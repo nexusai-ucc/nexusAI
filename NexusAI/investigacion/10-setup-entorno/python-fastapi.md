@@ -50,24 +50,25 @@ cp .env.example .env
 ENV=development
 APP_VERSION=0.1.0
 
-# OpenAI
-OPENAI_API_KEY=sk-REPLACE
-OPENAI_CHAT_MODEL=gpt-4o-mini
-OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+# LLM Provider (MVP: Gemini / Producción: OpenAI)
+LLM_API_KEY=REPLACE
+LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+LLM_MODEL=gemini-2.0-flash
 
-# ChromaDB
-CHROMA_PATH=./data/chromadb
+# Embedding Provider
+EMBEDDING_API_KEY=REPLACE
+EMBEDDING_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+EMBEDDING_MODEL=models/text-embedding-004
+EMBEDDING_DIMENSIONS=768
 
-# HMAC
+# Base de datos
+DATABASE_URL=postgresql://user:password@localhost:5432/nexusai
+
+# Seguridad
 NEXUSAI_SHARED_SECRET=REPLACE_WITH_HEX_32
 NEXUSAI_API_KEY=REPLACE_WITH_HEX_32
 HMAC_REPLAY_WINDOW_SEC=300
-
-# Rate limiting
 RATE_LIMIT_PER_USER_DAILY=50
-
-# Redis (cache)
-REDIS_URL=redis://localhost:6379/0
 ```
 
 ### 4. Arrancar servicios de soporte con Docker
