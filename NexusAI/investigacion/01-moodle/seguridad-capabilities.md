@@ -1,12 +1,10 @@
 # Seguridad, capabilities y Privacy API
 
-> **Resumen:** Cómo NexusAI controla accesos (`require_login`, `has_capability`), qué capabilities define, cómo cumple con la Privacy API de Moodle, y las 8 buenas prácticas obligatorias al publicar un plugin en producción.
-
----
+Resumen: Cómo NexusAI controla accesos (`require_login`, `has_capability`), qué capabilities define, cómo cumple con la Privacy API de Moodle, y las 8 buenas prácticas obligatorias al publicar un plugin en producción.
 
 ## Contexto
 
-Un plugin de IA que envía mensajes de alumnos a OpenAI procesa **datos personales**. Moodle obliga a declarar esto explícitamente vía la Privacy API, además de usar el sistema de capabilities nativo para los permisos.
+Un plugin de IA que envía mensajes de alumnos a un LLM externo procesa datos personales. Moodle obliga a declarar esto explícitamente vía la Privacy API, además de usar el sistema de capabilities nativo para los permisos.
 
 ## 1. Capabilities — `db/access.php`
 
@@ -112,10 +110,14 @@ class provider implements
             'timecreated' => 'privacy:metadata:messages:timecreated',
         ], 'privacy:metadata:messages');
 
-        $collection->add_external_location_link('openai_api', [
-            'query'   => 'privacy:metadata:openai:query',
-            'context' => 'privacy:metadata:openai:context',
-        ], 'privacy:metadata:openai');
+        // Declarar el proveedor de LLM como ubicación externa de datos personales.
+        // En el MVP usamos Gemini 2.5 Flash (tier gratuito). En producción se escala
+        // a un proveedor pago (GPT-4o-mini u equivalente). El proveedor activo se
+        // configura vía variable de entorno en el backend — el plugin PHP no lo hardcodea.
+        $collection->add_external_location_link('llm_provider', [
+            'query'   => 'privacy:metadata:llm:query',
+            'context' => 'privacy:metadata:llm:context',
+        ], 'privacy:metadata:llm');
 
         return $collection;
     }
@@ -124,7 +126,7 @@ class provider implements
 }
 ```
 
-**Importante:** Los mensajes enviados a OpenAI son una **ubicación externa** de datos personales. Hay que declararla explícitamente con `add_external_location_link()`.
+Importante: Los mensajes enviados al proveedor de LLM son una ubicación externa de datos personales. Hay que declararla explícitamente con `add_external_location_link()`. El nombre `llm_provider` es genérico a propósito — no atamos la Privacy API a un proveedor específico.
 
 ## 4. Las 8 buenas prácticas imprescindibles
 
@@ -133,28 +135,30 @@ Extraído de la guía técnica base y validado con plugins en producción:
 1. **Privacy API obligatoria** — implementar `\core_privacy\local\metadata\provider` declarando todos los datos personales (historial, consultas, IDs).
 2. **Nunca `$_GET` / `$_POST` directos** — siempre `required_param($name, PARAM_INT)` u `optional_param()` con constantes `PARAM_*` (`PARAM_TEXT`, `PARAM_INT`, `PARAM_ALPHANUM`, etc.).
 3. **Estilo de código Moodle estricto** — 4 espacios (nunca tabs), variables en minúsculas, comillas simples para strings sin variables, llaves siempre requeridas. Validar con `local_codechecker`.
-4. **Rate limiting por usuario** — tabla `{local_nexusai_usage}` con consultas diarias por alumno. Protege costos de OpenAI y previene abuso.
-5. **Manejo de errores graceful** — cuando el backend Python no responde, mensaje amigable. **Nunca `die()` o `exit()`** — siempre `throw new moodle_exception('backenderror', 'local_nexusai');`.
+4. **Rate limiting por usuario** — tabla `{local_nexusai_usage}` con consultas diarias por alumno. Protege costos del proveedor de LLM y previene abuso.
+5. **Manejo de errores graceful** — cuando el backend Python no responde, mensaje amigable. Nunca `die()` o `exit()` — siempre `throw new moodle_exception('backenderror', 'local_nexusai');`.
 6. **Logging con Events API** — eventos custom por cada interacción con la IA para auditoría.
-7. **Testing automatizado** — PHPUnit para lógica de negocio, Behat para flujos de usuario. Mockear OpenAI para tests determinísticos.
+7. **Testing automatizado** — PHPUnit para lógica de negocio, Behat para flujos de usuario. Mockear el proveedor de LLM para tests determinísticos.
 8. **`thirdpartylibs.xml` obligatorio** — declarar React, Webpack y cualquier otra lib incluida con nombre, versión y licencia.
 
 ## 5. Riesgos y mitigaciones (para la defensa del jurado)
 
 | Riesgo | Mitigación |
 |---|---|
-| API key de OpenAI expuesta al navegador | Patrón Hybrid PHP Proxy: la key vive solo en FastAPI. Ver [05-backend-fastapi/autenticacion-hmac.md](../05-backend-fastapi/autenticacion-hmac.md). |
-| Acceso cruzado entre cursos | Namespacing por `course_id` en ChromaDB + `has_capability` por contexto de curso. |
+| API key del proveedor de LLM expuesta al navegador | Patrón Hybrid PHP Proxy: la key vive solo en FastAPI como variable de entorno. Ver `05-backend-fastapi/autenticacion-hmac.md`. |
+| Acceso cruzado entre cursos | Filtrado por `course_id` en PostgreSQL (pgvector) + `has_capability` por contexto de curso. |
 | Alumnos ven respuestas de otros | Campo `userid` en `{local_nexusai_messages}` + filtrado en el External function. |
-| Prompt injection vía material del curso | Estructurar el prompt con delimitadores explícitos y system prompt firme. Ver [03-openai/gpt-4o.md](../03-openai/gpt-4o.md). |
+| Prompt injection vía material del curso | Estructurar el prompt con delimitadores explícitos y system prompt firme. |
 | Alumno intenta saltearse `require_login` | `require_login($course)` como primera línea de toda external function. |
+| Cambio de proveedor de LLM | El backend abstrae el proveedor detrás de una interfaz `LLMProvider`. Cambiar de Gemini a GPT-4o-mini es solo cambio de configuración (variable de entorno), sin tocar código. |
 
 ## Decisiones tomadas para NexusAI
 
-- **Tres capabilities:** `use` (alumnos), `manage` (docentes — settings del curso), `reindex` (docentes — dispara reindexación).
-- **Shared secret PHP↔Python** guardado en settings con `admin_setting_configpasswordunmask`.
-- **Privacy API desde el Sprint 1**, no al final. Es obligatoria y dejarla para el cierre genera deuda.
-- **Rate limiting en el MVP:** 50 consultas/día por alumno, configurable por el docente.
+- Tres capabilities: `use` (alumnos), `manage` (docentes — settings del curso), `reindex` (docentes — dispara reindexación).
+- Shared secret PHP↔Python guardado en settings con `admin_setting_configpasswordunmask`.
+- Privacy API desde el Sprint 1, no al final. Es obligatoria y dejarla para el cierre genera deuda.
+- Rate limiting en el MVP: 50 consultas/día por alumno, configurable por el docente.
+- La Privacy API declara el proveedor de LLM de forma genérica (`llm_provider`), no atada a OpenAI ni a ningún proveedor específico. En el MVP es Gemini 2.5 Flash; en producción puede ser cualquier proveedor compatible.
 
 ## Abierto / pendiente
 
