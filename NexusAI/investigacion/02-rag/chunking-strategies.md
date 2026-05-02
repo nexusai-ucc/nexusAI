@@ -20,7 +20,7 @@ Si los chunks son muy chicos, pierden contexto y el retrieval trae fragmentos qu
 
 - Captura 1-2 párrafos académicos completos (un concepto suele ocupar 300-600 tokens).
 - Permite meter ~5 chunks en el contexto del prompt sin superar el presupuesto (~2500 tokens).
-- `text-embedding-3-small` acepta hasta 8192 tokens de entrada — estamos lejísimo del límite.
+- Los modelos de embedding usados (Gemini Embedding, nomic-embed-text, text-embedding-3-small) aceptan hasta 8192 tokens — muy por debajo del límite.
 - Los benchmarks de RAG muestran mejor recall con chunks de 256-512 tokens para Q&A factual.
 
 ## Por qué 10% de overlap
@@ -37,7 +37,7 @@ def chunk_text(text: str, max_tokens: int = 500, overlap: int = 50) -> list[str]
     Corta texto en chunks de max_tokens, con overlap de tokens entre chunks consecutivos.
     Respeta separadores naturales (párrafos, oraciones) cuando es posible.
     """
-    encoder = tiktoken.encoding_for_model("text-embedding-3-small")
+    encoder = tiktoken.get_encoding("cl100k_base")  # Compatible con Gemini y OpenAI embeddings
     tokens = encoder.encode(text)
 
     chunks = []
