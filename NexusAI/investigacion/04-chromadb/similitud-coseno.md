@@ -1,51 +1,70 @@
 # Similitud coseno y búsqueda HNSW
 
-> **Resumen:** NexusAI usa **similitud coseno** en ChromaDB para comparar vectores de embeddings. La búsqueda es aproximada vía HNSW (Hierarchical Navigable Small Worlds), que es O(log n) y trae top-5 en <30ms sobre 10K vectores.
-
----
+Resumen: NexusAI usa similitud coseno con pgvector para comparar vectores de embeddings. La búsqueda es aproximada vía HNSW (Hierarchical Navigable Small Worlds), que es O(log n) y trae top-5 en <30ms sobre 240K vectores en hardware modesto.
 
 ## Contexto
 
-La "búsqueda semántica" del RAG se traduce en una operación matemática: encontrar los K vectores más cercanos a un vector de consulta. "Cercano" depende de la métrica de distancia elegida.
+La "búsqueda semántica" del RAG se traduce en una operación matemática: encontrar los K vectores más cercanos a un vector de consulta. "Cercano" depende de la métrica de distancia elegida. En pgvector, esta operación se hace directamente en SQL.
 
-## Métricas de distancia disponibles en ChromaDB
+## Métricas de distancia disponibles en pgvector
 
-| Métrica | Rango | Cuándo usarla | Para embeddings OpenAI |
-|---|---|---|---|
-| **Cosine** (`hnsw:space: cosine`) | [0, 2] | Comparación de dirección de vectores, invariante a magnitud. | ✅ **Recomendada.** |
-| Squared L2 (`l2`) | [0, ∞) | Distancia euclídea. Sensible a magnitud. | ⚠ OpenAI embeddings ya están normalizados, L2 ≈ cosine. |
-| Inner product (`ip`) | (-∞, ∞) | Dot product. Requiere vectores normalizados. | ⚠ Solo si sabés lo que hacés. |
+| Operador | Métrica | Rango | Cuándo usarla | Para embeddings |
+|---|---|---|---|---|
+| `<=>` | Distancia coseno | [0, 2] | Comparación de dirección de vectores, invariante a magnitud. | ✅ Recomendada |
+| `<->` | Distancia L2 (euclídea) | [0, ∞) | Sensible a magnitud. | ⚠ OpenAI/Gemini embeddings ya están normalizados, L2 ≈ coseno |
+| `<#>` | Producto interno negativo | (-∞, ∞) | Dot product. Requiere vectores normalizados. | ⚠ Solo si sabés lo que hacés |
 
 ## Por qué coseno
 
-Los embeddings de OpenAI ya están normalizados (norma L2 = 1). Con vectores normalizados:
+Los embeddings de OpenAI y Gemini ya están normalizados (norma L2 = 1). Con vectores normalizados:
 
-- **Cosine similarity** = `dot(a, b)` ∈ [-1, 1]
-- **Cosine distance** = `1 - cosine_similarity` ∈ [0, 2]
-
-Cuanto **menor** la distancia, más similares los vectores. Un chunk perfectamente relacionado con la query tendría distancia ~0.1-0.3. Chunks no relacionados rondan 0.8-1.2.
-
-## Qué umbral usar
-
-Heurística práctica:
-
-```python
-results = collection.query(query_embeddings=[qvec], n_results=10)
-distances = results["distances"][0]
-
-# Regla dura: descartar chunks con distancia > 0.7
-relevant = [
-    (doc, meta, dist)
-    for doc, meta, dist in zip(results["documents"][0], results["metadatas"][0], distances)
-    if dist < 0.7
-][:5]  # Tope de 5 chunks
-
-if not relevant:
-    # Fallback honesto — nada relevante en el material
-    return "No encuentro esta información..."
+```
+Cosine similarity = dot(a, b) ∈ [-1, 1]
+Cosine distance   = 1 - cosine_similarity ∈ [0, 2]
 ```
 
-**El umbral exacto se calibra con el dataset de evaluación.** Empezamos con 0.7 y ajustamos. Ver [02-rag/evaluacion-rag.md](../02-rag/evaluacion-rag.md).
+Cuanto menor la distancia, más similares los vectores. Un chunk muy relacionado con la query tendrá distancia ~0.1-0.3. Chunks no relacionados rondan 0.8-1.2.
+
+## Umbral de relevancia
+
+No todos los resultados que devuelve pgvector son útiles. Se aplica un umbral de distancia para descartar chunks poco relevantes:
+
+```python
+def semantic_search_with_threshold(
+    conn,
+    course_id: int,
+    query_embedding: list[float],
+    top_k: int = 5,
+    max_distance: float = 0.7,
+) -> list[dict]:
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT
+                c.chunk_text,
+                c.embedding <=> %s AS distance,
+                d.filename,
+                c.chunk_index
+            FROM nexusai_chunks c
+            JOIN nexusai_documents d ON c.document_id = d.id
+            WHERE d.course_id = %s
+              AND d.status = 'indexed'
+              AND c.embedding <=> %s < %s      -- umbral de relevancia
+            ORDER BY c.embedding <=> %s
+            LIMIT %s
+        """, (query_embedding, course_id, query_embedding, max_distance, query_embedding, top_k))
+
+        results = cur.fetchall()
+
+    if not results:
+        return []  # Fallback honesto — nada relevante en el material
+
+    return [
+        {"text": row[0], "distance": row[1], "filename": row[2], "chunk_index": row[3]}
+        for row in results
+    ]
+```
+
+El umbral exacto se calibra con el dataset de evaluación. Se empieza con 0.7 y se ajusta. Ver `02-rag/evaluacion-rag.md`.
 
 ## HNSW — cómo funciona la búsqueda aproximada
 
@@ -55,106 +74,92 @@ HNSW (Hierarchical Navigable Small Worlds) construye un grafo multi-nivel donde:
 - Los niveles inferiores agregan más nodos con conexiones locales.
 - La búsqueda baja por niveles, refinando el resultado.
 
-**Complejidad:** O(log n) vs O(n) de fuerza bruta.
+Complejidad: **O(log n)** vs O(n) de fuerza bruta.
 
-### Parámetros HNSW en ChromaDB
+## Parámetros HNSW en pgvector
 
-| Parámetro | Default | Efecto |
+| Parámetro | Valor NexusAI | Efecto |
 |---|---|---|
-| `hnsw:construction_ef` | 100 | Calidad del grafo al insertar. Más alto = mejor recall, más RAM y tiempo de indexación. |
-| `hnsw:search_ef` | 10 | Profundidad de búsqueda al query. Más alto = mejor recall, más latencia. |
-| `hnsw:M` | 16 | Grado del grafo (conexiones por nodo). 16-32 suele ser óptimo. |
+| `m` | 16 | Grado del grafo (conexiones por nodo). 16-32 es óptimo para la mayoría de casos. |
+| `ef_construction` | 200 | Calidad del grafo al indexar. Más alto = mejor recall, más tiempo de indexación. La indexación es offline, priorizamos calidad. |
+| `ef_search` | 50 | Profundidad de búsqueda al hacer query. Más alto = mejor recall, más latencia. |
 
-### Configuración recomendada para NexusAI
+```sql
+-- Crear el índice con los parámetros configurados
+CREATE INDEX ON nexusai_chunks
+    USING hnsw (embedding vector_cosine_ops)
+    WITH (m = 16, ef_construction = 200);
 
-```python
-collection = client.get_or_create_collection(
-    name=f"course_{course_id}",
-    metadata={
-        "hnsw:space": "cosine",
-        "hnsw:construction_ef": 200,  # Priorizamos calidad — indexación es offline
-        "hnsw:search_ef": 50,         # Más lento que default pero más preciso
-        "hnsw:M": 16,                 # Default
-    },
-)
+-- Configurar ef_search en runtime (por sesión o globalmente)
+SET hnsw.ef_search = 50;
 ```
 
-Con 10K vectores y estos parámetros, **recall@10 ~ 0.98** vs fuerza bruta, con latencia <30ms.
+Con 240K vectores y estos parámetros, recall@10 ~ 0.98 vs fuerza bruta, con latencia <30ms en hardware modesto.
 
-## Filtrado por metadata
+## Filtrado por metadata en pgvector
 
-ChromaDB permite combinar búsqueda vectorial con filtros exactos sobre metadata:
+pgvector permite combinar búsqueda vectorial con filtros SQL estándar en la misma query. Esta es una ventaja directa sobre ChromaDB, que tiene un lenguaje de filtros propio más limitado.
 
-```python
-# Solo chunks de un archivo específico
-results = collection.query(
-    query_embeddings=[qvec],
-    n_results=5,
-    where={"file_id": "f_1234"},
-)
+```sql
+-- Solo chunks de un documento específico
+SELECT chunk_text, embedding <=> $1 AS distance
+FROM nexusai_chunks
+WHERE document_id = $2
+ORDER BY embedding <=> $1
+LIMIT 5;
 
-# Combinaciones con operadores
-results = collection.query(
-    query_embeddings=[qvec],
-    n_results=5,
-    where={
-        "$and": [
-            {"course_id": str(course_id)},
-            {"page": {"$gte": 10}},
-            {"page": {"$lte": 50}},
-        ]
-    },
-)
+-- Solo chunks de un rango de páginas (si se guarda metadata de página)
+SELECT c.chunk_text, c.embedding <=> $1 AS distance
+FROM nexusai_chunks c
+JOIN nexusai_documents d ON c.document_id = d.id
+WHERE d.course_id = $2
+  AND c.chunk_index BETWEEN $3 AND $4
+ORDER BY c.embedding <=> $1
+LIMIT 5;
 
-# Filtrado por contenido del texto (substring)
-results = collection.query(
-    query_embeddings=[qvec],
-    n_results=5,
-    where_document={"$contains": "derivada"},
-)
+-- Búsqueda híbrida: semántica + keyword (post-MVP)
+SELECT c.chunk_text, c.embedding <=> $1 AS distance
+FROM nexusai_chunks c
+JOIN nexusai_documents d ON c.document_id = d.id
+WHERE d.course_id = $2
+  AND c.chunk_text ILIKE '%derivada%'   -- filtro keyword adicional
+ORDER BY c.embedding <=> $1
+LIMIT 5;
 ```
 
-**Uso previsto en NexusAI:**
+## Intuición geométrica — qué hace la búsqueda semántica
 
-- `where={"course_id": ...}` (defensivo, aunque la colección ya está por curso).
-- `where_document` para post-MVP (ej. "responder solo con chunks que mencionen X").
+```
+Query: "¿qué es una derivada?"
 
-## Visualización — intuición geométrica
-
-```mermaid
-flowchart TB
-    Q([Query: ¿qué es una derivada?]) -.dist 0.15.-> C1[Chunk: definición formal de derivada]
-    Q -.dist 0.22.-> C2[Chunk: interpretación geométrica de la derivada]
-    Q -.dist 0.35.-> C3[Chunk: reglas de derivación]
-    Q -.dist 0.68.-> C4[Chunk: integrales definidas]
-    Q -.dist 0.91.-> C5[Chunk: bibliografía]
-
-    style C1 fill:#8f8,color:#000
-    style C2 fill:#8f8,color:#000
-    style C3 fill:#bfb,color:#000
-    style C4 fill:#fc8,color:#000
-    style C5 fill:#f88,color:#000
+  dist 0.15 → Chunk: definición formal de derivada         ✅ muy relevante
+  dist 0.22 → Chunk: interpretación geométrica de derivada ✅ muy relevante
+  dist 0.35 → Chunk: reglas de derivación                  ✅ relevante
+  dist 0.68 → Chunk: integrales definidas                  ⚠ dudoso (cerca del umbral)
+  dist 0.91 → Chunk: bibliografía                          ❌ descartar
 ```
 
-Verde oscuro = muy relevante, verde claro = relevante, naranja = dudoso, rojo = descartar.
+Los chunks con distancia < 0.7 pasan el umbral y se incluyen en el contexto del prompt. Los demás se descartan y si no queda ninguno, el asistente responde el fallback honesto.
 
 ## Decisiones tomadas para NexusAI
 
-- **Métrica:** cosine.
-- **HNSW:** `construction_ef=200`, `search_ef=50`, `M=16`.
-- **Umbral de relevancia:** distance < 0.7 (calibrar con dataset de evaluación).
-- **Filtrado defensivo** por `course_id` además del aislamiento por colección.
+- **Métrica:** coseno (`<=>` en pgvector).
+- **HNSW:** `m=16`, `ef_construction=200`, `ef_search=50`.
+- **Umbral de relevancia:** `distance < 0.7` (calibrar con dataset de evaluación en Sprint 2).
+- **Filtrado:** SQL estándar — `WHERE d.course_id = $2 AND d.status = 'indexed'`.
+- El fallback cuando no hay resultados relevantes es un mensaje honesto al alumno, no una respuesta inventada.
 
 ## Abierto / pendiente
 
 - [ ] Calibrar umbral real con el dataset de evaluación (Sprint 2).
-- [ ] Benchmark latencia con 10K vectores en Railway Hobby.
-- [ ] Evaluar si agregar `where_document` por keyword mejora retrieval en preguntas con jerga puntual.
+- [ ] Benchmark latencia con 240K vectores en el hardware de hosting elegido.
+- [ ] Evaluar búsqueda híbrida (semántica + keyword) para preguntas con jerga puntual (post-MVP).
 
 ## Referencias
 
-- [Malkov & Yashunin — *Efficient and Robust Approximate Nearest Neighbor Search using HNSW*](https://arxiv.org/abs/1603.09320)
-- [ChromaDB — HNSW configuration](https://docs.trychroma.com/usage-guide#changing-the-distance-function)
+- [pgvector — Operadores de distancia](https://github.com/pgvector/pgvector#distance)
+- [pgvector — HNSW configuration](https://github.com/pgvector/pgvector#hnsw)
+- [Malkov & Yashunin — HNSW paper](https://arxiv.org/abs/1603.09320)
 - [Pinecone — Similarity metrics explained](https://www.pinecone.io/learn/vector-similarity/)
 
 ---
