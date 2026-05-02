@@ -57,25 +57,36 @@ backend/
 ## `main.py` base
 
 ```python
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
+import chromadb
+
 from app.routers import chat, documents, health
 from app.config import settings
+from app.core.middleware import HMACSecurityMiddleware
+
+ml_components: dict = {}
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ml_components["chroma_client"] = chromadb.PersistentClient(path=settings.CHROMA_PATH)
+    yield
+    ml_components.clear()
 
 app = FastAPI(
     title="NexusAI Backend",
     version=settings.APP_VERSION,
+    lifespan=lifespan,
     docs_url="/docs" if settings.ENV != "production" else None,
-    redoc_url=None,
 )
 
+app.add_middleware(HMACSecurityMiddleware)
 app.include_router(health.router)
-app.include_router(chat.router, prefix="/api")
+app.include_router(chat.router,      prefix="/api")
 app.include_router(documents.router, prefix="/api/documents")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
+
+> Patrón Lifespan completo, `HMACSecurityMiddleware` con nonce tracking y dependency injection del cliente ChromaDB en [`lifespan-y-estado.md`](lifespan-y-estado.md).
 
 ## Config con Pydantic Settings
 
@@ -215,4 +226,4 @@ Un VPS de **2 GB RAM, 1 vCPU compartido** cubre cómodamente el MVP.
 
 ---
 
-*Última actualización: 2026-04-24 — equipo NexusAI*
+*Última actualización: 2026-05-02 — Marcos Bugliotti*

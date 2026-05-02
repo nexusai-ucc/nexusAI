@@ -76,97 +76,35 @@ $id = $DB->insert_record('local_nexusai_messages', (object)[
 ]);
 ```
 
-## 3. Obtener PDFs de un curso para indexar en PostgreSQL (pgvector)
+## 3. Obtener PDFs de un curso para indexar
 
-Moodle almacena archivos de forma deduplicada por hash SHA-1 en `$CFG->dataroot/filedir/`. La tabla `{files}` contiene los metadatos.
+Moodle almacena archivos de forma deduplicada por hash SHA-1 en `$CFG->dataroot/filedir/`. El método más eficiente para recorrer el árbol del curso es `get_fast_modinfo()` — está cacheado y minimiza el impacto en la base de datos.
 
-```php
-$modinfo   = get_fast_modinfo($COURSE);   // Cacheado, es la forma eficiente
-$resources = $modinfo->get_instances_of('resource');
-$fs        = get_file_storage();
+El flujo de indexación es: PHP extrae el PDF → lo envía al backend FastAPI vía HMAC → FastAPI genera los chunks y embeddings → los almacena en ChromaDB.
 
-foreach ($resources as $cm) {
-    $context = context_module::instance($cm->id);
-    $files = $fs->get_area_files(
-        $context->id, 'mod_resource', 'content', 0, 'sortorder', false
-    );
-    foreach ($files as $file) {
-        if ($file->get_mimetype() === 'application/pdf') {
-            $content  = $file->get_content();  // Binario del PDF
-            $filename = $file->get_filename();
-            // Enviar al backend Python para procesar e indexar en PostgreSQL (pgvector)
-        }
-    }
-}
-```
-
-Cada archivo se identifica por `contextid + component + filearea + itemid`.
-
-El flujo de indexación es: PHP extrae el PDF → lo envía al backend FastAPI vía HMAC → FastAPI genera los chunks y embeddings → los almacena en PostgreSQL con pgvector como columna `vector(1536)` en la tabla `nexusai_chunks`.
+> Implementación completa del cron de sincronización, con metadata para RAG y envío a la Data Ingestion API, en [`arquitectura-plugin-detallada.md`](arquitectura-plugin-detallada.md).
 
 ## 4. External functions — endpoint AJAX seguro
 
-`db/services.php` registra la función:
+`db/services.php` registra las funciones externas del plugin con `'ajax' => true`, lo que permite al frontend llamarlas vía `core/ajax` usando la sesión autenticada del usuario — sin tokens estáticos en el navegador.
 
-```php
-<?php
-defined('MOODLE_INTERNAL') || die();
+> Esquema completo de `db/services.php`, la clase `chat_api` que implementa el endpoint y el esquema XMLDB de las tablas en [`arquitectura-plugin-detallada.md`](arquitectura-plugin-detallada.md).
 
-$functions = [
-    'local_nexusai_send_message' => [
-        'classname'     => 'local_nexusai\external\send_message',
-        'description'   => 'Enviar mensaje al asistente IA',
-        'type'          => 'write',
-        'ajax'          => true,          // Habilita llamadas desde core/ajax
-        'loginrequired' => true,
-    ],
-];
-```
+## 5. Consumo de Web Services REST desde Python (opcional)
 
-El flag `'ajax' => true` es clave: permite que el JavaScript del frontend llame a esta función vía `core/ajax` sin gestionar tokens manualmente, usando la sesión autenticada del usuario.
+Para que el backend Python consulte Moodle directamente (ej. traer la lista de materiales de un curso para indexación RAG), se habilita REST en Admin → Funciones avanzadas y se genera un token de servicio dedicado.
 
-## 5. Web Services REST para acceso externo (opcional)
-
-Si quisiéramos que el backend Python consulte Moodle directamente (por ejemplo, para traer el listado de materiales de un curso), se habilita REST en Admin → Funciones avanzadas → Habilitar servicios web y se genera un token:
-
-```python
-import requests
-
-MOODLE_URL = "https://moodle.universidad.edu"
-TOKEN = "token_generado_en_moodle"
-
-def moodle_api(function, **kwargs):
-    params = {
-        'wstoken': TOKEN,
-        'wsfunction': function,
-        'moodlewsrestformat': 'json',
-        **kwargs,
-    }
-    return requests.post(
-        f"{MOODLE_URL}/webservice/rest/server.php",
-        data=params,
-    ).json()
-
-contents = moodle_api('core_course_get_contents', courseid=5)
-for section in contents:
-    for module in section.get('modules', []):
-        for content in module.get('contents', []):
-            if content['filename'].endswith('.pdf'):
-                url = f"{content['fileurl']}&token={TOKEN}"
-                pdf_data = requests.get(url).content
-```
+> Teoría completa del framework de Web Services, modelo de seguridad de tokens y ejemplo de código Python con `core_course_get_contents` en [`webservices-teoria.md`](webservices-teoria.md).
 
 ## Decisiones tomadas para NexusAI
 
-- Inyección vía `before_footer()` con validación de `isloggedin()`, `isguestuser()` y capability `local/nexusai:use`. Compatible con Moodle 4.1–4.5 sin detección de versión.
-- Acceso a archivos del curso desde PHP (no desde Python) para respetar el framework de seguridad de Moodle. PHP extrae el PDF y lo envía al backend vía HMAC para su procesamiento e indexación en PostgreSQL con pgvector.
-- No habilitar Web Services REST en el MVP: simplifica el despliegue (menos permisos admin que pedir) y evita manejar tokens de larga vida.
-- El almacenamiento vectorial usa pgvector sobre PostgreSQL — no ChromaDB. Un único sistema para datos relacionales y vectores. Ver `../04-chromadb/` → decisión migrada a `../03-openai/` y base de datos unificada en PostgreSQL.
+- Inyección vía `before_footer()` con validación de `isloggedin()`, `isguestuser()` y capability `local/nexusai:usechat`. Compatible con Moodle 4.1–4.5 sin detección de versión.
+- Acceso a archivos del curso desde PHP (no desde Python) para respetar el framework de seguridad de Moodle. PHP extrae el PDF y lo envía al backend vía HMAC para su procesamiento e indexación en ChromaDB. Ver `arquitectura-plugin-detallada.md`.
+- No habilitar Web Services REST en el MVP para la comunicación Moodle → FastAPI: el plugin actúa como proxy interno y no requiere tokens externos.
 
 ## Abierto / pendiente
 
-- [ ] Definir esquema de tablas propias (`local_nexusai_messages`, `local_nexusai_documents`, `local_nexusai_chunks`, etc.) en `db/install.xml`.
-- [ ] Evaluar si usamos `get_fast_modinfo()` o `core_course_get_contents()` para el listado inicial de materiales.
+- [ ] Evaluar si `get_fast_modinfo()` (desde PHP) o `core_course_get_contents()` (desde Python) es el método preferido para el listado inicial de materiales.
 
 ## Referencias
 
@@ -177,4 +115,4 @@ for section in contents:
 
 ---
 
-*Última actualización: 2026-04-24 — equipo NexusAI*
+*Última actualización: 2026-05-02 — Marcos Bugliotti*
