@@ -47,15 +47,15 @@ flowchart LR
 
 1. **Extracción:** `pdfplumber` convierte PDFs en texto plano, respetando estructura de párrafos.
 2. **Chunking:** cortamos en fragmentos de ~500 tokens con ~10% de overlap. Ver [chunking-strategies.md](chunking-strategies.md).
-3. **Embedding:** cada chunk pasa por `text-embedding-3-small` → vector de 1536 dimensiones.
-4. **Storage:** los vectores + metadata (curso, archivo, página) se guardan en ChromaDB, una colección por `course_id`.
+3. **Embedding:** cada chunk → vector de 768 dims en MVP (Gemini Embedding / nomic-embed-text) o 1536 dims en producción (text-embedding-3-small).
+4. **Storage:** vectores + metadata en PostgreSQL con pgvector, columna `vector(N)` en la tabla `nexusai_chunks`, filtrado por `course_id` vía SQL.
 
 Costo de indexación: **~$0.10 por cada 10.000 chunks**.
 
 ### Fase 2 — Retrieval (online)
 
 1. La pregunta del alumno se vectoriza con el mismo modelo de embeddings.
-2. ChromaDB devuelve los **top-5 chunks** más similares (similitud coseno), filtrando por `course_id`.
+2. pgvector devuelve los **top-5 chunks** más similares (distancia coseno con operador `<=>`).
 3. Esos chunks se inyectan como contexto.
 
 Latencia típica: **~130 ms** (100 ms embedding + 30 ms búsqueda vectorial).
@@ -69,7 +69,7 @@ Latencia típica: **~130 ms** (100 ms embedding + 30 ms búsqueda vectorial).
    [Contexto: top-5 chunks recuperados]
    [Pregunta: <query del alumno>]
    ```
-2. GPT-4o genera la respuesta (streaming con SSE para que el alumno vea tokens aparecer).
+2. El LLM activo (Gemini 2.5 Flash en MVP, GPT-4o-mini en producción) genera la respuesta con streaming SSE.
 
 Latencia típica: **1-5 s para GPT-4o** (o 1-2 s para GPT-4o-mini).
 
@@ -99,7 +99,7 @@ Esto diferencia a NexusAI de chatbots que alucinan respuestas cuando no saben.
 ## Decisiones tomadas para NexusAI
 
 - **RAG sí, fine-tuning no**, para el MVP y probablemente también post-MVP.
-- **Una colección ChromaDB por materia** (namespace = `course_id`).
+- **PostgreSQL con pgvector** como único sistema de almacenamiento. Filtrado por `course_id` vía SQL.
 - **Fallback honesto** como requisito del system prompt — no negociable.
 - **Streaming SSE** en el MVP (no podemos dejar al alumno 5 segundos en blanco).
 
