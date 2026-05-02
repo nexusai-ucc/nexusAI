@@ -18,7 +18,7 @@ Dejar documentado, con criterio técnico y trazabilidad, **por qué NexusAI se c
 | [01-moodle/](01-moodle/) | Plugin development, hooks, seguridad, compatibilidad 4.1–4.5 |
 | [02-rag/](02-rag/) | Conceptos RAG, estrategias de chunking, evaluación |
 | [03-openai/](03-openai/) | GPT-4o, embeddings, costos, rate limits, prompting |
-| [04-chromadb/](04-chromadb/) | Arquitectura, similitud coseno, persistencia |
+| [04-chromadb/](04-chromadb/) | Decisión pgvector vs ChromaDB, similitud coseno, HNSW |
 | [05-backend-fastapi/](05-backend-fastapi/) | API Python, HMAC PHP↔Python, hosting |
 | [06-frontend-react/](06-frontend-react/) | React + Webpack + AMD dentro de Moodle |
 | [07-procesamiento-docs/](07-procesamiento-docs/) | pdfplumber, chunking, extracción |
@@ -45,8 +45,8 @@ Dejar documentado, con criterio técnico y trazabilidad, **por qué NexusAI se c
 |---|---|---|
 | 01 Moodle | En progreso | Marcos |
 | 02 RAG | En progreso | Santiago |
-| 03 OpenAI | En progreso | Santiago |
-| 04 ChromaDB | En progreso | Marcos |
+| 03 LLMs y Embeddings | En progreso | Santiago |
+| 04 Base vectorial (pgvector) | En progreso | Marcos |
 | 05 Backend FastAPI | En progreso | Santiago |
 | 06 Frontend React | En progreso | Delfi |
 | 07 Procesamiento docs | Pendiente | Marcos |
