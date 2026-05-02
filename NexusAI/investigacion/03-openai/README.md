@@ -4,7 +4,7 @@ Uso de LLMs y modelos de embeddings en NexusAI. Arquitectura agnóstica de prove
 
 ## Archivos
 
-- [gpt-4o.md](gpt-4o.md) — Decisión de proveedor de LLM, comparativa, arquitectura `LLMProvider`, prompt engineering, streaming y prompt injection.
+- [Modelos-de-Lenguaje.md](Modelos-de-Lenguaje.md) — Decisión de proveedor de LLM, comparativa, arquitectura `LLMProvider`, prompt engineering, streaming y prompt injection.
 - [embeddings.md](embeddings.md) — Decisión de modelo de embeddings, comparativa, arquitectura `EmbeddingProvider`, integración con pgvector.
 - [costos-rate-limits.md](costos-rate-limits.md) — Proyección de costos por escenario (MVP $0, producción ~$108/mes para 500 alumnos), rate limits, palancas de optimización.
 
