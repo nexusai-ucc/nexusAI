@@ -22,13 +22,20 @@ Bibliografía centralizada de toda la investigación. Cada documento puede citar
 
 ## RAG / IA / Embeddings
 
-- [OpenAI — GPT-4o pricing](https://openai.com/api/pricing/)
-- [OpenAI — Embeddings guide](https://platform.openai.com/docs/guides/embeddings)
-- [OpenAI — text-embedding-3-small](https://platform.openai.com/docs/models/text-embedding-3-small)
-- [ChromaDB docs](https://docs.trychroma.com/)
-- [FastAPI docs](https://fastapi.tiangolo.com/)
-- [pdfplumber](https://github.com/jsvine/pdfplumber)
-- Lewis et al. (2020) — *Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks* (paper original RAG)
+OpenAI — GPT-4o-mini pricing
+OpenAI — Embeddings guide
+OpenAI — text-embedding-3-small
+OpenAI — Prompt caching
+Google Gemini API — Gemini 2.5 Flash
+Google Gemini API — Embeddings
+Google Gemini API — OpenAI compatibility
+Ollama — nomic-embed-text
+pgvector — GitHub
+pgvector — HNSW indexing
+FastAPI docs
+pdfplumber
+Lewis et al. (2020) — Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (paper original RAG)
+Malkov & Yashunin (2016) — Efficient and Robust Approximate Nearest Neighbor Search using Hierarchical Navigable Small Worlds (paper original HNSW)
 
 ## Plugins Moodle IA de referencia
 
