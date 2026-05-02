@@ -22,8 +22,8 @@ backend/
 │   │   ├── documents.py             # POST /api/documents/index, DELETE /api/documents/{id}
 │   │   └── health.py                # GET /health, GET /ready
 │   ├── services/
-│   │   ├── openai_client.py         # Wrapper GPT-4o + embeddings
-│   │   ├── chroma_client.py         # Wrapper ChromaDB
+│   │   ├── llm_provider.py
+│   │   ├── embedding_provider.py
 │   │   ├── rag.py                   # Pipeline: retrieve + build prompt + generate
 │   │   └── documents.py             # pdfplumber + chunking + indexación
 │   ├── models/
@@ -197,6 +197,7 @@ Un VPS de **2 GB RAM, 1 vCPU compartido** cubre cómodamente el MVP.
 - **Railway Hobby** para la defensa.
 - **Sin CORS en MVP** (patrón PHP proxy).
 - **Ruff + PyTest** como linter y test runner.
+- **LLMProvider y EmbeddingProvider** como capas de abstracción. Gemini 2.5 Flash en MVP, GPT-4o-mini en producción. Cambio solo de variables de entorno.
 
 ## Abierto / pendiente
 
