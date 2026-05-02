@@ -1,8 +1,6 @@
 # Hooks, APIs internas y acceso a datos de Moodle
 
-> **Resumen:** Cómo inyectamos el widget (`before_footer()`), cómo accedemos a datos del curso desde el plugin (`$DB`, `$COURSE`, file storage), y cómo el backend Python puede opcionalmente consumir datos de Moodle vía Web Services REST.
-
----
+Resumen: Cómo inyectamos el widget (`before_footer()`), cómo accedemos a datos del curso desde el plugin (`$DB`, `$COURSE`, file storage), y cómo el backend Python puede opcionalmente consumir datos de Moodle vía Web Services REST.
 
 ## Contexto
 
@@ -46,6 +44,7 @@ Puntos clave:
 - Moodle llama automáticamente a todas las funciones `local_*_before_footer()` registradas.
 - Desde Moodle 3.10, debe retornar HTML como string.
 - Pasa `courseid` + `userid` + `sesskey` al bundle React como parámetros de inicialización.
+- Este callback es compatible con todo el rango Moodle 4.1–4.5. Para 4.3+ existe la Hooks API (PSR-14), pero no la adoptamos en el MVP — ver `compatibilidad-4.1-4.5.md`.
 
 ## 2. Variables globales y acceso a la base de datos
 
@@ -55,7 +54,7 @@ Moodle expone datos vía globals declaradas explícitamente:
 global $DB, $USER, $COURSE, $PAGE, $CFG;
 ```
 
-`$DB` provee la API de manipulación de datos. **Las tablas nunca llevan el prefijo `mdl_` en las llamadas API** — se usan llaves `{}`:
+`$DB` provee la API de manipulación de datos. Las tablas nunca llevan el prefijo `mdl_` en las llamadas API — se usan llaves `{}`:
 
 ```php
 // Obtener un registro
@@ -77,7 +76,7 @@ $id = $DB->insert_record('local_nexusai_messages', (object)[
 ]);
 ```
 
-## 3. Obtener PDFs de un curso para indexar en ChromaDB
+## 3. Obtener PDFs de un curso para indexar en PostgreSQL (pgvector)
 
 Moodle almacena archivos de forma deduplicada por hash SHA-1 en `$CFG->dataroot/filedir/`. La tabla `{files}` contiene los metadatos.
 
@@ -95,13 +94,15 @@ foreach ($resources as $cm) {
         if ($file->get_mimetype() === 'application/pdf') {
             $content  = $file->get_content();  // Binario del PDF
             $filename = $file->get_filename();
-            // Enviar al backend Python para indexar en ChromaDB
+            // Enviar al backend Python para procesar e indexar en PostgreSQL (pgvector)
         }
     }
 }
 ```
 
 Cada archivo se identifica por `contextid + component + filearea + itemid`.
+
+El flujo de indexación es: PHP extrae el PDF → lo envía al backend FastAPI vía HMAC → FastAPI genera los chunks y embeddings → los almacena en PostgreSQL con pgvector como columna `vector(1536)` en la tabla `nexusai_chunks`.
 
 ## 4. External functions — endpoint AJAX seguro
 
@@ -126,7 +127,7 @@ El flag `'ajax' => true` es clave: permite que el JavaScript del frontend llame 
 
 ## 5. Web Services REST para acceso externo (opcional)
 
-Si quisiéramos que el backend Python consulte Moodle directamente (por ejemplo, para traer el listado de materiales de un curso), se habilita REST en **Admin → Funciones avanzadas → Habilitar servicios web** y se genera un token:
+Si quisiéramos que el backend Python consulte Moodle directamente (por ejemplo, para traer el listado de materiales de un curso), se habilita REST en Admin → Funciones avanzadas → Habilitar servicios web y se genera un token:
 
 ```python
 import requests
@@ -157,20 +158,21 @@ for section in contents:
 
 ## Decisiones tomadas para NexusAI
 
-- **Inyección vía `before_footer()`** con validación de `isloggedin()`, `isguestuser()` y capability `local/nexusai:use`.
-- **Acceso a archivos del curso desde PHP** (no desde Python) para respetar el framework de seguridad de Moodle. PHP extrae el PDF y lo envía al backend por HMAC.
-- **No habilitar Web Services REST** en el MVP: simplifica el despliegue en la facu (menos permisos admin que pedir) y evita manejar tokens de larga vida.
+- Inyección vía `before_footer()` con validación de `isloggedin()`, `isguestuser()` y capability `local/nexusai:use`. Compatible con Moodle 4.1–4.5 sin detección de versión.
+- Acceso a archivos del curso desde PHP (no desde Python) para respetar el framework de seguridad de Moodle. PHP extrae el PDF y lo envía al backend vía HMAC para su procesamiento e indexación en PostgreSQL con pgvector.
+- No habilitar Web Services REST en el MVP: simplifica el despliegue (menos permisos admin que pedir) y evita manejar tokens de larga vida.
+- El almacenamiento vectorial usa pgvector sobre PostgreSQL — no ChromaDB. Un único sistema para datos relacionales y vectores. Ver `../04-chromadb/` → decisión migrada a `../03-openai/` y base de datos unificada en PostgreSQL.
 
 ## Abierto / pendiente
 
-- [ ] Definir esquema de tablas propias (`local_nexusai_messages`, `local_nexusai_indexed_files`, etc.) en `db/install.xml`.
+- [ ] Definir esquema de tablas propias (`local_nexusai_messages`, `local_nexusai_documents`, `local_nexusai_chunks`, etc.) en `db/install.xml`.
 - [ ] Evaluar si usamos `get_fast_modinfo()` o `core_course_get_contents()` para el listado inicial de materiales.
 
 ## Referencias
 
-- [Moodle Developer Resources — Callbacks](https://moodledev.io/docs/apis/plugintypes/local#callbacks)
-- [Moodle Developer Resources — Data manipulation API (`$DB`)](https://moodledev.io/docs/apis/core/dml)
-- [Moodle Developer Resources — File API](https://moodledev.io/docs/apis/subsystems/file)
+- [Moodle Developer Resources — Callbacks](https://moodledev.io/docs/apis/core/hooks)
+- [Moodle Developer Resources — Data manipulation API ($DB)](https://moodledev.io/docs/apis/core/dml)
+- [Moodle Developer Resources — File API](https://moodledev.io/docs/apis/subsystems/files)
 - [Moodle Developer Resources — Web services / External functions](https://moodledev.io/docs/apis/subsystems/external)
 
 ---
