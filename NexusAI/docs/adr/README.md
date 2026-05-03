@@ -21,15 +21,16 @@ Usar [`000-template.md`](000-template.md) como base. Estructura:
 | ADR | Título | Estado | Fecha |
 |---|---|---|---|
 | [001](001-monolito-modular.md) | Backend Python como monolito modular | ✅ Aceptada | 2026-05-02 |
+| [002](002-pgvector.md) | pgvector sobre PostgreSQL como única base de datos | ✅ Aceptada | 2026-05-02 |
+| [003](003-multi-provider-llm.md) | Arquitectura agnóstica multi-provider LLM | ✅ Aceptada | 2026-05-02 |
+| [004](004-gemini-mvp-openai-prod.md) | Gemini en MVP, OpenAI en producción | ✅ Aceptada | 2026-05-02 |
 
 ## ADRs planificados (Sprint 1-2)
 
-- ADR-002: ChromaDB in-process como base vectorial.
-- ADR-003: GPT-4o-mini como modelo default.
-- ADR-004: Chunking 500 tokens / 10% overlap.
-- ADR-005: Comunicación PHP↔Python con HMAC + Bearer.
-- ADR-006: React compilado como módulo AMD vía Webpack.
-- ADR-007: Plugin tipo `local` con `before_footer()`.
+- ADR-005: Chunking 500 tokens / 10% overlap (a formalizar a partir de `investigacion/02-rag/chunking-strategies.md`).
+- ADR-006: Comunicación PHP↔Python con HMAC + Bearer + nonce (a formalizar a partir de `investigacion/05-backend-fastapi/autenticacion-hmac.md` y `lifespan-y-estado.md`).
+- ADR-007: React compilado como módulo AMD vía Webpack (a formalizar a partir de `investigacion/06-frontend-react/`).
+- ADR-008: Plugin tipo `local` con `before_footer()` (a formalizar a partir de `investigacion/01-moodle/plugin-development.md`).
 
 ## Reglas
 

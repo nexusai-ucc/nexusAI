@@ -9,9 +9,10 @@ sequenceDiagram
     participant R as React (browser)
     participant P as Plugin PHP (Moodle)
     participant F as FastAPI (backend)
-    participant C as ChromaDB
+    participant PG as PostgreSQL/pgvector
     participant Re as Redis
-    participant O as OpenAI
+    participant E as EmbeddingProvider
+    participant L as LLMProvider
 
     A->>R: Escribe pregunta y envía
     R->>R: validate input
@@ -28,16 +29,16 @@ sequenceDiagram
         P->>P: increment usage in mdl
         P->>P: build payload + HMAC SHA-256
 
-        P->>F: POST /api/chat<br/>headers: HMAC + Bearer + timestamp<br/>body: {question, course_id, user_id}
+        P->>F: POST /api/chat<br/>headers: HMAC + Bearer + timestamp + nonce<br/>body: {question, course_id, user_id}
 
-        F->>F: verify HMAC + timestamp window
+        F->>F: HMACSecurityMiddleware<br/>verify HMAC + timestamp window + nonce
         F->>F: verify Bearer
 
-        F->>O: embed(question)<br/>text-embedding-3-small
-        O-->>F: vector 1536d
+        F->>E: embed(question)
+        E-->>F: vector (768 o 1536 dim)
 
-        F->>C: query top-5 chunks<br/>where course_id
-        C-->>F: chunks + metadata + distances
+        F->>PG: SELECT ... ORDER BY embedding ⟨=⟩ $1<br/>WHERE course_id = $2 AND status = 'indexed'<br/>LIMIT 5
+        PG-->>F: chunks + metadata + distances
 
         alt min distance > 0.7
             F-->>P: respuesta fallback honesto
@@ -45,9 +46,9 @@ sequenceDiagram
             R-->>A: muestra mensaje
         else min distance <= 0.7
             F->>F: build prompt<br/>(system + historial + contexto + pregunta)
-            F->>O: chat.completions.create<br/>gpt-4o-mini, stream=True
+            F->>L: chat.completions.create<br/>(stream=True)
             loop por cada token
-                O-->>F: token chunk
+                L-->>F: token chunk
                 F-->>P: SSE data: {token}
                 P-->>R: SSE proxy
                 R-->>A: token aparece en UI
@@ -60,8 +61,10 @@ sequenceDiagram
 ## Notas técnicas
 
 - **Sesskey de Moodle** valida CSRF + sesión activa del usuario.
-- **HMAC** se valida con ventana de timestamp de 5 min (anti-replay).
+- **HMAC + nonce** se valida con ventana de timestamp de 5 min (anti-replay) + nonce tracking en Redis (anti-reuse).
 - **Si el rate limit se excede**, el plugin no llama al backend — corta antes.
+- **Una sola query a la DB** para retrieval: filtros SQL + búsqueda vectorial en la misma operación gracias a pgvector.
+- **EmbeddingProvider y LLMProvider** son intercambiables vía variables de entorno. En MVP son Gemini, en producción OpenAI.
 - **Streaming SSE** se proxea de FastAPI a través de PHP a React. PHP necesita `flush()` después de cada chunk.
 - **Persistencia** ocurre al final, tras stream completo. Si hay un error mid-stream, se logea pero no se guarda.
 
@@ -72,6 +75,7 @@ sequenceDiagram
 | 3 | sesskey inválido | Moodle rechaza con 403 |
 | 6-7 | sin permiso | PHP responde "no autorizado" |
 | 13 | HMAC inválido o vencido | FastAPI responde 401, PHP loguea y muestra error genérico |
-| 15-17 | OpenAI rate limit | Reintento con backoff exponencial (max 3) |
-| 18 | ChromaDB error | Fallback degradado: respuesta sin contexto + warning |
-| 27 | Stream interrumpido | Cliente reintenta o muestra "respuesta incompleta" |
+| 14 | nonce ya usado (replay) | FastAPI responde 401, PHP loguea como sospechoso |
+| 16-17 | LLM rate limit | Reintento con backoff exponencial (max 3) |
+| 19 | pgvector error | Fallback degradado: respuesta sin contexto + warning |
+| 30 | Stream interrumpido | Cliente reintenta o muestra "respuesta incompleta" |

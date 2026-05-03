@@ -132,7 +132,7 @@ Reabrir el debate de splitar a microservicios si:
 |---|---|
 | Indexar 200+ PDFs bloquea el chat por minutos | Extraer `nexus-indexer` como worker async (Celery/RQ) |
 | Aparece la épica 04 (analytics docente) con queries pesadas | Evaluar extraer `nexus-analytics` con DB propia agregada |
-| ChromaDB supera 100K vectores en una sola materia | Mover Chroma a server mode (deja de ser embedded) |
+| pgvector no escala (>10M vectores con concurrencia alta) | Evaluar Qdrant o Weaviate como base vectorial dedicada |
 | Equipo crece a > 6 devs | Evaluar splitar para que cada equipo tenga su servicio |
 | Un dominio impone requirements distintos al resto (ej. GPU) | Extraer ese dominio |
 

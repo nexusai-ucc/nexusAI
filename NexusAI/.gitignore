@@ -78,9 +78,9 @@ config.php
 behatdata/
 
 # ---- Backend / Datos ----
-# ChromaDB persistente en local
+# Datos locales del backend (logs, dumps, etc.)
 services/api/data/
-data/chromadb/
+data/
 
 # Logs
 *.log

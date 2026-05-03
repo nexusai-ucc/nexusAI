@@ -24,8 +24,10 @@ A diferencia de otros plugins de IA para Moodle, **NexusAI implementa RAG autén
 
 - **RAG automático** sobre el material real del docente. Sin pegar texto a mano.
 - **Integración nativa** en Moodle vía `before_footer()` — widget flotante en todas las páginas del curso.
-- **API key de OpenAI nunca llega al navegador.** Patrón Hybrid PHP Proxy con HMAC PHP↔Python.
-- **Open source y self-hostable.** Las universidades mantienen control sobre los datos.
+- **API key del proveedor LLM nunca llega al navegador.** Patrón Hybrid PHP Proxy con HMAC PHP↔Python.
+- **Self-hosted.** Una sola base de datos (PostgreSQL + pgvector) — los datos académicos nunca salen del servidor de la institución.
+- **Agnóstico de proveedor LLM.** Gemini en MVP (gratuito), GPT-4o-mini en producción. Cambio de proveedor solo con variables de entorno.
+- **Open source.** Distribuido bajo licencia MIT.
 - **Fallback honesto.** Si la pregunta no se puede responder con el material, lo admite.
 
 ---
@@ -65,11 +67,11 @@ Ver [`investigacion/`](investigacion/) para el detalle técnico y de gestión, y
 | **Frontend** | React 18 + Webpack (bundle AMD embebido en Moodle) |
 | **Plugin Moodle** | PHP — plugin tipo `local`, `require_login()`, `has_capability()`, proxy cURL |
 | **Backend IA** | Python 3.11 + FastAPI |
-| **IA generativa** | OpenAI GPT-4o-mini (con GPT-4o opcional) |
-| **Embeddings** | OpenAI text-embedding-3-small (1536 dim) |
-| **Base vectorial** | ChromaDB (modo in-process, persistente) |
+| **IA generativa** | Multi-provider — Gemini 2.5 Flash (MVP) / GPT-4o-mini (producción) |
+| **Embeddings** | Multi-provider — Gemini Embedding o nomic-embed-text (MVP) / text-embedding-3-small (producción) |
+| **Base vectorial** | **PostgreSQL + pgvector** (índice HNSW, distancia coseno) |
 | **Cache** | Redis |
-| **Base de datos** | PostgreSQL (compartida con Moodle) |
+| **Base de datos** | PostgreSQL (compartida con Moodle, **única DB del sistema**) |
 | **Compatibilidad Moodle** | 4.1 LTS – 4.5 LTS |
 
 ### Flujo de una consulta
@@ -78,8 +80,8 @@ Ver [`investigacion/`](investigacion/) para el detalle técnico y de gestión, y
 Alumno → React (AMD)
        → Moodle PHP (External Function + cURL)
        → FastAPI (HMAC verify + RAG)
-       → ChromaDB (top-5 chunks por similitud coseno)
-       → GPT-4o-mini (generación con streaming SSE)
+       → PostgreSQL/pgvector (top-5 chunks por similitud coseno, SQL+vector)
+       → LLM activo (Gemini Flash en MVP / GPT-4o-mini en prod, streaming SSE)
        → respuesta contextualizada al alumno
 ```
 
