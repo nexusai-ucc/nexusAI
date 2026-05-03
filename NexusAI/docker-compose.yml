@@ -36,9 +36,11 @@ services:
     container_name: nexusai-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-nexusai}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexusai_dev}
-      POSTGRES_DB: ${POSTGRES_DB:-nexusai}
+      # Sin defaults inline — todos los valores vienen del .env (gitignored).
+      # Si .env no tiene POSTGRES_PASSWORD, docker-compose falla con un error claro.
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER no está en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD no está en .env}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB no está en .env}
       # Crea ambas DBs al primer arranque vía init script
       POSTGRES_MULTIPLE_DATABASES: nexusai,moodle
     ports:
@@ -90,7 +92,7 @@ services:
     env_file: .env
     environment:
       # Override del DATABASE_URL para que apunte al servicio interno (no a localhost)
-      DATABASE_URL: postgresql://${POSTGRES_USER:-nexusai}:${POSTGRES_PASSWORD:-nexusai_dev}@postgres:5432/nexusai
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/nexusai
       REDIS_URL: redis://redis:6379/0
     ports:
       - "${API_PORT:-8001}:8000"
@@ -124,11 +126,11 @@ services:
       MOODLE_DATABASE_HOST: postgres
       MOODLE_DATABASE_PORT_NUMBER: "5432"
       MOODLE_DATABASE_NAME: moodle
-      MOODLE_DATABASE_USER: ${POSTGRES_USER:-nexusai}
-      MOODLE_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-nexusai_dev}
-      MOODLE_USERNAME: ${MOODLE_ADMIN_USER:-admin}
-      MOODLE_PASSWORD: ${MOODLE_ADMIN_PASSWORD:-adminpass123}
-      MOODLE_EMAIL: ${MOODLE_ADMIN_EMAIL:-admin@nexusai.local}
+      MOODLE_DATABASE_USER: ${POSTGRES_USER}
+      MOODLE_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      MOODLE_USERNAME: ${MOODLE_ADMIN_USER:?MOODLE_ADMIN_USER no está en .env}
+      MOODLE_PASSWORD: ${MOODLE_ADMIN_PASSWORD:?MOODLE_ADMIN_PASSWORD no está en .env}
+      MOODLE_EMAIL: ${MOODLE_ADMIN_EMAIL:?MOODLE_ADMIN_EMAIL no está en .env}
       MOODLE_SITE_NAME: NexusAI Dev
       MOODLE_SKIP_BOOTSTRAP: "no"
     ports:
@@ -152,8 +154,8 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:?PGADMIN_EMAIL no está en .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD no está en .env}
       PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
       - "${PGADMIN_PORT:-5050}:80"

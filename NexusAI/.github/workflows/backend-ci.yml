@@ -78,13 +78,15 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_USER: nexusai
-          POSTGRES_PASSWORD: nexusai_test
-          POSTGRES_DB: nexusai_test
+          # Credenciales efímeras solo para CI — el container se destruye al final del job.
+          # No son secretos reales y nunca tocan producción.
+          POSTGRES_USER: ci_test_user
+          POSTGRES_PASSWORD: ci_test_only_not_a_secret
+          POSTGRES_DB: ci_test_db
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U nexusai"
+          --health-cmd "pg_isready -U ci_test_user"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -101,17 +103,18 @@ jobs:
 
     env:
       ENV: test
-      DATABASE_URL: postgresql://nexusai:nexusai_test@localhost:5432/nexusai_test
+      DATABASE_URL: postgresql://ci_test_user:ci_test_only_not_a_secret@localhost:5432/ci_test_db
       REDIS_URL: redis://localhost:6379/0
-      LLM_API_KEY: test-key-not-real
+      # Valores dummy para que el código arranque. Los tests reales mockean los providers.
+      LLM_API_KEY: dummy-ci-value
       LLM_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
       LLM_MODEL: gemini-2.0-flash
-      EMBEDDING_API_KEY: test-key-not-real
+      EMBEDDING_API_KEY: dummy-ci-value
       EMBEDDING_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
       EMBEDDING_MODEL: models/text-embedding-004
       EMBEDDING_DIMENSIONS: 768
-      NEXUSAI_SHARED_SECRET: test_shared_secret_not_real_replace_in_prod
-      NEXUSAI_API_KEY: test_api_key_not_real_replace_in_prod
+      NEXUSAI_SHARED_SECRET: dummy_ci_value_32_chars_long_xx_x
+      NEXUSAI_API_KEY: dummy_ci_value_32_chars_long_xx_x
       HMAC_REPLAY_WINDOW_SEC: 300
       RATE_LIMIT_PER_USER_DAILY: 50
 
@@ -147,17 +150,19 @@ jobs:
       - name: Habilitar extensión pgvector
         if: steps.check.outputs.skip == 'false'
         env:
-          PGPASSWORD: nexusai_test
-        run: psql -h localhost -U nexusai -d nexusai_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          PGPASSWORD: ci_test_only_not_a_secret
+        run: psql -h localhost -U ci_test_user -d ci_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
       - name: Aplicar migraciones (si existen)
         if: steps.check.outputs.skip == 'false'
         working-directory: services/api
+        env:
+          PGPASSWORD: ci_test_only_not_a_secret
         run: |
           if [ -d migrations ]; then
             for f in migrations/*.sql; do
               [ -f "$f" ] || continue
-              PGPASSWORD=nexusai_test psql -h localhost -U nexusai -d nexusai_test -f "$f"
+              psql -h localhost -U ci_test_user -d ci_test_db -f "$f"
             done
           fi
 
