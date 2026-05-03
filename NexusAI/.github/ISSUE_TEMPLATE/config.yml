@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentación de NexusAI
+    url: https://github.com/nexusai-ucc/nexusAI/blob/main/docs/architecture.md
+    about: Antes de abrir un issue, revisá la arquitectura y los ADRs.
+  - name: 🔍 Investigación técnica
+    url: https://github.com/nexusai-ucc/nexusAI/tree/main/investigacion
+    about: 39 docs con fundamentación técnica. Buscá ahí si tenés dudas conceptuales.
+  - name: 📊 Backlog y Roadmap
+    url: https://github.com/users/delfisalinasmich/projects/5
+    about: Ver qué se está trabajando ahora y qué viene después.

@@ -1,0 +1,84 @@
+# CODEOWNERS — NexusAI
+#
+# Cada vez que se abre un PR, GitHub auto-asigna review a los owners de los
+# archivos tocados.
+#
+# Sintaxis: <pattern> <owner1> <owner2> ...
+# Más específico gana sobre menos específico.
+#
+# Ver: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-security/customizing-your-repository/about-code-owners
+#
+# IMPORTANTE: los handles de GitHub deben ser confirmados por cada miembro del equipo.
+# Reemplazar los placeholders @santiagotricherri y @marcosbugliotti cuando se confirmen.
+
+# ----------------------------------------------------------------------------
+# Default owner — toda la base
+# ----------------------------------------------------------------------------
+*                                       @delfisalinasmich
+
+# ----------------------------------------------------------------------------
+# Plugin Moodle (PHP)
+# ----------------------------------------------------------------------------
+/plugin/                                @marcosbugliotti
+/plugin/local/nexusai/db/               @marcosbugliotti
+/plugin/local/nexusai/classes/          @marcosbugliotti
+/plugin/local/nexusai/lib.php           @marcosbugliotti
+/plugin/local/nexusai/version.php       @marcosbugliotti
+/plugin/local/nexusai/settings.php      @marcosbugliotti
+
+# ----------------------------------------------------------------------------
+# Frontend React (dentro del plugin)
+# ----------------------------------------------------------------------------
+/plugin/local/nexusai/react/            @delfisalinasmich
+/plugin/local/nexusai/amd/              @delfisalinasmich
+/plugin/local/nexusai/styles.css        @delfisalinasmich
+/plugin/local/nexusai/webpack.config.js @delfisalinasmich
+/plugin/local/nexusai/package.json      @delfisalinasmich
+
+# ----------------------------------------------------------------------------
+# Backend Python (FastAPI + RAG)
+# ----------------------------------------------------------------------------
+/services/                              @santiagotricherri
+/services/api/app/chat/                 @santiagotricherri
+/services/api/app/documents/            @santiagotricherri @marcosbugliotti
+/services/api/app/infrastructure/       @santiagotricherri
+/services/api/app/shared/               @santiagotricherri
+/services/api/migrations/               @marcosbugliotti
+
+# ----------------------------------------------------------------------------
+# Docs y arquitectura — review de equipo completo
+# ----------------------------------------------------------------------------
+/docs/architecture.md                   @santiagotricherri @delfisalinasmich @marcosbugliotti
+/docs/adr/                              @santiagotricherri @delfisalinasmich @marcosbugliotti
+/docs/diagrams/                         @santiagotricherri @delfisalinasmich @marcosbugliotti
+/docs/fases/                            @delfisalinasmich @santiagotricherri
+
+# ----------------------------------------------------------------------------
+# Investigación — owner por bloque
+# ----------------------------------------------------------------------------
+/investigacion/01-moodle/               @marcosbugliotti
+/investigacion/02-rag/                  @santiagotricherri
+/investigacion/03-openai/               @santiagotricherri
+/investigacion/04-chromadb/             @marcosbugliotti
+/investigacion/05-backend-fastapi/      @santiagotricherri
+/investigacion/06-frontend-react/       @delfisalinasmich
+/investigacion/07-procesamiento-docs/   @marcosbugliotti
+/investigacion/08-estado-del-arte/      @delfisalinasmich
+/investigacion/09-relevamiento/         @delfisalinasmich
+/investigacion/10-setup-entorno/        @delfisalinasmich @santiagotricherri @marcosbugliotti
+
+# ----------------------------------------------------------------------------
+# CI / GitHub config — Scrum Master + área correspondiente
+# ----------------------------------------------------------------------------
+/.github/                               @delfisalinasmich
+/.github/workflows/moodle-ci.yml        @delfisalinasmich @marcosbugliotti
+/.github/workflows/backend-ci.yml       @delfisalinasmich @santiagotricherri
+/.github/workflows/frontend-ci.yml      @delfisalinasmich
+
+# ----------------------------------------------------------------------------
+# Archivos críticos del repo — todo el equipo
+# ----------------------------------------------------------------------------
+/README.md                              @delfisalinasmich @santiagotricherri @marcosbugliotti
+/CONTRIBUTING.md                        @delfisalinasmich
+/LICENSE                                @delfisalinasmich
+/docker-compose.yml                     @santiagotricherri @marcosbugliotti
