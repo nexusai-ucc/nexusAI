@@ -1,0 +1,108 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plugin/local/nexusai/react/**'
+      - 'plugin/local/nexusai/package.json'
+      - 'plugin/local/nexusai/package-lock.json'
+      - 'plugin/local/nexusai/webpack.config.js'
+      - 'plugin/local/nexusai/babel.config.json'
+      - 'plugin/local/nexusai/.eslintrc.json'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    paths:
+      - 'plugin/local/nexusai/react/**'
+      - 'plugin/local/nexusai/package.json'
+      - 'plugin/local/nexusai/package-lock.json'
+      - 'plugin/local/nexusai/webpack.config.js'
+      - 'plugin/local/nexusai/babel.config.json'
+      - 'plugin/local/nexusai/.eslintrc.json'
+      - '.github/workflows/frontend-ci.yml'
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Lint + Test + Build
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip si no hay package.json todavía
+        id: check
+        run: |
+          if [ ! -f plugin/local/nexusai/package.json ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "::warning::plugin/local/nexusai/package.json no existe todavía. Saltando frontend CI."
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node 20
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: plugin/local/nexusai/package-lock.json
+
+      - name: Install deps
+        if: steps.check.outputs.skip == 'false'
+        working-directory: plugin/local/nexusai
+        run: npm ci
+
+      - name: ESLint
+        if: steps.check.outputs.skip == 'false'
+        working-directory: plugin/local/nexusai
+        run: npm run lint
+
+      - name: Jest
+        if: steps.check.outputs.skip == 'false'
+        working-directory: plugin/local/nexusai
+        run: npm test -- --ci --coverage
+
+      - name: Webpack build (production)
+        if: steps.check.outputs.skip == 'false'
+        working-directory: plugin/local/nexusai
+        run: npm run build
+
+      - name: Verificar tamaño del bundle (warn si > 512 KB)
+        if: steps.check.outputs.skip == 'false'
+        working-directory: plugin/local/nexusai
+        run: |
+          BUNDLE=amd/build/chatwidget-lazy.min.js
+          if [ ! -f "$BUNDLE" ]; then
+            echo "::error::No se generó $BUNDLE"
+            exit 1
+          fi
+          SIZE=$(wc -c < "$BUNDLE")
+          SIZE_KB=$((SIZE / 1024))
+          echo "Bundle size: $SIZE_KB KB"
+          if [ $SIZE_KB -gt 512 ]; then
+            echo "::warning::Bundle size ($SIZE_KB KB) supera el target de 512 KB"
+          fi
+
+      - name: Verificar que el bundle commiteado coincide con el generado
+        if: steps.check.outputs.skip == 'false' && github.event_name == 'pull_request'
+        working-directory: plugin/local/nexusai
+        run: |
+          # Si el bundle generado difiere del commiteado, fallar
+          # (forzamos a que el dev regenere y commitee antes de pedir review)
+          if ! git diff --exit-code amd/build/chatwidget-lazy.min.js; then
+            echo "::error::El bundle commiteado no coincide con el generado por 'npm run build'."
+            echo "::error::Corré 'npm run build' localmente y commiteá el resultado."
+            exit 1
+          fi
+
+      - name: Upload coverage
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: plugin/local/nexusai/coverage/
+          retention-days: 7

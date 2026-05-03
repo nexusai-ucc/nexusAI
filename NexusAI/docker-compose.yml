@@ -1,0 +1,183 @@
+# NexusAI — docker-compose para desarrollo local
+#
+# Uso típico:
+#   docker compose up -d                        # postgres + redis + api (stack mínimo)
+#   docker compose --profile full up -d         # + moodle (stack completo E2E)
+#   docker compose down                         # parar todo (preserva volúmenes)
+#   docker compose down -v                      # parar y borrar datos
+#
+# Pre-requisitos:
+#   - cp .env.example .env  y completar credenciales
+#   - Docker Desktop o Docker Engine + Compose v2
+#
+# Servicios y puertos:
+#   - Postgres+pgvector:  localhost:5432
+#   - Redis:              localhost:6379
+#   - FastAPI:            localhost:8001  (Swagger en /docs)
+#   - Moodle (opcional):  localhost:8080  (admin/adminpass tras setup)
+#   - pgAdmin (opcional): localhost:5050  (admin@example.com / admin)
+#
+# Notas:
+#   - El servicio `api` usa el Dockerfile de services/api/. Si todavía no existe,
+#     `docker compose up api` va a fallar (esperado al inicio del proyecto).
+#     Mientras tanto se puede arrancar solo postgres+redis: `docker compose up postgres redis`
+#   - Moodle vive en su propio profile `full` para no levantarlo siempre.
+#     Para desarrollo del plugin Moodle conviene usar moodlehq/moodle-docker
+#     (ver investigacion/10-setup-entorno/docker-moodle.md).
+
+name: nexusai
+
+services:
+  # --------------------------------------------------------------
+  # PostgreSQL + extensión pgvector — única base de datos del sistema
+  # --------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: nexusai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nexusai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexusai_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-nexusai}
+      # Crea ambas DBs al primer arranque vía init script
+      POSTGRES_MULTIPLE_DATABASES: nexusai,moodle
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Scripts que se corren UNA SOLA VEZ al inicializar la DB:
+      - ./scripts/init-postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexusai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [nexusai-net]
+
+  # --------------------------------------------------------------
+  # Redis — cache + rate limiting + nonce tracking del HMAC
+  # --------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: nexusai-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [nexusai-net]
+
+  # --------------------------------------------------------------
+  # Backend FastAPI
+  # --------------------------------------------------------------
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: nexusai-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      # Override del DATABASE_URL para que apunte al servicio interno (no a localhost)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nexusai}:${POSTGRES_PASSWORD:-nexusai_dev}@postgres:5432/nexusai
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "${API_PORT:-8001}:8000"
+    volumes:
+      # Hot-reload del código en dev (sin esto, hay que rebuild en cada cambio)
+      - ./services/api/app:/app/app
+      - ./services/api/migrations:/app/migrations:ro
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks: [nexusai-net]
+
+  # --------------------------------------------------------------
+  # Moodle (profile opcional `full`) — para demo E2E
+  # Para desarrollo del plugin, usar moodlehq/moodle-docker en lugar de esto.
+  # --------------------------------------------------------------
+  moodle:
+    image: bitnami/moodle:4.4
+    container_name: nexusai-moodle
+    restart: unless-stopped
+    profiles: [full]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MOODLE_DATABASE_TYPE: pgsql
+      MOODLE_DATABASE_HOST: postgres
+      MOODLE_DATABASE_PORT_NUMBER: "5432"
+      MOODLE_DATABASE_NAME: moodle
+      MOODLE_DATABASE_USER: ${POSTGRES_USER:-nexusai}
+      MOODLE_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-nexusai_dev}
+      MOODLE_USERNAME: ${MOODLE_ADMIN_USER:-admin}
+      MOODLE_PASSWORD: ${MOODLE_ADMIN_PASSWORD:-adminpass123}
+      MOODLE_EMAIL: ${MOODLE_ADMIN_EMAIL:-admin@nexusai.local}
+      MOODLE_SITE_NAME: NexusAI Dev
+      MOODLE_SKIP_BOOTSTRAP: "no"
+    ports:
+      - "${MOODLE_PORT:-8080}:8080"
+    volumes:
+      - moodle_data:/bitnami/moodle
+      - moodle_dataroot:/bitnami/moodledata
+      # Montar el plugin como local/nexusai dentro de Moodle
+      - ./plugin/local/nexusai:/bitnami/moodle/local/nexusai
+    networks: [nexusai-net]
+
+  # --------------------------------------------------------------
+  # pgAdmin (profile opcional `tools`) — UI para inspeccionar Postgres
+  # --------------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: nexusai-pgadmin
+    restart: unless-stopped
+    profiles: [tools]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks: [nexusai-net]
+
+# --------------------------------------------------------------
+# Volúmenes persistentes (sobreviven a `docker compose down`)
+# Borrar con: docker compose down -v
+# --------------------------------------------------------------
+volumes:
+  postgres_data:
+    name: nexusai_postgres_data
+  redis_data:
+    name: nexusai_redis_data
+  moodle_data:
+    name: nexusai_moodle_data
+  moodle_dataroot:
+    name: nexusai_moodle_dataroot
+  pgadmin_data:
+    name: nexusai_pgadmin_data
+
+networks:
+  nexusai-net:
+    name: nexusai-net
+    driver: bridge
