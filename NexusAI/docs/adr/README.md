@@ -24,13 +24,14 @@ Usar [`000-template.md`](000-template.md) como base. Estructura:
 | [002](002-pgvector.md) | pgvector sobre PostgreSQL como única base de datos | ✅ Aceptada | 2026-05-02 |
 | [003](003-multi-provider-llm.md) | Arquitectura agnóstica multi-provider LLM | ✅ Aceptada | 2026-05-02 |
 | [004](004-gemini-mvp-openai-prod.md) | Gemini en MVP, OpenAI en producción | ✅ Aceptada | 2026-05-02 |
+| [005](005-hmac-php-python.md) | Autenticación PHP↔Python con HMAC SHA-256 en 3 capas | ✅ Aceptada | 2026-05-04 |
+| [006](006-privacy-strategy.md) | Estrategia de Privacy API — `null_provider` ahora, `metadata\provider` cuando se justifique | ✅ Aceptada | 2026-05-04 |
 
-## ADRs planificados (Sprint 1-2)
+## ADRs planificados (Sprint 2-3)
 
-- ADR-005: Chunking 500 tokens / 10% overlap (a formalizar a partir de `investigacion/02-rag/chunking-strategies.md`).
-- ADR-006: Comunicación PHP↔Python con HMAC + Bearer + nonce (a formalizar a partir de `investigacion/05-backend-fastapi/autenticacion-hmac.md` y `lifespan-y-estado.md`).
-- ADR-007: React compilado como módulo AMD vía Webpack (a formalizar a partir de `investigacion/06-frontend-react/`).
-- ADR-008: Plugin tipo `local` con `before_footer()` (a formalizar a partir de `investigacion/01-moodle/plugin-development.md`).
+- ADR-007: Chunking 500 tokens / 10% overlap (a formalizar a partir de `investigacion/02-rag/chunking-strategies.md`).
+- ADR-008: React compilado como módulo AMD vía Webpack (a formalizar a partir de `investigacion/06-frontend-react/`).
+- ADR-009: Plugin tipo `local` con Hook API nuevo (Moodle 4.4+) y callback legacy (4.1-4.3) (a formalizar a partir de `investigacion/01-moodle/hooks-y-apis.md`).
 
 ## Reglas
 

@@ -13,6 +13,8 @@ docs/
 │   ├── 002-pgvector.md
 │   ├── 003-multi-provider-llm.md
 │   ├── 004-gemini-mvp-openai-prod.md
+│   ├── 005-hmac-php-python.md
+│   ├── 006-privacy-strategy.md
 │   └── ...
 ├── diagrams/                     # Diagramas Mermaid del proyecto
 │   ├── architecture.md
