@@ -65,17 +65,46 @@ bin/moodle-docker-compose exec webserver php admin/cli/install_database.php \
 
 ## Montar el plugin NexusAI
 
-El plugin vive en el repo `nexusAI/` pero se monta como `local/nexusai/` dentro del Moodle:
+El plugin vive en el repo NexusAI pero se monta como `local/nexusai/` dentro del Moodle. Hay tres formas de hacerlo, en orden de preferencia:
+
+### Opción A — Bind mount via `local.yml` (recomendada para dev) ⭐
+
+`moodle-docker` carga automáticamente cualquier archivo `local.yml` en su raíz. Creá uno con:
 
 ```yaml
-# local.yml — override para moodle-docker
+# moodle-docker/local.yml — override para montar el plugin sin copiarlo
 services:
   webserver:
     volumes:
-      - /Users/delfisalinasmich/Documents/NexusAI/nexusAI/NexusAI/plugin:/var/www/html/local/nexusai
+      - /Users/delfisalinasmich/Documents/NexusAI/nexusAI/NexusAI/plugin/local/nexusai:/var/www/html/local/nexusai
 ```
 
-Con `local.yml` presente, `bin/moodle-docker-compose` lo incluye automáticamente al próximo `up`.
+Después: `bin/moodle-docker-compose down && up -d`. Cualquier cambio en el repo NexusAI se refleja inmediatamente en Moodle (hace falta purgar cachés para PHP, hard refresh para JS).
+
+**Ventaja:** una única fuente de verdad. Editás en el repo NexusAI → se refleja en Moodle.
+
+### Opción B — Copy manual (rápido para verificar)
+
+```bash
+rm -rf ~/Documents/NexusAI/moodle-docker/moodle/local/nexusai
+cp -R ~/Documents/NexusAI/nexusAI/NexusAI/plugin/local/nexusai ~/Documents/NexusAI/moodle-docker/moodle/local/
+```
+
+Útil para una primera verificación antes de configurar el bind mount. **Desventaja:** cada cambio en el repo NexusAI requiere repetir el `cp`.
+
+### Opción C — Symlink ❌ NO funciona en Docker
+
+```bash
+# ESTO NO FUNCIONA con moodle-docker:
+ln -s ~/Documents/NexusAI/nexusAI/NexusAI/plugin/local/nexusai \
+      ~/Documents/NexusAI/moodle-docker/moodle/local/nexusai
+```
+
+**Por qué falla (verificado en Sprint 1):** moodle-docker monta solamente `$MOODLE_DOCKER_WWWROOT` (la carpeta `moodle/`) dentro del container en `/var/www/html/`. Si dentro hay un symlink a `/Users/.../NexusAI/plugin/local/nexusai`, el container intenta resolver esa ruta absoluta **dentro de su filesystem virtual** — donde no existe. El symlink queda colgando y Moodle nunca ve el plugin.
+
+Síntoma típico: el plugin no aparece en `Site administration → Plugins → Plugins overview` aunque el symlink se ve correcto desde el host.
+
+**Conclusión:** symlinks solo sirven para Moodle nativo (sin Docker). Para moodle-docker usar siempre bind mount o copy.
 
 ## Comandos frecuentes
 
@@ -158,17 +187,21 @@ bin/moodle-docker-compose exec webserver \
 |---|---|---|
 | "Cannot connect to database" | DB no terminó de iniciar | `bin/moodle-docker-wait-for-db` antes del install |
 | Plugin no aparece en admin/Notificaciones | `version.php` mal armado o no montado | Verificar `local.yml` + estructura de archivos |
-| JS cambia y no se refleja | `cachejs=true` | `$CFG->cachejs = false` + hard refresh |
+| Plugin no aparece y usaste symlink | Symlinks no se siguen dentro de Docker | Reemplazar por bind mount en `local.yml` o copy directo (ver "Montar el plugin NexusAI" → Opción C) |
+| JS cambia y no se refleja | `cachejs=true` o caché de AMD | `$CFG->cachejs = false` + Site admin → Development → Purge all caches + Ctrl+Shift+R |
+| Hook `before_footer` muestra warning de deprecación | Moodle 4.4+ requiere Hook API nuevo | Migrar a `db/hooks.php` + listener — ver `01-moodle/hooks-y-apis.md` |
+| Bundle React falla con `ChunkLoadError` apuntando a otro CDN | Dynamic imports + sin `publicPath` configurado | Imports estáticos + `splitChunks: false` — ver `06-frontend-react/integracion-moodle-amd.md` |
 | PHPUnit falla con "behat no inicializado" | Falta init | `php admin/tool/phpunit/cli/init.php` |
 | "Your Moodle is out of date" después de `git pull` del plugin | Cambió `version.php` | Visitar `/admin/index.php` |
+| Credenciales admin de moodle-docker | Default tras install vía CLI | Usuario `admin`, password `test` (las define el script `install_database.php` en el quickstart oficial) |
 
 ## Decisiones tomadas para NexusAI
 
-- **Moodle 4.4** en Docker como base de desarrollo (balance entre LTS 4.1 y 4.5).
+- **Moodle 4.4 / 4.5** en Docker como base de desarrollo. Skeleton verificado end-to-end en 4.5 (Sprint 1).
 - **PostgreSQL** (coincide con el supuesto de producción UCC).
-- **Volumen `local.yml`** para montar el plugin sin duplicar código.
-- **`$CFG->cachejs = false`** mientras durameos iterando en el bundle React.
-- **Eventualmente probamos contra 4.1 y 4.5** usando `MOODLE_DOCKER_WWWROOT` apuntando a distintos clones.
+- **`local.yml` con bind mount directo del plugin** — no copy, no symlink. Verificado en Sprint 1: los symlinks no funcionan dentro del container Docker.
+- **`$CFG->cachejs = false`** mientras iteramos en el bundle React.
+- **Eventualmente probamos contra 4.1 LTS** usando `MOODLE_DOCKER_WWWROOT` apuntando a un clone distinto, para validar el callback legacy de `lib.php`.
 
 ## Abierto / pendiente
 
@@ -181,7 +214,9 @@ bin/moodle-docker-compose exec webserver \
 - [moodlehq/moodle-docker](https://github.com/moodlehq/moodle-docker)
 - [Moodle Dev — Setting up development environment](https://moodledev.io/general/development/process/setup)
 - [Moodle — Debug settings](https://moodledev.io/docs/apis/core/log/debug)
+- [Docker — Bind mounts](https://docs.docker.com/storage/bind-mounts/)
+- Issue #126 — verificación end-to-end del setup en Sprint 1 (2026-05-04)
 
 ---
 
-*Última actualización: 2026-04-24 — equipo NexusAI*
+*Última actualización: 2026-05-04 — Delfina Salinas (revisado tras debug del setup en Sprint 1)*
