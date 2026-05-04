@@ -1,0 +1,19 @@
+# Build artifacts de Webpack — pero el bundle final SÍ se commitea
+# (está en amd/build/ y es lo que Moodle carga en producción).
+react/node_modules/
+react/dist/
+react/.cache/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+react/coverage/

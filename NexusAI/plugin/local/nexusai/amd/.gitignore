@@ -1,0 +1,7 @@
+# Sourcemaps generados por Webpack — no se commitean.
+build/*.map
+
+# Pero el bundle SÍ se commitea (build/chatwidget-lazy.min.js)
+# para que el plugin funcione out-of-the-box sin necesidad de
+# correr npm install. Cuando movamos el build a CI, esto cambia.
+!build/chatwidget-lazy.min.js

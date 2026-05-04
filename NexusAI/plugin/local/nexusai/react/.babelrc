@@ -1,0 +1,12 @@
+{
+  "presets": [
+    ["@babel/preset-env", {
+      "targets": "> 0.5%, last 2 versions, not dead, not IE 11",
+      "useBuiltIns": false,
+      "modules": false
+    }],
+    ["@babel/preset-react", {
+      "runtime": "automatic"
+    }]
+  ]
+}
