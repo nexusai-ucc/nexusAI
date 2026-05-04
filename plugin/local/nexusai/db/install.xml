@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/nexusai/db" VERSION="20260501" COMMENT="NexusAI local plugin schema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd">
+  <TABLES>
+    <TABLE NAME="local_nexusai_placeholder" COMMENT="Placeholder table">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>
