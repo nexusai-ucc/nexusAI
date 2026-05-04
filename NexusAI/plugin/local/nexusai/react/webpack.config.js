@@ -35,6 +35,28 @@ module.exports = (env, argv) => {
             libraryTarget: 'amd',
             // Limpiar el directorio antes de cada build, así no quedan archivos viejos.
             clean: true,
+            // publicPath para chunks lazy. Sin esto, Webpack los carga relativo
+            // a la URL del último script ejecutado — que en Moodle puede ser MathJax
+            // u otro CDN, rompiendo todo. Forzamos que cualquier chunk se busque
+            // en el path donde Moodle sirve los AMD modules del plugin.
+            publicPath: '/local/nexusai/amd/build/',
+        },
+
+        optimization: {
+            minimize: isProd,
+            minimizer: [
+                new TerserPlugin({
+                    extractComments: false,
+                    terserOptions: {
+                        format: { comments: false },
+                    },
+                }),
+            ],
+            // Forzar UN SOLO bundle, sin chunks separados. Más simple para Moodle/AMD.
+            // Si alguien escribe `import('foo')` por error, esto lo bundlea inline
+            // en lugar de generar un chunk lazy que rompería en runtime.
+            splitChunks: false,
+            runtimeChunk: false,
         },
 
         // Estas dependencias NO se bundlean — Moodle las provee globalmente.
@@ -64,18 +86,6 @@ module.exports = (env, argv) => {
 
         resolve: {
             extensions: ['.js', '.jsx'],
-        },
-
-        optimization: {
-            minimize: isProd,
-            minimizer: [
-                new TerserPlugin({
-                    extractComments: false,
-                    terserOptions: {
-                        format: { comments: false },
-                    },
-                }),
-            ],
         },
 
         // Source maps solo en dev, hacen el bundle 4x más grande.

@@ -4,9 +4,14 @@
 /**
  * Library functions for local_nexusai.
  *
- * Moodle invoca automáticamente las funciones que empiezan con el nombre del plugin
- * cuando ocurren ciertos eventos (hooks). Acá usamos `before_footer` para inyectar
- * el contenedor del chat y cargar el bundle React.
+ * Hook system:
+ *   - Moodle 4.4+ → usa db/hooks.php + classes/hook/output/before_footer_listener.php
+ *   - Moodle 4.1-4.3 → usa la función `local_nexusai_before_footer()` de este archivo
+ *
+ * En Moodle 4.4+, la función vieja todavía se invoca por backward compat pero su
+ * valor de retorno se ignora (solo emite un warning de deprecación). Por eso acá
+ * detectamos la versión de Moodle y skipeamos en 4.4+ para no duplicar lógica
+ * ni generar warnings inútiles.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -16,28 +21,28 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Hook ejecutado por Moodle justo antes de cerrar el </body> en cada página.
+ * Hook ejecutado por Moodle 4.1-4.3 antes de cerrar el </body>.
  *
- * Acá decidimos si mostrar o no el chat de NexusAI. Reglas (Sprint 1, mínimas):
- *   - Solo usuarios logueados (no guests, no anónimos)
- *   - Solo dentro de un curso real ($COURSE->id > 1, porque 1 es el sitio)
- *   - Solo si el usuario tiene la capability `local/nexusai:use` en ese curso
+ * En Moodle 4.4+ el hook handling se hace en classes/hook/output/before_footer_listener.php,
+ * así que esta función retorna vacío para evitar duplicación.
  *
- * Si pasa todos los filtros, inyecta el div contenedor y le pide a Moodle que cargue
- * el módulo AMD `local_nexusai/chatwidget-lazy`, pasándole el contexto del curso
- * y del usuario para que React sepa contra qué materia consultar.
- *
- * @return string HTML que Moodle inserta antes del footer.
+ * @return string HTML que Moodle inserta antes del footer (Moodle ≤ 4.3).
  */
 function local_nexusai_before_footer(): string {
-    global $PAGE, $USER, $COURSE;
+    global $CFG, $PAGE, $USER, $COURSE;
 
-    // 1. Filtros de seguridad y contexto.
+    // En Moodle 4.4+ el sistema de hooks nuevo se encarga.
+    // Build 2024042200 = 4.4 LTS / 4.5. Más arriba de 2024 → usar nuevo sistema.
+    if ((int)$CFG->version >= 2024041600) {
+        return '';
+    }
+
+    // ---- Lógica para Moodle 4.1-4.3 (legacy hook system) ----
+
     if (!isloggedin() || isguestuser()) {
         return '';
     }
     if (empty($COURSE->id) || $COURSE->id <= 1) {
-        // Estamos fuera de un curso (frontpage, dashboard, settings, etc.). No mostrar.
         return '';
     }
 
@@ -46,20 +51,15 @@ function local_nexusai_before_footer(): string {
         return '';
     }
 
-    // 2. Pedir a Moodle que cargue el bundle React vía AMD/RequireJS.
-    //    El bundle compilado vive en amd/build/chatwidget-lazy.min.js
-    //    y exporta una función init(params).
     $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
         [
-            'courseid'  => (int) $COURSE->id,
-            'userid'    => (int) $USER->id,
-            'sesskey'   => sesskey(),
-            'wwwroot'   => (string) (new moodle_url('/'))->out(false),
-            'lang'      => current_language(),
+            'courseid' => (int) $COURSE->id,
+            'userid'   => (int) $USER->id,
+            'sesskey'  => sesskey(),
+            'wwwroot'  => (string) (new moodle_url('/'))->out(false),
+            'lang'     => current_language(),
         ],
     ]);
 
-    // 3. Inyectar el contenedor donde React va a montar el componente.
-    //    El ID tiene que coincidir con el que busca react/src/index.jsx.
     return '<div id="local-nexusai-container" data-plugin="nexusai"></div>';
 }
