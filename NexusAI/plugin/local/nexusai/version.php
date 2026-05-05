@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026050302;        // YYYYMMDDXX — bump en cada cambio. 02 = bundle sin chunks lazy.
-$plugin->release   = '0.1.2-skeleton';  // Human readable version.
+$plugin->version   = 2026050401;        // YYYYMMDDXX — 0401 = External Function + backend_client + HMAC.
+$plugin->release   = '0.2.1';            // End-to-end real: React → Moodle PHP → FastAPI con HMAC.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

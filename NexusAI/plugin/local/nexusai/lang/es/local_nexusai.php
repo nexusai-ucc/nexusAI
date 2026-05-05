@@ -24,10 +24,22 @@ $string['nexusai:viewanalytics'] = 'Ver el dashboard de analytics de NexusAI';
 
 // Página de settings (admin).
 $string['settings']                = 'Configuración de NexusAI';
+$string['section_general']         = 'General';
+$string['section_backend']         = 'Conexión con el backend';
+$string['section_backend_desc']    = 'Configurá cómo el plugin se autentica contra el backend Python de NexusAI. Ver ADR-005 en el repositorio.';
 $string['apiendpoint']             = 'URL del backend';
 $string['apiendpoint_desc']        = 'URL base del backend Python de NexusAI (ej: http://localhost:8001).';
 $string['apienabled']              = 'Activar NexusAI';
 $string['apienabled_desc']         = 'Switch maestro. Desactivar para ocultar el chat en todo el sitio.';
+$string['apikey']                  = 'API key';
+$string['apikey_desc']             = 'Bearer API key que va en el header Authorization. Generar con: openssl rand -hex 32. Tiene que coincidir con NEXUSAI_API_KEY en el backend.';
+$string['sharedsecret']            = 'Shared secret (HMAC)';
+$string['sharedsecret_desc']       = 'Secreto que firma cada request con HMAC-SHA256. Generar con: openssl rand -hex 32. Tiene que coincidir con NEXUSAI_SHARED_SECRET en el backend.';
+
+// Errores de la external function (los usan backend_client + chat_send).
+$string['errorconfigmissing']      = 'La configuración de NexusAI está incompleta. Falta: {$a}. Completala en Administración del sitio → Plugins → Plugins locales → NexusAI.';
+$string['errorbackend']            = 'Error del backend NexusAI: {$a}';
+$string['errorbackendunreachable'] = 'No se puede contactar el backend NexusAI: {$a}. Verificá la URL, la red y que el contenedor del backend esté corriendo.';
 
 // UI strings.
 $string['chatwidget_title']        = 'Asistente NexusAI';

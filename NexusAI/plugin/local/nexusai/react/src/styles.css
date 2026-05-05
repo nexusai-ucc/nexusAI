@@ -1,19 +1,30 @@
 /*
  * Estilos del widget NexusAI.
  *
- * IMPORTANTE: usamos prefijo `.nexusai-` en TODAS las clases para no chocar
- * con los estilos de Moodle (que usa Bootstrap 4/5 y muchas clases sin prefijo).
- *
- * Posicionamiento: fixed en bottom-right, z-index alto para quedar arriba
- * del footer y los popovers de Moodle (que usan z-index ~1080 para tooltips).
+ * Reglas:
+ *   - Prefijo `.nexusai-` en TODAS las clases para no chocar con Bootstrap/Boost.
+ *   - Posicionamiento fixed bottom-right, z-index alto para quedar arriba del
+ *     footer y de los popovers de Moodle (que usan z-index ~1080 para tooltips).
+ *   - Paleta basada en var(--violet) → consistente con el branding NexusAI.
+ *   - Animaciones suaves pero rápidas (200-300ms), nada que distraiga.
  */
 
 .nexusai-widget {
-    /* Container raíz, no agrega box pero sirve de scope */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1f2937;
+    box-sizing: border-box;
+}
+.nexusai-widget *,
+.nexusai-widget *::before,
+.nexusai-widget *::after {
+    box-sizing: border-box;
 }
 
-/* --------- Floating Action Button (la burbuja siempre visible) --------- */
+/* ============================================================
+   Floating Action Button (FAB) — la burbuja siempre visible
+============================================================ */
 .nexusai-fab {
     position: fixed;
     bottom: 24px;
@@ -25,6 +36,7 @@
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     color: white;
     font-size: 24px;
+    line-height: 1;
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
     transition: transform 0.2s, box-shadow 0.2s;
@@ -42,14 +54,17 @@
     outline-offset: 2px;
 }
 
-/* --------- Panel desplegable (aparece al clickear la burbuja) --------- */
+/* ============================================================
+   Panel desplegable
+============================================================ */
 .nexusai-panel {
     position: fixed;
     bottom: 96px;            /* 24 (fab bottom) + 56 (fab height) + 16 (gap) */
     right: 24px;
-    width: 380px;
+    width: 400px;
     max-width: calc(100vw - 48px);
-    max-height: 600px;
+    height: 600px;
+    max-height: calc(100vh - 120px);
     background: white;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -65,73 +80,292 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ----- Header ----- */
 .nexusai-panel__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
+    padding: 14px 18px;
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     color: white;
+    flex-shrink: 0;
+}
+.nexusai-panel__title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
 }
 .nexusai-panel__title {
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-.nexusai-panel__close {
+.nexusai-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.25);
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+.nexusai-panel__actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.nexusai-icon-btn {
     background: transparent;
     border: none;
     color: white;
-    font-size: 24px;
-    line-height: 1;
     cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 22px;
+    opacity: 0.85;
+    transition: opacity 0.15s, background 0.15s;
+}
+.nexusai-icon-btn:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+
+/* ----- Body / lista de mensajes ----- */
+.nexusai-panel__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #1f2937;
+    /* Custom scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+.nexusai-panel__body::-webkit-scrollbar { width: 6px; }
+.nexusai-panel__body::-webkit-scrollbar-track { background: transparent; }
+.nexusai-panel__body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+.nexusai-panel__body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ----- Welcome (cuando no hay mensajes todavía) ----- */
+.nexusai-welcome {
+    text-align: center;
+    padding: 32px 20px;
+    color: #64748b;
+}
+.nexusai-welcome__icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+}
+.nexusai-welcome__text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* ----- Mensajes ----- */
+.nexusai-msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 85%;
+    margin-bottom: 4px;
+    animation: nexusai-fade-in 0.2s ease-out;
+}
+@keyframes nexusai-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.nexusai-msg--user {
+    align-self: flex-end;
+    align-items: flex-end;
+}
+.nexusai-msg--assistant {
+    align-self: flex-start;
+    align-items: flex-start;
+}
+.nexusai-msg__bubble {
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+}
+.nexusai-msg--user .nexusai-msg__bubble {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+.nexusai-msg--assistant .nexusai-msg__bubble {
+    background: #f1f5f9;
+    color: #1f2937;
+    border-bottom-left-radius: 4px;
+}
+.nexusai-msg__meta {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 2px;
     padding: 0 4px;
 }
-.nexusai-panel__close:hover {
-    opacity: 0.8;
+
+/* ----- Indicador "está escribiendo" ----- */
+.nexusai-typing {
+    display: flex;
+    gap: 4px;
+    padding: 12px 14px;
+    align-items: center;
+}
+.nexusai-typing__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #94a3b8;
+    animation: nexusai-typing 1.2s infinite ease-in-out;
+}
+.nexusai-typing__dot:nth-child(2) { animation-delay: 0.15s; }
+.nexusai-typing__dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes nexusai-typing {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30%           { transform: translateY(-4px); opacity: 1; }
 }
 
-.nexusai-panel__body {
-    padding: 20px;
-    overflow-y: auto;
-    flex: 1;
-    color: #1f2937;
+/* ----- Error banner ----- */
+.nexusai-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 8px 0;
+}
+.nexusai-error__text {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    color: #991b1b;
+}
+.nexusai-error__actions {
+    display: flex;
+    gap: 8px;
 }
 
-.nexusai-panel__footer {
-    padding: 8px 20px;
-    border-top: 1px solid #e5e7eb;
-    color: #6b7280;
-    text-align: center;
-    font-size: 11px;
-}
-
-/* --------- Estado de hello world --------- */
-.nexusai-status {
-    margin: 0 0 16px;
-    padding: 10px 12px;
-    background: #d1fae5;
-    color: #065f46;
+/* ----- Botones ----- */
+.nexusai-btn {
+    border: none;
     border-radius: 6px;
+    padding: 6px 14px;
     font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+}
+.nexusai-btn--primary {
+    background: #ef4444;
+    color: white;
+}
+.nexusai-btn--primary:hover { background: #dc2626; }
+.nexusai-btn--ghost {
+    background: transparent;
+    color: #991b1b;
+}
+.nexusai-btn--ghost:hover { background: #fee2e2; }
+
+/* ============================================================
+   Input area
+============================================================ */
+.nexusai-input {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 12px 14px;
+    border-top: 1px solid #e5e7eb;
+    background: white;
+    flex-shrink: 0;
+}
+.nexusai-input__textarea {
+    flex: 1;
+    border: 1px solid #d1d5db;
+    border-radius: 18px;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+    resize: none;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    max-height: 120px;
+    background: #f9fafb;
+    color: inherit;
+}
+.nexusai-input__textarea:focus {
+    border-color: #6366f1;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+.nexusai-input__textarea:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.nexusai-input__send {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s, opacity 0.15s;
+}
+.nexusai-input__send:hover:not(:disabled) {
+    transform: scale(1.05);
+}
+.nexusai-input__send:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
-.nexusai-debug {
-    margin: 0;
-    font-size: 13px;
+/* ============================================================
+   Footer
+============================================================ */
+.nexusai-panel__footer {
+    padding: 6px 14px;
+    border-top: 1px solid #e5e7eb;
+    color: #9ca3af;
+    text-align: center;
+    font-size: 10px;
+    flex-shrink: 0;
+    background: #f9fafb;
 }
-.nexusai-debug dt {
-    font-weight: 600;
-    color: #374151;
-    margin-top: 8px;
-}
-.nexusai-debug dd {
-    margin: 0 0 4px 0;
-}
-.nexusai-debug code {
-    background: #f3f4f6;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 12px;
-    color: #6366f1;
+
+/* ============================================================
+   Responsive — móvil ocupa pantalla completa
+============================================================ */
+@media (max-width: 480px) {
+    .nexusai-panel {
+        bottom: 16px;
+        right: 16px;
+        left: 16px;
+        width: auto;
+        max-width: none;
+        height: calc(100vh - 100px);
+    }
+    .nexusai-fab {
+        bottom: 16px;
+        right: 16px;
+    }
 }
