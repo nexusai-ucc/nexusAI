@@ -1,6 +1,11 @@
 # Arquitectura de NexusAI
 
 > Síntesis de arquitectura del MVP y proyección post-MVP. Es el documento de referencia para entender el sistema en 10 minutos. Para profundizar en cualquier punto, ir a [`investigacion/`](../investigacion/).
+>
+> **Estado al 5 May 2026:** sistema funcionando end-to-end. Verificado smoke test
+> completo en Moodle 4.5 + bundle React + HMAC + FastAPI + PostgreSQL/pgvector +
+> Gemini 2.5 Flash. Faltan para el MVP: retrieval semántico en `/messages`,
+> endpoint de upload de documentos, vista docente para carga de PDFs.
 
 ---
 
@@ -36,8 +41,8 @@ flowchart TB
 
     subgraph BACKEND["Backend NexusAI"]
         FASTAPI["FastAPI<br/>(monolito modular)"]
-        PG[("PostgreSQL<br/>+ pgvector<br/>nexusai_chunks · nexusai_documents")]
-        REDIS[(Redis cache)]
+        PG[("PostgreSQL + pgvector<br/>documents · chunks<br/>chat_sessions · messages")]
+        REDIS[("Redis<br/>HMAC nonces + cache")]
     end
 
     subgraph EXTERNAL["Externo (configurable)"]
@@ -67,16 +72,18 @@ flowchart TB
 
 | Capa | Tecnología | Versión / detalle |
 |---|---|---|
-| Frontend | React + Webpack | React 18, Webpack 5, bundle AMD |
-| Plugin Moodle | PHP | 7.4+ (8.1+ recomendado) |
-| Compatibilidad Moodle | Moodle | 4.1 LTS – 4.5 LTS |
-| Backend IA | FastAPI + Uvicorn | FastAPI 0.110+, Python 3.11+ |
-| **Base de datos + vectores** | **PostgreSQL + pgvector** | PG 14+, pgvector con índice HNSW |
-| **LLM (MVP)** | **Gemini 2.5 Flash** | tier gratuito, vía SDK OpenAI-compatible |
+| Frontend | React + Webpack | React 18.3, Webpack 5, bundle único AMD (sin chunks lazy) |
+| Plugin Moodle | PHP | 8.0+ |
+| Compatibilidad Moodle | Moodle | 4.1 LTS – 4.5 (Hook API nuevo en 4.4+, callback legacy en 4.1-4.3) |
+| Backend IA | FastAPI + Uvicorn | FastAPI 0.115, Python 3.11 |
+| ORM + migraciones | SQLAlchemy 2.0 async + Alembic | engine asyncpg, modelos en `app/db/models.py` |
+| **Base de datos + vectores** | **PostgreSQL + pgvector** | PG 16, pgvector 0.3.5 con índice HNSW |
+| **LLM (MVP)** | **Gemini 2.5 Flash** | tier gratuito, vía SDK OpenAI-compatible. **Nota:** `gemini-2.0-flash` tiene `limit: 0` en cuentas free nuevas, usar 2.5 |
 | **LLM (producción)** | **GPT-4o-mini** | API OpenAI |
-| **Embeddings (MVP)** | Gemini Embedding o nomic-embed-text | 768 dim |
-| **Embeddings (producción)** | text-embedding-3-small | 1.536 dim |
-| Cache | Redis | 7 |
+| **Embeddings (MVP)** | `models/text-embedding-004` (Gemini) | 768 dim |
+| **Embeddings (producción)** | `text-embedding-3-small` (OpenAI) | 1.536 dim — requiere re-indexación |
+| Cache + nonces HMAC | Redis | 7 alpine |
+| Containers | Docker Compose | profiles `dev`, `full`, `tools` |
 
 Detalle de cada decisión: ver [`docs/adr/`](adr/) y [`investigacion/`](../investigacion/).
 
@@ -96,39 +103,60 @@ sequenceDiagram
     participant L as LLMProvider
 
     A->>R: Escribe pregunta
-    R->>P: core/ajax → local_nexusai_send_message<br/>{courseid, message, sesskey}
-    P->>P: require_login + has_capability + rate_limit
-    P->>F: POST /api/chat<br/>HMAC + Bearer + payload firmado
-    F->>F: verify HMAC + timestamp + nonce
+    R->>P: core/ajax → local_nexusai_chat_send<br/>{question, courseid, sessionid}
+    P->>P: validate_context + require_capability(local/nexusai:use)
+    P->>P: backend_client::send_message()<br/>computa HMAC(secret, ts + nonce + body)
+    P->>F: POST /api/v1/chat/messages<br/>+ Authorization: Bearer<br/>+ X-Timestamp · X-Nonce · X-Signature
+    F->>F: verify_hmac (3 capas: API key + firma + nonce Redis)
+    F->>PG: get_or_create chat_session<br/>+ INSERT user message
+    rect rgb(255, 240, 200)
+    Note right of F: Sprint 2 — pendiente:<br/>retrieval semántico
     F->>E: embed(question)
-    E-->>F: vector (768 o 1536 dim)
-    F->>PG: SELECT ... ORDER BY embedding <=> $1<br/>WHERE course_id = $2 LIMIT 5
-    PG-->>F: top-5 chunks + distances + metadata
-    F->>F: build prompt<br/>(system + historial + contexto + pregunta)
-    F->>L: chat completion stream
-    L-->>F: tokens en streaming
-    F-->>P: stream SSE<br/>data: {token}
-    P-->>R: stream proxied
-    R-->>A: tokens aparecen en UI
+    E-->>F: vector 768 dim
+    F->>PG: SELECT chunks ORDER BY embedding <=> $1<br/>JOIN documents WHERE course_id = $2 LIMIT 5
+    PG-->>F: top-5 chunks + metadata
+    end
+    F->>F: build prompt<br/>(system + historial últimos 10 + contexto + pregunta)
+    F->>L: chat_completion(messages)
+    L-->>F: respuesta completa (Gemini 2.5 Flash)
+    F->>PG: INSERT assistant message
+    F-->>P: JSON {session_id, answer, messages[]}
+    P-->>R: response al cliente core/ajax
+    R-->>A: respuesta aparece en panel
 ```
 
-**Latencia objetivo:** 1.5–5 s end-to-end (con streaming SSE para que el alumno vea tokens aparecer desde el primer ~700 ms).
+**Latencia actual (sin retrieval, MVP):** 1.5–4 s end-to-end con respuesta no-streaming.
+
+**Latencia objetivo (Sprint 2 con SSE + retrieval):** 0.7 s primer token, 3–6 s respuesta completa.
+
+**Estado al 5 May 2026:**
+- Pasos 1–8, 14–17 ✅ implementados y funcionando
+- Pasos 9–13 (retrieval RAG) ⏳ pendientes Sprint 2 — el endpoint actual usa LLM con system prompt fijo, sin contexto del material del curso
+- Streaming SSE ⏳ pendiente Sprint 2
 
 ---
 
 ## 5. Pipeline RAG — indexación
 
-Indexación es el proceso **offline** que ocurre cuando el docente sube material nuevo o pide reindexar:
+Indexación es el proceso **offline** que ocurre cuando el docente sube material nuevo o pide reindexar.
+
+**Implementación al 5 May 2026:** módulos `extractor.py`, `chunker.py`, `pipeline.py` en `services/api/app/documents/` ✅. Falta el endpoint `POST /api/v1/documents` que dispare el pipeline desde la vista docente — Sprint 2.
 
 ```mermaid
 flowchart LR
-    PDF[PDFs/DOCX/TXT<br/>en mdl_files] --> EXT[pdfplumber<br/>extract_text por página]
-    EXT --> CLEAN[Limpieza:<br/>headers, footers, wraps]
-    CLEAN --> CHUNK[Chunking<br/>500 tokens / 10% overlap]
-    CHUNK --> META[+ metadata:<br/>document_id, page, chunk_index]
-    META --> EMB[EmbeddingProvider<br/>Gemini o text-embedding-3-small]
-    EMB --> STORE[(PostgreSQL/pgvector<br/>INSERT INTO nexusai_chunks)]
+    PDF[PDFs/DOCX/TXT<br/>en mdl_files] --> EXT[extractor.py<br/>pdfplumber]
+    EXT --> CHUNK[chunker.py<br/>tiktoken cl100k_base<br/>512 tokens / 64 overlap]
+    CHUNK --> EMB[EmbeddingProvider<br/>text-embedding-004 (768 dim)]
+    EMB --> STORE[(pgvector<br/>INSERT INTO chunks)]
+    EMB --> STATUS[document.status<br/>= 'indexed']
 ```
+
+**Detalles de implementación:**
+
+- **Extracción** sin OCR: rechaza PDFs escaneados con `ValueError` claro. Solo texto extraíble.
+- **Chunking** sliding window de 512 tokens con 64 overlap (12.5%). El overlap preserva contexto en bordes para mejor retrieval. Token counting con `cl100k_base` (compatible con OpenAI y Gemini).
+- **Persistencia** transaccional: si la extracción o el embedding falla, el documento queda marcado con `status='error'` y `error_message` poblado, sin dejar chunks parciales.
+- **Estado del documento:** ciclo `pending → indexing → indexed | error`, persistido en la columna `documents.status`.
 
 **Costo de indexación:** $0 con Gemini (tier gratuito) en MVP. ~$0.10 por cada 10.000 chunks con OpenAI en producción.
 
@@ -138,17 +166,18 @@ Detalle: [`investigacion/02-rag/chunking-strategies.md`](../investigacion/02-rag
 
 ## 6. Seguridad
 
-| Capa | Mecanismo |
-|---|---|
-| Navegador → Moodle PHP | `sesskey` de Moodle (CSRF), `core/ajax` |
-| Moodle PHP → FastAPI | **HMAC SHA-256 + timestamp** (ventana 5 min) + nonce + Bearer API key |
-| FastAPI → LLM/Embeddings | API key servidor-side (variable de entorno, nunca llega al navegador) |
-| Capabilities | `local/nexusai:use`, `:manage`, `:reindex` por contexto de curso |
-| Privacy | Privacy API de Moodle implementada — declara `llm_provider` como ubicación externa de forma genérica |
-| Rate limiting | Por usuario por día (default 50 consultas, configurable por docente) |
-| Aislamiento por materia | Filtrado SQL `WHERE course_id = $X` directo sobre pgvector |
+| Capa | Mecanismo | Estado |
+|---|---|---|
+| Navegador → Moodle PHP | `sesskey` de Moodle (CSRF), `core/ajax` valida sesión y CSRF automáticamente | ✅ |
+| Moodle PHP → FastAPI | **HMAC SHA-256 en 3 capas:** Bearer API key + firma sobre `timestamp \|\| nonce \|\| body` + nonce store en Redis con TTL 5 min (anti-replay) | ✅ |
+| Backend valida `$USER->id` | El cliente puede enviar `userid` pero PHP lo ignora — usa `$USER->id` del lado del server (anti-impersonation) | ✅ |
+| FastAPI → LLM/Embeddings | API key servidor-side (variable de entorno, nunca llega al navegador) | ✅ |
+| Capabilities | `local/nexusai:use`, `:manage`, `:viewanalytics` por contexto de curso | ✅ |
+| Privacy API | `null_provider` en MVP (todos los datos personales viven en backend Python externo, no en Moodle). Migración planificada a `metadata\\provider` cuando se almacenen logs/cache en Moodle (ADR-006) | ✅ MVP / 🟨 plan |
+| Rate limiting | Por usuario por día (default 50 consultas, configurable). Implementación pendiente | ⏳ Sprint 2 |
+| Aislamiento por materia | Filtrado SQL `WHERE course_id = $X` directo sobre pgvector + capability check antes de cada request | ✅ |
 
-Detalle: [`investigacion/05-backend-fastapi/autenticacion-hmac.md`](../investigacion/05-backend-fastapi/autenticacion-hmac.md), [`investigacion/05-backend-fastapi/lifespan-y-estado.md`](../investigacion/05-backend-fastapi/lifespan-y-estado.md), [`investigacion/01-moodle/seguridad-capabilities.md`](../investigacion/01-moodle/seguridad-capabilities.md).
+Detalle: [`investigacion/05-backend-fastapi/autenticacion-hmac.md`](../investigacion/05-backend-fastapi/autenticacion-hmac.md), [`docs/adr/005-hmac-php-python.md`](adr/005-hmac-php-python.md), [`docs/adr/006-privacy-strategy.md`](adr/006-privacy-strategy.md), [`investigacion/01-moodle/seguridad-capabilities.md`](../investigacion/01-moodle/seguridad-capabilities.md).
 
 ---
 
@@ -162,10 +191,11 @@ Cada decisión está formalizada como ADR (Architecture Decision Record):
 | [002](adr/002-pgvector.md) | **pgvector sobre PostgreSQL** como única base (no ChromaDB) | ✅ Aceptada |
 | [003](adr/003-multi-provider-llm.md) | **Arquitectura agnóstica** de proveedor LLM (`LLMProvider` / `EmbeddingProvider`) | ✅ Aceptada |
 | [004](adr/004-gemini-mvp-openai-prod.md) | **Gemini 2.5 Flash** en MVP (gratuito), **GPT-4o-mini** en producción | ✅ Aceptada |
-| 005 (TBD) | **Chunking 500 tokens / 10% overlap** | ✅ Aceptada (a formalizar Sprint 1) |
-| 006 (TBD) | Comunicación PHP↔Python con **HMAC + Bearer + nonce** | ✅ Aceptada (a formalizar Sprint 1) |
-| 007 (TBD) | React compilado como **módulo AMD vía Webpack** | ✅ Aceptada (a formalizar Sprint 1) |
-| 008 (TBD) | Plugin tipo **`local` con `before_footer()`** | ✅ Aceptada (a formalizar Sprint 1) |
+| [005](adr/005-hmac-php-python.md) | **HMAC SHA-256 en 3 capas** (Bearer + firma + nonce Redis) entre PHP y Python | ✅ Aceptada |
+| [006](adr/006-privacy-strategy.md) | **Privacy API**: `null_provider` en MVP, migración planificada a `metadata\\provider` | ✅ Aceptada |
+| 007 (TBD) | **Chunking 512 tokens / 64 overlap** (formalizar lo implementado por Marcos) | 🟨 pendiente Sprint 2 |
+| 008 (TBD) | React compilado como **bundle único AMD vía Webpack** (sin chunks lazy, con `publicPath` configurado) | 🟨 pendiente Sprint 2 |
+| 009 (TBD) | Plugin tipo **`local`** con **Hook API nuevo de Moodle 4.4+** y callback legacy para 4.1-4.3 | 🟨 pendiente Sprint 2 |
 
 ---
 
@@ -221,73 +251,75 @@ Equivalente a ~**$0.22/alumno/mes** en producción. Detalle: [`investigacion/03-
 
 ## 9. Modelo de datos
 
-### Tablas propias del plugin (en PostgreSQL de Moodle)
+NexusAI usa **dos esquemas separados** (decisión arquitectónica de ADR-006):
+
+- **Esquema del backend Python** — todos los datos personales y de RAG. PostgreSQL+pgvector administrado por Alembic. Migrado vía `migrations/versions/001_initial_schema.py`.
+- **Esquema del plugin Moodle** — solo configuración del plugin. Hoy `local_nexusai_placeholder` (vacío). Cuando agreguemos audit logs en el plugin, se documenta en ADR adicional y se migra Privacy API a `metadata\provider`.
+
+### 9.1. Esquema en backend Python (PostgreSQL + pgvector) — ✅ implementado
 
 ```mermaid
 erDiagram
-    MDL_USER ||--o{ LOCAL_NEXUSAI_MESSAGES : "envía"
-    MDL_USER ||--o{ LOCAL_NEXUSAI_USAGE : "consume"
-    MDL_COURSE ||--o{ LOCAL_NEXUSAI_MESSAGES : "contexto"
-    MDL_COURSE ||--o{ NEXUSAI_DOCUMENTS : "tiene"
-    NEXUSAI_DOCUMENTS ||--o{ NEXUSAI_CHUNKS : "compone"
-    LOCAL_NEXUSAI_MESSAGES ||--o| LOCAL_NEXUSAI_FEEDBACK : "califica"
+    DOCUMENTS ||--o{ CHUNKS : "compone"
+    CHAT_SESSIONS ||--o{ MESSAGES : "contiene"
 
-    LOCAL_NEXUSAI_MESSAGES {
-        bigint id PK
-        bigint userid FK
-        bigint courseid FK
-        text message
-        text response
-        text model_used
-        int tokens_input
-        int tokens_output
-        bigint timecreated
+    DOCUMENTS {
+        uuid id PK
+        int course_id "ID del curso Moodle"
+        int uploader_id "ID del docente Moodle"
+        string(255) filename
+        string(100) mime_type
+        string(20) status "pending | indexing | indexed | error"
+        text error_message NULL
+        timestamptz created_at
+        timestamptz updated_at
     }
 
-    LOCAL_NEXUSAI_USAGE {
-        bigint id PK
-        bigint userid FK
-        bigint courseid FK
-        date date
-        int count
-    }
-
-    NEXUSAI_DOCUMENTS {
-        bigint id PK
-        bigint courseid FK
-        text filename
-        text contenthash
-        text status
-        text embedding_model
-        bigint timeindexed
-    }
-
-    NEXUSAI_CHUNKS {
-        bigint id PK
-        bigint document_id FK
+    CHUNKS {
+        uuid id PK
+        uuid document_id FK
+        text content
         int chunk_index
-        text chunk_text
-        int token_count
-        vector embedding "vector(768) MVP / vector(1536) prod"
+        int token_count NULL
+        vector embedding "Vector(768) — text-embedding-004"
         timestamptz created_at
     }
 
-    LOCAL_NEXUSAI_FEEDBACK {
-        bigint id PK
-        bigint messageid FK
-        int rating
-        text comment
-        bigint timecreated
+    CHAT_SESSIONS {
+        uuid id PK
+        int user_id "ID del alumno Moodle"
+        int course_id "ID del curso Moodle"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    MESSAGES {
+        uuid id PK
+        uuid session_id FK
+        string(20) role "user | assistant | system"
+        text content
+        timestamptz created_at
     }
 ```
 
 **Notas clave:**
 
-- `nexusai_chunks` tiene un **índice HNSW de pgvector** sobre `embedding` con distancia coseno (`vector_cosine_ops`).
-- La columna `vector(N)` cambia entre 768 (MVP con Gemini) y 1536 (producción con OpenAI). El cambio requiere migración del schema y re-indexación completa.
-- `ON DELETE CASCADE` en `nexusai_chunks(document_id)` simplifica re-indexación.
+- IDs en **UUID v4** (no `bigint`) — facilita generación cliente, evita colisiones cross-DB en futuro.
+- `chunks.embedding` es `Vector(768)` (Gemini `text-embedding-004`). El cambio a `Vector(1536)` (OpenAI `text-embedding-3-small`) en producción requiere **migración del schema y re-indexación completa** — script automatizado planificado para post-MVP.
+- `ON DELETE CASCADE` en `chunks(document_id)` y `messages(session_id)` simplifica re-indexación y borrado de conversaciones.
+- Índices: `ix_documents_course_id`, `ix_chunks_document_id_chunk_index`, `ix_chat_sessions_user_id_course_id`, `ix_messages_session_id_created_at`. Plus el HNSW de pgvector sobre `embedding` (a agregar en Sprint 2 cuando se active el retrieval).
+- **NO almacenamos analytics ni feedback en MVP.** Esas tablas se agregarán en Épica 04 (post-MVP).
 
-Esquema completo en `plugin/local/nexusai/db/install.xml` + script PostgreSQL adicional para `nexusai_documents` + `nexusai_chunks` (a definir en Sprint 1).
+### 9.2. Esquema en Moodle (plugin DB) — ⏳ MVP-mínimo
+
+Hoy: solo `local_nexusai_placeholder` definida en `plugin/local/nexusai/db/install.xml` (sin uso real, evita warnings del plugin checker).
+
+**No persistimos en Moodle:** historial de chat, sesiones, documentos indexados, analytics. Todo eso vive en el backend Python externo. Esa decisión está formalizada en [ADR-006](adr/006-privacy-strategy.md) y se mantiene mientras no haya un trigger explícito para migrar.
+
+**Triggers que sí van a generar tablas en Moodle (post-MVP):**
+- Audit log de uso del plugin → tabla `local_nexusai_usage`
+- Cache de respuestas LLM por hash de pregunta → tabla `local_nexusai_cache`
+- Settings por curso → tabla `local_nexusai_course_settings`
 
 ---
 
@@ -374,4 +406,4 @@ Para edición y zoom:
 
 ---
 
-*Última actualización: 2026-05-02 — equipo NexusAI*
+*Última actualización: 2026-05-05 — equipo NexusAI (revisión post smoke test E2E)*

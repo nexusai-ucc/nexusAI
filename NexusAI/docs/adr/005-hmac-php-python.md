@@ -66,8 +66,8 @@ limpia solo.
 
 Implementación: `services/api/app/auth/hmac.py` como FastAPI Dependency
 (`verify_hmac`) que se inyecta en cada endpoint protegido. Cliente PHP en
-`plugin/local/nexusai/classes/external/backend_client.php` (TODO Marcos
-Sprint 1/2).
+`plugin/local/nexusai/classes/external/backend_client.php` (implementado en
+Sprint 1, verificado end-to-end el 4 May 2026).
 
 ## Alternativas evaluadas
 
