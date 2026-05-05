@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusAI — Wireframes UX · MVP</title>
+<style>
+:root {
+    --ink: #1f2937;
+    --ink-soft: #4b5563;
+    --ink-mute: #9ca3af;
+    --line: #d1d5db;
+    --line-strong: #6b7280;
+    --bg: #fafafa;
+    --paper: #ffffff;
+    --hl: #fef9c3;
+    --note: #fff7ed;
+    --note-line: #fb923c;
+    --link: #1e40af;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ========== HEADER ========== */
+header.top {
+    background: var(--ink);
+    color: white;
+    padding: 24px 32px;
+    border-bottom: 4px solid #4b5563;
+}
+header.top h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+header.top .meta { font-size: 12px; color: var(--ink-mute); margin-top: 4px; }
+header.top .meta strong { color: white; }
+
+/* ========== NAV ========== */
+nav.tabs {
+    background: white;
+    border-bottom: 1px solid var(--line);
+    padding: 0 32px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+nav.tabs button {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+nav.tabs button:hover { background: #f9fafb; }
+nav.tabs button.active {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+    font-weight: 600;
+}
+
+/* ========== LAYOUT ========== */
+main {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 32px;
+}
+section.view {
+    display: none;
+}
+section.view.active { display: block; }
+
+.view-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed var(--line);
+}
+.view-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.view-header p {
+    font-size: 14px;
+    color: var(--ink-soft);
+}
+
+/* ========== WIREFRAME GRID ========== */
+.wf-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 32px;
+}
+.wf {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.wf-label {
+    background: #f9fafb;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--ink-soft);
+}
+.wf-label .num {
+    background: var(--ink);
+    color: white;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 8px;
+}
+.wf-label strong {
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 13px;
+}
+.wf-canvas {
+    background: var(--paper);
+    padding: 20px;
+    min-height: 380px;
+    position: relative;
+}
+.wf-notes {
+    background: var(--note);
+    border-top: 1px solid var(--note-line);
+    padding: 10px 14px;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+}
+.wf-notes strong { color: var(--ink); }
+
+/* ========== WIREFRAME ELEMENTS ========== */
+.box {
+    border: 1.5px solid var(--line-strong);
+    border-radius: 4px;
+    background: white;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+.box.dashed { border-style: dashed; }
+.box.filled { background: #f3f4f6; }
+.box-header {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 13px;
+}
+.placeholder {
+    background: repeating-linear-gradient(
+        135deg,
+        #f3f4f6,
+        #f3f4f6 6px,
+        #e5e7eb 6px,
+        #e5e7eb 7px
+    );
+    border: 1px dashed var(--line-strong);
+    border-radius: 3px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-mute);
+    font-size: 11px;
+    font-style: italic;
+}
+.btn {
+    display: inline-block;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 4px;
+    padding: 6px 12px;
+    background: white;
+    font-size: 12px;
+    font-weight: 500;
+}
+.btn-primary { background: var(--ink); color: white; border-color: var(--ink); }
+.btn-icon {
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+}
+.input {
+    border: 1.5px solid var(--line-strong);
+    border-radius: 16px;
+    padding: 8px 14px;
+    background: white;
+    font-size: 12px;
+    color: var(--ink-mute);
+    width: 100%;
+}
+.tag {
+    display: inline-block;
+    background: #f3f4f6;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 10px;
+    color: var(--ink-soft);
+}
+.tag.done { background: #dcfce7; border-color: #4ade80; color: #166534; }
+.tag.proc { background: #dbeafe; border-color: #60a5fa; color: #1e40af; }
+.tag.err  { background: #fee2e2; border-color: #f87171; color: #991b1b; }
+
+/* ========== STUDENT VIEW WIREFRAMES ========== */
+.moodle-frame {
+    border: 1.5px solid var(--line-strong);
+    border-radius: 4px;
+    background: white;
+    height: 380px;
+    position: relative;
+    overflow: hidden;
+}
+.moodle-topbar {
+    height: 40px;
+    background: #f9fafb;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 14px;
+    font-size: 11px;
+    color: var(--ink-soft);
+}
+.moodle-topbar .logo {
+    font-weight: 700;
+    color: var(--ink);
+}
+.moodle-topbar .nav-item { color: var(--ink-mute); }
+.moodle-content {
+    padding: 18px;
+    height: calc(100% - 40px);
+    overflow: hidden;
+}
+.course-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+.course-section {
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--ink-soft);
+}
+
+/* Floating chat bubble */
+.fab {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Chat panel */
+.chat-panel {
+    position: absolute;
+    bottom: 76px;
+    right: 16px;
+    width: 280px;
+    height: 360px;
+    background: white;
+    border: 1.5px solid var(--ink);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.chat-header {
+    padding: 10px 12px;
+    background: var(--ink);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.chat-body {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 11px;
+}
+.chat-msg {
+    max-width: 80%;
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line-strong);
+    background: white;
+}
+.chat-msg.user {
+    align-self: flex-end;
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+}
+.chat-input-row {
+    padding: 8px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.chat-input-row .input { flex: 1; padding: 6px 10px; font-size: 11px; }
+.chat-input-row .send-btn {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: white;
+    display: flex; align-items: center; justify-content: center; font-size: 13px;
+}
+
+/* Typing dots */
+.dots {
+    display: inline-flex;
+    gap: 3px;
+    padding: 6px 10px;
+    background: white;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 10px;
+    align-self: flex-start;
+}
+.dots span {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--ink-mute);
+    animation: blink 1.2s infinite;
+}
+.dots span:nth-child(2) { animation-delay: 0.15s; }
+.dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes blink {
+    0%, 60%, 100% { opacity: 0.3; }
+    30% { opacity: 1; }
+}
+
+.error-banner {
+    background: #fee2e2;
+    border: 1.5px solid #f87171;
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 10.5px;
+    color: #991b1b;
+    align-self: stretch;
+}
+.error-banner .actions { display: flex; gap: 6px; margin-top: 6px; }
+.error-banner button {
+    border: 1px solid #991b1b;
+    background: #991b1b;
+    color: white;
+    border-radius: 3px;
+    padding: 3px 8px;
+    font-size: 10px;
+}
+.error-banner button.ghost {
+    background: transparent;
+    color: #991b1b;
+    border-color: transparent;
+}
+
+/* ========== TEACHER VIEW WIREFRAMES ========== */
+.teacher-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    height: 100%;
+}
+.upload-zone {
+    border: 2px dashed var(--line-strong);
+    border-radius: 6px;
+    padding: 30px 20px;
+    text-align: center;
+    background: #fafafa;
+    color: var(--ink-soft);
+    font-size: 13px;
+}
+.upload-zone .icon { font-size: 32px; margin-bottom: 8px; color: var(--ink-mute); }
+.upload-zone .hint { font-size: 11px; color: var(--ink-mute); margin-top: 4px; }
+
+.docs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.docs-table th {
+    text-align: left;
+    padding: 8px 10px;
+    background: #f9fafb;
+    border-bottom: 1.5px solid var(--line-strong);
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.docs-table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--line);
+}
+.docs-table .filename {
+    font-weight: 600;
+    color: var(--ink);
+}
+.docs-table .progress-bar {
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+.docs-table .progress-bar .fill {
+    height: 100%;
+    background: var(--ink);
+}
+
+/* ========== FLOW DIAGRAM ========== */
+.flow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 24px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+}
+.flow-step {
+    border: 1.5px solid var(--line-strong);
+    border-radius: 6px;
+    padding: 12px 16px;
+    min-width: 130px;
+    background: white;
+    text-align: center;
+    font-size: 12px;
+}
+.flow-step .who {
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 2px;
+}
+.flow-step .what {
+    color: var(--ink-soft);
+    font-size: 11px;
+}
+.flow-arrow {
+    color: var(--ink-soft);
+    font-size: 20px;
+}
+
+/* ========== LEGEND / INTRO ========== */
+.intro-box {
+    background: var(--note);
+    border-left: 4px solid var(--note-line);
+    padding: 16px 20px;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: var(--ink-soft);
+}
+.intro-box strong { color: var(--ink); }
+
+@media (max-width: 768px) {
+    .wf-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+    <h1>🖼️ NexusAI — Wireframes UX · MVP</h1>
+    <p class="meta">
+        <strong>Issue #158 (FRONT-01)</strong> · Sprint 1 · Delfina Salinas · 5 May 2026 · Baja fidelidad para iteración rápida
+    </p>
+</header>
+
+<nav class="tabs">
+    <button class="active" data-view="alumno">👨‍🎓 Vista alumno</button>
+    <button data-view="docente">👨‍🏫 Vista docente</button>
+    <button data-view="flujos">🔀 Flujos</button>
+    <button data-view="decisiones">⚖️ Decisiones de diseño</button>
+</nav>
+
+<main>
+
+<!-- ============================================================
+     VISTA ALUMNO
+============================================================ -->
+<section class="view active" id="view-alumno">
+    <div class="view-header">
+        <h2>Vista alumno · 5 estados del chat</h2>
+        <p>El widget se inyecta en el footer de toda página dentro de un curso. Es flotante (FAB bottom-right) para no ocupar espacio del contenido del curso. 5 estados cubiertos en MVP.</p>
+    </div>
+
+    <div class="intro-box">
+        <strong>Por qué floating action button (FAB) y no fullscreen:</strong>
+        el alumno suele querer consultar al asistente <em>mientras lee</em> el material del curso, no en lugar de él.
+        Un panel flotante permite ver ambos al mismo tiempo. Implementado y verificado en Moodle 4.5.
+    </div>
+
+    <div class="wf-grid">
+
+        <!-- 1. FAB CERRADO -->
+        <div class="wf">
+            <div class="wf-label">
+                <span><span class="num">1</span><strong>Estado inicial — chat cerrado</strong></span>
+                <span>Vista por defecto</span>
+            </div>
+            <div class="wf-canvas">
+                <div class="moodle-frame">
+                    <div class="moodle-topbar">
+                        <span class="logo">Moodle</span>
+                        <span class="nav-item">Home</span>
+                        <span class="nav-item">My courses</span>
+                        <span class="nav-item">Math 101</span>
+                    </div>
+                    <div class="moodle-content">
+                        <div class="course-title">Math 101</div>
+                        <div class="course-section">📁 Unidad 1 — Funciones</div>
+                        <div class="course-section">📁 Unidad 2 — Límites</div>
+                        <div class="course-section">📁 Unidad 3 — Derivadas</div>
+                    </div>
+                    <div class="fab">💬</div>
+                </div>
+            </div>
+            <div class="wf-notes">
+                <strong>Comportamiento:</strong> el FAB aparece en cada página de curso (no en frontpage ni dashboard) si el usuario tiene capability <code>local/nexusai:use</code>. Click → abre el panel (estado 2).
+                <br><strong>Visibilidad:</strong> z-index 9998, no choca con popovers de Moodle (que usan ~1080).
+            </div>
+        </div>
+
+        <!-- 2. PANEL ABIERTO BIENVENIDA -->
+        <div class="wf">
+            <div class="wf-label">
+                <span><span class="num">2</span><strong>Panel abierto — bienvenida</strong></span>
+                <span>Sin mensajes previos</span>
+            </div>
+            <div class="wf-canvas">
+                <div class="moodle-frame">
+                    <div class="moodle-topbar">
+                        <span class="logo">Moodle</span>
+                        <span class="nav-item">Math 101</span>
+                    </div>
+                    <div class="moodle-content"></div>
+                    <div class="chat-panel">
+                        <div class="chat-header">
+                            <span>NexusAI Assistant</span>
+                            <span>×</span>
+                        </div>
+                        <div class="chat-body" style="justify-content: center; align-items: center; text-align: center; color: var(--ink-mute);">
+                            <div style="font-size: 32px;">✨</div>
+                            <div style="font-size: 11px; max-width: 200px; line-height: 1.5;">
+                                ¡Hola! Soy el asistente de tu materia.<br>
+                                Preguntame lo que necesites.
+                            </div>
+                        </div>
+                        <div class="chat-input-row">
+                            <span class="input">Preguntá lo que quieras...</span>
+                            <span class="send-btn">▶</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="wf-notes">
+                <strong>Welcome state:</strong> aparece cuando <code>messages.length === 0</code>. Bilingüe es/en según <code>current_language()</code> de Moodle.
+                <br><strong>Input desactivado de envío</strong> hasta que el usuario escriba algo (botón gris).
+            </div>
+        </div>
+
+        <!-- 3. CONVERSANDO -->
+        <div class="wf">
+            <div class="wf-label">
+                <span><span class="num">3</span><strong>Conversando — historial</strong></span>
+                <span>Estado activo</span>
+            </div>
+            <div class="wf-canvas">
+                <div class="moodle-frame">
+                    <div class="moodle-topbar">
+                        <span class="logo">Moodle</span>
+                        <span class="nav-item">Math 101</span>
+                    </div>
+                    <div class="moodle-content"></div>
+                    <div class="chat-panel">
+                        <div class="chat-header">
+                            <span>NexusAI Assistant</span>
+                            <span>📋 ×</span>
+                        </div>
+                        <div class="chat-body">
+                            <div class="chat-msg user">¿Qué es una derivada?</div>
+                            <div class="chat-msg">Una derivada mide cuánto cambia una función con respecto a su variable. Te lo explico con un ejemplo de la Unidad 3...</div>
+                            <div class="chat-msg user">¿Y cómo la calculo?</div>
+                            <div class="chat-msg">Hay varias reglas según el tipo de función. Las más comunes son la regla de la cadena, del producto...</div>
+                        </div>
+                        <div class="chat-input-row">
+                            <span class="input">Preguntá lo que quieras...</span>
+                            <span class="send-btn">▶</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="wf-notes">
+                <strong>Burbujas asimétricas:</strong> user (oscuro, derecha) vs assistant (gris, izquierda). Auto-scroll al fondo en cada mensaje nuevo.
+                <br><strong>Header con icono "📋":</strong> botón "Nueva conversación" — aparece solo cuando hay mensajes. Limpia state + sessionId.
+                <br><strong>Sprint 2:</strong> agregar fuentes citadas debajo de cada respuesta del asistente (chunks del material del curso).
+            </div>
+        </div>
+
+        <!-- 4. LOADING TYPING -->
+        <div class="wf">
+            <div class="wf-label">
+                <span><span class="num">4</span><strong>Loading — typing indicator</strong></span>
+                <span>Esperando respuesta</span>
+            </div>
+            <div class="wf-canvas">
+                <div class="moodle-frame">
+                    <div class="moodle-topbar">
+                        <span class="logo">Moodle</span>
+                        <span class="nav-item">Math 101</span>
+                    </div>
+                    <div class="moodle-content"></div>
+                    <div class="chat-panel">
+                        <div class="chat-header">
+                            <span>NexusAI Assistant</span>
+                            <span>📋 ×</span>
+                        </div>
+                        <div class="chat-body">
+                            <div class="chat-msg user">¿Qué dice la Unidad 2 sobre límites?</div>
+                            <div class="dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                        <div class="chat-input-row" style="opacity: 0.5;">
+                            <span class="input">Preguntá lo que quieras...</span>
+                            <span class="send-btn" style="opacity: 0.4;">▶</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="wf-notes">
+                <strong>Typing dots:</strong> 3 dots animados (estilo iMessage/WhatsApp) durante <code>loading === true</code>.
+                <br><strong>Input deshabilitado</strong> mientras carga — evita que el usuario mande otro mensaje y se acumulen requests.
+                <br><strong>Optimistic UI:</strong> el mensaje del user se muestra inmediatamente (sin esperar al backend).
+            </div>
+        </div>
+
+        <!-- 5. ERROR -->
+        <div class="wf">
+            <div class="wf-label">
+                <span><span class="num">5</span><strong>Error — backend caído / sin cuota</strong></span>
+                <span>Estado degradado</span>
+            </div>
+            <div class="wf-canvas">
+                <div class="moodle-frame">
+                    <div class="moodle-topbar">
+                        <span class="logo">Moodle</span>
+                        <span class="nav-item">Math 101</span>
+                    </div>
+                    <div class="moodle-content"></div>
+                    <div class="chat-panel">
+                        <div class="chat-header">
+                            <span>NexusAI Assistant</span>
+                            <span>×</span>
+                        </div>
+                        <div class="chat-body">
+                            <div class="error-banner">
+                                <strong>⚠ NexusAI backend error: HTTP 503</strong>
+                                <div style="margin-top: 4px;">El asistente no está disponible</div>
+                                <div class="actions">
+                                    <button>Reintentar</button>
+                                    <button class="ghost">Descartar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input-row">
+                            <span class="input">Preguntá lo que quieras...</span>
+                            <span class="send-btn">▶</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="wf-notes">
+                <strong>Banner claro:</strong> rojo, con detalle del error real (no genérico).
+                <br><strong>Reintentar:</strong> reenvía la última pregunta (<code>lastQuestion</code> en state).
+                <br><strong>Descartar:</strong> oculta el banner, deja el input listo para nueva pregunta.
+                <br><strong>Mensaje del user borrado del estado</strong> al fallar — para que reintentar no duplique.
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ============================================================
+     VISTA DOCENTE
+============================================================ -->
+<section class="view" id="view-docente">
+    <div class="view-header">
+        <h2>Vista docente · 4 pantallas para gestión del material</h2>
+        <p>El docente accede desde una pestaña adicional en su curso de Moodle. Solo visible para usuarios con capability <code>local/nexusai:manage</code> (editingteacher + manager). Sprint 2 / 3.</p>
+    </div>
+
+    <div class="intro-box">
+        <strong>Decisión clave:</strong> la indexación es <em>asincrónica</em>. El docente sube un PDF y se le devuelve "indexando..." inmediatamente. Cuando termina, el estado pasa a "indexado" sin que el docente tenga que esperar. Lo que tarda es: extracción → chunking → embeddings (1 PDF de 50 pág ≈ 30-60 segundos).
+    </div>
+
+    <div class="wf-grid">
+
+        <!-- 1. LISTA VACÍA - DRAG & DROP -->
+        <div class="wf">
+            <div class="wf-label">
+                <span><span class="num">1</span><strong>Estado inicial — sin documentos</strong></span>
+                <span>Drop zone visible</span>
+            </div>
+            <div class="wf-canvas">
+                <div class="moodle-frame">
+                    <div class="moodle-topbar">
+                        <span class="logo">Moodle</span>
+                        <span class="nav-item">Math 101</span>
+                        <span class="nav-item" style="color:var(--ink); font-weight:600; border-bottom: 2px solid var(--ink); padding-bottom: 8px;">📚 NexusAI</span>
+                    </div>
+                    <div class="moodle-content">
+                        <div class="course-title" style="font-size: 16px;">📚 Material indexado para NexusAI</div>
+                        <div class="upload-zone">
+                            <div class="icon">⬆️</div>
+                            <div><strong>Arrastrá tus PDFs acá</strong></div>
+                            <div class="hint">o hacé click para seleccionar archivos</div>
+                            <div class="hint" style="margin-top: 12px;">Formatos: PDF (DOCX y TXT en Sprint 3)</div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--ink-mute); margin-top: 12px;">
+                            Los archivos que subís quedan disponibles para el asistente NexusAI cuando los alumnos hacen preguntas. La indexación tarda ~30-60 segundos por PDF.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="wf-notes">
+                <strong>Pestaña "📚 NexusAI"</strong> aparece en el navbar del curso solo para usuarios con <code>local/nexusai:manage</code>.
+                <br><strong>Drag & drop visual</strong> — drop zone con borde dasheado que se ilumina al pasar el archivo. Click también permite seleccionar.
+            </div>
+        </div>
+
+        <!-- 2. INDEXANDO -->
+        <div class="wf">
+            <div class="wf-label">
+                <span><span class="num">2</span><strong>Indexando — feedback en tiempo real</strong></span>
+                <span>Document.status = "indexing"</span>
+            </div>
+            <div class="wf-canvas">
+                <div class="moodle-frame">
+                    <div class="moodle-topbar">
+                        <span class="logo">Moodle</span>
+                        <span class="nav-item" style="color:var(--ink); font-weight:600;">📚 NexusAI</span>
+                    </div>
+                    <div class="moodle-content">
+                        <div class="course-title" style="font-size: 16px;">📚 Material indexado</div>
+                        <div class="upload-zone" style="padding: 14px;">
+                            <div style="font-size: 12px;"><span style="color: var(--ink);">⬆️ Subir más archivos</span></div>
+                        </div>
+                        <table class="docs-table" style="margin-top: 12px;">
+                            <thead>
+                                <tr>
+                                    <th>Archivo</th>
+                                    <th>Estado</th>
+                                    <th>Subido</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="filename">apunte-derivadas.pdf</div>
+                                        <div style="font-size: 10px; color: var(--ink-mute);">52 páginas · 3.2 MB</div>
+                                        <div class="progress-bar"><div class="fill" style="width: 60%;"></div></div>
+                                    </td>
+                                    <td><span class="tag proc">Indexando</span></td>
+                                    <td style="font-size: 11px; color: var(--ink-mute);">hace 25s</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="wf-notes">
+                <strong>Polling cada 3 segundos</strong> al endpoint <code>GET /documents/{id}</code> para actualizar el estado. Cuando llega a "indexed" o "error", se detiene.
+                <br><strong>Barra de progreso es estimada</strong> — el backend reporta solo "pending → indexing → indexed/error", no el % real.
+            </div>
+        </div>
+
+        <!-- 3. LISTA POBLADA -->
+        <div class="wf">
+            <div class="wf-label">
+                <span><span class="num">3</span><strong>Lista con documentos — vista normal</strong></span>
+                <span>Estado estable</span>
+            </div>
+            <div class="wf-canvas">
+                <div class="moodle-frame">
+                    <div class="moodle-topbar">
+                        <span class="logo">Moodle</span>
+                        <span class="nav-item" style="color:var(--ink); font-weight:600;">📚 NexusAI</span>
+                    </div>
+                    <div class="moodle-content">
+                        <div class="course-title" style="font-size: 16px;">📚 Material indexado · 4 documentos</div>
+                        <div class="upload-zone" style="padding: 12px;">
+                            <span style="color: var(--ink); font-size: 12px;">⬆️ Subir más archivos</span>
+                        </div>
+                        <table class="docs-table" style="margin-top: 12px;">
+                            <thead>
+                                <tr><th>Archivo</th><th>Estado</th><th>Acciones</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="filename">apunte-derivadas.pdf</div>
+                                        <div style="font-size: 10px; color: var(--ink-mute);">128 chunks · 52 páginas</div>
+                                    </td>
+                                    <td><span class="tag done">Indexado</span></td>
+                                    <td style="font-size: 11px;">
+                                        <span style="color: var(--link); cursor: pointer;">Re-indexar</span>
+                                        ·
+                                        <span style="color: var(--link); cursor: pointer;">Eliminar</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="filename">teorema-fundamental.pdf</div>
+                                        <div style="font-size: 10px; color: var(--ink-mute);">22 chunks · 8 páginas</div>
+                                    </td>
+                                    <td><span class="tag done">Indexado</span></td>
+                                    <td style="font-size: 11px;">
+                                        <span style="color: var(--link);">Re-indexar</span> · <span style="color: var(--link);">Eliminar</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="filename">scan-clase-3.pdf</div>
+                                        <div style="font-size: 10px; color: var(--ink-mute);">PDF escaneado, sin texto</div>
+                                    </td>
+                                    <td><span class="tag err">Error</span></td>
+                                    <td style="font-size: 11px;">
+                                        <span style="color: var(--link);">Reintentar</span> · <span style="color: var(--link);">Eliminar</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="wf-notes">
+                <strong>Estado "error"</strong> con tooltip explicativo (al hover): "El PDF está escaneado y no tiene texto extraíble. Usá un OCR antes de subirlo".
+                <br><strong>Re-indexar:</strong> útil cuando el docente actualiza el archivo o cuando se cambia el modelo de embeddings.
+                <br><strong>Eliminar:</strong> CASCADE borra todos los chunks asociados. Confirmación modal antes de borrar.
+            </div>
+        </div>
+
+        <!-- 4. SETTINGS DEL PLUGIN -->
+        <div class="wf">
+            <div class="wf-label">
+                <span><span class="num">4</span><strong>Settings de admin — config global</strong></span>
+                <span>Solo administradores Moodle</span>
+            </div>
+            <div class="wf-canvas">
+                <div class="moodle-frame">
+                    <div class="moodle-topbar">
+                        <span class="logo">Moodle</span>
+                        <span class="nav-item">Site administration</span>
+                        <span class="nav-item">Plugins</span>
+                        <span class="nav-item" style="color:var(--ink); font-weight:600;">NexusAI</span>
+                    </div>
+                    <div class="moodle-content">
+                        <div class="course-title" style="font-size: 16px;">⚙️ NexusAI · Configuración</div>
+
+                        <div class="box" style="margin-bottom: 12px;">
+                            <div class="box-header">General</div>
+                            <div style="font-size: 12px; margin-bottom: 6px;">
+                                <span style="display: inline-block; width: 14px; height: 14px; border: 1.5px solid var(--ink-soft); border-radius: 2px; vertical-align: middle; background: var(--ink);"></span>
+                                Activar NexusAI
+                            </div>
+                            <div style="font-size: 10px; color: var(--ink-mute);">Switch maestro. Desactivar oculta el chat en todo el sitio.</div>
+                        </div>
+
+                        <div class="box">
+                            <div class="box-header">Conexión con el backend</div>
+                            <div style="font-size: 11px; margin-bottom: 8px;">
+                                <strong>Backend API URL:</strong>
+                                <div style="font-family: monospace; color: var(--ink-soft); margin-top: 2px;">http://host.docker.internal:8001</div>
+                            </div>
+                            <div style="font-size: 11px; margin-bottom: 8px;">
+                                <strong>API Key:</strong>
+                                <div style="font-family: monospace; color: var(--ink-soft); margin-top: 2px;">••••••••••••••••••••••••••••••••</div>
+                            </div>
+                            <div style="font-size: 11px;">
+                                <strong>Shared secret (HMAC):</strong>
+                                <div style="font-family: monospace; color: var(--ink-soft); margin-top: 2px;">••••••••••••••••••••••••••••••••</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="wf-notes">
+                <strong>Implementado en MVP:</strong> los 3 campos críticos (URL, API key, Shared secret).
+                <br><strong>API key y Shared secret</strong> se muestran enmascarados con <code>admin_setting_configpasswordunmask</code> — el admin puede unlock para ver el valor.
+                <br><strong>Sprint 3:</strong> agregar campos para rate limit por usuario, modelo LLM activo, idioma default.
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ============================================================
+     FLUJOS
+============================================================ -->
+<section class="view" id="view-flujos">
+    <div class="view-header">
+        <h2>Flujos · journey del alumno y del docente</h2>
+        <p>Cómo se llega a cada vista y cuáles son los puntos críticos del UX.</p>
+    </div>
+
+    <h3 style="font-size: 16px; margin: 24px 0 12px; font-weight: 600;">🎓 Journey alumno</h3>
+    <div class="flow">
+        <div class="flow-step">
+            <div class="who">1. Login</div>
+            <div class="what">Entra a Moodle como cualquier alumno</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+            <div class="who">2. Curso</div>
+            <div class="what">Abre uno de sus cursos</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+            <div class="who">3. FAB</div>
+            <div class="what">Ve la burbuja morada bottom-right</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+            <div class="who">4. Pregunta</div>
+            <div class="what">Click + escribe pregunta</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+            <div class="who">5. Respuesta</div>
+            <div class="what">Recibe respuesta basada en el material</div>
+        </div>
+    </div>
+
+    <h3 style="font-size: 16px; margin: 32px 0 12px; font-weight: 600;">👨‍🏫 Journey docente — primera vez</h3>
+    <div class="flow">
+        <div class="flow-step">
+            <div class="who">1. Tab "📚 NexusAI"</div>
+            <div class="what">Abre la pestaña en su curso</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+            <div class="who">2. Drop zone</div>
+            <div class="what">Arrastra PDFs del material del curso</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+            <div class="who">3. Indexando</div>
+            <div class="what">Ve el estado en tiempo real (~30-60 s)</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+            <div class="who">4. Indexado ✓</div>
+            <div class="what">El asistente ya puede responder con ese material</div>
+        </div>
+    </div>
+
+    <h3 style="font-size: 16px; margin: 32px 0 12px; font-weight: 600;">🔁 Journey docente — actualización</h3>
+    <div class="flow">
+        <div class="flow-step">
+            <div class="who">1. Edita PDF</div>
+            <div class="what">El docente actualiza un material</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+            <div class="who">2. Re-indexar</div>
+            <div class="what">Click en "Re-indexar" en la fila del archivo</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+            <div class="who">3. Backend</div>
+            <div class="what">Borra chunks viejos + procesa el nuevo</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+            <div class="who">4. Listo</div>
+            <div class="what">Asistente responde con la nueva versión</div>
+        </div>
+    </div>
+
+</section>
+
+<!-- ============================================================
+     DECISIONES DE DISEÑO
+============================================================ -->
+<section class="view" id="view-decisiones">
+    <div class="view-header">
+        <h2>Decisiones de diseño · UX rationale</h2>
+        <p>Por qué cada decisión fue tomada así, para defender ante el equipo y la profe en el Sprint Review.</p>
+    </div>
+
+    <div class="wf-grid">
+        <div class="wf">
+            <div class="wf-label"><strong>FAB flotante vs. modal fullscreen</strong></div>
+            <div class="wf-canvas">
+                <p style="font-size: 13px; line-height: 1.6;">
+                    <strong>Decisión:</strong> Floating Action Button (FAB) en bottom-right.
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>Por qué:</strong> el alumno suele consultar al asistente <em>mientras</em> lee el material (hace cuentas, mira un PDF, ve un video). Un panel flotante permite ambas cosas. Modal fullscreen rompería el flujo y obligaría a alternar.
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>Inspiración:</strong> Intercom, Crisp, ChatGPT widget para sites.
+                </p>
+            </div>
+        </div>
+
+        <div class="wf">
+            <div class="wf-label"><strong>Indexación asincrónica vs. sincrónica</strong></div>
+            <div class="wf-canvas">
+                <p style="font-size: 13px; line-height: 1.6;">
+                    <strong>Decisión:</strong> el docente sube el PDF y obtiene "indexando..." inmediatamente. El procesamiento ocurre en background.
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>Por qué:</strong> un PDF de 50 páginas tarda 30-60 s en chunkear + embedear. Bloquear la UI todo ese tiempo es frustrante. La asincronía es estándar (Notion, Airtable, etc.).
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>Trade-off:</strong> el docente tiene que volver a la pestaña para ver el resultado. Mitigación: notificación nativa de Moodle cuando termina (Sprint 3).
+                </p>
+            </div>
+        </div>
+
+        <div class="wf">
+            <div class="wf-label"><strong>Mostrar fuentes vs. solo respuesta</strong></div>
+            <div class="wf-canvas">
+                <p style="font-size: 13px; line-height: 1.6;">
+                    <strong>Decisión:</strong> mostrar fuentes citadas debajo de cada respuesta (Sprint 2).
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>Por qué:</strong> el principio rector de NexusAI es "no inventar". Si la respuesta cita explícitamente "según apunte-derivadas.pdf, página 12", el alumno gana confianza Y aprende a usar el material.
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>Implementación:</strong> los chunks tienen <code>document_id</code> y <code>chunk_index</code>; el LLM puede referenciarlos en la respuesta y el frontend los renderiza como links/cards expandibles.
+                </p>
+            </div>
+        </div>
+
+        <div class="wf">
+            <div class="wf-label"><strong>Idioma del chat — auto vs. manual</strong></div>
+            <div class="wf-canvas">
+                <p style="font-size: 13px; line-height: 1.6;">
+                    <strong>Decisión:</strong> auto-detectar el idioma del usuario desde Moodle (<code>current_language()</code>).
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>Por qué:</strong> Moodle ya tiene la preferencia del usuario. Forzar al alumno a elegir idioma de nuevo es fricción innecesaria.
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>System prompt al LLM:</strong> "Respondé en el mismo idioma que el alumno" — Gemini detecta auto-magic. UI con strings en es/en según el lang activo.
+                </p>
+            </div>
+        </div>
+
+        <div class="wf">
+            <div class="wf-label"><strong>Estado de error: mostrar detalle vs. ocultar</strong></div>
+            <div class="wf-canvas">
+                <p style="font-size: 13px; line-height: 1.6;">
+                    <strong>Decisión:</strong> mostrar el mensaje real del backend (no genérico).
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>Por qué:</strong> en MVP universitario, los alumnos son técnicos (Ingeniería en Sistemas). Un "Algo falló" es menos útil que "HTTP 503: rate limit excedido". El detalle ayuda a soportar.
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>En producción a escala:</strong> revisar — si los usuarios no son técnicos, ocultar el detalle y mostrar mensajes amigables. Configurable vía <code>$CFG->debug</code>.
+                </p>
+            </div>
+        </div>
+
+        <div class="wf">
+            <div class="wf-label"><strong>Color identitario violeta</strong></div>
+            <div class="wf-canvas">
+                <p style="font-size: 13px; line-height: 1.6;">
+                    <strong>Decisión:</strong> gradiente violeta (#6366f1 → #8b5cf6) como color principal del FAB y header.
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>Por qué:</strong> diferencia visualmente a NexusAI del azul de Moodle Boost (theme default). El violeta también es asociación cultural con AI/tecnología (OpenAI, Anthropic, etc.).
+                </p>
+                <p style="font-size: 13px; line-height: 1.6; margin-top: 12px;">
+                    <strong>A futuro:</strong> permitir al admin de Moodle override del color para alinear con el branding institucional (Sprint 4 — post-MVP).
+                </p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+</main>
+
+<script>
+const tabs = document.querySelectorAll('nav.tabs button');
+const views = document.querySelectorAll('section.view');
+
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        const target = tab.dataset.view;
+        tabs.forEach(t => t.classList.remove('active'));
+        views.forEach(v => v.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('view-' + target).classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+});
+</script>
+
+</body>
+</html>
