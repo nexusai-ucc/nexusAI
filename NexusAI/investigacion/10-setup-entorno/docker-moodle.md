@@ -194,6 +194,7 @@ bin/moodle-docker-compose exec webserver \
 | PHPUnit falla con "behat no inicializado" | Falta init | `php admin/tool/phpunit/cli/init.php` |
 | "Your Moodle is out of date" después de `git pull` del plugin | Cambió `version.php` | Visitar `/admin/index.php` |
 | Credenciales admin de moodle-docker | Default tras install vía CLI | Usuario `admin`, password `test` (las define el script `install_database.php` en el quickstart oficial) |
+| Plugin tira "Cannot reach NexusAI backend: The URL is blocked" | El filtro `curlsecurityblockedhosts` de Moodle bloquea localhost/IPs privadas (anti-SSRF). El backend FastAPI corre en `host.docker.internal:8001`, que resuelve a una IP privada bloqueada. | En dev: vaciar `Site admin → Security → HTTP security → cURL blocked hosts list` y agregar `8001` a `cURL allowed ports list`. En prod: el backend estará en dominio público con HTTPS y no hace falta tocar nada. |
 
 ## Decisiones tomadas para NexusAI
 

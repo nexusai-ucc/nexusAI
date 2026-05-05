@@ -121,6 +121,15 @@ cmd_status() {
     docker compose --profile full --profile tools ps
 }
 
+cmd_reload() {
+    check_prereqs
+    log "Recreando containers (lee .env nuevo)..."
+    docker compose up -d --force-recreate postgres redis api
+    sleep 5
+    ok "Containers recreados con la config actual del .env."
+    echo "   Verificá:  ./scripts/dev.sh logs api"
+}
+
 cmd_help() {
     cat <<EOF
 NexusAI — helper de desarrollo
@@ -132,6 +141,7 @@ COMANDOS:
   up            Levanta stack mínimo (postgres + redis + api)
   full          Levanta stack completo (+ moodle)
   tools         Levanta herramientas de inspección (pgAdmin)
+  reload        Recrea containers leyendo .env nuevo (usar tras editar .env)
   down          Para todos los servicios (preserva datos)
   destroy       Borra TODOS los volúmenes y datos (¡irreversible!)
   status        Muestra el estado de los containers
@@ -162,6 +172,7 @@ case "${1:-help}" in
     up)         cmd_up ;;
     full)       cmd_full ;;
     tools)      cmd_tools ;;
+    reload)     cmd_reload ;;
     down)       cmd_down ;;
     destroy)    cmd_destroy ;;
     status|ps)  cmd_status ;;
