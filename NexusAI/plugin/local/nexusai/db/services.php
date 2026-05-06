@@ -23,22 +23,65 @@ defined('MOODLE_INTERNAL') || die();
 
 $functions = [
 
+    // ----- ALUMNO -----
+
     // Enviar un mensaje del alumno al asistente y recibir la respuesta del LLM.
     // Esta es la función que invoca React vía core/ajax.
     'local_nexusai_chat_send' => [
         'classname'     => '\local_nexusai\external\chat_send',
         'methodname'    => 'execute',
         'description'   => 'Send a message to the NexusAI assistant and get the LLM response.',
-        // 'write' porque el backend persiste la sesión y el mensaje en la DB.
-        // Usar 'read' acá daría falso negativo a sistemas de auditoría.
         'type'          => 'write',
-        // Habilitar invocación desde core/ajax (requerido para nuestro frontend).
         'ajax'          => true,
-        // Capabilities exigidas. La external function igual va a re-chequear
-        // contra el contexto del curso adentro del execute() — esto es una
-        // primera línea de defensa.
         'capabilities'  => 'local/nexusai:use',
-        // Logging de uso. Sirve para debugging y futura analytics.
+        'loginrequired' => true,
+    ],
+
+    // ----- DOCENTE -----
+
+    // Subir un documento (PDF) del curso para indexarlo en el backend RAG.
+    // Recibe un `draftitemid` del file picker de Moodle, lee el archivo del
+    // file API, lo encodea en base64 y POSTea al backend.
+    'local_nexusai_document_upload' => [
+        'classname'     => '\local_nexusai\external\document_upload',
+        'methodname'    => 'execute',
+        'description'   => 'Upload a course document (PDF) to NexusAI for indexing.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    // Listar todos los documentos indexados de un curso (para la tabla docente).
+    'local_nexusai_document_list' => [
+        'classname'     => '\local_nexusai\external\document_list',
+        'methodname'    => 'execute',
+        'description'   => 'List all NexusAI-indexed documents for a course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    // Estado de un documento individual (para polling durante indexación).
+    'local_nexusai_document_status' => [
+        'classname'     => '\local_nexusai\external\document_status',
+        'methodname'    => 'execute',
+        'description'   => 'Get the current status of an indexing job.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    // Borrar un documento (cascada borra los chunks asociados).
+    'local_nexusai_document_delete' => [
+        'classname'     => '\local_nexusai\external\document_delete',
+        'methodname'    => 'execute',
+        'description'   => 'Delete a NexusAI-indexed document and all its chunks.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
         'loginrequired' => true,
     ],
 

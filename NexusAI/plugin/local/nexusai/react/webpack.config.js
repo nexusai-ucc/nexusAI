@@ -25,12 +25,20 @@ module.exports = (env, argv) => {
     const isProd = argv.mode === 'production';
 
     return {
-        entry: './src/index.jsx',
+        // Dos bundles AMD separados: uno para el chat flotante (cargado en TODAS
+        // las páginas de curso), otro para la vista docente (solo en /documents.php).
+        // Cada uno se compila como `<entry>.min.js` en amd/build/.
+        entry: {
+            'chatwidget-lazy':       './src/index.jsx',
+            'documents-manager-lazy': './src/documents/index.jsx',
+        },
 
         output: {
             // Va directo al directorio que Moodle sirve.
             path: path.resolve(__dirname, '../amd/build'),
-            filename: 'chatwidget-lazy.min.js',
+            // [name] viene de la key del entry, así obtenemos los 2 bundles
+            // con sus nombres correctos.
+            filename: '[name].min.js',
             // 'amd' = AMDjs / RequireJS. Moodle lo carga con `js_call_amd()`.
             libraryTarget: 'amd',
             // Limpiar el directorio antes de cada build, así no quedan archivos viejos.

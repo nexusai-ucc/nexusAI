@@ -109,6 +109,87 @@ class backend_client {
     }
 
     /**
+     * Upload de un documento al backend para indexación RAG.
+     *
+     * El archivo viaja como base64 dentro de un JSON (no multipart) para que el
+     * HMAC sea predictible. Ver decisión arquitectónica en
+     * services/api/app/documents/router.py.
+     *
+     * @param int    $courseid     ID del curso (validado por la external function).
+     * @param int    $uploaderid   $USER->id real del docente (no del cliente).
+     * @param string $filename     Nombre del archivo.
+     * @param string $mimetype     MIME type (solo 'application/pdf' aceptado en MVP).
+     * @param string $filebytes    Contenido binario del archivo (raw, NO base64).
+     * @return array{id:string, course_id:int, uploader_id:int, filename:string, mime_type:string, status:string, error_message:?string}
+     *
+     * @throws \moodle_exception Si el backend rechaza o la red falla.
+     */
+    public function upload_document(int $courseid, int $uploaderid, string $filename, string $mimetype, string $filebytes): array {
+        $payload = [
+            'course_id'   => $courseid,
+            'uploader_id' => $uploaderid,
+            'filename'    => $filename,
+            'mime_type'   => $mimetype,
+            'content_b64' => base64_encode($filebytes),
+        ];
+
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+
+        return $this->post('/api/v1/documents', $body);
+    }
+
+    /**
+     * Lista los documentos indexados de un curso.
+     *
+     * @param int $courseid ID del curso de Moodle.
+     * @return array Lista de documentos con su estado actual.
+     */
+    public function list_documents(int $courseid): array {
+        return $this->get('/api/v1/documents?course_id=' . $courseid);
+    }
+
+    /**
+     * Estado de un documento individual (polling durante indexación).
+     *
+     * @param string $documentid UUID del documento.
+     * @return array Estado actual del documento.
+     */
+    public function get_document(string $documentid): array {
+        return $this->get('/api/v1/documents/' . $documentid);
+    }
+
+    /**
+     * Borra un documento. El backend hace CASCADE sobre los chunks asociados.
+     *
+     * @param string $documentid UUID del documento.
+     */
+    public function delete_document(string $documentid): void {
+        $this->delete('/api/v1/documents/' . $documentid);
+    }
+
+    /**
+     * GET autenticado con HMAC. Body firmado = string vacío.
+     *
+     * @param string $path Path relativo (ej: '/api/v1/documents?course_id=1').
+     * @return array Decodificado del response.
+     */
+    private function get(string $path): array {
+        return $this->request('GET', $path, '');
+    }
+
+    /**
+     * DELETE autenticado con HMAC. Body firmado = string vacío.
+     *
+     * @param string $path Path relativo.
+     */
+    private function delete(string $path): void {
+        $this->request('DELETE', $path, '', expectjson: false);
+    }
+
+    /**
      * POST autenticado al backend con HMAC + Bearer.
      *
      * @param string $path  Path relativo (ej: '/api/v1/chat/messages').
@@ -118,6 +199,25 @@ class backend_client {
      * @throws \moodle_exception Si el HTTP status no es 200, o si el JSON viene roto.
      */
     private function post(string $path, string $body): array {
+        return $this->request('POST', $path, $body);
+    }
+
+    /**
+     * Request HTTP autenticada con HMAC + Bearer. Soporta GET/POST/DELETE.
+     *
+     * Acepta cualquier código 2xx como éxito (no solo 200): 202 Accepted
+     * para uploads async, 204 No Content para deletes.
+     *
+     * @param string $method     'GET' | 'POST' | 'DELETE'
+     * @param string $path       Path relativo (ej: '/api/v1/chat/messages')
+     * @param string $body       Body firmado (vacío para GET/DELETE)
+     * @param bool   $expectjson Si la respuesta debe ser JSON parseable.
+     *                           false para 204 No Content.
+     * @return array Decodificado del response (vacío si expectjson=false).
+     *
+     * @throws \moodle_exception Si HTTP status no es 2xx o si el JSON viene roto.
+     */
+    private function request(string $method, string $path, string $body, bool $expectjson = true): array {
         $timestamp = (string) time();
         $nonce     = self::generate_nonce();
         $signature = self::compute_signature($this->secret, $timestamp, $nonce, $body);
@@ -134,19 +234,33 @@ class backend_client {
             'X-Signature: ' . $signature,
         ]);
         $curl->setopt([
-            // 120 segundos: las respuestas de LLM pueden tardar bastante,
-            // especialmente con el modelo embebido haciendo retrieval RAG.
+            // 120 segundos para chat (LLM puede tardar). Para upload del PDF,
+            // el backend devuelve 202 inmediato y el indexing va en background,
+            // así que con 120s sobra para uploads de hasta ~20MB en redes lentas.
             'CURLOPT_TIMEOUT'        => 120,
             'CURLOPT_CONNECTTIMEOUT' => 10,
             'CURLOPT_RETURNTRANSFER' => true,
         ]);
 
         $url = $this->endpoint . $path;
-        $response = $curl->post($url, $body);
-        $info     = $curl->get_info();
-        $errno    = $curl->get_errno();
 
-        // Errores de red (DNS, conexión, timeout): el backend ni siquiera contestó.
+        switch (strtoupper($method)) {
+            case 'POST':
+                $response = $curl->post($url, $body);
+                break;
+            case 'GET':
+                $response = $curl->get($url);
+                break;
+            case 'DELETE':
+                $response = $curl->delete($url);
+                break;
+            default:
+                throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'Unsupported HTTP method: ' . $method);
+        }
+
+        $info  = $curl->get_info();
+        $errno = $curl->get_errno();
+
         if ($errno || empty($info['http_code'])) {
             throw new \moodle_exception(
                 'errorbackendunreachable', 'local_nexusai', '',
@@ -155,10 +269,10 @@ class backend_client {
         }
 
         $httpcode = (int) $info['http_code'];
-        if ($httpcode !== 200) {
-            // Devolvemos el body del error si vino, para debugging.
+        // Aceptar cualquier 2xx — útil para 202 Accepted (upload async) y 204
+        // No Content (delete).
+        if ($httpcode < 200 || $httpcode >= 300) {
             $detail = $response ?: ('HTTP ' . $httpcode);
-            // Truncar para que no inunde los logs si el backend devuelve HTML.
             if (strlen($detail) > 500) {
                 $detail = substr($detail, 0, 500) . '...';
             }
@@ -166,6 +280,10 @@ class backend_client {
                 'errorbackend', 'local_nexusai', '',
                 'HTTP ' . $httpcode . ': ' . $detail
             );
+        }
+
+        if (!$expectjson) {
+            return [];  // 204 No Content y similares.
         }
 
         $decoded = json_decode($response, true);

@@ -48,5 +48,9 @@ $string['chatwidget_send']         = 'Send';
 $string['chatwidget_loading']      = 'Loading...';
 $string['chatwidget_error']        = 'Something went wrong. Try again in a moment.';
 
+// Teacher view — document management.
+$string['documents_page_title']    = 'NexusAI · Materials';
+$string['documents_page_noscript'] = 'This page requires JavaScript to manage materials indexed by the NexusAI assistant.';
+
 // Privacy API.
 $string['privacy:metadata'] = 'The NexusAI plugin does not store personal data in Moodle. All chat history lives in the external NexusAI backend service.';

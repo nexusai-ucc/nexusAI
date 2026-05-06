@@ -63,3 +63,36 @@ function local_nexusai_before_footer(): string {
 
     return '<div id="local-nexusai-container" data-plugin="nexusai"></div>';
 }
+
+/**
+ * Hook ejecutado por Moodle cuando arma el navbar de un curso.
+ *
+ * Agregamos un link "📚 NexusAI" que lleva a la página de gestión de documentos,
+ * SOLO visible para usuarios con capability local/nexusai:manage (docentes y admins).
+ * Los alumnos no ven este link — interactúan con el chat flotante únicamente.
+ *
+ * Este hook funciona en TODAS las versiones soportadas (Moodle 4.1 LTS hasta
+ * 4.5) — no fue migrado a Hook API nuevo.
+ *
+ * @param navigation_node $navigation Nodo del curso al que sumamos el item.
+ * @param stdClass        $course     Objeto del curso actual.
+ * @param context_course  $context    Contexto del curso.
+ */
+function local_nexusai_extend_navigation_course($navigation, $course, $context): void {
+    if (!has_capability('local/nexusai:manage', $context)) {
+        return;
+    }
+
+    $url = new moodle_url('/local/nexusai/documents.php', ['courseid' => $course->id]);
+    $node = navigation_node::create(
+        get_string('documents_page_title', 'local_nexusai'),
+        $url,
+        navigation_node::TYPE_SETTING,
+        null,
+        'local_nexusai_documents',
+        new pix_icon('i/files', '')
+    );
+
+    $navigation->add_node($node);
+}
+
