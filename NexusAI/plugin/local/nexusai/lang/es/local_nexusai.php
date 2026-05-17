@@ -48,6 +48,9 @@ $string['chatwidget_send']         = 'Enviar';
 $string['chatwidget_loading']      = 'Cargando...';
 $string['chatwidget_error']        = 'Algo salió mal. Intentá de nuevo en un momento.';
 
+// Página de administración con health check.
+$string['admin_page_title']        = 'NexusAI · Panel de administración';
+
 // Vista docente — gestión de documentos.
 $string['documents_page_title']    = 'NexusAI · Material';
 $string['documents_page_noscript'] = 'Esta página requiere JavaScript habilitado para gestionar el material indexado por el asistente NexusAI.';

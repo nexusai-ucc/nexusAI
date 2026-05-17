@@ -9,6 +9,10 @@
  *                   negritas, código, etc. — antes salía con asteriscos crudos.
  *   - "system"    → no se muestra (es solo prompt interno)
  *
+ * Los mensajes del asistente se renderizan como Markdown usando marked +
+ * DOMPurify para sanitizar el HTML resultante. Los mensajes del usuario se
+ * muestran como texto plano (pre-wrap) para no procesar markdown del input.
+ *
  * Citas de fuente:
  *   El system prompt del backend (services/api/app/chat/router.py) le pide al
  *   LLM citar el archivo de origen así: "según apunte-X.pdf...". Detectamos
@@ -17,13 +21,41 @@
  *   material salió la respuesta sin contaminar el cuerpo del mensaje.
  */
 
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { useMemo } from "react";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 // Matchea menciones tipo "según archivo.pdf", "fuente: apunte-derivadas.pdf",
 // "(materia-01.docx)". Es deliberadamente conservador para evitar falsos
 // positivos: pide un punto seguido de pdf/docx/txt (case-insensitive).
 const SOURCE_REGEX = /([\w\-]+\.(pdf|docx|txt))/gi;
+
+// Configuración de marked: GFM habilitado, links forzados a target=_blank
+// para no romper la sesión de Moodle abriendo en el mismo tab.
+marked.use({
+    gfm: true,
+    breaks: true,
+    renderer: {
+        link(href, title, text) {
+            const titleAttr = title ? ` title="${title}"` : "";
+            return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+        },
+    },
+});
+
+function renderMarkdown(text) {
+    const rawHtml = marked.parse(text || "");
+    return DOMPurify.sanitize(rawHtml, {
+        ALLOWED_TAGS: [
+            "p", "br", "strong", "em", "b", "i", "u", "s", "del",
+            "ul", "ol", "li", "code", "pre", "blockquote",
+            "h1", "h2", "h3", "h4", "h5", "h6",
+            "a", "hr",
+        ],
+        ALLOWED_ATTR: ["href", "target", "rel", "title"],
+        FORCE_BODY: false,
+    });
+}
 
 function formatTimestamp(isoString) {
     if (!isoString) return "";
@@ -63,6 +95,11 @@ export default function MessageBubble({ message }) {
     const className = `nexusai-msg ${isUser ? "nexusai-msg--user" : "nexusai-msg--assistant"}`;
     const sources = isUser ? [] : extractSources(message.content);
 
+    const htmlContent = useMemo(() => {
+        if (isUser) return null;
+        return renderMarkdown(message.content);
+    }, [isUser, message.content]);
+
     return (
         <div className={className}>
             <div className="nexusai-msg__bubble">
@@ -71,21 +108,11 @@ export default function MessageBubble({ message }) {
                     // line breaks (el white-space:pre-wrap del CSS hace ese trabajo).
                     message.content
                 ) : (
-                    // El LLM devuelve markdown. ReactMarkdown lo parsea de forma
-                    // segura (no inyecta HTML crudo, así que no hay riesgo XSS).
-                    // remark-gfm habilita tablas, tachado, listas con [ ], y autolinks.
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                            // Forzamos target=_blank en links para que no rompan
-                            // la sesión de Moodle abriéndolos en el mismo tab.
-                            a: ({ node, ...props }) => (
-                                <a {...props} target="_blank" rel="noopener noreferrer" />
-                            ),
-                        }}
-                    >
-                        {message.content}
-                    </ReactMarkdown>
+                    <div
+                        className="nexusai-msg__markdown"
+                        // DOMPurify sanitizes before this point.
+                        dangerouslySetInnerHTML={{ __html: htmlContent }}
+                    />
                 )}
             </div>
 
