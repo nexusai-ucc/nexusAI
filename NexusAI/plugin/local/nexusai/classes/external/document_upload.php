@@ -50,10 +50,17 @@ class document_upload extends \external_api {
         ]);
     }
 
+    /** MIME types permitidos → validador de magic bytes. */
+    private const ALLOWED_MIME_TYPES = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
+    ];
+
     /**
      * @param int    $courseid    ID del curso (el contexto del curso valida acceso).
      * @param string $filename    Nombre del archivo subido.
-     * @param string $mimetype    MIME type. Solo 'application/pdf' aceptado en MVP.
+     * @param string $mimetype    MIME type: PDF, DOCX o TXT.
      * @param string $contentb64  Contenido binario del archivo en base64.
      * @return array Document state después del upload.
      */
@@ -72,10 +79,10 @@ class document_upload extends \external_api {
         self::validate_context($context);
         require_capability('local/nexusai:manage', $context);
 
-        // Validar tipo MIME — solo PDF en MVP.
-        if ($params['mimetype'] !== 'application/pdf') {
+        // Validar tipo MIME contra la lista de tipos permitidos.
+        if (!in_array($params['mimetype'], self::ALLOWED_MIME_TYPES, true)) {
             throw new \invalid_parameter_exception(
-                'Only PDF is supported in MVP. Got: ' . $params['mimetype']
+                'Unsupported file type. Allowed: PDF, DOCX, TXT. Got: ' . $params['mimetype']
             );
         }
 
@@ -99,10 +106,8 @@ class document_upload extends \external_api {
             throw new \invalid_parameter_exception('Invalid base64 content');
         }
 
-        // Magic bytes: los PDFs empiezan con "%PDF-".
-        if (substr($filebytes, 0, 5) !== '%PDF-') {
-            throw new \invalid_parameter_exception('File does not look like a valid PDF');
-        }
+        // Validar magic bytes según tipo MIME declarado.
+        self::validate_magic_bytes($filebytes, $params['mimetype']);
 
         // POST al backend con HMAC. El cliente backend re-encodea a base64
         // (sí, doble encode/decode, pero el contrato del backend está en
@@ -133,5 +138,32 @@ class document_upload extends \external_api {
             'status'        => (string) $response['status'],
             'error_message' => $response['error_message'] ?? null,
         ];
+    }
+
+    /**
+     * Verifica magic bytes contra el MIME type declarado.
+     * Lanza invalid_parameter_exception si no coinciden.
+     */
+    private static function validate_magic_bytes(string $bytes, string $mimetype): void {
+        switch ($mimetype) {
+            case 'application/pdf':
+                // PDF: "%PDF-"
+                if (substr($bytes, 0, 5) !== '%PDF-') {
+                    throw new \invalid_parameter_exception('File does not look like a valid PDF');
+                }
+                break;
+            case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                // DOCX es un ZIP: magic bytes PK\x03\x04
+                if (substr($bytes, 0, 4) !== "PK\x03\x04") {
+                    throw new \invalid_parameter_exception('File does not look like a valid DOCX');
+                }
+                break;
+            case 'text/plain':
+                // TXT: verificar que sea UTF-8 válido (mb_check_encoding).
+                if (!mb_check_encoding($bytes, 'UTF-8')) {
+                    throw new \invalid_parameter_exception('TXT file is not valid UTF-8');
+                }
+                break;
+        }
     }
 }
