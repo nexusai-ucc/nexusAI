@@ -117,10 +117,16 @@ export async function getDocumentStatus(courseId, documentId) {
  * @param {File} file  Archivo del input HTML5 (drag-and-drop o input file)
  * @returns {Promise<object>}  Document state inicial (status='pending' o 'indexing')
  */
+const ACCEPTED_MIME_TYPES = new Set([
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+]);
+
 export async function uploadDocument(courseId, file) {
     if (!file) throw new Error("No file provided");
-    if (file.type !== "application/pdf") {
-        throw new Error(`Solo se aceptan PDFs en MVP. Recibido: ${file.type || "tipo desconocido"}`);
+    if (!ACCEPTED_MIME_TYPES.has(file.type)) {
+        throw new Error(`Formato no soportado: ${file.type || "desconocido"}. Se aceptan PDF, DOCX y TXT.`);
     }
     if (file.size > 20 * 1024 * 1024) {
         throw new Error(`Archivo muy grande (${formatBytes(file.size)}). Máximo: 20 MB`);

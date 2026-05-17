@@ -65,7 +65,8 @@ export default function DocumentsManager({ courseid, userid, lang = "es" }) {
         <div className="nexusai-documents">
             <p className="nexusai-documents__intro">
                 Los archivos que subís acá quedan disponibles para el asistente NexusAI cuando los alumnos
-                de este curso le hacen preguntas. La indexación tarda aproximadamente 30-60 segundos por PDF.
+                de este curso le hacen preguntas. Se aceptan PDF, DOCX y TXT. La indexación tarda
+                aproximadamente 30-60 segundos por archivo.
             </p>
 
             <UploadZone onUpload={handleUpload} disabled={uploading} />

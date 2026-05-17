@@ -8,7 +8,9 @@
 
 import { useRef, useState } from "react";
 
-export default function UploadZone({ onUpload, disabled, accept = "application/pdf" }) {
+const ACCEPT_TYPES = "application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain";
+
+export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES }) {
     const inputRef = useRef(null);
     const [dragOver, setDragOver] = useState(false);
 
@@ -73,13 +75,13 @@ export default function UploadZone({ onUpload, disabled, accept = "application/p
                 {disabled ? "⏳" : "⬆️"}
             </div>
             <div className="nexusai-dropzone__title">
-                {disabled ? "Subiendo archivo..." : "Arrastrá tus PDFs acá"}
+                {disabled ? "Subiendo archivo..." : "Arrastrá tu archivo acá"}
             </div>
             <div className="nexusai-dropzone__hint">
                 {disabled ? "Por favor esperá a que termine" : "o hacé click para seleccionar"}
             </div>
             <div className="nexusai-dropzone__formats">
-                Formatos: PDF · Tamaño máximo: 20 MB
+                Formatos: PDF · DOCX · TXT · Tamaño máximo: 20 MB
             </div>
         </div>
     );

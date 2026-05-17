@@ -69,4 +69,12 @@ if ($hassiteconfig) {
     ));
 
     $ADMIN->add('localplugins', $settings);
+
+    // Página de administración con health check del backend.
+    $ADMIN->add('localplugins', new admin_externalpage(
+        'local_nexusai_admin',
+        get_string('admin_page_title', 'local_nexusai'),
+        new moodle_url('/local/nexusai/admin.php'),
+        'moodle/site:config'
+    ));
 }
