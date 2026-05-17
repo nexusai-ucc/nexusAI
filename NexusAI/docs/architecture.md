@@ -80,7 +80,7 @@ flowchart TB
 | **Base de datos + vectores** | **PostgreSQL + pgvector** | PG 16, pgvector 0.3.5 con índice HNSW |
 | **LLM (MVP)** | **Gemini 2.5 Flash** | tier gratuito, vía SDK OpenAI-compatible. **Nota:** `gemini-2.0-flash` tiene `limit: 0` en cuentas free nuevas, usar 2.5 |
 | **LLM (producción)** | **GPT-4o-mini** | API OpenAI |
-| **Embeddings (MVP)** | `models/text-embedding-004` (Gemini) | 768 dim |
+| **Embeddings (MVP)** | `gemini-embedding-001` (Gemini, Matryoshka) | 768 dim |
 | **Embeddings (producción)** | `text-embedding-3-small` (OpenAI) | 1.536 dim — requiere re-indexación |
 | Cache + nonces HMAC | Redis | 7 alpine |
 | Containers | Docker Compose | profiles `dev`, `full`, `tools` |
@@ -109,8 +109,8 @@ sequenceDiagram
     P->>F: POST /api/v1/chat/messages<br/>+ Authorization: Bearer<br/>+ X-Timestamp · X-Nonce · X-Signature
     F->>F: verify_hmac (3 capas: API key + firma + nonce Redis)
     F->>PG: get_or_create chat_session<br/>+ INSERT user message
-    rect rgb(255, 240, 200)
-    Note right of F: Sprint 2 — pendiente:<br/>retrieval semántico
+    rect rgb(220, 255, 220)
+    Note right of F: Retrieval RAG — ✅ Sprint 2
     F->>E: embed(question)
     E-->>F: vector 768 dim
     F->>PG: SELECT chunks ORDER BY embedding <=> $1<br/>JOIN documents WHERE course_id = $2 LIMIT 5
@@ -125,14 +125,15 @@ sequenceDiagram
     R-->>A: respuesta aparece en panel
 ```
 
-**Latencia actual (sin retrieval, MVP):** 1.5–4 s end-to-end con respuesta no-streaming.
+**Latencia actual (con retrieval RAG):** 3–6 s end-to-end con respuesta no-streaming.
 
-**Latencia objetivo (Sprint 2 con SSE + retrieval):** 0.7 s primer token, 3–6 s respuesta completa.
+**Latencia objetivo (Sprint 3 con SSE):** 0.7 s primer token, 3–6 s respuesta completa.
 
-**Estado al 5 May 2026:**
-- Pasos 1–8, 14–17 ✅ implementados y funcionando
-- Pasos 9–13 (retrieval RAG) ⏳ pendientes Sprint 2 — el endpoint actual usa LLM con system prompt fijo, sin contexto del material del curso
-- Streaming SSE ⏳ pendiente Sprint 2
+**Estado al 20 May 2026 (cierre Sprint 2):**
+- Pasos 1–17 ✅ implementados y funcionando end-to-end
+- Retrieval RAG ✅ operativo con `gemini-embedding-001` (Matryoshka 768) sobre pgvector
+- Cita de fuentes en la respuesta del LLM ✅ + pills visuales en el frontend
+- Streaming SSE ⏳ trasladado a Sprint 3
 
 ---
 
@@ -140,13 +141,13 @@ sequenceDiagram
 
 Indexación es el proceso **offline** que ocurre cuando el docente sube material nuevo o pide reindexar.
 
-**Implementación al 5 May 2026:** módulos `extractor.py`, `chunker.py`, `pipeline.py` en `services/api/app/documents/` ✅. Falta el endpoint `POST /api/v1/documents` que dispare el pipeline desde la vista docente — Sprint 2.
+**Implementación al 20 May 2026 (cierre Sprint 2):** módulos `extractor.py`, `chunker.py`, `pipeline.py` + `retriever.py` en `services/api/app/documents/` ✅. Endpoints `POST/GET/DELETE /api/v1/documents` operativos con upload JSON+base64, BackgroundTasks para indexación async, y polling del estado desde la vista docente.
 
 ```mermaid
 flowchart LR
     PDF[PDFs/DOCX/TXT<br/>en mdl_files] --> EXT[extractor.py<br/>pdfplumber]
     EXT --> CHUNK[chunker.py<br/>tiktoken cl100k_base<br/>512 tokens / 64 overlap]
-    CHUNK --> EMB[EmbeddingProvider<br/>text-embedding-004 (768 dim)]
+    CHUNK --> EMB[EmbeddingProvider<br/>gemini-embedding-001<br/>Matryoshka 768 dim]
     EMB --> STORE[(pgvector<br/>INSERT INTO chunks)]
     EMB --> STATUS[document.status<br/>= 'indexed']
 ```
@@ -174,7 +175,7 @@ Detalle: [`investigacion/02-rag/chunking-strategies.md`](../investigacion/02-rag
 | FastAPI → LLM/Embeddings | API key servidor-side (variable de entorno, nunca llega al navegador) | ✅ |
 | Capabilities | `local/nexusai:use`, `:manage`, `:viewanalytics` por contexto de curso | ✅ |
 | Privacy API | `null_provider` en MVP (todos los datos personales viven en backend Python externo, no en Moodle). Migración planificada a `metadata\\provider` cuando se almacenen logs/cache en Moodle (ADR-006) | ✅ MVP / 🟨 plan |
-| Rate limiting | Por usuario por día (default 50 consultas, configurable). Implementación pendiente | ⏳ Sprint 2 |
+| Rate limiting | Por usuario por día (default 50 consultas, configurable). Implementación pendiente | ⏳ Sprint 3 |
 | Aislamiento por materia | Filtrado SQL `WHERE course_id = $X` directo sobre pgvector + capability check antes de cada request | ✅ |
 
 Detalle: [`investigacion/05-backend-fastapi/autenticacion-hmac.md`](../investigacion/05-backend-fastapi/autenticacion-hmac.md), [`docs/adr/005-hmac-php-python.md`](adr/005-hmac-php-python.md), [`docs/adr/006-privacy-strategy.md`](adr/006-privacy-strategy.md), [`investigacion/01-moodle/seguridad-capabilities.md`](../investigacion/01-moodle/seguridad-capabilities.md).
@@ -193,9 +194,9 @@ Cada decisión está formalizada como ADR (Architecture Decision Record):
 | [004](adr/004-gemini-mvp-openai-prod.md) | **Gemini 2.5 Flash** en MVP (gratuito), **GPT-4o-mini** en producción | ✅ Aceptada |
 | [005](adr/005-hmac-php-python.md) | **HMAC SHA-256 en 3 capas** (Bearer + firma + nonce Redis) entre PHP y Python | ✅ Aceptada |
 | [006](adr/006-privacy-strategy.md) | **Privacy API**: `null_provider` en MVP, migración planificada a `metadata\\provider` | ✅ Aceptada |
-| 007 (TBD) | **Chunking 512 tokens / 64 overlap** (formalizar lo implementado por Marcos) | 🟨 pendiente Sprint 2 |
-| 008 (TBD) | React compilado como **bundle único AMD vía Webpack** (sin chunks lazy, con `publicPath` configurado) | 🟨 pendiente Sprint 2 |
-| 009 (TBD) | Plugin tipo **`local`** con **Hook API nuevo de Moodle 4.4+** y callback legacy para 4.1-4.3 | 🟨 pendiente Sprint 2 |
+| 007 (TBD) | **Chunking 512 tokens / 64 overlap** (formalizar lo implementado por Marcos) | 🟨 pendiente Sprint 3 |
+| 008 (TBD) | React compilado como **bundle único AMD vía Webpack** (sin chunks lazy, con `publicPath` configurado) | 🟨 pendiente Sprint 3 |
+| 009 (TBD) | Plugin tipo **`local`** con **Hook API nuevo de Moodle 4.4+** y callback legacy para 4.1-4.3 | 🟨 pendiente Sprint 3 |
 
 ---
 
@@ -281,7 +282,7 @@ erDiagram
         text content
         int chunk_index
         int token_count NULL
-        vector embedding "Vector(768) — text-embedding-004"
+        vector embedding "Vector(768) — gemini-embedding-001 (Matryoshka)"
         timestamptz created_at
     }
 
@@ -305,9 +306,9 @@ erDiagram
 **Notas clave:**
 
 - IDs en **UUID v4** (no `bigint`) — facilita generación cliente, evita colisiones cross-DB en futuro.
-- `chunks.embedding` es `Vector(768)` (Gemini `text-embedding-004`). El cambio a `Vector(1536)` (OpenAI `text-embedding-3-small`) en producción requiere **migración del schema y re-indexación completa** — script automatizado planificado para post-MVP.
+- `chunks.embedding` es `Vector(768)` (Gemini `gemini-embedding-001` con Matryoshka). El cambio a `Vector(1536)` (OpenAI `text-embedding-3-small`) en producción requiere **migración del schema y re-indexación completa** — script automatizado planificado para post-MVP.
 - `ON DELETE CASCADE` en `chunks(document_id)` y `messages(session_id)` simplifica re-indexación y borrado de conversaciones.
-- Índices: `ix_documents_course_id`, `ix_chunks_document_id_chunk_index`, `ix_chat_sessions_user_id_course_id`, `ix_messages_session_id_created_at`. Plus el HNSW de pgvector sobre `embedding` (a agregar en Sprint 2 cuando se active el retrieval).
+- Índices: `ix_documents_course_id`, `ix_chunks_document_id_chunk_index`, `ix_chat_sessions_user_id_course_id`, `ix_messages_session_id_created_at`. Plus el índice **HNSW de pgvector** sobre `chunks.embedding` ✅ activo desde la migración 002 (Sprint 2).
 - **NO almacenamos analytics ni feedback en MVP.** Esas tablas se agregarán en Épica 04 (post-MVP).
 
 ### 9.2. Esquema en Moodle (plugin DB) — ⏳ MVP-mínimo
