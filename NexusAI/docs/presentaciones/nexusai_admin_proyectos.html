@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusAI — Administración de Proyectos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  /* Aurora pastel background */
+  --aurora-1: #fbcfe8;   /* pink-200 */
+  --aurora-2: #c4b5fd;   /* violet-300 */
+  --aurora-3: #93c5fd;   /* blue-300 */
+  --aurora-4: #67e8f9;   /* cyan-300 */
+
+  /* Text */
+  --ink:      #1e1b4b;   /* very dark indigo */
+  --ink-2:    #312e81;   /* indigo-900 */
+  --muted:    #475569;   /* slate-600 */
+  --dim:      #94a3b8;   /* slate-400 */
+
+  /* Glass */
+  --glass:    rgba(255,255,255,0.45);
+  --glass-2:  rgba(255,255,255,0.30);
+  --glass-3:  rgba(255,255,255,0.65);
+  --glass-bd: rgba(255,255,255,0.75);
+  --glass-bd2:rgba(255,255,255,0.55);
+
+  /* Accents */
+  --rose:     #ec4899;
+  --violet:   #8b5cf6;
+  --indigo:   #6366f1;
+  --sky:      #0ea5e9;
+  --teal:     #14b8a6;
+  --emerald:  #10b981;
+  --lime:     #84cc16;
+  --amber:    #f59e0b;
+  --orange:   #f97316;
+  --red:      #ef4444;
+  --fuchsia:  #d946ef;
+}
+
+html,body { width:100%; height:100%; font-family:'Inter','Plus Jakarta Sans',sans-serif; overflow:hidden; color:var(--ink); }
+body {
+  background:
+    radial-gradient(ellipse at 0% 0%,   #fbcfe8 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 0%, #c4b5fd 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%,#a5f3fc 0%, transparent 55%),
+    radial-gradient(ellipse at 0% 100%, #ddd6fe 0%, transparent 55%),
+    linear-gradient(135deg, #fef3f8 0%, #f5f3ff 40%, #eff6ff 80%, #ecfeff 100%);
+  background-attachment: fixed;
+}
+
+.deck { position:relative; width:100vw; height:100vh; }
+
+/* Floating color blobs for extra aurora feel */
+.blob { position:fixed; border-radius:50%; filter:blur(80px); opacity:.5; pointer-events:none; z-index:0; }
+.blob-1 { width:520px; height:520px; background:#f9a8d4; top:-160px; left:-160px; }
+.blob-2 { width:460px; height:460px; background:#a78bfa; top:-100px; right:-120px; }
+.blob-3 { width:380px; height:380px; background:#67e8f9; bottom:-100px; left:30%; }
+.blob-4 { width:300px; height:300px; background:#fcd34d; bottom:80px; right:-60px; opacity:.35; }
+
+.slide {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  padding:48px 64px 76px;
+  opacity:0; pointer-events:none;
+  transform:translateY(20px) scale(.985);
+  transition:opacity .45s cubic-bezier(.4,0,.2,1), transform .45s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+  z-index:2;
+}
+.slide.active { opacity:1; pointer-events:all; transform:translateY(0) scale(1); }
+.slide.exit   { opacity:0; transform:translateY(-20px) scale(.985); }
+
+.footer { position:absolute; bottom:22px; left:64px; right:64px; display:flex; align-items:center; justify-content:space-between; z-index:10; }
+.foot-brand { font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; color:var(--muted); letter-spacing:.18em; text-transform:uppercase; font-weight:600; }
+.slide-num { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--dim); letter-spacing:.1em; }
+
+.label { font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:var(--violet); margin-bottom:10px; }
+h2 { font-family:'Plus Jakarta Sans',sans-serif; font-size:clamp(40px,5.4vw,64px); font-weight:800; line-height:1.04; letter-spacing:-.025em; margin-bottom:28px; color:var(--ink); }
+h3 { font-family:'Plus Jakarta Sans',sans-serif; font-size:24px; font-weight:700; line-height:1.2; color:var(--ink); }
+p, li { font-size:20px; line-height:1.55; color:var(--muted); }
+.grad { background:linear-gradient(135deg, var(--rose) 0%, var(--violet) 50%, var(--sky) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+/* Glass card */
+.card {
+  background:var(--glass);
+  border:1px solid var(--glass-bd);
+  border-radius:24px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 8px 32px rgba(99,102,241,.08), inset 0 1px 0 rgba(255,255,255,.5);
+  padding:28px 32px;
+  position:relative;
+  overflow:hidden;
+}
+.card-top { position:absolute; top:0; left:24px; right:24px; height:3px; border-radius:2px; }
+.card-top.rose    { background:linear-gradient(90deg, var(--rose), var(--fuchsia)); }
+.card-top.violet  { background:linear-gradient(90deg, var(--violet), var(--indigo)); }
+.card-top.sky     { background:linear-gradient(90deg, var(--sky), var(--teal)); }
+.card-top.emerald { background:linear-gradient(90deg, var(--emerald), var(--lime)); }
+.card-top.amber   { background:linear-gradient(90deg, var(--amber), var(--orange)); }
+.card-top.cyan    { background:linear-gradient(90deg, var(--teal), var(--sky)); }
+
+.tag { display:inline-block; padding:6px 14px; background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); border-radius:999px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--violet); font-weight:500; }
+code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--violet); background:rgba(139,92,246,.08); padding:2px 8px; border-radius:6px; }
+
+.arrow-list { list-style:none; display:flex; flex-direction:column; gap:12px; }
+.arrow-list li { display:flex; align-items:flex-start; gap:12px; font-size:19px; color:var(--muted); line-height:1.45; }
+.arrow-list li::before { content:"→"; color:var(--violet); flex-shrink:0; margin-top:3px; font-size:16px; font-weight:700; }
+.arrow-list li.hi::before { color:var(--emerald); }
+.arrow-list li.hi { color:var(--emerald); font-weight:600; }
+
+/* Nav */
+.nav { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:center; align-items:center; gap:14px; padding:18px 24px; z-index:100; }
+.nav-inner {
+  display:flex; align-items:center; gap:12px;
+  background:var(--glass-3);
+  border:1px solid var(--glass-bd);
+  border-radius:999px;
+  padding:8px 14px;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:0 8px 24px rgba(99,102,241,.12);
+}
+.nav-btn { background:transparent; border:none; color:var(--muted); padding:8px 18px; border-radius:999px; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .18s; }
+.nav-btn:hover { background:rgba(139,92,246,.1); color:var(--ink); }
+.nav-icon { background:transparent; border:none; color:var(--muted); padding:8px; border-radius:50%; cursor:pointer; transition:all .18s; display:flex; align-items:center; justify-content:center; }
+.nav-icon:hover { background:rgba(139,92,246,.12); color:var(--ink); }
+.nav-icon svg { width:18px; height:18px; }
+.nav-dots { display:flex; gap:5px; align-items:center; padding:0 6px; }
+.nav-dot { width:6px; height:6px; border-radius:50%; background:rgba(99,102,241,.3); cursor:pointer; transition:all .2s; }
+.nav-dot.active { background:var(--violet); width:20px; border-radius:3px; }
+.nav-sep { width:1px; height:18px; background:rgba(99,102,241,.18); }
+
+/* ═══ S1 PORTADA ═══ */
+#s1 { justify-content:center; align-items:center; text-align:center; }
+.cover-tag { font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--violet); margin-bottom:24px; padding:8px 20px; background:var(--glass-3); border:1px solid var(--glass-bd); border-radius:999px; backdrop-filter:blur(20px); }
+.cover-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:clamp(84px,12vw,140px); font-weight:800; letter-spacing:-.04em; line-height:.95; margin-bottom:20px; }
+.cover-sub { font-size:24px; color:var(--muted); margin-bottom:60px; font-weight:400; max-width:680px; }
+.cover-meta { display:flex; gap:0; justify-content:center; align-items:stretch; flex-wrap:wrap; background:var(--glass-3); border:1px solid var(--glass-bd); border-radius:24px; backdrop-filter:blur(20px); padding:6px; box-shadow:0 8px 32px rgba(99,102,241,.08); }
+.cover-meta-item { display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 32px; }
+.cover-meta-sep { width:1px; background:rgba(99,102,241,.15); margin:12px 0; }
+.cover-meta-key { font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--dim); font-weight:600; }
+.cover-meta-val { font-size:18px; font-weight:600; color:var(--ink); }
+
+/* ═══ S2 PROBLEMA ═══ */
+.ps-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; flex:1; }
+.ps-card { padding:36px 40px; }
+.ps-icon { font-size:42px; margin-bottom:16px; }
+.ps-sub { font-size:13px; color:var(--dim); margin-bottom:14px; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:.22em; text-transform:uppercase; font-weight:700; }
+.ps-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:34px; font-weight:800; margin-bottom:16px; line-height:1.1; letter-spacing:-.02em; }
+.ps-title.prob { color:var(--rose); }
+.ps-title.sol  { color:var(--emerald); }
+
+/* ═══ S3 SOLUCIÓN ═══ */
+.pillars-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; flex:1; }
+.pillar { padding:28px 24px; text-align:left; display:flex; flex-direction:column; gap:12px; }
+.pillar .ico { font-size:38px; margin-bottom:4px; }
+.pillar .ttl { font-family:'Plus Jakarta Sans',sans-serif; font-size:22px; font-weight:700; color:var(--ink); line-height:1.2; }
+.pillar .dsc { font-size:16px; color:var(--muted); line-height:1.5; }
+
+/* ═══ S4 AVANCES ═══ */
+.adv-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; flex:1; }
+.adv-card { padding:28px 30px; display:flex; flex-direction:column; gap:12px; }
+.adv-big { font-family:'Plus Jakarta Sans',sans-serif; font-size:72px; font-weight:800; line-height:1; letter-spacing:-.03em; }
+.adv-big.emerald { color:var(--emerald); }
+.adv-big.violet  { color:var(--violet); }
+.adv-big.sky     { color:var(--sky); }
+.adv-lbl { font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--dim); }
+.adv-dsc { font-size:17px; color:var(--muted); line-height:1.45; }
+.adv-banner { background:var(--glass-3); border:1px solid rgba(16,185,129,.3); border-radius:16px; padding:18px 32px; display:flex; align-items:center; justify-content:center; gap:24px; flex-wrap:wrap; font-size:19px; margin-top:24px; backdrop-filter:blur(20px); }
+
+/* ═══ S5 GANTT ═══ */
+.gantt-wrap { padding:28px 32px; flex:1; display:flex; flex-direction:column; gap:18px; overflow:hidden; }
+.gantt-header { display:grid; grid-template-columns:180px repeat(11,1fr); gap:0; align-items:center; padding-bottom:10px; border-bottom:1px solid rgba(99,102,241,.15); }
+.gantt-month { font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); text-align:center; padding:0 2px; }
+.gantt-rows { display:flex; flex-direction:column; gap:10px; flex:1; justify-content:space-around; position:relative; padding-top:8px; }
+.gantt-row { display:grid; grid-template-columns:180px 1fr; gap:0; align-items:center; height:30px; position:relative; }
+.gantt-label { font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:var(--ink); padding-right:12px; }
+.gantt-bar-wrap { position:relative; height:24px; background:rgba(99,102,241,.06); border-radius:8px; }
+.gantt-bar { position:absolute; top:0; bottom:0; border-radius:8px; display:flex; align-items:center; padding:0 10px; font-size:11px; font-family:'JetBrains Mono',monospace; color:white; white-space:nowrap; overflow:hidden; font-weight:500; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.gantt-bar.setup { background:linear-gradient(90deg,#94a3b8,#64748b); }
+.gantt-bar.s1    { background:linear-gradient(90deg,#6366f1,#8b5cf6); }
+.gantt-bar.s2    { background:linear-gradient(90deg,#8b5cf6,#d946ef); }
+.gantt-bar.s3    { background:linear-gradient(90deg,#d946ef,#ec4899); }
+.gantt-bar.mvp   { background:linear-gradient(90deg,#10b981,#84cc16); }
+.gantt-bar.docs  { background:linear-gradient(90deg,#84cc16,#facc15); color:#422006; }
+.gantt-bar.post  { background:linear-gradient(90deg,#14b8a6,#0ea5e9); }
+.gantt-bar.check { background:linear-gradient(90deg,#a78bfa,#7c3aed); }
+.gantt-bar.def   { background:linear-gradient(90deg,#f59e0b,#f97316); }
+.gantt-today { position:absolute; top:-8px; bottom:-8px; width:2px; background:var(--rose); z-index:5; box-shadow:0 0 12px rgba(236,72,153,.5); }
+.gantt-today::after { content:'HOY'; position:absolute; top:-22px; left:50%; transform:translateX(-50%); font-family:'Plus Jakarta Sans',sans-serif; font-size:10px; font-weight:800; color:var(--rose); letter-spacing:.18em; padding:2px 8px; background:white; border-radius:6px; box-shadow:0 2px 8px rgba(236,72,153,.2); }
+.gantt-legend { display:flex; gap:18px; flex-wrap:wrap; font-size:13px; color:var(--muted); padding-top:10px; border-top:1px solid rgba(99,102,241,.15); }
+.gantt-legend-item { display:flex; align-items:center; gap:6px; font-weight:500; }
+.gantt-legend-dot { width:12px; height:12px; border-radius:4px; }
+
+/* ═══ S6 DECISIONES ═══ */
+.decisions-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+.dec-icon-title { display:flex; align-items:flex-start; gap:14px; }
+.dec-icon { font-size:32px; flex-shrink:0; margin-top:0; }
+.dec-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; padding-top:14px; }
+
+/* ═══ S7 MÉTRICAS GAUGES ═══ */
+.gauges-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; flex:1; }
+.gauge-card { display:flex; flex-direction:column; align-items:center; padding:28px 22px; gap:6px; }
+.gauge-card .ttl { font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; }
+.gauge-card .ttl.ges { color:var(--violet); }
+.gauge-card .ttl.cos { color:var(--amber); }
+.gauge-card .ttl.cal { color:var(--emerald); }
+.gauge-svg { width:100%; max-width:260px; }
+.gauge-val { font-family:'Plus Jakarta Sans',sans-serif; font-size:54px; font-weight:800; line-height:1; margin-top:-60px; letter-spacing:-.03em; }
+.gauge-val.emerald { color:var(--emerald); }
+.gauge-val.amber { color:var(--amber); }
+.gauge-val.fuchsia { color:var(--fuchsia); }
+.gauge-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:18px; font-weight:700; color:var(--ink); margin-top:38px; }
+.gauge-expl { font-size:14px; color:var(--muted); text-align:center; line-height:1.5; margin-top:6px; }
+.gauge-expl strong { color:var(--emerald); font-weight:700; }
+.gauge-expl strong.warn { color:var(--amber); }
+
+/* ═══ S8 ARQUITECTURA ═══ */
+.flow-simple { display:flex; align-items:center; justify-content:space-between; gap:6px; flex:1; padding:0 4px; }
+.flow-step { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px;
+  background:var(--glass);
+  border:1px solid var(--glass-bd);
+  border-radius:20px;
+  backdrop-filter:blur(20px) saturate(180%);
+  box-shadow:0 8px 24px rgba(99,102,241,.08);
+  padding:26px 14px; min-height:180px; justify-content:center;
+}
+.flow-step .ico { font-size:38px; }
+.flow-step .ttl { font-family:'Plus Jakarta Sans',sans-serif; font-size:17px; font-weight:700; color:var(--ink); line-height:1.2; }
+.flow-step .tch { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--violet); }
+.flow-arrow { color:var(--violet); font-size:24px; flex-shrink:0; font-weight:700; }
+.arch-notes { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-top:26px; }
+.arch-note { display:flex; align-items:center; gap:14px; padding:18px 22px;
+  background:var(--glass-2); border:1px solid var(--glass-bd2); border-radius:16px;
+  backdrop-filter:blur(16px); }
+.arch-note .ico { font-size:24px; }
+.arch-note .txt { font-size:15px; color:var(--muted); line-height:1.4; }
+.arch-note .txt strong { color:var(--ink); font-family:'Plus Jakarta Sans',sans-serif; font-size:16px; display:block; margin-bottom:2px; font-weight:700; }
+
+/* ═══ S9 INFRA / DEPLOY ═══ */
+.deploy-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; flex:1; }
+.deploy-card { padding:28px 28px; display:flex; flex-direction:column; gap:12px; }
+.deploy-tag { font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; }
+.deploy-tag.dev  { color:var(--violet); }
+.deploy-tag.demo { color:var(--sky); }
+.deploy-tag.prod { color:var(--emerald); }
+.deploy-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:26px; font-weight:800; color:var(--ink); line-height:1.15; letter-spacing:-.02em; }
+.deploy-desc { font-size:16px; color:var(--muted); line-height:1.5; }
+.deploy-chip { display:inline-block; padding:7px 14px; background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); border-radius:999px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--violet); margin-top:auto; align-self:flex-start; font-weight:500; }
+
+/* ═══ S10 COSTOS ═══ */
+.cost-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; flex:1; }
+.cost-card { padding:32px 36px; display:flex; flex-direction:column; gap:16px; }
+.cost-tag { font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; }
+.cost-tag.us { color:var(--fuchsia); }
+.cost-tag.op { color:var(--emerald); }
+.cost-head { font-family:'Plus Jakarta Sans',sans-serif; font-size:28px; font-weight:800; color:var(--ink); line-height:1.15; letter-spacing:-.02em; }
+.cost-bars { display:flex; flex-direction:column; gap:16px; margin-top:8px; }
+.cost-bar { display:flex; flex-direction:column; gap:6px; }
+.cost-bar-head { display:flex; justify-content:space-between; align-items:baseline; }
+.cost-bar-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:16px; font-weight:600; color:var(--ink); }
+.cost-bar-val  { font-family:'JetBrains Mono',monospace; font-size:16px; color:var(--violet); font-weight:500; }
+.cost-bar-track { height:14px; background:rgba(99,102,241,.08); border-radius:999px; overflow:hidden; }
+.cost-bar-fill { height:100%; border-radius:999px; }
+.cost-bar-fill.santi { background:linear-gradient(90deg,#6366f1,#8b5cf6); }
+.cost-bar-fill.delfi { background:linear-gradient(90deg,#d946ef,#ec4899); }
+.cost-total { display:flex; justify-content:space-between; align-items:baseline; padding-top:18px; border-top:1px solid rgba(99,102,241,.15); margin-top:auto; }
+.cost-total-lbl { font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:var(--dim); font-weight:700; }
+.cost-total-val { font-family:'Plus Jakarta Sans',sans-serif; font-size:32px; font-weight:800; color:var(--ink); letter-spacing:-.02em; }
+.cost-rows { display:flex; flex-direction:column; gap:0; }
+.cost-row { display:flex; justify-content:space-between; align-items:baseline; padding:16px 0; border-bottom:1px solid rgba(99,102,241,.08); }
+.cost-row:last-child { border-bottom:none; }
+.cost-row .k { color:var(--muted); font-size:16px; }
+.cost-row .v { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:24px; color:var(--emerald); letter-spacing:-.02em; }
+.cost-foot { font-size:14px; color:var(--dim); font-style:italic; margin-top:auto; padding-top:14px; }
+
+/* ═══ S11 ROADMAP ═══ */
+.roadmap-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; flex:1; }
+.rm-label { font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; }
+.rm-label.s3 { color:var(--sky); }
+.rm-label.s4 { color:var(--emerald); }
+.rm-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:30px; font-weight:800; color:var(--ink); line-height:1.2; margin-top:4px; letter-spacing:-.02em; }
+.rm-dates { font-size:15px; color:var(--dim); margin-bottom:10px; }
+.mvp-badge { background:linear-gradient(135deg, rgba(16,185,129,.12), rgba(132,204,22,.12)); border:1px solid rgba(16,185,129,.3); border-radius:14px; padding:18px 22px; font-family:'Plus Jakarta Sans',sans-serif; font-size:20px; font-weight:800; color:var(--emerald); text-align:center; margin-top:auto; letter-spacing:-.01em; }
+
+/* ═══ S12 CIERRE ═══ */
+#s12 { justify-content:center; align-items:center; text-align:center; }
+.close-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:clamp(70px,10vw,120px); font-weight:800; letter-spacing:-.04em; line-height:.95; margin-bottom:26px; }
+.close-phrase { font-size:26px; color:var(--muted); line-height:1.5; margin-bottom:48px; max-width:780px; }
+.close-phrase strong { color:var(--ink); font-weight:700; }
+.close-mvp-lbl { font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; letter-spacing:.24em; text-transform:uppercase; color:var(--dim); margin-bottom:12px; font-weight:700; }
+.close-mvp-date { font-family:'Plus Jakarta Sans',sans-serif; font-size:clamp(42px,6.5vw,70px); font-weight:800; background:linear-gradient(135deg, var(--rose) 0%, var(--violet) 50%, var(--sky) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:-.03em; }
+
+/* Fullscreen mode tweaks */
+:fullscreen .nav { padding:18px 24px; }
+:fullscreen body { background-attachment:fixed; }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+<div class="blob blob-4"></div>
+
+<div class="deck">
+
+<!-- ═══ S1 PORTADA ═══ -->
+<div class="slide active" id="s1">
+  <div class="cover-tag">Administración de Proyectos · UCC 2026</div>
+  <div class="cover-name grad">NexusAI</div>
+  <div class="cover-sub">Asistente Académico Inteligente para Campus Virtual</div>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><span class="cover-meta-key">Equipo</span><span class="cover-meta-val">Santiago Tricherri · Delfina Salinas</span></div>
+    <div class="cover-meta-sep"></div>
+    <div class="cover-meta-item"><span class="cover-meta-key">Fase</span><span class="cover-meta-val">Sprint 2 — pre-MVP</span></div>
+    <div class="cover-meta-sep"></div>
+    <div class="cover-meta-item"><span class="cover-meta-key">Fecha</span><span class="cover-meta-val">Mayo 2026</span></div>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">01 / 12</span></div>
+</div>
+
+<!-- ═══ S2 PROBLEMÁTICA ═══ -->
+<div class="slide" id="s2">
+  <div class="label">Punto de partida</div>
+  <h2>El problema que detectamos</h2>
+  <div class="ps-grid">
+    <div class="card ps-card">
+      <div class="card-top rose"></div>
+      <div class="ps-icon">⚠️</div>
+      <div class="ps-sub">Del lado del alumno</div>
+      <div class="ps-title prob">Se pierde en el material</div>
+      <ul class="arrow-list">
+        <li>PDFs, slides y apuntes dispersos en el aula virtual</li>
+        <li>Las dudas fuera de horario quedan sin responder</li>
+        <li>Los asistentes genéricos inventan respuestas</li>
+      </ul>
+    </div>
+    <div class="card ps-card">
+      <div class="card-top amber"></div>
+      <div class="ps-icon">📊</div>
+      <div class="ps-sub">Del lado del docente</div>
+      <div class="ps-title prob">No tiene visibilidad</div>
+      <ul class="arrow-list">
+        <li>No ve qué temas le cuestan al curso</li>
+        <li>Repite las mismas explicaciones cada año</li>
+        <li>Las plataformas existentes no usan SU material</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">02 / 12</span></div>
+</div>
+
+<!-- ═══ S3 SOLUCIÓN ═══ -->
+<div class="slide" id="s3">
+  <div class="label">Propuesta</div>
+  <h2>Un asistente IA dentro de Moodle</h2>
+  <div class="pillars-grid">
+    <div class="card pillar">
+      <div class="card-top emerald"></div>
+      <div class="ico">📚</div>
+      <div class="ttl">RAG real</div>
+      <div class="dsc">Responde con el material que sube el docente, no con conocimiento genérico.</div>
+    </div>
+    <div class="card pillar">
+      <div class="card-top sky"></div>
+      <div class="ico">🔖</div>
+      <div class="ttl">Cita la fuente</div>
+      <div class="dsc">Cada respuesta indica de qué PDF o apunte sale la información.</div>
+    </div>
+    <div class="card pillar">
+      <div class="card-top violet"></div>
+      <div class="ico">🧩</div>
+      <div class="ttl">Dentro de Moodle</div>
+      <div class="dsc">Plugin instalable. El alumno no se va del aula virtual para preguntar.</div>
+    </div>
+    <div class="card pillar">
+      <div class="card-top rose"></div>
+      <div class="ico">🔒</div>
+      <div class="ttl">Self-hosted</div>
+      <div class="dsc">Los datos académicos nunca salen del servidor de la institución.</div>
+    </div>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">03 / 12</span></div>
+</div>
+
+<!-- ═══ S4 AVANCES ═══ -->
+<div class="slide" id="s4">
+  <div class="label">Estado al día de hoy — 12 Mayo 2026</div>
+  <h2>Dónde estamos parados</h2>
+  <div class="adv-grid">
+    <div class="card adv-card">
+      <div class="card-top violet"></div>
+      <div class="adv-lbl">Sprint 1 — Completo</div>
+      <div class="adv-big violet">100%</div>
+      <div class="adv-dsc">Plugin Moodle instalado, backend FastAPI corriendo, widget React en el aula.</div>
+    </div>
+    <div class="card adv-card">
+      <div class="card-top sky"></div>
+      <div class="adv-lbl">Sprint 2 — En curso</div>
+      <div class="adv-big sky">~80%</div>
+      <div class="adv-dsc">Pipeline RAG operativo end-to-end. Vista docente para subir y indexar PDFs.</div>
+    </div>
+    <div class="card adv-card">
+      <div class="card-top emerald"></div>
+      <div class="adv-lbl">Issues cerrados</div>
+      <div class="adv-big emerald">25</div>
+      <div class="adv-dsc">El sistema responde preguntas usando el material real del curso, citando la fuente.</div>
+    </div>
+  </div>
+  <div class="adv-banner">
+    <span style="color:var(--emerald);font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;">MVP adelantado</span>
+    <span style="color:var(--dim)">·</span>
+    <span style="color:var(--ink);font-weight:600">4 días antes de lo planeado</span>
+    <span style="color:var(--dim)">·</span>
+    <span style="color:var(--muted)">Entrega 1 de junio</span>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">04 / 12</span></div>
+</div>
+
+<!-- ═══ S5 GANTT ═══ -->
+<div class="slide" id="s5">
+  <div class="label">Cronograma</div>
+  <h2>El proyecto en el tiempo</h2>
+
+  <div class="card gantt-wrap">
+    <div class="gantt-header">
+      <div></div>
+      <div class="gantt-month">Abr</div>
+      <div class="gantt-month">May</div>
+      <div class="gantt-month">Jun</div>
+      <div class="gantt-month">Jul</div>
+      <div class="gantt-month">Ago</div>
+      <div class="gantt-month">Sep</div>
+      <div class="gantt-month">Oct</div>
+      <div class="gantt-month">Nov</div>
+      <div class="gantt-month">Dic</div>
+      <div class="gantt-month">Ene</div>
+      <div class="gantt-month">Feb</div>
+    </div>
+
+    <div class="gantt-rows">
+      <div class="gantt-today" style="left:calc(180px + 12.7%);"></div>
+
+      <div class="gantt-row">
+        <div class="gantt-label">Setup + Investigación</div>
+        <div class="gantt-bar-wrap">
+          <div class="gantt-bar setup" style="left:0%;width:6%">9–22 Abr</div>
+        </div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Sprint 1</div>
+        <div class="gantt-bar-wrap">
+          <div class="gantt-bar s1" style="left:6%;width:6.5%">23 Abr – 6 May</div>
+        </div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Sprint 2</div>
+        <div class="gantt-bar-wrap">
+          <div class="gantt-bar s2" style="left:12.5%;width:6.5%">7–20 May</div>
+        </div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Sprint 3</div>
+        <div class="gantt-bar-wrap">
+          <div class="gantt-bar s3" style="left:19%;width:3.5%">21–27 May</div>
+        </div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Sprint 4 — MVP</div>
+        <div class="gantt-bar-wrap">
+          <div class="gantt-bar mvp" style="left:22.5%;width:3%">28 May – 1 Jun ⭐</div>
+        </div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Documentación MVP</div>
+        <div class="gantt-bar-wrap">
+          <div class="gantt-bar docs" style="left:25.5%;width:6%">2–15 Jun</div>
+        </div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Post-MVP</div>
+        <div class="gantt-bar-wrap">
+          <div class="gantt-bar post" style="left:31.5%;width:42%">Jun – Nov 2026</div>
+        </div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Check 2 PI</div>
+        <div class="gantt-bar-wrap">
+          <div class="gantt-bar check" style="left:70%;width:3%">3 Nov</div>
+        </div>
+      </div>
+      <div class="gantt-row">
+        <div class="gantt-label">Defensa final</div>
+        <div class="gantt-bar-wrap">
+          <div class="gantt-bar def" style="left:81.5%;width:18%">Ene – 27 Feb 2027 🎓</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gantt-legend">
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#94a3b8,#64748b)"></div><span>Setup</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#6366f1,#d946ef)"></div><span>Sprints</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#10b981,#84cc16)"></div><span>MVP + Documentación</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#14b8a6,#0ea5e9)"></div><span>Post-MVP</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#a78bfa,#7c3aed)"></div><span>Check 2</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#f59e0b,#f97316)"></div><span>Defensa final</span></div>
+    </div>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">05 / 12</span></div>
+</div>
+
+<!-- ═══ S6 DECISIONES ═══ -->
+<div class="slide" id="s6">
+  <div class="label">Decisiones técnicas</div>
+  <h2>Lo que decidimos por el camino</h2>
+  <div class="decisions-grid">
+    <div class="card" style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card-top violet"></div>
+      <div class="dec-icon-title"><span class="dec-icon">🗄️</span><h3>Una sola base de datos</h3></div>
+      <p>PostgreSQL + pgvector en lugar de una base vectorial aparte. Backup estándar, menos infra.</p>
+      <div class="dec-tags"><span class="tag">PostgreSQL 16</span><span class="tag">pgvector</span></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card-top sky"></div>
+      <div class="dec-icon-title"><span class="dec-icon">🔄</span><h3>IA intercambiable</h3></div>
+      <p>Cambiar de Gemini a GPT-4o-mini es solo modificar variables de entorno. Sin lock-in.</p>
+      <div class="dec-tags"><span class="tag">Gemini (dev)</span><span class="tag">GPT-4o-mini (prod)</span></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card-top rose"></div>
+      <div class="dec-icon-title"><span class="dec-icon">🔐</span><h3>Seguridad en 3 capas</h3></div>
+      <p>Bearer key + firma HMAC-SHA256 + anti-replay en Redis. La API key nunca llega al navegador.</p>
+      <div class="dec-tags"><span class="tag">HMAC-SHA256</span><span class="tag">Redis nonces</span></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card-top emerald"></div>
+      <div class="dec-icon-title"><span class="dec-icon">🧩</span><h3>Plugin no invasivo</h3></div>
+      <p>Tipo <code>local</code>: se instala en Moodle sin tocar el core. Compatible 4.1–4.5 LTS.</p>
+      <div class="dec-tags"><span class="tag">local_nexusai</span><span class="tag">Moodle 4.1–4.5</span></div>
+    </div>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">06 / 12</span></div>
+</div>
+
+<!-- ═══ S7 MÉTRICAS GAUGES ═══ -->
+<div class="slide" id="s7">
+  <div class="label">Métricas — Indicadores clave</div>
+  <h2>Cómo medimos que vamos bien</h2>
+
+  <div class="gauges-grid">
+
+    <div class="card gauge-card">
+      <div class="card-top violet"></div>
+      <div class="ttl ges">Tiempo</div>
+      <svg class="gauge-svg" viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e0e7ff" stroke-width="16" stroke-linecap="round" />
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="url(#grad-emerald)" stroke-width="16" stroke-linecap="round" stroke-dasharray="155.5 282.7" />
+        <defs>
+          <linearGradient id="grad-emerald" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#10b981"/>
+            <stop offset="100%" stop-color="#84cc16"/>
+          </linearGradient>
+        </defs>
+        <text x="20" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">0.0</text>
+        <text x="110" y="22" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">1.0 (meta)</text>
+        <text x="200" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">2.0</text>
+      </svg>
+      <div class="gauge-val emerald">1.10</div>
+      <div class="gauge-name">SPI · Avance del plan</div>
+      <div class="gauge-expl">Cada semana avanzamos <strong>10% más rápido</strong> de lo que habíamos planeado.<br>Bueno: mayor a 1.</div>
+    </div>
+
+    <div class="card gauge-card">
+      <div class="card-top amber"></div>
+      <div class="ttl cos">Costo</div>
+      <svg class="gauge-svg" viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e0e7ff" stroke-width="16" stroke-linecap="round" />
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="url(#grad-amber)" stroke-width="16" stroke-linecap="round" stroke-dasharray="120.1 282.7" />
+        <defs>
+          <linearGradient id="grad-amber" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#f97316"/>
+            <stop offset="100%" stop-color="#f59e0b"/>
+          </linearGradient>
+        </defs>
+        <text x="20" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">0.0</text>
+        <text x="110" y="22" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">1.0 (meta)</text>
+        <text x="200" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">2.0</text>
+      </svg>
+      <div class="gauge-val amber">0.85</div>
+      <div class="gauge-name">CPI · Uso del esfuerzo</div>
+      <div class="gauge-expl">Estamos usando <strong class="warn">15% más esfuerzo</strong> del estimado.<br>Aceptable: típico al arrancar un proyecto nuevo.</div>
+    </div>
+
+    <div class="card gauge-card">
+      <div class="card-top emerald"></div>
+      <div class="ttl cal">Calidad</div>
+      <svg class="gauge-svg" viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e0e7ff" stroke-width="16" stroke-linecap="round" />
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="url(#grad-fuchsia)" stroke-width="16" stroke-linecap="round" stroke-dasharray="282.7 282.7" />
+        <defs>
+          <linearGradient id="grad-fuchsia" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#d946ef"/>
+            <stop offset="100%" stop-color="#ec4899"/>
+          </linearGradient>
+        </defs>
+        <text x="20" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">0</text>
+        <text x="110" y="22" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">tests passed</text>
+        <text x="200" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">18</text>
+      </svg>
+      <div class="gauge-val fuchsia">100%</div>
+      <div class="gauge-name">Tests pasando</div>
+      <div class="gauge-expl"><strong>18 de 18</strong> tests automáticos pasan.<br>0 vulnerabilidades detectadas.</div>
+    </div>
+
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">07 / 12</span></div>
+</div>
+
+<!-- ═══ S8 ARQUITECTURA ═══ -->
+<div class="slide" id="s8">
+  <div class="label">Arquitectura</div>
+  <h2>Cómo funciona una pregunta</h2>
+
+  <div class="flow-simple">
+    <div class="flow-step">
+      <div class="ico">👨‍🎓</div>
+      <div class="ttl">Alumno pregunta</div>
+      <div class="tch">React widget</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="ico">🔐</div>
+      <div class="ttl">Moodle valida</div>
+      <div class="tch">Plugin PHP + HMAC</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="ico">🧠</div>
+      <div class="ttl">Backend busca</div>
+      <div class="tch">FastAPI + pgvector</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="ico">✨</div>
+      <div class="ttl">IA responde</div>
+      <div class="tch">Gemini con contexto</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="ico">📖</div>
+      <div class="ttl">Cita la fuente</div>
+      <div class="tch">"Según apunte-X.pdf"</div>
+    </div>
+  </div>
+
+  <div class="arch-notes">
+    <div class="arch-note">
+      <span class="ico">🔒</span>
+      <div class="txt"><strong>Seguro</strong>La API key nunca llega al navegador</div>
+    </div>
+    <div class="arch-note">
+      <span class="ico">⚡</span>
+      <div class="txt"><strong>Resiliente</strong>Si falla retrieval, el chat sigue funcionando</div>
+    </div>
+    <div class="arch-note">
+      <span class="ico">📚</span>
+      <div class="txt"><strong>Async</strong>Indexación en background, no bloquea la UI</div>
+    </div>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">08 / 12</span></div>
+</div>
+
+<!-- ═══ S9 INFRA / DEPLOY ═══ -->
+<div class="slide" id="s9">
+  <div class="label">Infraestructura</div>
+  <h2>Cómo lo desplegamos</h2>
+
+  <div class="deploy-grid">
+    <div class="card deploy-card">
+      <div class="card-top violet"></div>
+      <div class="deploy-tag dev">Desarrollo</div>
+      <div class="deploy-name">Docker Compose local</div>
+      <div class="deploy-desc">Stack completo en un comando. Postgres + Redis + FastAPI + Moodle todos en contenedores.</div>
+      <span class="deploy-chip">docker compose up -d</span>
+    </div>
+
+    <div class="card deploy-card">
+      <div class="card-top sky"></div>
+      <div class="deploy-tag demo">Demo / Piloto</div>
+      <div class="deploy-name">Railway o VPS chico</div>
+      <div class="deploy-desc">Para mostrar el MVP a usuarios reales sin esperar aprobación de TI. ~$5 al mes.</div>
+      <span class="deploy-chip">Railway · ngrok · Fly.io</span>
+    </div>
+
+    <div class="card deploy-card">
+      <div class="card-top emerald"></div>
+      <div class="deploy-tag prod">Producción UCC</div>
+      <div class="deploy-name">Servidor propio de la facultad</div>
+      <div class="deploy-desc">El stack corre dentro de la infraestructura UCC. Los datos académicos no salen nunca.</div>
+      <span class="deploy-chip">Self-hosted · GDPR-ready</span>
+    </div>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">09 / 12</span></div>
+</div>
+
+<!-- ═══ S10 COSTOS ═══ -->
+<div class="slide" id="s10">
+  <div class="label">Análisis económico</div>
+  <h2>Cuánto cuesta hacerlo y operarlo</h2>
+
+  <div class="cost-grid">
+    <div class="card cost-card">
+      <div class="card-top rose"></div>
+      <div class="cost-tag us">Costo del equipo</div>
+      <div class="cost-head">Horas invertidas</div>
+
+      <div class="cost-bars">
+        <div class="cost-bar">
+          <div class="cost-bar-head">
+            <span class="cost-bar-name">Santiago — PM + Backend</span>
+            <span class="cost-bar-val">~580 hs</span>
+          </div>
+          <div class="cost-bar-track">
+            <div class="cost-bar-fill santi" style="width:100%"></div>
+          </div>
+        </div>
+        <div class="cost-bar">
+          <div class="cost-bar-head">
+            <span class="cost-bar-name">Delfina — SM + Frontend</span>
+            <span class="cost-bar-val">~560 hs</span>
+          </div>
+          <div class="cost-bar-track">
+            <div class="cost-bar-fill delfi" style="width:96%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cost-total">
+        <div>
+          <div class="cost-total-lbl">Equivalente a tarifa junior</div>
+          <div style="font-size:13px;color:var(--dim);font-style:italic;margin-top:4px;">~1.140 hs · $20/h estimado</div>
+        </div>
+        <div class="cost-total-val">~$22.800</div>
+      </div>
+    </div>
+
+    <div class="card cost-card">
+      <div class="card-top emerald"></div>
+      <div class="cost-tag op">Costo operativo</div>
+      <div class="cost-head">Qué sale correrlo</div>
+
+      <div class="cost-rows">
+        <div class="cost-row">
+          <span class="k">MVP (hoy) — Gemini gratuito</span>
+          <span class="v">$0 /mes</span>
+        </div>
+        <div class="cost-row">
+          <span class="k">Hosting demo (Railway)</span>
+          <span class="v" style="color:var(--sky)">~$5 /mes</span>
+        </div>
+        <div class="cost-row">
+          <span class="k">Producción UCC · 12.000 alumnos</span>
+          <span class="v" style="color:var(--violet)">~$580 /mes</span>
+        </div>
+        <div class="cost-row">
+          <span class="k">Costo por alumno</span>
+          <span class="v">~$0,05 /mes</span>
+        </div>
+      </div>
+
+      <div class="cost-foot">El equivalente al costo de una fotocopia por alumno.</div>
+    </div>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">10 / 12</span></div>
+</div>
+
+<!-- ═══ S11 ROADMAP ═══ -->
+<div class="slide" id="s11">
+  <div class="label">Próximos pasos</div>
+  <h2>Lo que viene</h2>
+  <div class="roadmap-grid">
+    <div class="card" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card-top sky"></div>
+      <div class="rm-label s3">Sprint 3</div>
+      <div class="rm-title">Integración completa con Moodle</div>
+      <div class="rm-dates">21 May – 27 May 2026</div>
+      <ul class="arrow-list" style="flex:1;">
+        <li>Sincronización automática de PDFs del curso</li>
+        <li>Soporte DOCX y TXT además de PDF</li>
+        <li>Bundle React integrado en producción</li>
+      </ul>
+    </div>
+
+    <div class="card" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card-top emerald"></div>
+      <div class="rm-label s4">Sprint 4 — MVP ⭐</div>
+      <div class="rm-title">Testing &amp; validación con usuarios</div>
+      <div class="rm-dates">28 May – 1 Jun 2026</div>
+      <ul class="arrow-list" style="flex:1;">
+        <li>Testing end-to-end del sistema</li>
+        <li class="hi">Pruebas con usuarios reales — UCC</li>
+        <li>Corrección de bugs y pulido final</li>
+      </ul>
+      <div class="mvp-badge">🎯 MVP entregado el 1 de junio</div>
+    </div>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">11 / 12</span></div>
+</div>
+
+<!-- ═══ S12 CIERRE ═══ -->
+<div class="slide" id="s12">
+  <div class="close-name grad">NexusAI</div>
+  <div class="close-phrase">Del problema detectado al sistema funcionando<br><strong>en dos sprints.</strong></div>
+  <div>
+    <div class="close-mvp-lbl">Fecha objetivo MVP</div>
+    <div class="close-mvp-date">1 de junio de 2026</div>
+  </div>
+  <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">12 / 12</span></div>
+</div>
+
+</div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <button class="nav-btn" id="btn-prev" onclick="navigate(-1)">← Anterior</button>
+    <div class="nav-dots" id="dots"></div>
+    <button class="nav-btn" id="btn-next" onclick="navigate(1)">Siguiente →</button>
+    <div class="nav-sep"></div>
+    <button class="nav-icon" id="btn-fs" onclick="toggleFullscreen()" title="Pantalla completa (F)">
+      <svg id="fs-expand" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
+        <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+        <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
+        <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+      </svg>
+      <svg id="fs-collapse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+        <path d="M4 14h6v6"/>
+        <path d="M20 10h-6V4"/>
+        <path d="M14 10l7-7"/>
+        <path d="M3 21l7-7"/>
+      </svg>
+    </button>
+  </div>
+</nav>
+
+<script>
+const TOTAL=12; let cur=1;
+const dots=document.getElementById('dots');
+for(let i=1;i<=TOTAL;i++){const d=document.createElement('div');d.className='nav-dot'+(i===1?' active':'');d.onclick=()=>goTo(i);dots.appendChild(d);}
+
+function goTo(n){
+  const p=document.getElementById('s'+cur);
+  p.classList.remove('active');p.classList.add('exit');
+  setTimeout(()=>p.classList.remove('exit'),500);
+  cur=n;document.getElementById('s'+cur).classList.add('active');
+  document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i+1===cur));
+  document.getElementById('btn-prev').style.opacity=cur===1?'0.35':'1';
+  document.getElementById('btn-next').style.opacity=cur===TOTAL?'0.35':'1';
+}
+function navigate(dir){const n=cur+dir;if(n<1||n>TOTAL)return;goTo(n);}
+
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{});
+  } else {
+    document.exitFullscreen();
+  }
+}
+document.addEventListener('fullscreenchange',()=>{
+  const e=document.getElementById('fs-expand');
+  const c=document.getElementById('fs-collapse');
+  if(document.fullscreenElement){ e.style.display='none'; c.style.display=''; }
+  else { e.style.display=''; c.style.display='none'; }
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' ')navigate(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')navigate(-1);
+  if(e.key==='f'||e.key==='F')toggleFullscreen();
+  if(e.key==='Home')goTo(1);
+  if(e.key==='End')goTo(TOTAL);
+});
+document.getElementById('btn-prev').style.opacity='0.35';
+</script>
+</body>
+</html>

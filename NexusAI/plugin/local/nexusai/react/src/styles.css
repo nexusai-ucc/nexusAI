@@ -273,6 +273,129 @@
     padding: 0 4px;
 }
 
+/* ----- Markdown rendering dentro de la burbuja del assistant ----- */
+/* El LLM devuelve listas, negritas, código y a veces tablas. Estos estilos
+   son scoped a .nexusai-msg__bubble para no chocar con CSS de Moodle. */
+.nexusai-msg__bubble p {
+    margin: 0 0 8px 0;
+}
+.nexusai-msg__bubble p:last-child { margin-bottom: 0; }
+.nexusai-msg__bubble strong { font-weight: 600; color: inherit; }
+.nexusai-msg__bubble em     { font-style: italic; }
+.nexusai-msg__bubble ul,
+.nexusai-msg__bubble ol {
+    margin: 6px 0 8px 0;
+    padding-left: 22px;
+}
+.nexusai-msg__bubble li { margin-bottom: 3px; }
+.nexusai-msg__bubble li:last-child { margin-bottom: 0; }
+.nexusai-msg__bubble h1,
+.nexusai-msg__bubble h2,
+.nexusai-msg__bubble h3,
+.nexusai-msg__bubble h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 12px 0 6px 0;
+    line-height: 1.3;
+}
+.nexusai-msg__bubble h1:first-child,
+.nexusai-msg__bubble h2:first-child,
+.nexusai-msg__bubble h3:first-child { margin-top: 0; }
+.nexusai-msg__bubble code {
+    background: rgba(99, 102, 241, 0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    color: #4c1d95;
+}
+.nexusai-msg__bubble pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 6px 0 8px 0;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.nexusai-msg__bubble pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+}
+.nexusai-msg__bubble a {
+    color: #6366f1;
+    text-decoration: underline;
+}
+.nexusai-msg__bubble a:hover { color: #4f46e5; }
+.nexusai-msg__bubble blockquote {
+    border-left: 3px solid #cbd5e1;
+    padding: 2px 10px;
+    margin: 6px 0;
+    color: #64748b;
+}
+.nexusai-msg__bubble table {
+    border-collapse: collapse;
+    margin: 6px 0;
+    font-size: 12.5px;
+    width: 100%;
+}
+.nexusai-msg__bubble th,
+.nexusai-msg__bubble td {
+    border: 1px solid #cbd5e1;
+    padding: 4px 8px;
+    text-align: left;
+}
+.nexusai-msg__bubble th {
+    background: rgba(99, 102, 241, 0.08);
+    font-weight: 600;
+}
+
+/* En burbuja del user (fondo violeta), los links e inline-code se ven sobre
+   gradiente — bajamos contraste para que se lean bien. */
+.nexusai-msg--user .nexusai-msg__bubble code {
+    background: rgba(255, 255, 255, 0.22);
+    color: white;
+}
+.nexusai-msg--user .nexusai-msg__bubble a {
+    color: white;
+    text-decoration: underline;
+}
+
+/* ----- Citas de fuente (pills debajo del mensaje del assistant) ----- */
+.nexusai-msg__sources {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 0 4px;
+    max-width: 100%;
+}
+.nexusai-msg__sources-label {
+    font-size: 10.5px;
+    color: #64748b;
+    font-weight: 500;
+    margin-right: 2px;
+}
+.nexusai-msg__source-pill {
+    display: inline-block;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    color: #6366f1;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+    padding: 2px 8px;
+    line-height: 1.3;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* ----- Indicador "está escribiendo" ----- */
 .nexusai-typing {
     display: flex;

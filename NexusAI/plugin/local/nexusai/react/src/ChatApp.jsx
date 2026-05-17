@@ -1,13 +1,18 @@
 /**
  * ChatApp — componente principal del widget de NexusAI.
  *
- * Sprint 1 cierre: UI completa de chat (lista de mensajes, input, loader,
+ * Sprint 1: UI completa de chat (lista de mensajes, input, loader,
  * manejo de errores, auto-scroll) + cliente API que apunta al endpoint
  * `local_nexusai_chat_send` de Moodle. Incluye fallback a modo mock cuando
  * se corre fuera de Moodle (ver react/src/api/chat.js).
  *
- * Sprint 2: streaming de respuestas con SSE, citaciones de fuentes RAG,
- * historial de sesiones (GET /sessions), borrar conversación.
+ * Sprint 2 (cierre): markdown rendering en respuestas del LLM y pills de
+ * fuentes citadas (ver MessageBubble.jsx). El backend ya hace RAG real con
+ * pgvector + Gemini, así que cada respuesta puede traer citas tipo
+ * "según apunte-X.pdf" que parseamos y mostramos como badges.
+ *
+ * Sprint 3: streaming de respuestas con SSE, historial de sesiones
+ * (GET /sessions), borrar conversación.
  *
  * Props (vienen desde lib.php / classes/hook/output/before_footer_listener.php):
  *   - courseid:  ID del curso actual de Moodle
