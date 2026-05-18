@@ -5,347 +5,656 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NexusAI — Administración de Proyectos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  /* Aurora pastel background */
-  --aurora-1: #fbcfe8;   /* pink-200 */
-  --aurora-2: #c4b5fd;   /* violet-300 */
-  --aurora-3: #93c5fd;   /* blue-300 */
-  --aurora-4: #67e8f9;   /* cyan-300 */
+  --bg:      #ffffff;
+  --ink:     #0a0a0a;
+  --ink-2:   #1a1a1a;
+  --muted:   #555555;
+  --dim:     #999999;
+  --border:  #e0e0e0;
+  --border2: #f0f0f0;
 
-  /* Text */
-  --ink:      #1e1b4b;   /* very dark indigo */
-  --ink-2:    #312e81;   /* indigo-900 */
-  --muted:    #475569;   /* slate-600 */
-  --dim:      #94a3b8;   /* slate-400 */
+  --acc:     #1a1aff;   /* bold blue accent */
+  --acc2:    #ff1a1a;   /* red for problems/alerts */
+  --acc3:    #00c853;   /* green for success */
+  --acc4:    #ff9800;   /* amber for warnings */
 
-  /* Glass */
-  --glass:    rgba(255,255,255,0.45);
-  --glass-2:  rgba(255,255,255,0.30);
-  --glass-3:  rgba(255,255,255,0.65);
-  --glass-bd: rgba(255,255,255,0.75);
-  --glass-bd2:rgba(255,255,255,0.55);
-
-  /* Accents */
-  --rose:     #ec4899;
-  --violet:   #8b5cf6;
-  --indigo:   #6366f1;
-  --sky:      #0ea5e9;
-  --teal:     #14b8a6;
-  --emerald:  #10b981;
-  --lime:     #84cc16;
-  --amber:    #f59e0b;
-  --orange:   #f97316;
-  --red:      #ef4444;
-  --fuchsia:  #d946ef;
+  --display: 'Bebas Neue', sans-serif;
+  --body:    'DM Sans', sans-serif;
+  --mono:    'DM Mono', monospace;
 }
 
-html,body { width:100%; height:100%; font-family:'Inter','Plus Jakarta Sans',sans-serif; overflow:hidden; color:var(--ink); }
-body {
-  background:
-    radial-gradient(ellipse at 0% 0%,   #fbcfe8 0%, transparent 50%),
-    radial-gradient(ellipse at 100% 0%, #c4b5fd 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 100%,#a5f3fc 0%, transparent 55%),
-    radial-gradient(ellipse at 0% 100%, #ddd6fe 0%, transparent 55%),
-    linear-gradient(135deg, #fef3f8 0%, #f5f3ff 40%, #eff6ff 80%, #ecfeff 100%);
-  background-attachment: fixed;
-}
+html, body { width:100%; height:100%; background:var(--bg); color:var(--ink); font-family:var(--body); overflow:hidden; }
 
 .deck { position:relative; width:100vw; height:100vh; }
-
-/* Floating color blobs for extra aurora feel */
-.blob { position:fixed; border-radius:50%; filter:blur(80px); opacity:.5; pointer-events:none; z-index:0; }
-.blob-1 { width:520px; height:520px; background:#f9a8d4; top:-160px; left:-160px; }
-.blob-2 { width:460px; height:460px; background:#a78bfa; top:-100px; right:-120px; }
-.blob-3 { width:380px; height:380px; background:#67e8f9; bottom:-100px; left:30%; }
-.blob-4 { width:300px; height:300px; background:#fcd34d; bottom:80px; right:-60px; opacity:.35; }
 
 .slide {
   position:absolute; inset:0;
   display:flex; flex-direction:column;
-  padding:48px 64px 76px;
+  padding:52px 68px 80px;
   opacity:0; pointer-events:none;
-  transform:translateY(20px) scale(.985);
-  transition:opacity .45s cubic-bezier(.4,0,.2,1), transform .45s cubic-bezier(.4,0,.2,1);
+  transform:translateY(18px);
+  transition:opacity .38s cubic-bezier(.4,0,.2,1), transform .38s cubic-bezier(.4,0,.2,1);
   overflow:hidden;
   z-index:2;
+  background:var(--bg);
 }
-.slide.active { opacity:1; pointer-events:all; transform:translateY(0) scale(1); }
-.slide.exit   { opacity:0; transform:translateY(-20px) scale(.985); }
+.slide.active { opacity:1; pointer-events:all; transform:translateY(0); }
+.slide.exit   { opacity:0; transform:translateY(-18px); }
 
-.footer { position:absolute; bottom:22px; left:64px; right:64px; display:flex; align-items:center; justify-content:space-between; z-index:10; }
-.foot-brand { font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; color:var(--muted); letter-spacing:.18em; text-transform:uppercase; font-weight:600; }
-.slide-num { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--dim); letter-spacing:.1em; }
+/* ── TYPOGRAPHY ── */
+.eyebrow {
+  font-family:var(--mono);
+  font-size:13px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--acc);
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.eyebrow::before { content:''; width:28px; height:2px; background:var(--acc); flex-shrink:0; }
 
-.label { font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:var(--violet); margin-bottom:10px; }
-h2 { font-family:'Plus Jakarta Sans',sans-serif; font-size:clamp(40px,5.4vw,64px); font-weight:800; line-height:1.04; letter-spacing:-.025em; margin-bottom:28px; color:var(--ink); }
-h3 { font-family:'Plus Jakarta Sans',sans-serif; font-size:24px; font-weight:700; line-height:1.2; color:var(--ink); }
-p, li { font-size:20px; line-height:1.55; color:var(--muted); }
-.grad { background:linear-gradient(135deg, var(--rose) 0%, var(--violet) 50%, var(--sky) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+h2 {
+  font-family:var(--display);
+  font-size:clamp(60px, 8.5vw, 112px);
+  line-height:.92;
+  letter-spacing:-.01em;
+  margin-bottom:36px;
+  color:var(--ink);
+  text-transform:uppercase;
+}
+h3 {
+  font-family:var(--display);
+  font-size:clamp(26px, 3vw, 38px);
+  line-height:1.0;
+  text-transform:uppercase;
+  color:var(--ink);
+}
+p, li { font-size:18px; line-height:1.65; color:var(--muted); font-weight:400; }
+strong { color:var(--ink); font-weight:600; }
 
-/* Glass card */
+/* accent text */
+.hi-blue  { color:var(--acc); }
+.hi-red   { color:var(--acc2); }
+.hi-green { color:var(--acc3); }
+
+/* ── CARDS ── */
 .card {
-  background:var(--glass);
-  border:1px solid var(--glass-bd);
-  border-radius:24px;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow: 0 8px 32px rgba(99,102,241,.08), inset 0 1px 0 rgba(255,255,255,.5);
+  background:var(--bg);
+  border:1.5px solid var(--border);
+  border-radius:4px;
   padding:28px 32px;
   position:relative;
-  overflow:hidden;
 }
-.card-top { position:absolute; top:0; left:24px; right:24px; height:3px; border-radius:2px; }
-.card-top.rose    { background:linear-gradient(90deg, var(--rose), var(--fuchsia)); }
-.card-top.violet  { background:linear-gradient(90deg, var(--violet), var(--indigo)); }
-.card-top.sky     { background:linear-gradient(90deg, var(--sky), var(--teal)); }
-.card-top.emerald { background:linear-gradient(90deg, var(--emerald), var(--lime)); }
-.card-top.amber   { background:linear-gradient(90deg, var(--amber), var(--orange)); }
-.card-top.cyan    { background:linear-gradient(90deg, var(--teal), var(--sky)); }
+.card-accent {
+  position:absolute;
+  top:0; left:0; right:0;
+  height:3px;
+  border-radius:4px 4px 0 0;
+}
+.acc-blue   { background:var(--acc); }
+.acc-red    { background:var(--acc2); }
+.acc-green  { background:var(--acc3); }
+.acc-amber  { background:var(--acc4); }
 
-.tag { display:inline-block; padding:6px 14px; background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); border-radius:999px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--violet); font-weight:500; }
-code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--violet); background:rgba(139,92,246,.08); padding:2px 8px; border-radius:6px; }
+/* ── TAGS ── */
+.tag {
+  display:inline-flex; align-items:center;
+  padding:4px 12px;
+  border:1.5px solid var(--ink);
+  border-radius:2px;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--ink);
+  font-weight:500;
+  letter-spacing:.05em;
+}
+code {
+  font-family:var(--mono);
+  font-size:14px;
+  color:var(--acc);
+  background:rgba(26,26,255,.07);
+  padding:2px 8px;
+  border-radius:2px;
+}
 
+/* ── ARROW LIST ── */
 .arrow-list { list-style:none; display:flex; flex-direction:column; gap:12px; }
-.arrow-list li { display:flex; align-items:flex-start; gap:12px; font-size:19px; color:var(--muted); line-height:1.45; }
-.arrow-list li::before { content:"→"; color:var(--violet); flex-shrink:0; margin-top:3px; font-size:16px; font-weight:700; }
-.arrow-list li.hi::before { color:var(--emerald); }
-.arrow-list li.hi { color:var(--emerald); font-weight:600; }
-
-/* Nav */
-.nav { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:center; align-items:center; gap:14px; padding:18px 24px; z-index:100; }
-.nav-inner {
-  display:flex; align-items:center; gap:12px;
-  background:var(--glass-3);
-  border:1px solid var(--glass-bd);
-  border-radius:999px;
-  padding:8px 14px;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  box-shadow:0 8px 24px rgba(99,102,241,.12);
+.arrow-list li {
+  display:flex; align-items:flex-start; gap:14px;
+  font-size:18px; color:var(--muted); line-height:1.5;
 }
-.nav-btn { background:transparent; border:none; color:var(--muted); padding:8px 18px; border-radius:999px; font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .18s; }
-.nav-btn:hover { background:rgba(139,92,246,.1); color:var(--ink); }
-.nav-icon { background:transparent; border:none; color:var(--muted); padding:8px; border-radius:50%; cursor:pointer; transition:all .18s; display:flex; align-items:center; justify-content:center; }
-.nav-icon:hover { background:rgba(139,92,246,.12); color:var(--ink); }
-.nav-icon svg { width:18px; height:18px; }
-.nav-dots { display:flex; gap:5px; align-items:center; padding:0 6px; }
-.nav-dot { width:6px; height:6px; border-radius:50%; background:rgba(99,102,241,.3); cursor:pointer; transition:all .2s; }
-.nav-dot.active { background:var(--violet); width:20px; border-radius:3px; }
-.nav-sep { width:1px; height:18px; background:rgba(99,102,241,.18); }
+.arrow-list li::before {
+  content:"→";
+  color:var(--acc);
+  flex-shrink:0;
+  margin-top:2px;
+  font-size:16px;
+  font-weight:700;
+  font-family:var(--mono);
+}
+.arrow-list li.ok::before { content:"✓"; color:var(--acc3); }
+.arrow-list li.ok { color:var(--acc3); font-weight:600; }
 
-/* ═══ S1 PORTADA ═══ */
-#s1 { justify-content:center; align-items:center; text-align:center; }
-.cover-tag { font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:600; letter-spacing:.3em; text-transform:uppercase; color:var(--violet); margin-bottom:24px; padding:8px 20px; background:var(--glass-3); border:1px solid var(--glass-bd); border-radius:999px; backdrop-filter:blur(20px); }
-.cover-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:clamp(84px,12vw,140px); font-weight:800; letter-spacing:-.04em; line-height:.95; margin-bottom:20px; }
-.cover-sub { font-size:24px; color:var(--muted); margin-bottom:60px; font-weight:400; max-width:680px; }
-.cover-meta { display:flex; gap:0; justify-content:center; align-items:stretch; flex-wrap:wrap; background:var(--glass-3); border:1px solid var(--glass-bd); border-radius:24px; backdrop-filter:blur(20px); padding:6px; box-shadow:0 8px 32px rgba(99,102,241,.08); }
-.cover-meta-item { display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 32px; }
-.cover-meta-sep { width:1px; background:rgba(99,102,241,.15); margin:12px 0; }
-.cover-meta-key { font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--dim); font-weight:600; }
-.cover-meta-val { font-size:18px; font-weight:600; color:var(--ink); }
+/* ── FOOTER ── */
+.footer {
+  position:absolute; bottom:24px; left:68px; right:68px;
+  display:flex; align-items:center; justify-content:space-between;
+  z-index:10;
+  border-top:1px solid var(--border2);
+  padding-top:14px;
+}
+.foot-brand {
+  font-family:var(--display);
+  font-size:17px;
+  letter-spacing:.1em;
+  color:var(--ink);
+}
+.slide-num {
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--dim);
+  letter-spacing:.12em;
+}
 
-/* ═══ S2 PROBLEMA ═══ */
-.ps-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; flex:1; }
-.ps-card { padding:36px 40px; }
-.ps-icon { font-size:42px; margin-bottom:16px; }
-.ps-sub { font-size:13px; color:var(--dim); margin-bottom:14px; font-family:'Plus Jakarta Sans',sans-serif; letter-spacing:.22em; text-transform:uppercase; font-weight:700; }
-.ps-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:34px; font-weight:800; margin-bottom:16px; line-height:1.1; letter-spacing:-.02em; }
-.ps-title.prob { color:var(--rose); }
-.ps-title.sol  { color:var(--emerald); }
+/* ── NAV ── */
+.nav {
+  position:fixed; bottom:0; left:0; right:0;
+  display:flex; justify-content:center; align-items:center;
+  padding:16px 24px; z-index:100;
+}
+.nav-inner {
+  display:flex; align-items:center; gap:8px;
+  background:var(--ink);
+  border-radius:2px;
+  padding:6px 10px;
+}
+.nav-btn {
+  background:transparent; border:none;
+  color:rgba(255,255,255,.6);
+  padding:7px 16px; border-radius:2px;
+  font-family:var(--mono); font-size:11px;
+  font-weight:500; letter-spacing:.12em; text-transform:uppercase;
+  cursor:pointer; transition:all .15s;
+}
+.nav-btn:hover { background:rgba(255,255,255,.12); color:#fff; }
+.nav-dots { display:flex; gap:4px; align-items:center; padding:0 8px; }
+.nav-dot {
+  width:5px; height:5px; border-radius:50%;
+  background:rgba(255,255,255,.25);
+  cursor:pointer; transition:all .2s;
+}
+.nav-dot.active { background:#fff; width:18px; border-radius:2px; }
+.nav-sep { width:1px; height:16px; background:rgba(255,255,255,.15); }
+.nav-icon {
+  background:transparent; border:none; color:rgba(255,255,255,.5);
+  padding:7px; border-radius:2px; cursor:pointer;
+  transition:all .15s; display:flex; align-items:center; justify-content:center;
+}
+.nav-icon:hover { background:rgba(255,255,255,.12); color:#fff; }
+.nav-icon svg { width:16px; height:16px; }
 
-/* ═══ S3 SOLUCIÓN ═══ */
-.pillars-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; flex:1; }
-.pillar { padding:28px 24px; text-align:left; display:flex; flex-direction:column; gap:12px; }
-.pillar .ico { font-size:38px; margin-bottom:4px; }
-.pillar .ttl { font-family:'Plus Jakarta Sans',sans-serif; font-size:22px; font-weight:700; color:var(--ink); line-height:1.2; }
-.pillar .dsc { font-size:16px; color:var(--muted); line-height:1.5; }
+/* ══════════════════════════════════════════════
+   SLIDE 1 — PORTADA
+══════════════════════════════════════════════ */
+#s1 {
+  padding:0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+}
+.cover-left {
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:52px 60px 80px;
+  border-right:1.5px solid var(--border);
+}
+.cover-right {
+  display:flex; flex-direction:column; justify-content:center; align-items:flex-start;
+  padding:52px 60px 80px;
+  background:#0a0a0a;
+}
+.cover-eyebrow {
+  font-family:var(--mono); font-size:12px; letter-spacing:.28em;
+  text-transform:uppercase; color:var(--dim);
+}
+.cover-name {
+  font-family:var(--display);
+  font-size:clamp(110px,16vw,200px);
+  line-height:.85;
+  letter-spacing:-.02em;
+  color:var(--ink);
+  text-transform:uppercase;
+}
+.cover-sub {
+  font-size:22px; color:var(--muted); font-weight:400; line-height:1.45;
+  max-width:520px;
+}
+.cover-meta-grid { display:flex; flex-direction:column; gap:0; }
+.cover-meta-row {
+  display:flex; align-items:baseline; justify-content:space-between;
+  padding:14px 0;
+  border-top:1px solid var(--border);
+}
+.cover-meta-key {
+  font-family:var(--mono); font-size:11px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--dim);
+}
+.cover-meta-val {
+  font-size:16px; font-weight:600; color:var(--ink); text-align:right;
+}
+.cover-big-label {
+  font-family:var(--display);
+  font-size:clamp(48px, 6vw, 72px);
+  line-height:1.0;
+  color:#fff;
+  text-transform:uppercase;
+  margin-bottom:32px;
+}
+.cover-right-items { display:flex; flex-direction:column; gap:28px; width:100%; }
+.cover-right-item { display:flex; align-items:flex-start; gap:18px; }
+.cover-right-item .ico { color:var(--acc); flex-shrink:0; margin-top:2px; }
+.cover-right-item .txt { font-size:17px; color:rgba(255,255,255,.65); line-height:1.5; }
+.cover-right-item .txt strong { color:#fff; font-size:18px; display:block; margin-bottom:3px; font-weight:600; }
+#s1 .footer { left:0; right:0; padding-left:60px; padding-right:60px; }
 
-/* ═══ S4 AVANCES ═══ */
-.adv-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; flex:1; }
-.adv-card { padding:28px 30px; display:flex; flex-direction:column; gap:12px; }
-.adv-big { font-family:'Plus Jakarta Sans',sans-serif; font-size:72px; font-weight:800; line-height:1; letter-spacing:-.03em; }
-.adv-big.emerald { color:var(--emerald); }
-.adv-big.violet  { color:var(--violet); }
-.adv-big.sky     { color:var(--sky); }
-.adv-lbl { font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--dim); }
-.adv-dsc { font-size:17px; color:var(--muted); line-height:1.45; }
-.adv-banner { background:var(--glass-3); border:1px solid rgba(16,185,129,.3); border-radius:16px; padding:18px 32px; display:flex; align-items:center; justify-content:center; gap:24px; flex-wrap:wrap; font-size:19px; margin-top:24px; backdrop-filter:blur(20px); }
+/* ══════════════════════════════════════════════
+   SLIDE 2 — PROBLEMA
+══════════════════════════════════════════════ */
+.ps-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+.ps-card { padding:32px 36px; display:flex; flex-direction:column; gap:16px; }
+.ps-ico { color:var(--acc2); }
+.ps-ico-green { color:var(--acc3); }
+.ps-label {
+  font-family:var(--mono); font-size:11px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--dim); font-weight:500;
+}
+.ps-title {
+  font-family:var(--display);
+  font-size:clamp(34px,4vw,52px);
+  line-height:.95;
+  text-transform:uppercase;
+}
+.ps-title.prob { color:var(--acc2); }
+.ps-title.sol  { color:var(--acc3); }
 
-/* ═══ S5 GANTT ═══ */
-.gantt-wrap { padding:28px 32px; flex:1; display:flex; flex-direction:column; gap:18px; overflow:hidden; }
-.gantt-header { display:grid; grid-template-columns:180px repeat(11,1fr); gap:0; align-items:center; padding-bottom:10px; border-bottom:1px solid rgba(99,102,241,.15); }
-.gantt-month { font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); text-align:center; padding:0 2px; }
-.gantt-rows { display:flex; flex-direction:column; gap:10px; flex:1; justify-content:space-around; position:relative; padding-top:8px; }
-.gantt-row { display:grid; grid-template-columns:180px 1fr; gap:0; align-items:center; height:30px; position:relative; }
-.gantt-label { font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; font-weight:600; color:var(--ink); padding-right:12px; }
-.gantt-bar-wrap { position:relative; height:24px; background:rgba(99,102,241,.06); border-radius:8px; }
-.gantt-bar { position:absolute; top:0; bottom:0; border-radius:8px; display:flex; align-items:center; padding:0 10px; font-size:11px; font-family:'JetBrains Mono',monospace; color:white; white-space:nowrap; overflow:hidden; font-weight:500; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-.gantt-bar.setup { background:linear-gradient(90deg,#94a3b8,#64748b); }
-.gantt-bar.s1    { background:linear-gradient(90deg,#6366f1,#8b5cf6); }
-.gantt-bar.s2    { background:linear-gradient(90deg,#8b5cf6,#d946ef); }
-.gantt-bar.s3    { background:linear-gradient(90deg,#d946ef,#ec4899); }
-.gantt-bar.mvp   { background:linear-gradient(90deg,#10b981,#84cc16); }
-.gantt-bar.docs  { background:linear-gradient(90deg,#84cc16,#facc15); color:#422006; }
-.gantt-bar.post  { background:linear-gradient(90deg,#14b8a6,#0ea5e9); }
-.gantt-bar.check { background:linear-gradient(90deg,#a78bfa,#7c3aed); }
-.gantt-bar.def   { background:linear-gradient(90deg,#f59e0b,#f97316); }
-.gantt-today { position:absolute; top:-8px; bottom:-8px; width:2px; background:var(--rose); z-index:5; box-shadow:0 0 12px rgba(236,72,153,.5); }
-.gantt-today::after { content:'HOY'; position:absolute; top:-22px; left:50%; transform:translateX(-50%); font-family:'Plus Jakarta Sans',sans-serif; font-size:10px; font-weight:800; color:var(--rose); letter-spacing:.18em; padding:2px 8px; background:white; border-radius:6px; box-shadow:0 2px 8px rgba(236,72,153,.2); }
-.gantt-legend { display:flex; gap:18px; flex-wrap:wrap; font-size:13px; color:var(--muted); padding-top:10px; border-top:1px solid rgba(99,102,241,.15); }
-.gantt-legend-item { display:flex; align-items:center; gap:6px; font-weight:500; }
-.gantt-legend-dot { width:12px; height:12px; border-radius:4px; }
+/* ══════════════════════════════════════════════
+   SLIDE 3 — SOLUCIÓN
+══════════════════════════════════════════════ */
+.pillars-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; flex:1; }
+.pillar { padding:28px 24px; display:flex; flex-direction:column; gap:14px; }
+.pillar .ico { color:var(--acc); }
+.pillar .ttl {
+  font-family:var(--display);
+  font-size:28px; line-height:1.0; text-transform:uppercase; color:var(--ink);
+}
+.pillar .dsc { font-size:16px; color:var(--muted); line-height:1.55; }
 
-/* ═══ S6 DECISIONES ═══ */
-.decisions-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
-.dec-icon-title { display:flex; align-items:flex-start; gap:14px; }
-.dec-icon { font-size:32px; flex-shrink:0; margin-top:0; }
+/* ══════════════════════════════════════════════
+   SLIDE 4 — AVANCES
+══════════════════════════════════════════════ */
+.adv-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+.adv-card { padding:28px 30px; display:flex; flex-direction:column; gap:10px; }
+.adv-big {
+  font-family:var(--display);
+  font-size:clamp(64px,9vw,100px);
+  line-height:.9; letter-spacing:-.02em;
+}
+.adv-big.blue   { color:var(--acc); }
+.adv-big.green  { color:var(--acc3); }
+.adv-big.ink    { color:var(--ink); }
+.adv-lbl {
+  font-family:var(--mono); font-size:11px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--dim); font-weight:500;
+}
+.adv-dsc { font-size:16px; color:var(--muted); line-height:1.5; margin-top:6px; }
+.adv-banner {
+  border:1.5px solid var(--acc3);
+  border-radius:4px; padding:16px 32px;
+  display:flex; align-items:center; justify-content:center;
+  gap:24px; flex-wrap:wrap; font-size:18px; margin-top:20px;
+  background:rgba(0,200,83,.04);
+}
+
+/* ══════════════════════════════════════════════
+   SLIDE 5 — GANTT
+══════════════════════════════════════════════ */
+.gantt-wrap { padding:24px 28px; flex:1; display:flex; flex-direction:column; gap:16px; overflow:hidden; }
+.gantt-header {
+  display:grid; grid-template-columns:170px repeat(11,1fr);
+  align-items:center; padding-bottom:10px;
+  border-bottom:1.5px solid var(--border);
+}
+.gantt-month {
+  font-family:var(--mono); font-size:11px; font-weight:500;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--dim);
+  text-align:center;
+}
+.gantt-rows { display:flex; flex-direction:column; gap:9px; flex:1; justify-content:space-around; position:relative; padding-top:8px; }
+.gantt-row { display:grid; grid-template-columns:170px 1fr; align-items:center; height:28px; position:relative; }
+.gantt-label { font-family:var(--body); font-size:13px; font-weight:600; color:var(--ink); padding-right:12px; }
+.gantt-bar-wrap { position:relative; height:22px; background:var(--border2); border-radius:2px; }
+.gantt-bar {
+  position:absolute; top:0; bottom:0; border-radius:2px;
+  display:flex; align-items:center; padding:0 10px;
+  font-size:10px; font-family:var(--mono); color:white;
+  white-space:nowrap; overflow:hidden; font-weight:500;
+}
+.gantt-bar.setup { background:#555; }
+.gantt-bar.s1    { background:var(--acc); }
+.gantt-bar.s2    { background:#6a5aff; }
+.gantt-bar.s3    { background:#9a32ff; }
+.gantt-bar.mvp   { background:var(--acc3); }
+.gantt-bar.docs  { background:#00a86b; color:#fff; }
+.gantt-bar.post  { background:#0097a7; }
+.gantt-bar.check { background:#7b1fa2; }
+.gantt-bar.def   { background:var(--acc4); color:#fff; }
+.gantt-today {
+  position:absolute; top:-8px; bottom:-8px; width:2px;
+  background:var(--acc2); z-index:5;
+}
+.gantt-today::after {
+  content:'HOY'; position:absolute; top:-20px; left:50%;
+  transform:translateX(-50%);
+  font-family:var(--mono); font-size:9px; font-weight:700;
+  color:var(--acc2); letter-spacing:.16em;
+  padding:2px 7px; background:#fff;
+  border:1.5px solid var(--acc2); border-radius:2px;
+}
+.gantt-legend { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--muted); padding-top:10px; border-top:1px solid var(--border); }
+.gantt-legend-item { display:flex; align-items:center; gap:6px; font-weight:500; font-family:var(--mono); font-size:11px; letter-spacing:.05em; }
+.gantt-legend-dot { width:10px; height:10px; border-radius:2px; }
+
+/* ══════════════════════════════════════════════
+   SLIDE 6 — DECISIONES
+══════════════════════════════════════════════ */
+.decisions-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; }
+.dec-header { display:flex; align-items:flex-start; gap:14px; }
+.dec-ico { color:var(--acc); flex-shrink:0; margin-top:4px; }
 .dec-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; padding-top:14px; }
 
-/* ═══ S7 MÉTRICAS GAUGES ═══ */
-.gauges-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; flex:1; }
-.gauge-card { display:flex; flex-direction:column; align-items:center; padding:28px 22px; gap:6px; }
-.gauge-card .ttl { font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; }
-.gauge-card .ttl.ges { color:var(--violet); }
-.gauge-card .ttl.cos { color:var(--amber); }
-.gauge-card .ttl.cal { color:var(--emerald); }
-.gauge-svg { width:100%; max-width:260px; }
-.gauge-val { font-family:'Plus Jakarta Sans',sans-serif; font-size:54px; font-weight:800; line-height:1; margin-top:-60px; letter-spacing:-.03em; }
-.gauge-val.emerald { color:var(--emerald); }
-.gauge-val.amber { color:var(--amber); }
-.gauge-val.fuchsia { color:var(--fuchsia); }
-.gauge-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:18px; font-weight:700; color:var(--ink); margin-top:38px; }
-.gauge-expl { font-size:14px; color:var(--muted); text-align:center; line-height:1.5; margin-top:6px; }
-.gauge-expl strong { color:var(--emerald); font-weight:700; }
-.gauge-expl strong.warn { color:var(--amber); }
-
-/* ═══ S8 ARQUITECTURA ═══ */
-.flow-simple { display:flex; align-items:center; justify-content:space-between; gap:6px; flex:1; padding:0 4px; }
-.flow-step { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px;
-  background:var(--glass);
-  border:1px solid var(--glass-bd);
-  border-radius:20px;
-  backdrop-filter:blur(20px) saturate(180%);
-  box-shadow:0 8px 24px rgba(99,102,241,.08);
-  padding:26px 14px; min-height:180px; justify-content:center;
+/* ══════════════════════════════════════════════
+   SLIDE 7 — MÉTRICAS
+══════════════════════════════════════════════ */
+.gauges-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; flex:1; }
+.gauge-card { display:flex; flex-direction:column; align-items:center; padding:24px 20px; gap:4px; }
+.gauge-ttl {
+  font-family:var(--mono); font-size:11px; font-weight:500;
+  letter-spacing:.22em; text-transform:uppercase; margin-bottom:4px;
 }
-.flow-step .ico { font-size:38px; }
-.flow-step .ttl { font-family:'Plus Jakarta Sans',sans-serif; font-size:17px; font-weight:700; color:var(--ink); line-height:1.2; }
-.flow-step .tch { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--violet); }
-.flow-arrow { color:var(--violet); font-size:24px; flex-shrink:0; font-weight:700; }
-.arch-notes { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-top:26px; }
-.arch-note { display:flex; align-items:center; gap:14px; padding:18px 22px;
-  background:var(--glass-2); border:1px solid var(--glass-bd2); border-radius:16px;
-  backdrop-filter:blur(16px); }
-.arch-note .ico { font-size:24px; }
-.arch-note .txt { font-size:15px; color:var(--muted); line-height:1.4; }
-.arch-note .txt strong { color:var(--ink); font-family:'Plus Jakarta Sans',sans-serif; font-size:16px; display:block; margin-bottom:2px; font-weight:700; }
+.gauge-ttl.t1 { color:var(--acc); }
+.gauge-ttl.t2 { color:var(--acc4); }
+.gauge-ttl.t3 { color:var(--acc3); }
+.gauge-svg { width:100%; max-width:240px; }
+.gauge-val {
+  font-family:var(--display);
+  font-size:62px; line-height:1; margin-top:-58px; letter-spacing:-.02em;
+}
+.gauge-val.v1 { color:var(--acc3); }
+.gauge-val.v2 { color:var(--acc4); }
+.gauge-val.v3 { color:var(--acc); }
+.gauge-name {
+  font-family:var(--display); font-size:22px; color:var(--ink);
+  margin-top:38px; text-transform:uppercase; letter-spacing:.02em;
+}
+.gauge-expl { font-size:14px; color:var(--muted); text-align:center; line-height:1.5; margin-top:4px; }
+.gauge-expl strong { color:var(--acc3); font-weight:600; }
+.gauge-expl strong.warn { color:var(--acc4); }
 
-/* ═══ S9 INFRA / DEPLOY ═══ */
-.deploy-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; flex:1; }
+/* ══════════════════════════════════════════════
+   SLIDE 8 — ARQUITECTURA
+══════════════════════════════════════════════ */
+.flow-simple {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:6px; flex:1; padding:0 2px;
+}
+.flow-step {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  text-align:center; gap:10px;
+  border:1.5px solid var(--border);
+  border-radius:4px; padding:24px 12px;
+  min-height:160px; justify-content:center;
+}
+.flow-step .ico { color:var(--acc); }
+.flow-step .ttl {
+  font-family:var(--display); font-size:20px; color:var(--ink);
+  text-transform:uppercase; line-height:1.1;
+}
+.flow-step .tch {
+  font-family:var(--mono); font-size:11px; color:var(--dim);
+  letter-spacing:.05em;
+}
+.flow-arrow {
+  color:var(--border);
+  font-size:24px; flex-shrink:0;
+  font-weight:700;
+}
+.arch-notes { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:24px; }
+.arch-note {
+  display:flex; align-items:flex-start; gap:14px; padding:16px 20px;
+  border:1.5px solid var(--border); border-radius:4px;
+}
+.arch-note .ico { color:var(--acc); flex-shrink:0; margin-top:2px; }
+.arch-note .txt { font-size:14px; color:var(--muted); line-height:1.5; }
+.arch-note .txt strong {
+  color:var(--ink); font-family:var(--body);
+  font-size:15px; display:block; margin-bottom:3px; font-weight:600;
+}
+
+/* ══════════════════════════════════════════════
+   SLIDE 9 — INFRA
+══════════════════════════════════════════════ */
+.deploy-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; flex:1; }
 .deploy-card { padding:28px 28px; display:flex; flex-direction:column; gap:12px; }
-.deploy-tag { font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; }
-.deploy-tag.dev  { color:var(--violet); }
-.deploy-tag.demo { color:var(--sky); }
-.deploy-tag.prod { color:var(--emerald); }
-.deploy-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:26px; font-weight:800; color:var(--ink); line-height:1.15; letter-spacing:-.02em; }
-.deploy-desc { font-size:16px; color:var(--muted); line-height:1.5; }
-.deploy-chip { display:inline-block; padding:7px 14px; background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); border-radius:999px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--violet); margin-top:auto; align-self:flex-start; font-weight:500; }
+.deploy-tag {
+  font-family:var(--mono); font-size:11px; font-weight:500;
+  letter-spacing:.22em; text-transform:uppercase;
+}
+.deploy-tag.dev  { color:var(--acc); }
+.deploy-tag.demo { color:#0097a7; }
+.deploy-tag.prod { color:var(--acc3); }
+.deploy-name {
+  font-family:var(--display); font-size:clamp(22px,2.8vw,32px);
+  color:var(--ink); line-height:1.1; text-transform:uppercase;
+}
+.deploy-desc { font-size:16px; color:var(--muted); line-height:1.55; }
+.deploy-chip {
+  display:inline-block; padding:7px 14px;
+  border:1.5px solid var(--ink); border-radius:2px;
+  font-family:var(--mono); font-size:12px; color:var(--ink);
+  margin-top:auto; align-self:flex-start; font-weight:500;
+  letter-spacing:.05em;
+}
 
-/* ═══ S10 COSTOS ═══ */
-.cost-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; flex:1; }
-.cost-card { padding:32px 36px; display:flex; flex-direction:column; gap:16px; }
-.cost-tag { font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; }
-.cost-tag.us { color:var(--fuchsia); }
-.cost-tag.op { color:var(--emerald); }
-.cost-head { font-family:'Plus Jakarta Sans',sans-serif; font-size:28px; font-weight:800; color:var(--ink); line-height:1.15; letter-spacing:-.02em; }
+/* ══════════════════════════════════════════════
+   SLIDE 10 — COSTOS
+══════════════════════════════════════════════ */
+.cost-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+.cost-card { padding:30px 34px; display:flex; flex-direction:column; gap:16px; }
+.cost-tag {
+  font-family:var(--mono); font-size:11px; font-weight:500;
+  letter-spacing:.22em; text-transform:uppercase;
+}
+.cost-tag.us { color:#9a32ff; }
+.cost-tag.op { color:var(--acc3); }
+.cost-head {
+  font-family:var(--display); font-size:30px;
+  color:var(--ink); line-height:1.1; text-transform:uppercase;
+}
 .cost-bars { display:flex; flex-direction:column; gap:16px; margin-top:8px; }
 .cost-bar { display:flex; flex-direction:column; gap:6px; }
 .cost-bar-head { display:flex; justify-content:space-between; align-items:baseline; }
-.cost-bar-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:16px; font-weight:600; color:var(--ink); }
-.cost-bar-val  { font-family:'JetBrains Mono',monospace; font-size:16px; color:var(--violet); font-weight:500; }
-.cost-bar-track { height:14px; background:rgba(99,102,241,.08); border-radius:999px; overflow:hidden; }
-.cost-bar-fill { height:100%; border-radius:999px; }
-.cost-bar-fill.santi { background:linear-gradient(90deg,#6366f1,#8b5cf6); }
-.cost-bar-fill.delfi { background:linear-gradient(90deg,#d946ef,#ec4899); }
-.cost-total { display:flex; justify-content:space-between; align-items:baseline; padding-top:18px; border-top:1px solid rgba(99,102,241,.15); margin-top:auto; }
-.cost-total-lbl { font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:var(--dim); font-weight:700; }
-.cost-total-val { font-family:'Plus Jakarta Sans',sans-serif; font-size:32px; font-weight:800; color:var(--ink); letter-spacing:-.02em; }
+.cost-bar-name { font-size:15px; font-weight:600; color:var(--ink); }
+.cost-bar-val  { font-family:var(--mono); font-size:15px; color:var(--acc); font-weight:500; }
+.cost-bar-track { height:12px; background:var(--border2); border-radius:2px; overflow:hidden; }
+.cost-bar-fill { height:100%; border-radius:2px; }
+.cost-bar-fill.santi { background:var(--acc); }
+.cost-bar-fill.delfi { background:#9a32ff; }
+.cost-total {
+  display:flex; justify-content:space-between; align-items:baseline;
+  padding-top:16px; border-top:1.5px solid var(--border); margin-top:auto;
+}
+.cost-total-lbl {
+  font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--dim); font-weight:500;
+}
+.cost-total-val {
+  font-family:var(--display); font-size:38px; color:var(--ink); letter-spacing:-.01em;
+}
 .cost-rows { display:flex; flex-direction:column; gap:0; }
-.cost-row { display:flex; justify-content:space-between; align-items:baseline; padding:16px 0; border-bottom:1px solid rgba(99,102,241,.08); }
+.cost-row {
+  display:flex; justify-content:space-between; align-items:baseline;
+  padding:14px 0; border-bottom:1px solid var(--border2);
+}
 .cost-row:last-child { border-bottom:none; }
 .cost-row .k { color:var(--muted); font-size:16px; }
-.cost-row .v { font-family:'Plus Jakarta Sans',sans-serif; font-weight:800; font-size:24px; color:var(--emerald); letter-spacing:-.02em; }
-.cost-foot { font-size:14px; color:var(--dim); font-style:italic; margin-top:auto; padding-top:14px; }
+.cost-row .v { font-family:var(--display); font-size:26px; color:var(--acc3); letter-spacing:-.01em; }
+.cost-foot { font-size:13px; color:var(--dim); font-style:italic; margin-top:auto; padding-top:12px; }
 
-/* ═══ S11 ROADMAP ═══ */
-.roadmap-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; flex:1; }
-.rm-label { font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; }
-.rm-label.s3 { color:var(--sky); }
-.rm-label.s4 { color:var(--emerald); }
-.rm-title { font-family:'Plus Jakarta Sans',sans-serif; font-size:30px; font-weight:800; color:var(--ink); line-height:1.2; margin-top:4px; letter-spacing:-.02em; }
-.rm-dates { font-size:15px; color:var(--dim); margin-bottom:10px; }
-.mvp-badge { background:linear-gradient(135deg, rgba(16,185,129,.12), rgba(132,204,22,.12)); border:1px solid rgba(16,185,129,.3); border-radius:14px; padding:18px 22px; font-family:'Plus Jakarta Sans',sans-serif; font-size:20px; font-weight:800; color:var(--emerald); text-align:center; margin-top:auto; letter-spacing:-.01em; }
+/* ══════════════════════════════════════════════
+   SLIDE 11 — ROADMAP
+══════════════════════════════════════════════ */
+.roadmap-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+.rm-label {
+  font-family:var(--mono); font-size:11px; font-weight:500;
+  letter-spacing:.22em; text-transform:uppercase;
+}
+.rm-label.s3 { color:#0097a7; }
+.rm-label.s4 { color:var(--acc3); }
+.rm-title {
+  font-family:var(--display); font-size:clamp(26px,3.2vw,38px);
+  color:var(--ink); line-height:1.1; text-transform:uppercase; margin-top:4px;
+}
+.rm-dates { font-family:var(--mono); font-size:13px; color:var(--dim); margin-bottom:10px; letter-spacing:.04em; }
+.mvp-badge {
+  border:1.5px solid var(--acc3); border-radius:4px;
+  padding:16px 20px;
+  font-family:var(--display); font-size:22px; font-weight:400;
+  color:var(--acc3); text-align:center; margin-top:auto;
+  text-transform:uppercase; letter-spacing:.04em;
+  background:rgba(0,200,83,.04);
+}
 
-/* ═══ S12 CIERRE ═══ */
-#s12 { justify-content:center; align-items:center; text-align:center; }
-.close-name { font-family:'Plus Jakarta Sans',sans-serif; font-size:clamp(70px,10vw,120px); font-weight:800; letter-spacing:-.04em; line-height:.95; margin-bottom:26px; }
-.close-phrase { font-size:26px; color:var(--muted); line-height:1.5; margin-bottom:48px; max-width:780px; }
-.close-phrase strong { color:var(--ink); font-weight:700; }
-.close-mvp-lbl { font-family:'Plus Jakarta Sans',sans-serif; font-size:13px; letter-spacing:.24em; text-transform:uppercase; color:var(--dim); margin-bottom:12px; font-weight:700; }
-.close-mvp-date { font-family:'Plus Jakarta Sans',sans-serif; font-size:clamp(42px,6.5vw,70px); font-weight:800; background:linear-gradient(135deg, var(--rose) 0%, var(--violet) 50%, var(--sky) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:-.03em; }
-
-/* Fullscreen mode tweaks */
-:fullscreen .nav { padding:18px 24px; }
-:fullscreen body { background-attachment:fixed; }
+/* ══════════════════════════════════════════════
+   SLIDE 12 — CIERRE
+══════════════════════════════════════════════ */
+#s12 {
+  padding:0; display:grid; grid-template-columns:1fr 1fr;
+}
+#s12 .footer { display:none; }
+.close-left {
+  display:flex; flex-direction:column; justify-content:center;
+  padding:60px 68px;
+  background:#0a0a0a;
+}
+.close-right {
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:60px 68px 80px;
+  border-left:1.5px solid var(--border);
+}
+.close-name {
+  font-family:var(--display);
+  font-size:clamp(80px,13vw,160px);
+  line-height:.85; letter-spacing:-.02em;
+  color:#fff; text-transform:uppercase;
+  margin-bottom:28px;
+}
+.close-phrase {
+  font-size:22px; color:rgba(255,255,255,.55); line-height:1.55;
+}
+.close-phrase strong { color:#fff; font-weight:600; }
+.close-mvp-lbl {
+  font-family:var(--mono); font-size:11px; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--dim); margin-bottom:10px;
+}
+.close-mvp-date {
+  font-family:var(--display);
+  font-size:clamp(36px,5.5vw,64px);
+  color:var(--acc); letter-spacing:-.02em; text-transform:uppercase;
+  line-height:1.0;
+}
+.close-right-items { display:flex; flex-direction:column; gap:24px; }
+.close-right-item { display:flex; align-items:flex-start; gap:14px; }
+.close-right-item .ico { color:var(--acc); flex-shrink:0; margin-top:2px; }
+.close-right-item .txt { font-size:16px; color:var(--muted); line-height:1.5; }
+.close-right-item .txt strong { color:var(--ink); display:block; margin-bottom:2px; font-weight:600; }
+#s12 .footer { left:50%; right:0; padding-left:68px; padding-right:68px; }
 </style>
 </head>
 <body>
-
-<div class="blob blob-1"></div>
-<div class="blob blob-2"></div>
-<div class="blob blob-3"></div>
-<div class="blob blob-4"></div>
 
 <div class="deck">
 
 <!-- ═══ S1 PORTADA ═══ -->
 <div class="slide active" id="s1">
-  <div class="cover-tag">Administración de Proyectos · UCC 2026</div>
-  <div class="cover-name grad">NexusAI</div>
-  <div class="cover-sub">Asistente Académico Inteligente para Campus Virtual</div>
-  <div class="cover-meta">
-    <div class="cover-meta-item"><span class="cover-meta-key">Equipo</span><span class="cover-meta-val">Santiago Tricherri · Delfina Salinas</span></div>
-    <div class="cover-meta-sep"></div>
-    <div class="cover-meta-item"><span class="cover-meta-key">Fase</span><span class="cover-meta-val">Sprint 2 — pre-MVP</span></div>
-    <div class="cover-meta-sep"></div>
-    <div class="cover-meta-item"><span class="cover-meta-key">Fecha</span><span class="cover-meta-val">Mayo 2026</span></div>
+  <div class="cover-left">
+    <div>
+      <div class="cover-eyebrow">Administración de Proyectos · UCC 2026</div>
+    </div>
+    <div>
+      <div class="cover-name">Nexus<br>AI</div>
+    </div>
+    <div>
+      <div class="cover-sub">Asistente Académico Inteligente para Campus Virtual Moodle</div>
+    </div>
+    <div class="cover-meta-grid">
+      <div class="cover-meta-row">
+        <span class="cover-meta-key">Equipo</span>
+        <span class="cover-meta-val">Santiago Tricherri · Delfina Salinas</span>
+      </div>
+      <div class="cover-meta-row">
+        <span class="cover-meta-key">Fase</span>
+        <span class="cover-meta-val">Sprint 2 — pre-MVP</span>
+      </div>
+      <div class="cover-meta-row">
+        <span class="cover-meta-key">Fecha</span>
+        <span class="cover-meta-val">Mayo 2026</span>
+      </div>
+    </div>
+  </div>
+  <div class="cover-right">
+    <div class="cover-big-label">Lo que<br>construimos</div>
+    <div class="cover-right-items">
+      <div class="cover-right-item">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <div class="txt"><strong>RAG sobre material propio</strong>Responde con los PDFs y apuntes del docente, no con conocimiento genérico.</div>
+      </div>
+      <div class="cover-right-item">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <div class="txt"><strong>Integrado en Moodle</strong>Plugin instalable. El alumno pregunta sin salir del aula virtual.</div>
+      </div>
+      <div class="cover-right-item">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div class="txt"><strong>Self-hosted · datos seguros</strong>La información académica nunca sale del servidor institucional.</div>
+      </div>
+    </div>
   </div>
   <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">01 / 12</span></div>
 </div>
 
 <!-- ═══ S2 PROBLEMÁTICA ═══ -->
 <div class="slide" id="s2">
-  <div class="label">Punto de partida</div>
-  <h2>El problema que detectamos</h2>
+  <div class="eyebrow">Punto de partida</div>
+  <h2>El problema<br>que detectamos</h2>
   <div class="ps-grid">
     <div class="card ps-card">
-      <div class="card-top rose"></div>
-      <div class="ps-icon">⚠️</div>
-      <div class="ps-sub">Del lado del alumno</div>
+      <div class="card-accent acc-red"></div>
+      <svg class="ps-ico" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div class="ps-label">Del lado del alumno</div>
       <div class="ps-title prob">Se pierde en el material</div>
       <ul class="arrow-list">
         <li>PDFs, slides y apuntes dispersos en el aula virtual</li>
-        <li>Las dudas fuera de horario quedan sin responder</li>
+        <li>Las dudas fuera de horario quedan sin respuesta</li>
         <li>Los asistentes genéricos inventan respuestas</li>
       </ul>
     </div>
     <div class="card ps-card">
-      <div class="card-top amber"></div>
-      <div class="ps-icon">📊</div>
-      <div class="ps-sub">Del lado del docente</div>
+      <div class="card-accent acc-amber"></div>
+      <svg class="ps-ico" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <div class="ps-label">Del lado del docente</div>
       <div class="ps-title prob">No tiene visibilidad</div>
       <ul class="arrow-list">
         <li>No ve qué temas le cuestan al curso</li>
@@ -359,30 +668,30 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
 
 <!-- ═══ S3 SOLUCIÓN ═══ -->
 <div class="slide" id="s3">
-  <div class="label">Propuesta</div>
-  <h2>Un asistente IA dentro de Moodle</h2>
+  <div class="eyebrow">Propuesta</div>
+  <h2>Un asistente IA<br>dentro de Moodle</h2>
   <div class="pillars-grid">
     <div class="card pillar">
-      <div class="card-top emerald"></div>
-      <div class="ico">📚</div>
+      <div class="card-accent acc-green"></div>
+      <svg class="ico" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       <div class="ttl">RAG real</div>
       <div class="dsc">Responde con el material que sube el docente, no con conocimiento genérico.</div>
     </div>
     <div class="card pillar">
-      <div class="card-top sky"></div>
-      <div class="ico">🔖</div>
+      <div class="card-accent acc-blue"></div>
+      <svg class="ico" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="12" y2="13"/></svg>
       <div class="ttl">Cita la fuente</div>
       <div class="dsc">Cada respuesta indica de qué PDF o apunte sale la información.</div>
     </div>
     <div class="card pillar">
-      <div class="card-top violet"></div>
-      <div class="ico">🧩</div>
+      <div class="card-accent" style="background:#6a5aff;"></div>
+      <svg class="ico" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       <div class="ttl">Dentro de Moodle</div>
       <div class="dsc">Plugin instalable. El alumno no se va del aula virtual para preguntar.</div>
     </div>
     <div class="card pillar">
-      <div class="card-top rose"></div>
-      <div class="ico">🔒</div>
+      <div class="card-accent acc-red"></div>
+      <svg class="ico" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <div class="ttl">Self-hosted</div>
       <div class="dsc">Los datos académicos nunca salen del servidor de la institución.</div>
     </div>
@@ -392,33 +701,34 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
 
 <!-- ═══ S4 AVANCES ═══ -->
 <div class="slide" id="s4">
-  <div class="label">Estado al día de hoy — 12 Mayo 2026</div>
-  <h2>Dónde estamos parados</h2>
+  <div class="eyebrow">Estado — 18 Mayo 2026</div>
+  <h2>Dónde estamos<br>parados</h2>
   <div class="adv-grid">
     <div class="card adv-card">
-      <div class="card-top violet"></div>
+      <div class="card-accent acc-blue"></div>
       <div class="adv-lbl">Sprint 1 — Completo</div>
-      <div class="adv-big violet">100%</div>
+      <div class="adv-big blue">100%</div>
       <div class="adv-dsc">Plugin Moodle instalado, backend FastAPI corriendo, widget React en el aula.</div>
     </div>
     <div class="card adv-card">
-      <div class="card-top sky"></div>
+      <div class="card-accent" style="background:#6a5aff;"></div>
       <div class="adv-lbl">Sprint 2 — En curso</div>
-      <div class="adv-big sky">~80%</div>
-      <div class="adv-dsc">Pipeline RAG operativo end-to-end. Vista docente para subir y indexar PDFs.</div>
+      <div class="adv-big blue" style="color:#6a5aff;">~80%</div>
+      <div class="adv-dsc">Pipeline RAG operativo end-to-end. Vista docente para subir e indexar PDFs.</div>
     </div>
     <div class="card adv-card">
-      <div class="card-top emerald"></div>
+      <div class="card-accent acc-green"></div>
       <div class="adv-lbl">Issues cerrados</div>
-      <div class="adv-big emerald">25</div>
+      <div class="adv-big green">25</div>
       <div class="adv-dsc">El sistema responde preguntas usando el material real del curso, citando la fuente.</div>
     </div>
   </div>
   <div class="adv-banner">
-    <span style="color:var(--emerald);font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;">MVP adelantado</span>
-    <span style="color:var(--dim)">·</span>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00c853" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <span style="color:var(--acc3);font-weight:700;font-family:var(--body);">MVP adelantado</span>
+    <span style="color:var(--dim);">·</span>
     <span style="color:var(--ink);font-weight:600">4 días antes de lo planeado</span>
-    <span style="color:var(--dim)">·</span>
+    <span style="color:var(--dim);">·</span>
     <span style="color:var(--muted)">Entrega 1 de junio</span>
   </div>
   <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">04 / 12</span></div>
@@ -426,7 +736,7 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
 
 <!-- ═══ S5 GANTT ═══ -->
 <div class="slide" id="s5">
-  <div class="label">Cronograma</div>
+  <div class="eyebrow">Cronograma</div>
   <h2>El proyecto en el tiempo</h2>
 
   <div class="card gantt-wrap">
@@ -444,73 +754,52 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
       <div class="gantt-month">Ene</div>
       <div class="gantt-month">Feb</div>
     </div>
-
     <div class="gantt-rows">
-      <div class="gantt-today" style="left:calc(180px + 12.7%);"></div>
-
+      <div class="gantt-today" style="left:calc(170px + 14.7%);"></div>
       <div class="gantt-row">
         <div class="gantt-label">Setup + Investigación</div>
-        <div class="gantt-bar-wrap">
-          <div class="gantt-bar setup" style="left:0%;width:6%">9–22 Abr</div>
-        </div>
+        <div class="gantt-bar-wrap"><div class="gantt-bar setup" style="left:0%;width:6%">9–22 Abr</div></div>
       </div>
       <div class="gantt-row">
         <div class="gantt-label">Sprint 1</div>
-        <div class="gantt-bar-wrap">
-          <div class="gantt-bar s1" style="left:6%;width:6.5%">23 Abr – 6 May</div>
-        </div>
+        <div class="gantt-bar-wrap"><div class="gantt-bar s1" style="left:6%;width:6.5%">23 Abr – 6 May</div></div>
       </div>
       <div class="gantt-row">
         <div class="gantt-label">Sprint 2</div>
-        <div class="gantt-bar-wrap">
-          <div class="gantt-bar s2" style="left:12.5%;width:6.5%">7–20 May</div>
-        </div>
+        <div class="gantt-bar-wrap"><div class="gantt-bar s2" style="left:12.5%;width:6.5%">7–20 May</div></div>
       </div>
       <div class="gantt-row">
         <div class="gantt-label">Sprint 3</div>
-        <div class="gantt-bar-wrap">
-          <div class="gantt-bar s3" style="left:19%;width:3.5%">21–27 May</div>
-        </div>
+        <div class="gantt-bar-wrap"><div class="gantt-bar s3" style="left:19%;width:3.5%">21–27 May</div></div>
       </div>
       <div class="gantt-row">
         <div class="gantt-label">Sprint 4 — MVP</div>
-        <div class="gantt-bar-wrap">
-          <div class="gantt-bar mvp" style="left:22.5%;width:3%">28 May – 1 Jun ⭐</div>
-        </div>
+        <div class="gantt-bar-wrap"><div class="gantt-bar mvp" style="left:22.5%;width:3%">28 May – 1 Jun</div></div>
       </div>
       <div class="gantt-row">
         <div class="gantt-label">Documentación MVP</div>
-        <div class="gantt-bar-wrap">
-          <div class="gantt-bar docs" style="left:25.5%;width:6%">2–15 Jun</div>
-        </div>
+        <div class="gantt-bar-wrap"><div class="gantt-bar docs" style="left:25.5%;width:6%">2–15 Jun</div></div>
       </div>
       <div class="gantt-row">
         <div class="gantt-label">Post-MVP</div>
-        <div class="gantt-bar-wrap">
-          <div class="gantt-bar post" style="left:31.5%;width:42%">Jun – Nov 2026</div>
-        </div>
+        <div class="gantt-bar-wrap"><div class="gantt-bar post" style="left:31.5%;width:42%">Jun – Nov 2026</div></div>
       </div>
       <div class="gantt-row">
         <div class="gantt-label">Check 2 PI</div>
-        <div class="gantt-bar-wrap">
-          <div class="gantt-bar check" style="left:70%;width:3%">3 Nov</div>
-        </div>
+        <div class="gantt-bar-wrap"><div class="gantt-bar check" style="left:70%;width:3%">3 Nov</div></div>
       </div>
       <div class="gantt-row">
         <div class="gantt-label">Defensa final</div>
-        <div class="gantt-bar-wrap">
-          <div class="gantt-bar def" style="left:81.5%;width:18%">Ene – 27 Feb 2027 🎓</div>
-        </div>
+        <div class="gantt-bar-wrap"><div class="gantt-bar def" style="left:81.5%;width:18%">Ene – 27 Feb 2027</div></div>
       </div>
     </div>
-
     <div class="gantt-legend">
-      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#94a3b8,#64748b)"></div><span>Setup</span></div>
-      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#6366f1,#d946ef)"></div><span>Sprints</span></div>
-      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#10b981,#84cc16)"></div><span>MVP + Documentación</span></div>
-      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#14b8a6,#0ea5e9)"></div><span>Post-MVP</span></div>
-      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#a78bfa,#7c3aed)"></div><span>Check 2</span></div>
-      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:linear-gradient(90deg,#f59e0b,#f97316)"></div><span>Defensa final</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#555"></div><span>Setup</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:var(--acc)"></div><span>Sprints</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:var(--acc3)"></div><span>MVP + Docs</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#0097a7"></div><span>Post-MVP</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#7b1fa2"></div><span>Check 2</span></div>
+      <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:var(--acc4)"></div><span>Defensa final</span></div>
     </div>
   </div>
   <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">05 / 12</span></div>
@@ -518,30 +807,42 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
 
 <!-- ═══ S6 DECISIONES ═══ -->
 <div class="slide" id="s6">
-  <div class="label">Decisiones técnicas</div>
-  <h2>Lo que decidimos por el camino</h2>
+  <div class="eyebrow">Decisiones técnicas</div>
+  <h2>Lo que decidimos<br>por el camino</h2>
   <div class="decisions-grid">
     <div class="card" style="display:flex;flex-direction:column;gap:14px;">
-      <div class="card-top violet"></div>
-      <div class="dec-icon-title"><span class="dec-icon">🗄️</span><h3>Una sola base de datos</h3></div>
+      <div class="card-accent acc-blue"></div>
+      <div class="dec-header">
+        <svg class="dec-ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        <h3>Una sola base de datos</h3>
+      </div>
       <p>PostgreSQL + pgvector en lugar de una base vectorial aparte. Backup estándar, menos infra.</p>
       <div class="dec-tags"><span class="tag">PostgreSQL 16</span><span class="tag">pgvector</span></div>
     </div>
     <div class="card" style="display:flex;flex-direction:column;gap:14px;">
-      <div class="card-top sky"></div>
-      <div class="dec-icon-title"><span class="dec-icon">🔄</span><h3>IA intercambiable</h3></div>
+      <div class="card-accent" style="background:#0097a7;"></div>
+      <div class="dec-header">
+        <svg class="dec-ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <h3>IA intercambiable</h3>
+      </div>
       <p>Cambiar de Gemini a GPT-4o-mini es solo modificar variables de entorno. Sin lock-in.</p>
       <div class="dec-tags"><span class="tag">Gemini (dev)</span><span class="tag">GPT-4o-mini (prod)</span></div>
     </div>
     <div class="card" style="display:flex;flex-direction:column;gap:14px;">
-      <div class="card-top rose"></div>
-      <div class="dec-icon-title"><span class="dec-icon">🔐</span><h3>Seguridad en 3 capas</h3></div>
+      <div class="card-accent acc-red"></div>
+      <div class="dec-header">
+        <svg class="dec-ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <h3>Seguridad en 3 capas</h3>
+      </div>
       <p>Bearer key + firma HMAC-SHA256 + anti-replay en Redis. La API key nunca llega al navegador.</p>
       <div class="dec-tags"><span class="tag">HMAC-SHA256</span><span class="tag">Redis nonces</span></div>
     </div>
     <div class="card" style="display:flex;flex-direction:column;gap:14px;">
-      <div class="card-top emerald"></div>
-      <div class="dec-icon-title"><span class="dec-icon">🧩</span><h3>Plugin no invasivo</h3></div>
+      <div class="card-accent acc-green"></div>
+      <div class="dec-header">
+        <svg class="dec-ico" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <h3>Plugin no invasivo</h3>
+      </div>
       <p>Tipo <code>local</code>: se instala en Moodle sin tocar el core. Compatible 4.1–4.5 LTS.</p>
       <div class="dec-tags"><span class="tag">local_nexusai</span><span class="tag">Moodle 4.1–4.5</span></div>
     </div>
@@ -549,72 +850,53 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
   <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">06 / 12</span></div>
 </div>
 
-<!-- ═══ S7 MÉTRICAS GAUGES ═══ -->
+<!-- ═══ S7 MÉTRICAS ═══ -->
 <div class="slide" id="s7">
-  <div class="label">Métricas — Indicadores clave</div>
-  <h2>Cómo medimos que vamos bien</h2>
-
+  <div class="eyebrow">Métricas — Indicadores clave</div>
+  <h2>Cómo medimos<br>que vamos bien</h2>
   <div class="gauges-grid">
 
     <div class="card gauge-card">
-      <div class="card-top violet"></div>
-      <div class="ttl ges">Tiempo</div>
+      <div class="card-accent acc-green"></div>
+      <div class="gauge-ttl t1">Tiempo</div>
       <svg class="gauge-svg" viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
-        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e0e7ff" stroke-width="16" stroke-linecap="round" />
-        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="url(#grad-emerald)" stroke-width="16" stroke-linecap="round" stroke-dasharray="155.5 282.7" />
-        <defs>
-          <linearGradient id="grad-emerald" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#10b981"/>
-            <stop offset="100%" stop-color="#84cc16"/>
-          </linearGradient>
-        </defs>
-        <text x="20" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">0.0</text>
-        <text x="110" y="22" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">1.0 (meta)</text>
-        <text x="200" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">2.0</text>
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e8e8e8" stroke-width="14" stroke-linecap="round"/>
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#00c853" stroke-width="14" stroke-linecap="round" stroke-dasharray="155.5 282.7"/>
+        <text x="20" y="135" text-anchor="middle" font-size="10" fill="#999" font-family="DM Mono,monospace">0.0</text>
+        <text x="110" y="22" text-anchor="middle" font-size="10" fill="#999" font-family="DM Mono,monospace">meta: 1.0</text>
+        <text x="200" y="135" text-anchor="middle" font-size="10" fill="#999" font-family="DM Mono,monospace">2.0</text>
       </svg>
-      <div class="gauge-val emerald">1.10</div>
-      <div class="gauge-name">SPI · Avance del plan</div>
-      <div class="gauge-expl">Cada semana avanzamos <strong>10% más rápido</strong> de lo que habíamos planeado.<br>Bueno: mayor a 1.</div>
+      <div class="gauge-val v1">1.10</div>
+      <div class="gauge-name">SPI · Avance</div>
+      <div class="gauge-expl">Avanzamos <strong>10% más rápido</strong> de lo planeado.<br>Bueno: mayor a 1.</div>
     </div>
 
     <div class="card gauge-card">
-      <div class="card-top amber"></div>
-      <div class="ttl cos">Costo</div>
+      <div class="card-accent acc-amber"></div>
+      <div class="gauge-ttl t2">Costo</div>
       <svg class="gauge-svg" viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
-        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e0e7ff" stroke-width="16" stroke-linecap="round" />
-        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="url(#grad-amber)" stroke-width="16" stroke-linecap="round" stroke-dasharray="120.1 282.7" />
-        <defs>
-          <linearGradient id="grad-amber" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#f97316"/>
-            <stop offset="100%" stop-color="#f59e0b"/>
-          </linearGradient>
-        </defs>
-        <text x="20" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">0.0</text>
-        <text x="110" y="22" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">1.0 (meta)</text>
-        <text x="200" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">2.0</text>
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e8e8e8" stroke-width="14" stroke-linecap="round"/>
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#ff9800" stroke-width="14" stroke-linecap="round" stroke-dasharray="134.3 282.7"/>
+        <text x="20" y="135" text-anchor="middle" font-size="10" fill="#999" font-family="DM Mono,monospace">0.0</text>
+        <text x="110" y="22" text-anchor="middle" font-size="10" fill="#999" font-family="DM Mono,monospace">meta: 1.0</text>
+        <text x="200" y="135" text-anchor="middle" font-size="10" fill="#999" font-family="DM Mono,monospace">2.0</text>
       </svg>
-      <div class="gauge-val amber">0.85</div>
-      <div class="gauge-name">CPI · Uso del esfuerzo</div>
-      <div class="gauge-expl">Estamos usando <strong class="warn">15% más esfuerzo</strong> del estimado.<br>Aceptable: típico al arrancar un proyecto nuevo.</div>
+      <div class="gauge-val v2">0.95</div>
+      <div class="gauge-name">CPI · Esfuerzo</div>
+      <div class="gauge-expl">Usamos <strong class="warn">5% más esfuerzo</strong> del estimado.<br>Sobrecosto leve, dentro del margen.</div>
     </div>
 
     <div class="card gauge-card">
-      <div class="card-top emerald"></div>
-      <div class="ttl cal">Calidad</div>
+      <div class="card-accent acc-blue"></div>
+      <div class="gauge-ttl t3">Calidad</div>
       <svg class="gauge-svg" viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
-        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e0e7ff" stroke-width="16" stroke-linecap="round" />
-        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="url(#grad-fuchsia)" stroke-width="16" stroke-linecap="round" stroke-dasharray="282.7 282.7" />
-        <defs>
-          <linearGradient id="grad-fuchsia" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#d946ef"/>
-            <stop offset="100%" stop-color="#ec4899"/>
-          </linearGradient>
-        </defs>
-        <text x="20" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">0</text>
-        <text x="110" y="22" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">tests passed</text>
-        <text x="200" y="135" text-anchor="middle" font-size="11" fill="#94a3b8" font-family="JetBrains Mono,monospace">18</text>
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e8e8e8" stroke-width="14" stroke-linecap="round"/>
+        <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#1a1aff" stroke-width="14" stroke-linecap="round" stroke-dasharray="282.7 282.7"/>
+        <text x="20" y="135" text-anchor="middle" font-size="10" fill="#999" font-family="DM Mono,monospace">0</text>
+        <text x="110" y="22" text-anchor="middle" font-size="10" fill="#999" font-family="DM Mono,monospace">tests passed</text>
+        <text x="200" y="135" text-anchor="middle" font-size="10" fill="#999" font-family="DM Mono,monospace">18</text>
       </svg>
-      <div class="gauge-val fuchsia">100%</div>
+      <div class="gauge-val v3">100%</div>
       <div class="gauge-name">Tests pasando</div>
       <div class="gauge-expl"><strong>18 de 18</strong> tests automáticos pasan.<br>0 vulnerabilidades detectadas.</div>
     </div>
@@ -625,36 +907,36 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
 
 <!-- ═══ S8 ARQUITECTURA ═══ -->
 <div class="slide" id="s8">
-  <div class="label">Arquitectura</div>
+  <div class="eyebrow">Arquitectura</div>
   <h2>Cómo funciona una pregunta</h2>
 
   <div class="flow-simple">
     <div class="flow-step">
-      <div class="ico">👨‍🎓</div>
+      <svg class="ico" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <div class="ttl">Alumno pregunta</div>
       <div class="tch">React widget</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-step">
-      <div class="ico">🔐</div>
+      <svg class="ico" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <div class="ttl">Moodle valida</div>
       <div class="tch">Plugin PHP + HMAC</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-step">
-      <div class="ico">🧠</div>
+      <svg class="ico" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
       <div class="ttl">Backend busca</div>
       <div class="tch">FastAPI + pgvector</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-step">
-      <div class="ico">✨</div>
+      <svg class="ico" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
       <div class="ttl">IA responde</div>
       <div class="tch">Gemini con contexto</div>
     </div>
     <div class="flow-arrow">→</div>
     <div class="flow-step">
-      <div class="ico">📖</div>
+      <svg class="ico" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       <div class="ttl">Cita la fuente</div>
       <div class="tch">"Según apunte-X.pdf"</div>
     </div>
@@ -662,49 +944,46 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
 
   <div class="arch-notes">
     <div class="arch-note">
-      <span class="ico">🔒</span>
+      <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <div class="txt"><strong>Seguro</strong>La API key nunca llega al navegador</div>
     </div>
     <div class="arch-note">
-      <span class="ico">⚡</span>
+      <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       <div class="txt"><strong>Resiliente</strong>Si falla retrieval, el chat sigue funcionando</div>
     </div>
     <div class="arch-note">
-      <span class="ico">📚</span>
+      <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
       <div class="txt"><strong>Async</strong>Indexación en background, no bloquea la UI</div>
     </div>
   </div>
   <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">08 / 12</span></div>
 </div>
 
-<!-- ═══ S9 INFRA / DEPLOY ═══ -->
+<!-- ═══ S9 INFRA ═══ -->
 <div class="slide" id="s9">
-  <div class="label">Infraestructura</div>
-  <h2>Cómo lo desplegamos</h2>
-
+  <div class="eyebrow">Infraestructura</div>
+  <h2>Cómo lo<br>desplegamos</h2>
   <div class="deploy-grid">
     <div class="card deploy-card">
-      <div class="card-top violet"></div>
+      <div class="card-accent acc-blue"></div>
       <div class="deploy-tag dev">Desarrollo</div>
       <div class="deploy-name">Docker Compose local</div>
       <div class="deploy-desc">Stack completo en un comando. Postgres + Redis + FastAPI + Moodle todos en contenedores.</div>
       <span class="deploy-chip">docker compose up -d</span>
     </div>
-
     <div class="card deploy-card">
-      <div class="card-top sky"></div>
-      <div class="deploy-tag demo">Demo / Piloto</div>
-      <div class="deploy-name">Railway o VPS chico</div>
-      <div class="deploy-desc">Para mostrar el MVP a usuarios reales sin esperar aprobación de TI. ~$5 al mes.</div>
-      <span class="deploy-chip">Railway · ngrok · Fly.io</span>
+      <div class="card-accent" style="background:#0097a7;"></div>
+      <div class="deploy-tag demo">CI / CD</div>
+      <div class="deploy-name">GitHub Actions</div>
+      <div class="deploy-desc">En cada push a <code>main</code>: corren los tests, se buildea el bundle React y se hace deploy automático. Sin intervención manual.</div>
+      <span class="deploy-chip">tests · build · deploy auto</span>
     </div>
-
     <div class="card deploy-card">
-      <div class="card-top emerald"></div>
-      <div class="deploy-tag prod">Producción UCC</div>
-      <div class="deploy-name">Servidor propio de la facultad</div>
-      <div class="deploy-desc">El stack corre dentro de la infraestructura UCC. Los datos académicos no salen nunca.</div>
-      <span class="deploy-chip">Self-hosted · GDPR-ready</span>
+      <div class="card-accent acc-green"></div>
+      <div class="deploy-tag prod">Producción</div>
+      <div class="deploy-name">Fly.io</div>
+      <div class="deploy-desc">Free tier para el MVP, escalado automático según demanda. Postgres con pgvector incluido. Portable: el Dockerfile corre en cualquier cloud.</div>
+      <span class="deploy-chip">Free tier MVP · ~$10/mes a escala</span>
     </div>
   </div>
   <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">09 / 12</span></div>
@@ -712,50 +991,41 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
 
 <!-- ═══ S10 COSTOS ═══ -->
 <div class="slide" id="s10">
-  <div class="label">Análisis económico</div>
-  <h2>Cuánto cuesta hacerlo y operarlo</h2>
-
+  <div class="eyebrow">Análisis económico</div>
+  <h2>Cuánto cuesta<br>hacerlo y operarlo</h2>
   <div class="cost-grid">
     <div class="card cost-card">
-      <div class="card-top rose"></div>
+      <div class="card-accent" style="background:#9a32ff;"></div>
       <div class="cost-tag us">Costo del equipo</div>
       <div class="cost-head">Horas invertidas</div>
-
       <div class="cost-bars">
         <div class="cost-bar">
           <div class="cost-bar-head">
             <span class="cost-bar-name">Santiago — PM + Backend</span>
-            <span class="cost-bar-val">~580 hs</span>
+            <span class="cost-bar-val">~570 hs</span>
           </div>
-          <div class="cost-bar-track">
-            <div class="cost-bar-fill santi" style="width:100%"></div>
-          </div>
+          <div class="cost-bar-track"><div class="cost-bar-fill santi" style="width:100%"></div></div>
         </div>
         <div class="cost-bar">
           <div class="cost-bar-head">
             <span class="cost-bar-name">Delfina — SM + Frontend</span>
-            <span class="cost-bar-val">~560 hs</span>
+            <span class="cost-bar-val">~570 hs</span>
           </div>
-          <div class="cost-bar-track">
-            <div class="cost-bar-fill delfi" style="width:96%"></div>
-          </div>
+          <div class="cost-bar-track"><div class="cost-bar-fill delfi" style="width:100%"></div></div>
         </div>
       </div>
-
       <div class="cost-total">
         <div>
           <div class="cost-total-lbl">Equivalente a tarifa junior</div>
-          <div style="font-size:13px;color:var(--dim);font-style:italic;margin-top:4px;">~1.140 hs · $20/h estimado</div>
+          <div style="font-size:12px;color:var(--dim);font-style:italic;margin-top:3px;">~1.140 hs · $20/h estimado</div>
         </div>
         <div class="cost-total-val">~$22.800</div>
       </div>
     </div>
-
     <div class="card cost-card">
-      <div class="card-top emerald"></div>
+      <div class="card-accent acc-green"></div>
       <div class="cost-tag op">Costo operativo</div>
       <div class="cost-head">Qué sale correrlo</div>
-
       <div class="cost-rows">
         <div class="cost-row">
           <span class="k">MVP (hoy) — Gemini gratuito</span>
@@ -763,18 +1033,17 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
         </div>
         <div class="cost-row">
           <span class="k">Hosting demo (Railway)</span>
-          <span class="v" style="color:var(--sky)">~$5 /mes</span>
+          <span class="v" style="color:var(--acc);">~$5 /mes</span>
         </div>
         <div class="cost-row">
-          <span class="k">Producción UCC · 12.000 alumnos</span>
-          <span class="v" style="color:var(--violet)">~$580 /mes</span>
+          <span class="k">Producción · 12.000 alumnos estimados</span>
+          <span class="v" style="color:#6a5aff;">~$580 /mes</span>
         </div>
         <div class="cost-row">
           <span class="k">Costo por alumno</span>
           <span class="v">~$0,05 /mes</span>
         </div>
       </div>
-
       <div class="cost-foot">El equivalente al costo de una fotocopia por alumno.</div>
     </div>
   </div>
@@ -783,11 +1052,11 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
 
 <!-- ═══ S11 ROADMAP ═══ -->
 <div class="slide" id="s11">
-  <div class="label">Próximos pasos</div>
+  <div class="eyebrow">Próximos pasos</div>
   <h2>Lo que viene</h2>
   <div class="roadmap-grid">
     <div class="card" style="display:flex;flex-direction:column;gap:12px;">
-      <div class="card-top sky"></div>
+      <div class="card-accent" style="background:#0097a7;"></div>
       <div class="rm-label s3">Sprint 3</div>
       <div class="rm-title">Integración completa con Moodle</div>
       <div class="rm-dates">21 May – 27 May 2026</div>
@@ -797,18 +1066,20 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
         <li>Bundle React integrado en producción</li>
       </ul>
     </div>
-
     <div class="card" style="display:flex;flex-direction:column;gap:12px;">
-      <div class="card-top emerald"></div>
-      <div class="rm-label s4">Sprint 4 — MVP ⭐</div>
-      <div class="rm-title">Testing &amp; validación con usuarios</div>
+      <div class="card-accent acc-green"></div>
+      <div class="rm-label s4">Sprint 4 — MVP</div>
+      <div class="rm-title">Testing & validación con usuarios</div>
       <div class="rm-dates">28 May – 1 Jun 2026</div>
       <ul class="arrow-list" style="flex:1;">
         <li>Testing end-to-end del sistema</li>
-        <li class="hi">Pruebas con usuarios reales — UCC</li>
+        <li class="ok">Pruebas con usuarios reales — UCC</li>
         <li>Corrección de bugs y pulido final</li>
       </ul>
-      <div class="mvp-badge">🎯 MVP entregado el 1 de junio</div>
+      <div class="mvp-badge">
+        <svg style="display:inline;vertical-align:middle;margin-right:8px;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        MVP entregado el 1 de junio
+      </div>
     </div>
   </div>
   <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">11 / 12</span></div>
@@ -816,35 +1087,48 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
 
 <!-- ═══ S12 CIERRE ═══ -->
 <div class="slide" id="s12">
-  <div class="close-name grad">NexusAI</div>
-  <div class="close-phrase">Del problema detectado al sistema funcionando<br><strong>en dos sprints.</strong></div>
-  <div>
-    <div class="close-mvp-lbl">Fecha objetivo MVP</div>
-    <div class="close-mvp-date">1 de junio de 2026</div>
+  <div class="close-left">
+    <div class="close-name">Nexus<br>AI</div>
+    <div class="close-phrase">Del problema detectado al sistema funcionando<br><strong>en dos sprints.</strong></div>
+  </div>
+  <div class="close-right">
+    <div class="close-right-items">
+      <div class="close-right-item">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <div class="txt"><strong>Sprint 1 completado</strong>Plugin, backend y widget funcionando en producción.</div>
+      </div>
+      <div class="close-right-item">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <div class="txt"><strong>Sprint 2 al ~80%</strong>RAG end-to-end operativo, métricas verdes.</div>
+      </div>
+      <div class="close-right-item">
+        <svg class="ico" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <div class="txt"><strong>MVP adelantado 4 días</strong>Entrega objetivo: 1 de junio de 2026.</div>
+      </div>
+    </div>
+    <div>
+      <div class="close-mvp-lbl">Fecha objetivo MVP</div>
+      <div class="close-mvp-date">1 de junio<br>de 2026</div>
+    </div>
   </div>
   <div class="footer"><span class="foot-brand">NexusAI</span><span class="slide-num">12 / 12</span></div>
 </div>
 
-</div>
+</div><!-- /deck -->
 
 <nav class="nav">
   <div class="nav-inner">
-    <button class="nav-btn" id="btn-prev" onclick="navigate(-1)">← Anterior</button>
+    <button class="nav-btn" id="btn-prev" onclick="navigate(-1)">← Ant</button>
     <div class="nav-dots" id="dots"></div>
-    <button class="nav-btn" id="btn-next" onclick="navigate(1)">Siguiente →</button>
+    <button class="nav-btn" id="btn-next" onclick="navigate(1)">Sig →</button>
     <div class="nav-sep"></div>
     <button class="nav-icon" id="btn-fs" onclick="toggleFullscreen()" title="Pantalla completa (F)">
       <svg id="fs-expand" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
-        <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
-        <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
-        <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+        <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+        <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
       </svg>
       <svg id="fs-collapse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-        <path d="M4 14h6v6"/>
-        <path d="M20 10h-6V4"/>
-        <path d="M14 10l7-7"/>
-        <path d="M3 21l7-7"/>
+        <path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/>
       </svg>
     </button>
   </div>
@@ -853,33 +1137,30 @@ code { font-family:'JetBrains Mono',monospace; font-size:15px; color:var(--viole
 <script>
 const TOTAL=12; let cur=1;
 const dots=document.getElementById('dots');
-for(let i=1;i<=TOTAL;i++){const d=document.createElement('div');d.className='nav-dot'+(i===1?' active':'');d.onclick=()=>goTo(i);dots.appendChild(d);}
-
+for(let i=1;i<=TOTAL;i++){
+  const d=document.createElement('div');
+  d.className='nav-dot'+(i===1?' active':'');
+  d.onclick=()=>goTo(i);
+  dots.appendChild(d);
+}
 function goTo(n){
   const p=document.getElementById('s'+cur);
-  p.classList.remove('active');p.classList.add('exit');
-  setTimeout(()=>p.classList.remove('exit'),500);
-  cur=n;document.getElementById('s'+cur).classList.add('active');
+  p.classList.remove('active'); p.classList.add('exit');
+  setTimeout(()=>p.classList.remove('exit'),400);
+  cur=n; document.getElementById('s'+cur).classList.add('active');
   document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i+1===cur));
-  document.getElementById('btn-prev').style.opacity=cur===1?'0.35':'1';
-  document.getElementById('btn-next').style.opacity=cur===TOTAL?'0.35':'1';
+  document.getElementById('btn-prev').style.opacity=cur===1?'0.3':'1';
+  document.getElementById('btn-next').style.opacity=cur===TOTAL?'0.3':'1';
 }
-function navigate(dir){const n=cur+dir;if(n<1||n>TOTAL)return;goTo(n);}
-
+function navigate(dir){ const n=cur+dir; if(n<1||n>TOTAL)return; goTo(n); }
 function toggleFullscreen(){
-  if(!document.fullscreenElement){
-    document.documentElement.requestFullscreen().catch(()=>{});
-  } else {
-    document.exitFullscreen();
-  }
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+  else document.exitFullscreen();
 }
 document.addEventListener('fullscreenchange',()=>{
-  const e=document.getElementById('fs-expand');
-  const c=document.getElementById('fs-collapse');
-  if(document.fullscreenElement){ e.style.display='none'; c.style.display=''; }
-  else { e.style.display=''; c.style.display='none'; }
+  document.getElementById('fs-expand').style.display=document.fullscreenElement?'none':'';
+  document.getElementById('fs-collapse').style.display=document.fullscreenElement?'':'none';
 });
-
 document.addEventListener('keydown',e=>{
   if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' ')navigate(1);
   if(e.key==='ArrowLeft'||e.key==='ArrowUp')navigate(-1);
@@ -887,7 +1168,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Home')goTo(1);
   if(e.key==='End')goTo(TOTAL);
 });
-document.getElementById('btn-prev').style.opacity='0.35';
+document.getElementById('btn-prev').style.opacity='0.3';
 </script>
 </body>
 </html>
