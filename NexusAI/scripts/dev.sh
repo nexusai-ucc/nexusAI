@@ -55,15 +55,19 @@ cmd_up() {
 
 cmd_full() {
     check_prereqs
-    log "Levantando stack completo (+ moodle)..."
-    docker compose --profile full up -d
-    log "Esperando a Moodle (puede tardar 1-2 min en el primer arranque)..."
-    sleep 10
-    ok "Stack completo listo. URLs:"
-    echo "   - Moodle:     http://localhost:8080  (admin/adminpass123)"
+    log "Levantando backend (postgres + redis + api) + pgAdmin..."
+    docker compose --profile tools up -d postgres redis api pgadmin
+    sleep 5
+    ok "Stack del backend listo. URLs:"
     echo "   - API:        http://localhost:8001/docs"
     echo "   - Postgres:   localhost:5432"
     echo "   - Redis:      localhost:6379"
+    echo "   - pgAdmin:    http://localhost:5050"
+    echo ""
+    warn "Moodle NO se levanta desde acá."
+    echo "   Para E2E con Moodle, levantá moodlehq/moodle-docker en un repo aparte"
+    echo "   y montá plugin/local/nexusai/ como local/nexusai en su volumen."
+    echo "   Detalle: investigacion/10-setup-entorno/docker-moodle.md"
 }
 
 cmd_tools() {
@@ -82,26 +86,26 @@ cmd_tools() {
 
 cmd_down() {
     log "Parando todos los servicios (preservando datos)..."
-    docker compose --profile full --profile tools down
+    docker compose --profile tools down
     ok "Stack detenido. Datos preservados en volúmenes."
 }
 
 cmd_destroy() {
-    warn "Esto va a BORRAR TODOS LOS DATOS (postgres, redis, moodle, pgadmin)."
+    warn "Esto va a BORRAR TODOS LOS DATOS (postgres, redis, pgadmin)."
     read -p "¿Estás seguro? Escribí 'borrar todo' para confirmar: " confirm
     if [ "$confirm" != "borrar todo" ]; then
         log "Cancelado."
         exit 0
     fi
     log "Borrando volúmenes..."
-    docker compose --profile full --profile tools down -v
+    docker compose --profile tools down -v
     ok "Stack y datos borrados."
 }
 
 cmd_logs() {
     local service="${1:-}"
     if [ -z "$service" ]; then
-        docker compose --profile full --profile tools logs -f
+        docker compose --profile tools logs -f
     else
         docker compose logs -f "$service"
     fi
@@ -118,7 +122,7 @@ cmd_shell_api() {
 }
 
 cmd_status() {
-    docker compose --profile full --profile tools ps
+    docker compose --profile tools ps
 }
 
 cmd_reload() {
@@ -138,21 +142,21 @@ USO:
   ./scripts/dev.sh <comando>
 
 COMANDOS:
-  up            Levanta stack mínimo (postgres + redis + api)
-  full          Levanta stack completo (+ moodle)
-  tools         Levanta herramientas de inspección (pgAdmin)
+  up            Levanta stack del backend (postgres + redis + api)
+  full          Levanta backend + pgAdmin (todo en uno para demos)
+  tools         Levanta solo pgAdmin (sin tocar el resto)
   reload        Recrea containers leyendo .env nuevo (usar tras editar .env)
   down          Para todos los servicios (preserva datos)
   destroy       Borra TODOS los volúmenes y datos (¡irreversible!)
   status        Muestra el estado de los containers
-  logs [svc]    Sigue los logs (opcionalmente de un servicio: postgres, redis, api, moodle)
+  logs [svc]    Sigue los logs (opcionalmente de un servicio: postgres, redis, api)
   shell:pg      Abre psql en la DB nexusai
   shell:api     Abre bash en el container del API
   help          Muestra esta ayuda
 
 EJEMPLOS:
   ./scripts/dev.sh up                 # Lo más común — backend dev
-  ./scripts/dev.sh full               # Demo E2E con Moodle
+  ./scripts/dev.sh full               # backend + pgAdmin (demo)
   ./scripts/dev.sh logs api           # Seguir logs del backend
   ./scripts/dev.sh shell:pg           # Inspeccionar la DB
 
@@ -162,8 +166,13 @@ URLs DESPUÉS DE 'up':
   - Redis:      localhost:6379
 
 URLs DESPUÉS DE 'full':
-  - Moodle:     http://localhost:8080  (admin/adminpass123)
+  - pgAdmin:    http://localhost:5050
   - + URLs de 'up'
+
+MOODLE:
+  No se levanta desde este script. Para E2E con Moodle, levantá
+  moodlehq/moodle-docker en un repo separado y montá plugin/local/nexusai
+  como local/nexusai en su volumen.
 EOF
 }
 
