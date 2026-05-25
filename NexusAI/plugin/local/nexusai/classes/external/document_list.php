@@ -36,6 +36,8 @@ class document_list extends \external_api {
                 'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
                 'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
                 'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si aplica', VALUE_OPTIONAL),
+                'created_at'    => new \external_value(PARAM_TEXT, 'Fecha de subida (ISO 8601)', VALUE_OPTIONAL),
+                'updated_at'    => new \external_value(PARAM_TEXT, 'Fecha de última actualización (ISO 8601)', VALUE_OPTIONAL),
             ]),
             'Lista de documentos del curso, ordenados por fecha de subida descendente'
         );
@@ -62,6 +64,8 @@ class document_list extends \external_api {
                 'mime_type'     => (string) ($d['mime_type'] ?? ''),
                 'status'        => (string) ($d['status'] ?? ''),
                 'error_message' => $d['error_message'] ?? null,
+                'created_at'    => isset($d['created_at']) ? (string) $d['created_at'] : null,
+                'updated_at'    => isset($d['updated_at']) ? (string) $d['updated_at'] : null,
             ],
             $documents
         );

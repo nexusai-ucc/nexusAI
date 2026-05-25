@@ -48,7 +48,7 @@ if ($hassiteconfig) {
         get_string('apiendpoint', 'local_nexusai'),
         get_string('apiendpoint_desc', 'local_nexusai'),
         'http://localhost:8001',
-        PARAM_URL
+        PARAM_RAW
     ));
 
     // Bearer API key del backend (capa 1 de auth — ver ADR-005).

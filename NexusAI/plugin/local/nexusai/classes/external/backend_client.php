@@ -224,8 +224,10 @@ class backend_client {
 
         // Usamos la clase \curl de Moodle (no `curl_*` de PHP), que aplica
         // automáticamente la config de proxy / blocked hosts del sitio.
+        // ignoresecurity=true es necesario para que el backend interno (localhost /
+        // host.docker.internal) no sea rechazado por la protección anti-SSRF de Moodle.
         require_once($GLOBALS['CFG']->libdir . '/filelib.php');
-        $curl = new \curl();
+        $curl = new \curl(['ignoresecurity' => true]);
         $curl->setHeader([
             'Content-Type: application/json',
             'Authorization: Bearer ' . $this->apikey,

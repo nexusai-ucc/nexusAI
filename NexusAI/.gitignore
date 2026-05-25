@@ -108,3 +108,4 @@ junit.xml
 tmp/
 .cache/
 *.bak
+moodle-src/

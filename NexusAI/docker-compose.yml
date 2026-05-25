@@ -1,8 +1,8 @@
 # NexusAI — docker-compose para desarrollo local
 #
 # Uso típico:
-#   docker compose up -d                        # postgres + redis + api (stack del backend)
-#   docker compose --profile tools up -d        # + pgAdmin para inspeccionar la DB
+#   docker compose up -d                        # postgres + redis + api (stack mínimo)
+#   docker compose --profile full up -d         # + moodle (stack completo E2E)
 #   docker compose down                         # parar todo (preserva volúmenes)
 #   docker compose down -v                      # parar y borrar datos
 #
@@ -14,22 +14,16 @@
 #   - Postgres+pgvector:  localhost:5432
 #   - Redis:              localhost:6379
 #   - FastAPI:            localhost:8001  (Swagger en /docs)
+#   - Moodle (opcional):  localhost:8080  (admin/adminpass tras setup)
 #   - pgAdmin (opcional): localhost:5050  (admin@example.com / admin)
-#
-# Sobre Moodle:
-#   Moodle NO se levanta desde este compose. Para desarrollar el plugin se usa
-#   `moodlehq/moodle-docker` (proyecto oficial de Moodle), que vive en su propio
-#   repo fuera de este. Ver `investigacion/10-setup-entorno/docker-moodle.md`.
-#
-#   Histórico: hasta julio 2025 usábamos `bitnami/moodle:4.4` acá como profile
-#   `full`, pero Broadcom (que compró Bitnami) sacó las imágenes públicas de
-#   Docker Hub. Migrar a `moodlehq/moodle-docker` era el plan eventual de todos
-#   modos — esto solo nos forzó a hacerlo antes.
 #
 # Notas:
 #   - El servicio `api` usa el Dockerfile de services/api/. Si todavía no existe,
 #     `docker compose up api` va a fallar (esperado al inicio del proyecto).
 #     Mientras tanto se puede arrancar solo postgres+redis: `docker compose up postgres redis`
+#   - Moodle vive en su propio profile `full` para no levantarlo siempre.
+#     Para desarrollo del plugin Moodle conviene usar moodlehq/moodle-docker
+#     (ver investigacion/10-setup-entorno/docker-moodle.md).
 
 name: nexusai
 
@@ -116,9 +110,33 @@ services:
     networks: [nexusai-net]
 
   # --------------------------------------------------------------
-  # Moodle NO se levanta acá — usar moodlehq/moodle-docker (proyecto oficial)
-  # en un repo separado, montando este plugin como volumen. Ver:
-  #   investigacion/10-setup-entorno/docker-moodle.md
+  # Moodle (profile opcional `full`) — para demo E2E
+  # Usa moodlehq/moodle-php-apache con código fuente en moodle-src/
+  # --------------------------------------------------------------
+  moodle:
+    image: moodlehq/moodle-php-apache:8.1
+    container_name: nexusai-moodle
+    restart: unless-stopped
+    profiles: [full]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MOODLE_DOCKER_DBTYPE: pgsql
+      MOODLE_DOCKER_DBHOST: postgres
+      MOODLE_DOCKER_DBNAME: moodle
+      MOODLE_DOCKER_DBUSER: ${POSTGRES_USER}
+      MOODLE_DOCKER_DBPASS: ${POSTGRES_PASSWORD}
+      MOODLE_DOCKER_WWWROOT: /var/www/html
+      MOODLE_DOCKER_PHP_VERSION: "8.1"
+    ports:
+      - "${MOODLE_PORT:-8082}:80"
+    volumes:
+      - ./moodle-src:/var/www/html
+      - ./plugin/local/nexusai:/var/www/html/local/nexusai
+      - moodle_data:/var/moodledata
+    networks: [nexusai-net]
+
   # --------------------------------------------------------------
   # pgAdmin (profile opcional `tools`) — UI para inspeccionar Postgres
   # --------------------------------------------------------------
@@ -149,6 +167,8 @@ volumes:
     name: nexusai_postgres_data
   redis_data:
     name: nexusai_redis_data
+  moodle_data:
+    name: nexusai_moodle_data
   pgadmin_data:
     name: nexusai_pgadmin_data
 

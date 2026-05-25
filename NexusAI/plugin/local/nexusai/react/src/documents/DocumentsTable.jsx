@@ -90,6 +90,7 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                     <tr>
                         <th>Archivo</th>
                         <th>Estado</th>
+                        <th>Fecha</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -108,7 +109,15 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
     );
 }
 
+function formatIndexedAt(isoString) {
+    if (!isoString) return "—";
+    const d = new Date(isoString);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function DocumentRow({ doc, onDelete, deleting }) {
+    const showDate = STABLE_STATUSES.has(doc.status);
     return (
         <tr className={`nexusai-table__row nexusai-table__row--${doc.status}`}>
             <td>
@@ -121,6 +130,9 @@ function DocumentRow({ doc, onDelete, deleting }) {
             </td>
             <td>
                 <StatusBadge status={doc.status} errorMessage={doc.error_message} />
+            </td>
+            <td className="nexusai-table__date">
+                {showDate ? formatIndexedAt(doc.updated_at) : "—"}
             </td>
             <td className="nexusai-table__actions">
                 <button
