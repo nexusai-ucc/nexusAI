@@ -1,0 +1,54 @@
+# Deploy automático a Fly.io del backend NexusAI.
+#
+# Se dispara cuando se hace push a main y los archivos del backend cambiaron.
+# Para que funcione, tiene que estar configurado el secret FLY_API_TOKEN en
+# GitHub (Settings → Secrets and variables → Actions → New repository secret).
+#
+# Generar el token:
+#   fly auth token
+#
+# Y pegarlo como FLY_API_TOKEN en GitHub Secrets.
+
+name: Deploy backend to Fly.io
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/api/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:   # permite gatillarlo manualmente desde la UI de GitHub
+
+# Solo un deploy a la vez — si llega un push nuevo mientras corre, cancela el anterior.
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Fly.io
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy
+        working-directory: services/api
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Run database migrations
+        working-directory: services/api
+        run: flyctl ssh console -C "alembic upgrade head"
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Verify health check
+        run: |
+          sleep 5
+          curl --fail https://nexusai-api.fly.dev/health || exit 1
