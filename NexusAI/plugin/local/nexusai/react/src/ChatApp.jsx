@@ -3,21 +3,17 @@
  *
  * Sprint 1: UI completa de chat (lista de mensajes, input, loader,
  * manejo de errores, auto-scroll) + cliente API que apunta al endpoint
- * `local_nexusai_chat_send` de Moodle. Incluye fallback a modo mock cuando
- * se corre fuera de Moodle (ver react/src/api/chat.js).
+ * `local_nexusai_chat_send` de Moodle.
  *
- * Sprint 2 (cierre): markdown rendering en respuestas del LLM y pills de
- * fuentes citadas (ver MessageBubble.jsx). El backend ya hace RAG real con
- * pgvector + Gemini, así que cada respuesta puede traer citas tipo
- * "según apunte-X.pdf" que parseamos y mostramos como badges.
+ * Sprint 2: markdown rendering en respuestas del LLM y pills de fuentes.
  *
- * Sprint 3: streaming de respuestas con SSE, historial de sesiones
- * (GET /sessions), borrar conversación.
+ * Sprint 3+: rediseño shadcn/ui — header neutro con avatar y dot de estado,
+ * suggestion chips en bienvenida, footer limpio, FAB SVG, tipografía refinada.
  *
  * Props (vienen desde lib.php / classes/hook/output/before_footer_listener.php):
  *   - courseid:  ID del curso actual de Moodle
  *   - userid:    ID del usuario logueado
- *   - sesskey:   token CSRF de Moodle (lo usa core/ajax automáticamente)
+ *   - sesskey:   token CSRF de Moodle
  *   - wwwroot:   URL base de Moodle (debug)
  *   - lang:      'es' | 'en'
  */
@@ -32,35 +28,92 @@ import { sendMessage } from "./api/chat.js";
 const STRINGS = {
     es: {
         title:        "Asistente NexusAI",
+        statusActive: "Activo · basado en tu curso",
         close:        "Cerrar",
         open:         "Abrir chat",
-        welcome:      "¡Hola! Soy el asistente de tu materia. Preguntame lo que necesites sobre el contenido del curso.",
+        welcome:      "Hola, soy tu asistente de estudio. Puedo responder preguntas sobre el contenido de esta materia.",
+        chipsLabel:   "O elegí una consulta frecuente:",
         placeholder:  "Preguntá lo que quieras sobre esta materia...",
         errorGeneric: "Algo salió mal. Tocá «Reintentar» para volver a enviar tu pregunta.",
         errorRetry:   "Reintentar",
         errorDismiss: "Descartar",
         clearChat:    "Nueva conversación",
-        modeMock:     "modo demo",
+        modeMock:     "demo",
+        poweredBy:    "Respuestas basadas en el contenido de tu curso",
+        chips: [
+            "¿Qué temas entran en el parcial?",
+            "Resumí los conceptos clave del último tema",
+            "Haceme un quiz de práctica",
+        ],
     },
     en: {
         title:        "NexusAI Assistant",
+        statusActive: "Active · based on your course",
         close:        "Close",
         open:         "Open chat",
-        welcome:      "Hi! I'm your course assistant. Ask me anything about the course content.",
+        welcome:      "Hi! I'm your study assistant. I can answer questions about the content of this course.",
+        chipsLabel:   "Or choose a common question:",
         placeholder:  "Ask anything about this course...",
         errorGeneric: "Something went wrong. Tap «Retry» to send your message again.",
         errorRetry:   "Retry",
         errorDismiss: "Dismiss",
         clearChat:    "New conversation",
-        modeMock:     "demo mode",
+        modeMock:     "demo",
+        poweredBy:    "Answers based on your course content",
+        chips: [
+            "What topics are on the exam?",
+            "Summarize the key concepts from the last topic",
+            "Give me a practice quiz",
+        ],
     },
 };
 
-// Detectar si estamos corriendo dentro de Moodle (vs dev standalone).
-// Útil para mostrar un badge "demo mode" cuando no hay backend real.
 function isInsideMoodle() {
     return typeof window !== "undefined" && window.M && window.M.cfg;
 }
+
+/* ---- Iconos SVG inline ---- */
+const IconSparkle = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/>
+    </svg>
+);
+
+const IconClose = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+);
+
+const IconNewChat = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </svg>
+);
+
+const IconArrow = () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+    </svg>
+);
+
+const IconFABOpen = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+);
+
+const IconFABClose = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+);
+
+const IconLightning = () => (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9z"/>
+    </svg>
+);
 
 export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es" }) {
     const [open, setOpen] = useState(false);
@@ -68,12 +121,11 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [sessionId, setSessionId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [lastQuestion, setLastQuestion] = useState(null);  // Para retry
+    const [lastQuestion, setLastQuestion] = useState(null);
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
 
-    // Auto-scroll al fondo cuando llegan mensajes nuevos o cuando aparece el loader.
     useEffect(() => {
         if (!open) return;
         const el = messagesEndRef.current;
@@ -84,7 +136,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         setError(null);
         setLastQuestion(question);
 
-        // Optimistic UI: mostrar el mensaje del user inmediatamente, sin esperar al server.
         const optimisticUserMsg = {
             id: `local-${Date.now()}`,
             role: "user",
@@ -101,15 +152,10 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                 userId: userid,
                 sessionId,
             });
-
-            // El backend devuelve la lista canónica de mensajes — la usamos
-            // como fuente de verdad y descartamos el optimistic.
             setSessionId(response.session_id);
             setMessages(response.messages || []);
         } catch (err) {
-            // eslint-disable-next-line no-console
             console.error("[NexusAI] sendMessage failed:", err);
-            // Quitar el mensaje optimistic para que el usuario pueda reintentar.
             setMessages((prev) => prev.filter((m) => m.id !== optimisticUserMsg.id));
             setError(err.message || t.errorGeneric);
         } finally {
@@ -117,11 +163,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         }
     };
 
-    const retry = () => {
-        if (lastQuestion) {
-            send(lastQuestion);
-        }
-    };
+    const retry = () => { if (lastQuestion) send(lastQuestion); };
 
     const clearChat = () => {
         setMessages([]);
@@ -142,22 +184,34 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                 aria-label={open ? t.close : t.open}
                 title={open ? t.close : t.open}
             >
-                {open ? "×" : "💬"}
+                <span className="nexusai-fab__icon">
+                    {open ? <IconFABClose /> : <IconFABOpen />}
+                </span>
             </button>
 
             {open && (
                 <div className="nexusai-panel" role="dialog" aria-labelledby="nexusai-title">
+
+                    {/* Header */}
                     <header className="nexusai-panel__header">
                         <div className="nexusai-panel__title-wrap">
-                            <h3 id="nexusai-title" className="nexusai-panel__title">
-                                {t.title}
-                            </h3>
-                            {!isInsideMoodle() && (
-                                <span className="nexusai-badge" title="Sin Moodle: las respuestas son simuladas.">
-                                    {t.modeMock}
-                                </span>
-                            )}
+                            <div className="nexusai-panel__avatar">
+                                <IconSparkle />
+                            </div>
+                            <div className="nexusai-panel__title-group">
+                                <h3 id="nexusai-title" className="nexusai-panel__title">
+                                    {t.title}
+                                </h3>
+                                <div className="nexusai-panel__status">
+                                    <span className="nexusai-panel__status-dot" />
+                                    {!isInsideMoodle()
+                                        ? <span className="nexusai-badge">{t.modeMock}</span>
+                                        : t.statusActive
+                                    }
+                                </div>
+                            </div>
                         </div>
+
                         <div className="nexusai-panel__actions">
                             {messages.length > 0 && (
                                 <button
@@ -167,12 +221,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                     aria-label={t.clearChat}
                                     title={t.clearChat}
                                 >
-                                    {/* Icono "nuevo chat" — papel + lápiz */}
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8z"></path>
-                                        <line x1="9" y1="13" x2="15" y2="13"></line>
-                                        <line x1="12" y1="10" x2="12" y2="16"></line>
-                                    </svg>
+                                    <IconNewChat />
                                 </button>
                             )}
                             <button
@@ -180,17 +229,36 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                 className="nexusai-icon-btn"
                                 onClick={() => setOpen(false)}
                                 aria-label={t.close}
+                                title={t.close}
                             >
-                                ×
+                                <IconClose />
                             </button>
                         </div>
                     </header>
 
+                    {/* Mensajes */}
                     <div className="nexusai-panel__body">
                         {showWelcome && (
                             <div className="nexusai-welcome">
-                                <div className="nexusai-welcome__icon">✨</div>
+                                <div className="nexusai-welcome__icon-wrap">
+                                    <IconSparkle />
+                                </div>
                                 <p className="nexusai-welcome__text">{t.welcome}</p>
+                                <div className="nexusai-welcome__chips">
+                                    {t.chips.map((chip) => (
+                                        <button
+                                            key={chip}
+                                            type="button"
+                                            className="nexusai-chip"
+                                            onClick={() => send(chip)}
+                                        >
+                                            {chip}
+                                            <span className="nexusai-chip__arrow">
+                                                <IconArrow />
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         )}
 
@@ -231,8 +299,10 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         placeholder={t.placeholder}
                     />
 
+                    {/* Footer */}
                     <footer className="nexusai-panel__footer">
-                        <small>NexusAI v0.2.0 · curso #{courseid} · usuario #{userid}</small>
+                        <IconLightning />
+                        <span>{t.poweredBy}</span>
                     </footer>
                 </div>
             )}
