@@ -51,4 +51,4 @@ jobs:
       - name: Verify health check
         run: |
           sleep 5
-          curl --fail https://nexusai-api.fly.dev/health || exit 1
+          curl --fail https://nexusai-api-ucc.fly.dev/health || exit 1
