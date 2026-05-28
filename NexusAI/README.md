@@ -129,6 +129,23 @@ nexusAI/
 
 ---
 
+## Instalar el plugin en un Moodle existente
+
+¿Ya tenés un Moodle 4.1–4.5 corriendo y querés conectarlo al backend NexusAI hosteado? Es un solo ZIP:
+
+1. Bajá el ZIP del último release: [Releases · v0.8.0-mvp](https://github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp).
+2. En Moodle: **Site administration → Plugins → Install plugins**, subir el ZIP y seguir el wizard.
+3. Al terminar, **Site administration → Plugins → Local plugins → NexusAI** y completar:
+   - **Backend API URL:** `https://nexusai-api-ucc.fly.dev` (backend en producción)
+   - **API key + Shared secret:** pedirlas al equipo NexusAI ([Delfina](mailto:delfina.s@bircle.ai), Santiago, Marcos)
+4. Crear un curso, subir un PDF como docente desde el menú **📚 NexusAI · Materials** del curso, y probar el chat como alumno.
+
+> El backend está deployado en Fly.io con autodeploy desde `main` (workflow [`deploy.yml`](.github/workflows/deploy.yml)). No hace falta instalar nada del lado servidor — solo el plugin en tu Moodle.
+
+Si querés correr **toda la pila local** (backend + Moodle + DB) en lugar de usar el deploy, ver la sección siguiente.
+
+---
+
 ## Cómo correrlo en local
 
 ### Prerrequisitos
