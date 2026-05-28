@@ -133,6 +133,11 @@ function useCopyButtons(ref, htmlContent) {
 
 export default function MessageBubble({ message }) {
     if (!message || message.role === "system") return null;
+    // Ocultar burbuja del asistente vacía (esperando primer token del stream).
+    // El TypingIndicator se muestra en su lugar.
+    if (message.role === "assistant" && !message.content && message.streaming) {
+        return null;
+    }
 
     const isUser = message.role === "user";
     const sources = isUser ? [] : extractSources(message.content);
@@ -168,7 +173,7 @@ export default function MessageBubble({ message }) {
                 <div className="nexusai-msg__bubble">
                     <div
                         ref={markdownRef}
-                        className="nexusai-msg__markdown"
+                        className={`nexusai-msg__markdown ${message.streaming ? "nexusai-msg__markdown--streaming" : ""}`}
                         dangerouslySetInnerHTML={{ __html: htmlContent }}
                     />
                 </div>

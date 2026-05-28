@@ -823,3 +823,15 @@
     line-height: 1.5;
     margin: 0;
 }
+
+/* ── Caret de streaming ── */
+.nexusai-msg__markdown--streaming::after {
+    content: "▍";
+    display: inline-block;
+    margin-left: 2px;
+    color: #4A7FD4;
+    animation: nexusai-blink 1s steps(1) infinite;
+}
+@keyframes nexusai-blink {
+    50% { opacity: 0; }
+}

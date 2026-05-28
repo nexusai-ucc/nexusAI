@@ -24,7 +24,7 @@ import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
 import TypingIndicator from "./components/TypingIndicator.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
-import { sendMessage } from "./api/chat.js";
+import { sendMessage, sendMessageStream } from "./api/chat.js";
 
 const STRINGS = {
     es: {
@@ -139,28 +139,71 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         setError(null);
         setLastQuestion(question);
 
+        const ts = Date.now();
         const optimisticUserMsg = {
-            id: `local-${Date.now()}`,
+            id: `local-user-${ts}`,
             role: "user",
             content: question,
             created_at: new Date().toISOString(),
         };
-        setMessages((prev) => [...prev, optimisticUserMsg]);
+        const streamingAssistantId = `local-asst-${ts}`;
+        const initialAssistant = {
+            id: streamingAssistantId,
+            role: "assistant",
+            content: "",
+            created_at: new Date(ts + 1).toISOString(),
+            streaming: true,
+        };
+        setMessages((prev) => [...prev, optimisticUserMsg, initialAssistant]);
         setLoading(true);
 
+        // Acumulador local — los callbacks de SSE corren en ráfagas y queremos
+        // evitar batch races. Usamos ref vía closure.
+        let acc = "";
+        const appendToken = (token) => {
+            acc += token;
+            setMessages((prev) =>
+                prev.map((m) =>
+                    m.id === streamingAssistantId ? { ...m, content: acc } : m
+                )
+            );
+        };
+
         try {
-            const response = await sendMessage({
-                question,
-                courseId: courseid,
-                userId: userid,
-                sessionId,
-                multiCourse,
-            });
-            setSessionId(response.session_id);
-            setMessages(response.messages || []);
+            await sendMessageStream(
+                {
+                    question,
+                    courseId: courseid,
+                    sessionId,
+                    multiCourse,
+                },
+                {
+                    onMeta: ({ session_id }) => {
+                        if (session_id) setSessionId(session_id);
+                    },
+                    onToken: appendToken,
+                    onDone: () => {
+                        setMessages((prev) =>
+                            prev.map((m) =>
+                                m.id === streamingAssistantId
+                                    ? { ...m, streaming: false }
+                                    : m
+                            )
+                        );
+                    },
+                    onError: (detail) => {
+                        throw new Error(detail);
+                    },
+                }
+            );
         } catch (err) {
-            console.error("[NexusAI] sendMessage failed:", err);
-            setMessages((prev) => prev.filter((m) => m.id !== optimisticUserMsg.id));
+            console.error("[NexusAI] sendMessageStream failed:", err);
+            // Sacamos el bubble de assistant vacío + user optimista si el stream falló.
+            setMessages((prev) =>
+                prev.filter(
+                    (m) => m.id !== optimisticUserMsg.id && m.id !== streamingAssistantId
+                )
+            );
             setError(err.message || t.errorGeneric);
         } finally {
             setLoading(false);
@@ -310,7 +353,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             <MessageBubble key={msg.id} message={msg} />
                         ))}
 
-                        {loading && <TypingIndicator />}
+                        {loading && !messages.some((m) => m.streaming && m.content) && <TypingIndicator />}
 
                         {error && (
                             <div className="nexusai-error" role="alert">
