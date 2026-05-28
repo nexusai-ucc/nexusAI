@@ -197,6 +197,27 @@ class backend_client {
     }
 
     /**
+     * Lista los gaps del docente — preguntas que el material no pudo responder (Feature G).
+     *
+     * @param int $courseid ID del curso.
+     * @param int $days     Días hacia atrás (1..365).
+     * @param int $limit    Máximo de items (1..100).
+     * @return array{course_id:int, days:int, total:int, items:array}
+     */
+    public function list_gaps(int $courseid, int $days = 30, int $limit = 20): array {
+        $payload = [
+            'course_id' => $courseid,
+            'days'      => $days,
+            'limit'     => $limit,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/gaps/list', $body);
+    }
+
+    /**
      * Genera un quiz de práctica desde el material indexado del curso (Feature F).
      *
      * @param int         $courseid     ID del curso.

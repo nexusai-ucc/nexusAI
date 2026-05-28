@@ -214,3 +214,57 @@ export function formatBytes(bytes) {
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
     return (bytes / 1024 / 1024).toFixed(1) + " MB";
 }
+
+
+// ============================================================
+// Feature G — Gaps del docente
+// ============================================================
+
+const MOCK_GAPS = {
+    course_id: 2,
+    days: 30,
+    total: 3,
+    items: [
+        {
+            question: "¿cómo se calcula el determinante de una matriz 4x4?",
+            count: 5,
+            last_asked_at: new Date(Date.now() - 86400000).toISOString(),
+            avg_similarity: 0.18,
+        },
+        {
+            question: "¿qué es la regla de la cadena en derivadas parciales?",
+            count: 3,
+            last_asked_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+            avg_similarity: 0.32,
+        },
+        {
+            question: "ejercicios resueltos de integrales por partes",
+            count: 2,
+            last_asked_at: new Date(Date.now() - 10 * 86400000).toISOString(),
+            avg_similarity: null,
+        },
+    ],
+};
+
+/**
+ * Lista los gaps del docente — preguntas sin respuesta agrupadas.
+ *
+ * @param {number} courseId
+ * @param {number} [days]   Ventana temporal (default 30).
+ * @param {number} [limit]  Máximo items (default 30).
+ * @returns {Promise<{course_id:number, days:number, total:number, items:Array}>}
+ */
+export async function listGaps(courseId, days = 30, limit = 30) {
+    const fetchMany = await getMoodleAjax();
+    if (!fetchMany) {
+        await new Promise((r) => setTimeout(r, 400));
+        return { ...MOCK_GAPS, course_id: courseId, days };
+    }
+
+    const [response] = await fetchMany([{
+        methodname: "local_nexusai_gaps_list",
+        args: { courseid: courseId, days, limit },
+    }]);
+
+    return response;
+}

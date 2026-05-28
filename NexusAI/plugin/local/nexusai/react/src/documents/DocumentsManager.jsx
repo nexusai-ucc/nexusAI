@@ -8,6 +8,7 @@
  *  - Upload: agrega el doc nuevo a la lista solo si el backend confirma éxito
  *    y el id no existe ya (evita sobreescribir un doc existente con fecha nula).
  *  - Errores de upload (incl. 409 y duplicados): muestra ErrorModal, no toca lista.
+ *  - Tabs Material / Gaps detectados (Feature G).
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -15,6 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { listDocuments, uploadDocument } from "./api.js";
 import DocumentsTable, { ErrorModal } from "./DocumentsTable.jsx";
 import UploadZone from "./UploadZone.jsx";
+import GapsPanel from "./GapsPanel.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
@@ -38,11 +40,12 @@ function extractErrorMessage(err) {
 }
 
 export default function DocumentsManager({ courseid, userid, lang = "es" }) {
-    const [documents, setDocuments]     = useState([]);
-    const [loading, setLoading]         = useState(true);
-    const [uploading, setUploading]     = useState(false);
-    const [error, setError]             = useState(null);
+    const [documents, setDocuments]       = useState([]);
+    const [loading, setLoading]           = useState(true);
+    const [uploading, setUploading]       = useState(false);
+    const [error, setError]               = useState(null);
     const [warningToast, setWarningToast] = useState(null);
+    const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps"
     const warningTimerRef = useRef(null);
 
     // Ref para acceder al estado actual desde el closure del setInterval
@@ -127,45 +130,65 @@ export default function DocumentsManager({ courseid, userid, lang = "es" }) {
 
     // ── Render ─────────────────────────────────────────────────────────────
 
-    if (loading) {
-        return (
-            <div className="nexusai-loading">
-                Cargando documentos...
-            </div>
-        );
-    }
-
     return (
         <div className="nexusai-documents">
-            <p className="nexusai-documents__intro">
-                Los archivos que subís acá quedan disponibles para el asistente NexusAI cuando los alumnos
-                de este curso le hacen preguntas. Se aceptan PDF, DOCX y TXT. La indexación tarda
-                aproximadamente 30-60 segundos por archivo.
-            </p>
+            {/* Tabs Material / Gaps (Feature G) */}
+            <div className="nexusai-doc-tabs">
+                <button
+                    type="button"
+                    className={`nexusai-doc-tab ${activeTab === "material" ? "nexusai-doc-tab--active" : ""}`}
+                    onClick={() => setActiveTab("material")}
+                >
+                    📚 Material
+                </button>
+                <button
+                    type="button"
+                    className={`nexusai-doc-tab ${activeTab === "gaps" ? "nexusai-doc-tab--active" : ""}`}
+                    onClick={() => setActiveTab("gaps")}
+                >
+                    🎯 Gaps detectados
+                </button>
+            </div>
 
-            <UploadZone onUpload={handleUpload} disabled={uploading} />
+            {activeTab === "material" ? (
+                loading ? (
+                    <div className="nexusai-loading">Cargando documentos...</div>
+                ) : (
+                    <>
+                        <p className="nexusai-documents__intro">
+                            Los archivos que subís acá quedan disponibles para el asistente NexusAI cuando los alumnos
+                            de este curso le hacen preguntas. Se aceptan PDF, DOCX y TXT. La indexación tarda
+                            aproximadamente 30-60 segundos por archivo.
+                        </p>
 
-            <h3 className="nexusai-documents__heading">
-                Material indexado ({documents.length})
-            </h3>
+                        <UploadZone onUpload={handleUpload} disabled={uploading} />
 
-            <DocumentsTable
-                courseId={courseid}
-                documents={documents}
-                onChange={setDocuments}
-            />
+                        <h3 className="nexusai-documents__heading">
+                            Material indexado ({documents.length})
+                        </h3>
 
-            {error && (
-                <ErrorModal
-                    message={error}
-                    onClose={() => setError(null)}
-                />
-            )}
+                        <DocumentsTable
+                            courseId={courseid}
+                            documents={documents}
+                            onChange={setDocuments}
+                        />
 
-            {warningToast && (
-                <div className="nexusai-toast nexusai-toast--warning" role="status">
-                    {warningToast}
-                </div>
+                        {error && (
+                            <ErrorModal
+                                message={error}
+                                onClose={() => setError(null)}
+                            />
+                        )}
+
+                        {warningToast && (
+                            <div className="nexusai-toast nexusai-toast--warning" role="status">
+                                {warningToast}
+                            </div>
+                        )}
+                    </>
+                )
+            ) : (
+                <GapsPanel courseId={courseid} />
             )}
         </div>
     );

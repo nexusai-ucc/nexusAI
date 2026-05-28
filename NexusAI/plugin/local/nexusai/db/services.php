@@ -81,6 +81,18 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Detección de gaps — preguntas que el material no respondió (Feature G).
+    // Solo docentes ven sus gaps (capability :manage).
+    'local_nexusai_gaps_list' => [
+        'classname'     => '\local_nexusai\external\gaps_list',
+        'methodname'    => 'execute',
+        'description'   => 'List questions the course material could not answer (teacher view).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.
