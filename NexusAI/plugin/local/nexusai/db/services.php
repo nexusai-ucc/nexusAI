@@ -48,6 +48,28 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Historial de conversaciones — lista de sesiones previas del alumno (Feature E).
+    'local_nexusai_chat_sessions_list' => [
+        'classname'     => '\local_nexusai\external\chat_sessions_list',
+        'methodname'    => 'execute',
+        'description'   => 'List previous NexusAI chat sessions for the student.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Mensajes de una sesión específica para retomar conversación (Feature E).
+    'local_nexusai_chat_session_messages' => [
+        'classname'     => '\local_nexusai\external\chat_session_messages',
+        'methodname'    => 'execute',
+        'description'   => 'Fetch the full message list of an existing chat session.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.

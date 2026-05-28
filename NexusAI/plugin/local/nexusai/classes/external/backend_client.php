@@ -155,6 +155,48 @@ class backend_client {
     }
 
     /**
+     * Lista las sesiones previas del usuario (historial — Feature E).
+     *
+     * @param int      $userid   $USER->id real.
+     * @param int|null $courseid Filtrar por curso, o null para todas las del user.
+     * @param int      $limit    Máximo (1..100).
+     * @return array{sessions: array}
+     */
+    public function list_sessions(int $userid, ?int $courseid = null, int $limit = 20): array {
+        $payload = [
+            'user_id' => $userid,
+            'limit'   => $limit,
+        ];
+        if ($courseid !== null && $courseid > 0) {
+            $payload['course_id'] = $courseid;
+        }
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/chat/sessions/list', $body);
+    }
+
+    /**
+     * Devuelve los mensajes completos de una sesión.
+     *
+     * @param int    $userid    $USER->id real (el backend valida ownership).
+     * @param string $sessionid UUID de la sesión.
+     * @return array{session_id:string, messages: array}
+     */
+    public function get_session_messages(int $userid, string $sessionid): array {
+        $payload = [
+            'user_id'    => $userid,
+            'session_id' => $sessionid,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/chat/sessions/messages', $body);
+    }
+
+    /**
      * Búsqueda semántica en el material del curso (Feature A — sin LLM).
      *
      * @param int    $courseid ID del curso de Moodle.

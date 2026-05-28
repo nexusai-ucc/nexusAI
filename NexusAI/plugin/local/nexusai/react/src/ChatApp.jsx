@@ -24,7 +24,9 @@ import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
 import TypingIndicator from "./components/TypingIndicator.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
+import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
+import { getSessionMessages } from "./api/history.js";
 
 const STRINGS = {
     es: {
@@ -116,6 +118,14 @@ const IconLightning = () => (
     </svg>
 );
 
+const IconHistory = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 8v4l3 3"/>
+        <path d="M3.05 11a9 9 0 1 1 .5 4"/>
+        <polyline points="3 4 3 9 8 9"/>
+    </svg>
+);
+
 export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es" }) {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState([]);
@@ -125,6 +135,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
     const [activeTab, setActiveTab] = useState("chat"); // "chat" | "search"
+    const [historyOpen, setHistoryOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
@@ -228,6 +239,24 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         setLastQuestion(null);
     };
 
+    const loadSession = async (id) => {
+        if (!id) return;
+        setHistoryOpen(false);
+        setError(null);
+        setLoading(true);
+        try {
+            const data = await getSessionMessages({ courseId: courseid, sessionId: id });
+            setSessionId(data.session_id);
+            setMessages(data.messages || []);
+            setLastQuestion(null);
+        } catch (err) {
+            console.error("[NexusAI] loadSession failed:", err);
+            setError(err.message || "No se pudo cargar la conversación");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const showWelcome = messages.length === 0 && !loading && !error;
 
     return (
@@ -273,6 +302,15 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         <div className="nexusai-panel__actions">
                             <button
                                 type="button"
+                                className={`nexusai-icon-btn nexusai-history-toggle ${historyOpen ? "nexusai-history-toggle--active" : ""}`}
+                                onClick={() => setHistoryOpen((v) => !v)}
+                                aria-label={lang === "es" ? "Historial" : "History"}
+                                title={lang === "es" ? "Conversaciones previas" : "Previous conversations"}
+                            >
+                                <IconHistory />
+                            </button>
+                            <button
+                                type="button"
                                 className={`nexusai-icon-btn nexusai-multicourse-toggle ${multiCourse ? "nexusai-multicourse-toggle--active" : ""}`}
                                 onClick={() => {
                                     setMultiCourse((v) => !v);
@@ -311,6 +349,15 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             </button>
                         </div>
                     </header>
+
+                    <HistoryDropdown
+                        open={historyOpen}
+                        onClose={() => setHistoryOpen(false)}
+                        courseId={courseid}
+                        currentSessionId={sessionId}
+                        onSelectSession={loadSession}
+                        lang={lang}
+                    />
 
                     {/* Pestañas: Chat / Buscador */}
                     <div className="nexusai-tabs">
