@@ -37,6 +37,50 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Búsqueda semántica en el material del curso (retrieval sin LLM — Feature A).
+    'local_nexusai_search_query' => [
+        'classname'     => '\local_nexusai\external\search_query',
+        'methodname'    => 'execute',
+        'description'   => 'Semantic search over the indexed course material (no LLM).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Historial de conversaciones — lista de sesiones previas del alumno (Feature E).
+    'local_nexusai_chat_sessions_list' => [
+        'classname'     => '\local_nexusai\external\chat_sessions_list',
+        'methodname'    => 'execute',
+        'description'   => 'List previous NexusAI chat sessions for the student.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Mensajes de una sesión específica para retomar conversación (Feature E).
+    'local_nexusai_chat_session_messages' => [
+        'classname'     => '\local_nexusai\external\chat_session_messages',
+        'methodname'    => 'execute',
+        'description'   => 'Fetch the full message list of an existing chat session.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Quiz generator — preguntas de opción múltiple desde el material (Feature F).
+    'local_nexusai_quiz_generate' => [
+        'classname'     => '\local_nexusai\external\quiz_generate',
+        'methodname'    => 'execute',
+        'description'   => 'Generate a multiple-choice practice quiz from the course material.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.

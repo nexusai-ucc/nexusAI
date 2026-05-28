@@ -1,19 +1,57 @@
 /*
- * Estilos del widget NexusAI.
+ * Estilos del widget NexusAI — rediseño shadcn/ui style.
  *
  * Reglas:
  *   - Prefijo `.nexusai-` en TODAS las clases para no chocar con Bootstrap/Boost.
  *   - Posicionamiento fixed bottom-right, z-index alto para quedar arriba del
  *     footer y de los popovers de Moodle (que usan z-index ~1080 para tooltips).
- *   - Paleta basada en var(--violet) → consistente con el branding NexusAI.
- *   - Animaciones suaves pero rápidas (200-300ms), nada que distraiga.
+ *   - Paleta basada en tokens CSS (--nexusai-*) — cambiar desde un solo lugar.
+ *   - Animaciones suaves pero rápidas (150-250ms), nada que distraiga.
  */
 
+/* ============================================================
+   Design tokens
+============================================================ */
 .nexusai-widget {
+    /* Colores primarios */
+    --nexusai-primary:        #6366f1;
+    --nexusai-primary-hover:  #4f46e5;
+    --nexusai-primary-light:  rgba(99, 102, 241, 0.1);
+    --nexusai-primary-ring:   rgba(99, 102, 241, 0.2);
+
+    /* Fondos */
+    --nexusai-bg:             #ffffff;
+    --nexusai-bg-muted:       #f8fafc;
+    --nexusai-bg-subtle:      #f1f5f9;
+
+    /* Bordes */
+    --nexusai-border:         #e2e8f0;
+    --nexusai-border-strong:  #cbd5e1;
+
+    /* Texto */
+    --nexusai-fg:             #0f172a;
+    --nexusai-fg-muted:       #64748b;
+    --nexusai-fg-subtle:      #94a3b8;
+
+    /* Radios */
+    --nexusai-radius-sm:      4px;
+    --nexusai-radius:         8px;
+    --nexusai-radius-md:      10px;
+    --nexusai-radius-lg:      12px;
+    --nexusai-radius-xl:      16px;
+    --nexusai-radius-full:    9999px;
+
+    /* Sombras */
+    --nexusai-shadow-sm:      0 1px 2px 0 rgba(0,0,0,0.05);
+    --nexusai-shadow:         0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+    --nexusai-shadow-md:      0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+    --nexusai-shadow-fab:     0 4px 14px rgba(99, 102, 241, 0.35);
+
+    /* Tipografía */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 14px;
     line-height: 1.5;
-    color: #1f2937;
+    color: var(--nexusai-fg);
     box-sizing: border-box;
 }
 .nexusai-widget *,
@@ -23,35 +61,42 @@
 }
 
 /* ============================================================
-   Floating Action Button (FAB) — la burbuja siempre visible
+   Floating Action Button (FAB)
 ============================================================ */
 .nexusai-fab {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--nexusai-radius-full);
     border: none;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: var(--nexusai-primary);
     color: white;
-    font-size: 24px;
-    line-height: 1;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
-    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: var(--nexusai-shadow-fab);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s;
     z-index: 9998;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .nexusai-fab:hover {
+    background: var(--nexusai-primary-hover);
     transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
 }
 .nexusai-fab:focus-visible {
-    outline: 3px solid #c7d2fe;
-    outline-offset: 2px;
+    outline: 2px solid var(--nexusai-primary);
+    outline-offset: 3px;
+}
+.nexusai-fab__icon {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
 }
 
 /* ============================================================
@@ -59,25 +104,26 @@
 ============================================================ */
 .nexusai-panel {
     position: fixed;
-    bottom: 96px;            /* 24 (fab bottom) + 56 (fab height) + 16 (gap) */
+    bottom: 88px;
     right: 24px;
     width: 400px;
     max-width: calc(100vw - 48px);
     height: 600px;
     max-height: calc(100vh - 120px);
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    background: var(--nexusai-bg);
+    border-radius: var(--nexusai-radius-lg);
+    border: 1px solid var(--nexusai-border);
+    box-shadow: var(--nexusai-shadow-md);
     display: flex;
     flex-direction: column;
     z-index: 9999;
     overflow: hidden;
-    animation: nexusai-slide-up 0.2s ease-out;
+    animation: nexusai-slide-up 0.18s ease-out;
 }
 
 @keyframes nexusai-slide-up {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ----- Header ----- */
@@ -85,57 +131,96 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 18px;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    color: white;
+    padding: 14px 16px;
+    background: var(--nexusai-bg);
+    border-bottom: 1px solid var(--nexusai-border);
     flex-shrink: 0;
 }
 .nexusai-panel__title-wrap {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    min-width: 0;
+}
+.nexusai-panel__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--nexusai-radius-full);
+    background: var(--nexusai-primary-light);
+    border: 1.5px solid var(--nexusai-primary-ring);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.nexusai-panel__avatar svg {
+    color: var(--nexusai-primary);
+}
+.nexusai-panel__title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
     min-width: 0;
 }
 .nexusai-panel__title {
     margin: 0;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
+    color: var(--nexusai-fg);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.3;
+}
+.nexusai-panel__status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--nexusai-fg-muted);
+    line-height: 1;
+}
+.nexusai-panel__status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--nexusai-radius-full);
+    background: #22c55e;
+    flex-shrink: 0;
 }
 .nexusai-badge {
     font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.25);
-    color: white;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: var(--nexusai-radius-full);
+    background: var(--nexusai-primary-light);
+    color: var(--nexusai-primary);
+    border: 1px solid var(--nexusai-primary-ring);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
     flex-shrink: 0;
 }
 .nexusai-panel__actions {
     display: flex;
-    gap: 4px;
+    gap: 2px;
     flex-shrink: 0;
 }
 .nexusai-icon-btn {
     background: transparent;
     border: none;
-    color: white;
+    color: var(--nexusai-fg-muted);
     cursor: pointer;
     padding: 6px;
-    border-radius: 6px;
+    border-radius: var(--nexusai-radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
-    font-size: 22px;
-    opacity: 0.85;
-    transition: opacity 0.15s, background 0.15s;
+    transition: color 0.15s, background 0.15s;
 }
-.nexusai-icon-btn:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+.nexusai-icon-btn:hover {
+    color: var(--nexusai-fg);
+    background: var(--nexusai-bg-subtle);
+}
 
 /* ----- Body / lista de mensajes ----- */
 .nexusai-panel__body {
@@ -144,43 +229,93 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    color: #1f2937;
-    /* Custom scrollbar */
+    gap: 4px;
+    color: var(--nexusai-fg);
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: var(--nexusai-border-strong) transparent;
 }
-.nexusai-panel__body::-webkit-scrollbar { width: 6px; }
+.nexusai-panel__body::-webkit-scrollbar { width: 5px; }
 .nexusai-panel__body::-webkit-scrollbar-track { background: transparent; }
 .nexusai-panel__body::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
+    background: var(--nexusai-border-strong);
+    border-radius: var(--nexusai-radius-full);
 }
-.nexusai-panel__body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.nexusai-panel__body::-webkit-scrollbar-thumb:hover { background: var(--nexusai-fg-subtle); }
 
-/* ----- Welcome (cuando no hay mensajes todavía) ----- */
+/* ----- Welcome ----- */
 .nexusai-welcome {
-    text-align: center;
-    padding: 32px 20px;
-    color: #64748b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 16px 20px;
+    gap: 12px;
 }
-.nexusai-welcome__icon {
-    font-size: 36px;
-    margin-bottom: 12px;
+.nexusai-welcome__icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--nexusai-radius-full);
+    background: var(--nexusai-primary-light);
+    border: 1.5px solid var(--nexusai-primary-ring);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--nexusai-primary);
 }
 .nexusai-welcome__text {
     margin: 0;
-    font-size: 14px;
+    font-size: 13.5px;
+    color: var(--nexusai-fg-muted);
+    text-align: center;
     line-height: 1.6;
+    max-width: 280px;
+}
+.nexusai-welcome__chips {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    margin-top: 4px;
+}
+.nexusai-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 13px;
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius);
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--nexusai-fg);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    line-height: 1.4;
+}
+.nexusai-chip:hover {
+    border-color: var(--nexusai-primary);
+    background: var(--nexusai-primary-light);
+    box-shadow: 0 0 0 3px var(--nexusai-primary-ring);
+    color: var(--nexusai-primary-hover);
+}
+.nexusai-chip__arrow {
+    margin-left: auto;
+    color: var(--nexusai-fg-subtle);
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+.nexusai-chip:hover .nexusai-chip__arrow {
+    color: var(--nexusai-primary);
 }
 
 /* ----- Mensajes ----- */
 .nexusai-msg {
     display: flex;
     flex-direction: column;
-    max-width: 85%;
-    margin-bottom: 4px;
-    animation: nexusai-fade-in 0.2s ease-out;
+    max-width: 88%;
+    margin-bottom: 2px;
+    animation: nexusai-fade-in 0.18s ease-out;
 }
 @keyframes nexusai-fade-in {
     from { opacity: 0; transform: translateY(4px); }
@@ -193,242 +328,336 @@
 .nexusai-msg--assistant {
     align-self: flex-start;
     align-items: flex-start;
+    max-width: 92%;
 }
+
+/* Layout con avatar para el asistente */
+.nexusai-msg__row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+.nexusai-msg__avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: var(--nexusai-radius-full);
+    background: var(--nexusai-primary-light);
+    border: 1.5px solid var(--nexusai-primary-ring);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--nexusai-primary);
+    margin-bottom: 2px;
+}
+
 .nexusai-msg__bubble {
     padding: 10px 14px;
-    border-radius: 16px;
-    font-size: 14px;
-    line-height: 1.5;
+    border-radius: var(--nexusai-radius-md);
+    font-size: 13.5px;
+    line-height: 1.6;
     word-wrap: break-word;
     overflow-wrap: break-word;
     white-space: pre-wrap;
 }
-
-/* Markdown reset inside assistant bubbles */
-.nexusai-msg__markdown {
+.nexusai-msg--user .nexusai-msg__bubble {
+    background: var(--nexusai-primary);
+    color: white;
+    border-bottom-right-radius: var(--nexusai-radius-sm);
+    white-space: pre-wrap;
+}
+.nexusai-msg--assistant .nexusai-msg__bubble {
+    background: var(--nexusai-bg);
+    color: var(--nexusai-fg);
+    border: 1px solid var(--nexusai-border);
+    border-bottom-left-radius: var(--nexusai-radius-sm);
+    box-shadow: var(--nexusai-shadow-sm);
     white-space: normal;
 }
+
+/* Markdown en burbuja del asistente */
+.nexusai-msg__markdown { white-space: normal; }
 .nexusai-msg__markdown p { margin: 0 0 8px; }
 .nexusai-msg__markdown p:last-child { margin-bottom: 0; }
 .nexusai-msg__markdown ul,
-.nexusai-msg__markdown ol { margin: 0 0 8px; padding-left: 20px; }
-.nexusai-msg__markdown li { margin-bottom: 2px; }
+.nexusai-msg__markdown ol { margin: 4px 0 8px; padding-left: 20px; }
+.nexusai-msg__markdown li { margin-bottom: 3px; }
 .nexusai-msg__markdown code {
-    font-family: "SFMono-Regular", Consolas, monospace;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     font-size: 12px;
-    background: rgba(0,0,0,0.07);
+    background: var(--nexusai-primary-light);
+    color: #4c1d95;
     padding: 1px 5px;
-    border-radius: 3px;
+    border-radius: var(--nexusai-radius-sm);
 }
 .nexusai-msg__markdown pre {
-    background: rgba(0,0,0,0.07);
-    border-radius: 6px;
+    position: relative;
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: var(--nexusai-radius);
     padding: 10px 12px;
     overflow-x: auto;
-    margin: 0 0 8px;
+    margin: 6px 0 8px;
+    font-size: 12px;
+    line-height: 1.6;
 }
 .nexusai-msg__markdown pre code {
     background: none;
     padding: 0;
-    font-size: 12px;
+    color: inherit;
+    font-size: inherit;
 }
 .nexusai-msg__markdown blockquote {
     margin: 0 0 8px;
-    padding-left: 12px;
-    border-left: 3px solid rgba(0,0,0,0.2);
-    color: inherit;
-    opacity: 0.8;
+    padding: 4px 12px;
+    border-left: 3px solid var(--nexusai-border-strong);
+    color: var(--nexusai-fg-muted);
+    background: var(--nexusai-bg-subtle);
+    border-radius: 0 var(--nexusai-radius-sm) var(--nexusai-radius-sm) 0;
 }
 .nexusai-msg__markdown h1,
 .nexusai-msg__markdown h2,
 .nexusai-msg__markdown h3,
 .nexusai-msg__markdown h4 {
-    margin: 0 0 6px;
+    margin: 10px 0 5px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
+    color: var(--nexusai-fg);
 }
-.nexusai-msg__markdown a {
-    color: #6366f1;
-    text-decoration: underline;
-}
+.nexusai-msg__markdown h1:first-child,
+.nexusai-msg__markdown h2:first-child,
+.nexusai-msg__markdown h3:first-child { margin-top: 0; }
+.nexusai-msg__markdown a { color: var(--nexusai-primary); text-decoration: underline; }
+.nexusai-msg__markdown a:hover { color: var(--nexusai-primary-hover); }
 .nexusai-msg__markdown hr {
     border: none;
-    border-top: 1px solid rgba(0,0,0,0.15);
+    border-top: 1px solid var(--nexusai-border);
     margin: 8px 0;
 }
-.nexusai-msg--user .nexusai-msg__bubble {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    color: white;
-    border-bottom-right-radius: 4px;
-}
-.nexusai-msg--assistant .nexusai-msg__bubble {
-    background: #f1f5f9;
-    color: #1f2937;
-    border-bottom-left-radius: 4px;
-}
-.nexusai-msg__meta {
-    font-size: 10px;
-    color: #94a3b8;
-    margin-top: 2px;
-    padding: 0 4px;
-}
-
-/* ----- Markdown rendering dentro de la burbuja del assistant ----- */
-/* El LLM devuelve listas, negritas, código y a veces tablas. Estos estilos
-   son scoped a .nexusai-msg__bubble para no chocar con CSS de Moodle. */
-.nexusai-msg__bubble p {
-    margin: 0 0 8px 0;
-}
-.nexusai-msg__bubble p:last-child { margin-bottom: 0; }
-.nexusai-msg__bubble strong { font-weight: 600; color: inherit; }
-.nexusai-msg__bubble em     { font-style: italic; }
-.nexusai-msg__bubble ul,
-.nexusai-msg__bubble ol {
-    margin: 6px 0 8px 0;
-    padding-left: 22px;
-}
-.nexusai-msg__bubble li { margin-bottom: 3px; }
-.nexusai-msg__bubble li:last-child { margin-bottom: 0; }
-.nexusai-msg__bubble h1,
-.nexusai-msg__bubble h2,
-.nexusai-msg__bubble h3,
-.nexusai-msg__bubble h4 {
-    font-size: 15px;
-    font-weight: 600;
-    margin: 12px 0 6px 0;
-    line-height: 1.3;
-}
-.nexusai-msg__bubble h1:first-child,
-.nexusai-msg__bubble h2:first-child,
-.nexusai-msg__bubble h3:first-child { margin-top: 0; }
-.nexusai-msg__bubble code {
-    background: rgba(99, 102, 241, 0.1);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 12.5px;
-    color: #4c1d95;
-}
-.nexusai-msg__bubble pre {
-    background: #1e293b;
-    color: #e2e8f0;
-    padding: 10px 12px;
-    border-radius: 8px;
-    overflow-x: auto;
-    margin: 6px 0 8px 0;
-    font-size: 12px;
-    line-height: 1.5;
-}
-.nexusai-msg__bubble pre code {
-    background: transparent;
-    padding: 0;
-    color: inherit;
-    font-size: inherit;
-}
-.nexusai-msg__bubble a {
-    color: #6366f1;
-    text-decoration: underline;
-}
-.nexusai-msg__bubble a:hover { color: #4f46e5; }
-.nexusai-msg__bubble blockquote {
-    border-left: 3px solid #cbd5e1;
-    padding: 2px 10px;
-    margin: 6px 0;
-    color: #64748b;
-}
-.nexusai-msg__bubble table {
+.nexusai-msg__markdown table {
     border-collapse: collapse;
     margin: 6px 0;
     font-size: 12.5px;
     width: 100%;
 }
-.nexusai-msg__bubble th,
-.nexusai-msg__bubble td {
-    border: 1px solid #cbd5e1;
-    padding: 4px 8px;
+.nexusai-msg__markdown th,
+.nexusai-msg__markdown td {
+    border: 1px solid var(--nexusai-border);
+    padding: 5px 10px;
     text-align: left;
 }
-.nexusai-msg__bubble th {
-    background: rgba(99, 102, 241, 0.08);
+.nexusai-msg__markdown th {
+    background: var(--nexusai-bg-subtle);
     font-weight: 600;
+    font-size: 11.5px;
+    color: var(--nexusai-fg-muted);
 }
 
-/* En burbuja del user (fondo violeta), los links e inline-code se ven sobre
-   gradiente — bajamos contraste para que se lean bien. */
+/* User bubble: links e inline-code sobre fondo violeta */
 .nexusai-msg--user .nexusai-msg__bubble code {
-    background: rgba(255, 255, 255, 0.22);
+    background: rgba(255,255,255,0.2);
     color: white;
 }
-.nexusai-msg--user .nexusai-msg__bubble a {
-    color: white;
-    text-decoration: underline;
+.nexusai-msg--user .nexusai-msg__bubble a { color: white; }
+
+/* ----- Copy button en bloques de código ----- */
+.nexusai-code-block {
+    position: relative;
+}
+.nexusai-code-block:hover .nexusai-copy-btn,
+.nexusai-copy-btn--copied {
+    opacity: 1;
+}
+.nexusai-copy-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-family: inherit;
+    font-weight: 500;
+    background: rgba(255,255,255,0.1);
+    color: #94a3b8;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: var(--nexusai-radius-sm);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+    line-height: 1.4;
+}
+.nexusai-copy-btn:hover {
+    background: rgba(255,255,255,0.18);
+    color: #e2e8f0;
+}
+.nexusai-copy-btn--copied {
+    color: #4ade80 !important;
+    border-color: rgba(74, 222, 128, 0.3) !important;
 }
 
-/* ----- Citas de fuente (pills debajo del mensaje del assistant) ----- */
+/* ----- Source pills ----- */
 .nexusai-msg__sources {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     margin-top: 6px;
-    padding: 0 4px;
+    padding: 0 2px;
     max-width: 100%;
 }
 .nexusai-msg__sources-label {
     font-size: 10.5px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     font-weight: 500;
-    margin-right: 2px;
+    margin-right: 1px;
 }
 .nexusai-msg__source-pill {
-    display: inline-block;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 10.5px;
-    color: #6366f1;
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    border-radius: 10px;
+    color: var(--nexusai-primary);
+    background: var(--nexusai-primary-light);
+    border: 1px solid var(--nexusai-primary-ring);
+    border-radius: var(--nexusai-radius-full);
     padding: 2px 8px;
     line-height: 1.3;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    cursor: default;
+    transition: background .12s, border-color .12s, box-shadow .12s;
+}
+.nexusai-msg__source-pill--clickable {
+    cursor: pointer;
+}
+.nexusai-msg__source-pill--clickable:hover {
+    background: #e6edfb;
+    border-color: var(--nexusai-primary);
+}
+.nexusai-msg__source-pill--active {
+    background: var(--nexusai-primary);
+    color: #fff;
+    border-color: var(--nexusai-primary);
+}
+.nexusai-msg__source-pill--active:hover {
+    background: var(--nexusai-primary);
+}
+.nexusai-msg__source-score {
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.6);
+    color: inherit;
+    margin-left: 2px;
+}
+.nexusai-msg__source-pill--active .nexusai-msg__source-score {
+    background: rgba(255, 255, 255, 0.2);
 }
 
-/* ----- Indicador "está escribiendo" ----- */
+/* Panel expandido del fragmento citado */
+.nexusai-msg__source-panel {
+    margin-top: 6px;
+    background: #f7f8fc;
+    border: 1px solid var(--nexusai-primary-ring);
+    border-radius: 8px;
+    padding: 8px 10px;
+    animation: nexusai-source-panel-in .15s ease-out;
+}
+@keyframes nexusai-source-panel-in {
+    from { opacity: 0; transform: translateY(-3px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.nexusai-msg__source-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    gap: 8px;
+}
+.nexusai-msg__source-panel-file {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--nexusai-fg, #1E2761);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nexusai-msg__source-panel-close {
+    background: none;
+    border: none;
+    color: var(--nexusai-fg-muted, #94a3b8);
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+}
+.nexusai-msg__source-panel-close:hover {
+    color: var(--nexusai-fg, #1E2761);
+}
+.nexusai-msg__source-panel-content {
+    font-size: 11.5px;
+    color: #5a6a7a;
+    line-height: 1.5;
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* ----- Timestamp ----- */
+.nexusai-msg__meta {
+    font-size: 10px;
+    color: var(--nexusai-fg-subtle);
+    margin-top: 3px;
+    padding: 0 2px;
+}
+
+/* ----- Typing indicator ----- */
 .nexusai-typing {
     display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+}
+.nexusai-typing__bubble {
+    display: flex;
     gap: 4px;
-    padding: 12px 14px;
+    padding: 10px 14px;
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-md);
+    border-bottom-left-radius: var(--nexusai-radius-sm);
+    box-shadow: var(--nexusai-shadow-sm);
     align-items: center;
 }
 .nexusai-typing__dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #94a3b8;
+    width: 6px;
+    height: 6px;
+    border-radius: var(--nexusai-radius-full);
+    background: var(--nexusai-fg-subtle);
     animation: nexusai-typing 1.2s infinite ease-in-out;
 }
 .nexusai-typing__dot:nth-child(2) { animation-delay: 0.15s; }
 .nexusai-typing__dot:nth-child(3) { animation-delay: 0.3s; }
 @keyframes nexusai-typing {
-    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-    30%           { transform: translateY(-4px); opacity: 1; }
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+    30%           { transform: translateY(-3px); opacity: 1; }
 }
 
 /* ----- Error banner ----- */
 .nexusai-error {
     background: #fef2f2;
     border: 1px solid #fecaca;
-    border-radius: 8px;
+    border-radius: var(--nexusai-radius);
     padding: 12px 14px;
-    margin: 8px 0;
+    margin: 6px 0;
 }
 .nexusai-error__text {
-    margin: 0 0 8px 0;
+    margin: 0 0 8px;
     font-size: 13px;
     color: #991b1b;
+    line-height: 1.5;
 }
 .nexusai-error__actions {
     display: flex;
@@ -437,22 +666,26 @@
 
 /* ----- Botones ----- */
 .nexusai-btn {
-    border: none;
-    border-radius: 6px;
-    padding: 6px 14px;
-    font-size: 13px;
+    border: 1px solid transparent;
+    border-radius: var(--nexusai-radius-sm);
+    padding: 5px 12px;
+    font-size: 12.5px;
     font-weight: 500;
+    font-family: inherit;
     cursor: pointer;
-    transition: background 0.15s, opacity 0.15s;
+    transition: background 0.15s, opacity 0.15s, box-shadow 0.15s;
+    line-height: 1.5;
 }
 .nexusai-btn--primary {
     background: #ef4444;
     color: white;
+    border-color: #ef4444;
 }
-.nexusai-btn--primary:hover { background: #dc2626; }
+.nexusai-btn--primary:hover { background: #dc2626; border-color: #dc2626; }
 .nexusai-btn--ghost {
     background: transparent;
     color: #991b1b;
+    border-color: #fecaca;
 }
 .nexusai-btn--ghost:hover { background: #fee2e2; }
 
@@ -463,73 +696,82 @@
     display: flex;
     align-items: flex-end;
     gap: 8px;
-    padding: 12px 14px;
-    border-top: 1px solid #e5e7eb;
-    background: white;
+    padding: 10px 12px;
+    border-top: 1px solid var(--nexusai-border);
+    background: var(--nexusai-bg);
     flex-shrink: 0;
 }
 .nexusai-input__textarea {
     flex: 1;
-    border: 1px solid #d1d5db;
-    border-radius: 18px;
-    padding: 10px 14px;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius);
+    padding: 9px 12px;
     font-family: inherit;
-    font-size: 14px;
-    line-height: 1.4;
+    font-size: 13.5px;
+    line-height: 1.5;
     resize: none;
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     max-height: 120px;
-    background: #f9fafb;
-    color: inherit;
+    background: var(--nexusai-bg-muted);
+    color: var(--nexusai-fg);
 }
+.nexusai-input__textarea::placeholder { color: var(--nexusai-fg-subtle); }
 .nexusai-input__textarea:focus {
-    border-color: #6366f1;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    border-color: var(--nexusai-primary);
+    background: var(--nexusai-bg);
+    box-shadow: 0 0 0 3px var(--nexusai-primary-ring);
 }
 .nexusai-input__textarea:disabled {
-    opacity: 0.6;
+    opacity: 0.55;
     cursor: not-allowed;
 }
 .nexusai-input__send {
     flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--nexusai-radius);
     border: none;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: var(--nexusai-primary);
     color: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s, opacity 0.15s;
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 .nexusai-input__send:hover:not(:disabled) {
-    transform: scale(1.05);
+    background: var(--nexusai-primary-hover);
+    box-shadow: 0 0 0 3px var(--nexusai-primary-ring);
+}
+.nexusai-input__send:active:not(:disabled) {
+    transform: scale(0.95);
 }
 .nexusai-input__send:disabled {
-    background: #cbd5e1;
+    background: var(--nexusai-border-strong);
     cursor: not-allowed;
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 /* ============================================================
    Footer
 ============================================================ */
 .nexusai-panel__footer {
-    padding: 6px 14px;
-    border-top: 1px solid #e5e7eb;
-    color: #9ca3af;
+    padding: 7px 14px;
+    border-top: 1px solid var(--nexusai-border);
+    color: var(--nexusai-fg-subtle);
     text-align: center;
-    font-size: 10px;
+    font-size: 10.5px;
     flex-shrink: 0;
-    background: #f9fafb;
+    background: var(--nexusai-bg-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
 }
 
 /* ============================================================
-   Responsive — tablets y móviles (<768px) ocupa ancho completo
+   Responsive
 ============================================================ */
 @media (max-width: 767px) {
     .nexusai-panel {
@@ -538,9 +780,10 @@
         left: 0;
         width: 100%;
         max-width: 100%;
-        max-height: calc(100vh - 80px);
-        height: calc(100vh - 80px);
-        border-radius: 16px 16px 0 0;
+        max-height: calc(100vh - 72px);
+        height: calc(100vh - 72px);
+        border-radius: var(--nexusai-radius-xl) var(--nexusai-radius-xl) 0 0;
+        border-bottom: none;
     }
     .nexusai-fab {
         bottom: 16px;
@@ -549,4 +792,537 @@
     .nexusai-input__textarea {
         font-size: 16px; /* evita zoom en iOS */
     }
+}
+
+/* ── Toggle multi-curso (Feature B) ── */
+.nexusai-multicourse-toggle {
+    opacity: 0.5;
+    transition: opacity .15s, color .15s;
+    font-size: 14px;
+    line-height: 1;
+}
+.nexusai-multicourse-toggle--active {
+    opacity: 1;
+    color: #4A7FD4;
+}
+
+/* ── Pestañas Chat / Buscador (Feature A) ── */
+.nexusai-tabs {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 12px;
+    background: #fff;
+    flex-shrink: 0;
+}
+.nexusai-tab {
+    flex: 1;
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #94a3b8;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+}
+.nexusai-tab:hover { color: #64748b; }
+.nexusai-tab--active {
+    color: #4A7FD4;
+    border-bottom-color: #4A7FD4;
+}
+
+/* ── Buscador (Feature A) ── */
+.nexusai-search { padding: 12px; }
+.nexusai-search__form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.nexusai-search__input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+}
+.nexusai-search__input:focus { border-color: #4A7FD4; }
+.nexusai-search__btn {
+    padding: 8px 14px;
+    background: #4A7FD4;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s, opacity .15s;
+}
+.nexusai-search__btn:hover:not(:disabled) { background: #3d6ec0; }
+.nexusai-search__btn:disabled { opacity: .5; cursor: not-allowed; }
+.nexusai-search__empty {
+    font-size: 13px;
+    color: #94a3b8;
+    text-align: center;
+    padding: 24px 0;
+}
+.nexusai-search__result {
+    background: #f7f8fc;
+    border: 1px solid #e8edf5;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+.nexusai-search__result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    gap: 8px;
+}
+.nexusai-search__filename {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1E2761;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nexusai-search__score {
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.nexusai-search__content {
+    font-size: 12px;
+    color: #5a6a7a;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* ── Historial de conversaciones (Feature E) ── */
+.nexusai-history-toggle {
+    opacity: 0.6;
+    transition: opacity .15s, color .15s;
+}
+.nexusai-history-toggle--active,
+.nexusai-history-toggle:hover {
+    opacity: 1;
+    color: #4A7FD4;
+}
+
+.nexusai-history {
+    position: absolute;
+    top: 56px;
+    right: 10px;
+    width: 280px;
+    max-height: 340px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    animation: nexusai-source-panel-in .15s ease-out;
+}
+.nexusai-history__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px 6px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.nexusai-history__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1E2761;
+}
+.nexusai-history__close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #94a3b8;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+}
+.nexusai-history__close:hover { color: #1E2761; }
+
+.nexusai-history__scope {
+    display: flex;
+    padding: 8px 10px;
+    gap: 6px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.nexusai-history__scope-btn {
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f7f8fc;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+}
+.nexusai-history__scope-btn:hover { color: #1E2761; }
+.nexusai-history__scope-btn--active {
+    color: #4A7FD4;
+    background: #e6edfb;
+    border-color: #c6d4f0;
+}
+
+.nexusai-history__list {
+    overflow-y: auto;
+    padding: 4px 6px 8px;
+    flex: 1;
+}
+.nexusai-history__empty {
+    font-size: 12px;
+    color: #94a3b8;
+    text-align: center;
+    margin: 14px 8px;
+}
+.nexusai-history__item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    margin: 2px 0;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .1s, border-color .1s;
+}
+.nexusai-history__item:hover {
+    background: #f7f8fc;
+}
+.nexusai-history__item--active {
+    background: #e6edfb;
+    border-color: #c6d4f0;
+}
+.nexusai-history__item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
+}
+.nexusai-history__item-preview {
+    font-size: 12.5px;
+    color: #1E2761;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+.nexusai-history__item-time {
+    font-size: 10.5px;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+.nexusai-history__item-meta {
+    font-size: 10.5px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+/* ── Quiz Generator (Feature F) ── */
+.nexusai-quiz {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.nexusai-quiz--center {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 200px;
+}
+
+.nexusai-quiz__intro {
+    text-align: center;
+    padding: 4px 0 6px;
+}
+.nexusai-quiz__intro-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1E2761;
+    margin: 0 0 4px;
+}
+.nexusai-quiz__intro-text {
+    font-size: 12px;
+    color: #5a6a7a;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.nexusai-quiz__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.nexusai-quiz__label {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #475569;
+}
+.nexusai-quiz__input {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .12s;
+}
+.nexusai-quiz__input:focus { border-color: #4A7FD4; }
+
+.nexusai-quiz__numbtns {
+    display: flex;
+    gap: 6px;
+}
+.nexusai-quiz__numbtn {
+    flex: 1;
+    padding: 7px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f7f8fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .12s;
+}
+.nexusai-quiz__numbtn:hover {
+    border-color: #c6d4f0;
+    color: #4A7FD4;
+}
+.nexusai-quiz__numbtn--active {
+    background: #4A7FD4;
+    border-color: #4A7FD4;
+    color: #fff;
+}
+
+.nexusai-quiz__primary {
+    padding: 10px 14px;
+    background: #4A7FD4;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .12s, opacity .12s;
+}
+.nexusai-quiz__primary:hover:not(:disabled) { background: #3d6ec0; }
+.nexusai-quiz__primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.nexusai-quiz__secondary {
+    padding: 10px 14px;
+    background: none;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Spinner */
+.nexusai-quiz__spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #4A7FD4;
+    border-radius: 50%;
+    animation: nexusai-quiz-spin .8s linear infinite;
+}
+@keyframes nexusai-quiz-spin {
+    to { transform: rotate(360deg); }
+}
+.nexusai-quiz__loading-text {
+    font-size: 12.5px;
+    color: #64748b;
+    margin: 6px 0 0;
+}
+
+/* Progress */
+.nexusai-quiz__progress {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.nexusai-quiz__progress-label {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+.nexusai-quiz__progress-bar {
+    height: 4px;
+    background: #f1f5f9;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.nexusai-quiz__progress-fill {
+    height: 100%;
+    background: #4A7FD4;
+    transition: width .25s ease-out;
+}
+
+/* Pregunta */
+.nexusai-quiz__question {
+    font-size: 14.5px;
+    font-weight: 500;
+    color: #1E2761;
+    line-height: 1.45;
+    margin: 0;
+}
+
+.nexusai-quiz__options {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+.nexusai-quiz__option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1E2761;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .12s, background .12s, transform .08s;
+}
+.nexusai-quiz__option:hover:not(:disabled) {
+    border-color: #c6d4f0;
+    background: #f7f8fc;
+}
+.nexusai-quiz__option:active:not(:disabled) {
+    transform: scale(0.98);
+}
+.nexusai-quiz__option:disabled {
+    cursor: default;
+}
+.nexusai-quiz__option--selected {
+    border-color: #4A7FD4;
+    background: #e6edfb;
+}
+.nexusai-quiz__option--correct {
+    border-color: #16a34a;
+    background: #dcfce7;
+    color: #14532d;
+}
+.nexusai-quiz__option--wrong {
+    border-color: #dc2626;
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+.nexusai-quiz__option-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 11.5px;
+    flex-shrink: 0;
+}
+.nexusai-quiz__option--selected .nexusai-quiz__option-letter,
+.nexusai-quiz__option--correct .nexusai-quiz__option-letter,
+.nexusai-quiz__option--wrong .nexusai-quiz__option-letter {
+    background: rgba(255, 255, 255, 0.6);
+}
+.nexusai-quiz__option-text {
+    flex: 1;
+    line-height: 1.4;
+}
+
+/* Feedback */
+.nexusai-quiz__feedback {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    animation: nexusai-source-panel-in .15s ease-out;
+}
+.nexusai-quiz__feedback--correct {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    color: #14532d;
+}
+.nexusai-quiz__feedback--wrong {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #7f1d1d;
+}
+.nexusai-quiz__explanation {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: inherit;
+    opacity: 0.9;
+    line-height: 1.5;
+}
+.nexusai-quiz__source {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.nexusai-quiz__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* Pantalla final */
+.nexusai-quiz__final {
+    text-align: center;
+    padding: 12px 0 18px;
+}
+.nexusai-quiz__final-emoji {
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+.nexusai-quiz__final-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1E2761;
+    margin: 0 0 6px;
+}
+.nexusai-quiz__final-score {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 12px;
+}
+.nexusai-quiz__final-pct {
+    font-size: 38px;
+    font-weight: 700;
+    color: #4A7FD4;
+}
+
+/* ── Caret de streaming ── */
+.nexusai-msg__markdown--streaming::after {
+    content: "▍";
+    display: inline-block;
+    margin-left: 2px;
+    color: #4A7FD4;
+    animation: nexusai-blink 1s steps(1) infinite;
+}
+@keyframes nexusai-blink {
+    50% { opacity: 0; }
 }

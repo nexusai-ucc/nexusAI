@@ -64,6 +64,12 @@ class chat_send extends \external_api {
                 VALUE_OPTIONAL,
                 ''
             ),
+            'multicourse' => new \external_value(
+                PARAM_BOOL,
+                'Si true, busca en TODOS los cursos del alumno con material indexado (Feature B)',
+                VALUE_OPTIONAL,
+                false
+            ),
         ]);
     }
 
@@ -103,15 +109,22 @@ class chat_send extends \external_api {
      * @param string|null $sessionid UUID o ''
      * @return array{session_id: string, answer: string, messages: array}
      */
-    public static function execute(string $question, int $courseid, ?int $userid = 0, ?string $sessionid = ''): array {
+    public static function execute(
+        string $question,
+        int $courseid,
+        ?int $userid = 0,
+        ?string $sessionid = '',
+        bool $multicourse = false
+    ): array {
         global $USER;
 
         // ----- 1. Validar parámetros (Moodle ya hizo validación de tipos) -----
         $params = self::validate_parameters(self::execute_parameters(), [
-            'question'  => $question,
-            'courseid'  => $courseid,
-            'userid'    => $userid ?? 0,
-            'sessionid' => $sessionid ?? '',
+            'question'    => $question,
+            'courseid'    => $courseid,
+            'userid'      => $userid ?? 0,
+            'sessionid'   => $sessionid ?? '',
+            'multicourse' => $multicourse,
         ]);
 
         // ----- 2. Validar contexto del curso + capability -----
@@ -145,12 +158,46 @@ class chat_send extends \external_api {
         // userid SIEMPRE de $USER, NUNCA del parámetro. Si el atacante manda
         // un userid distinto al suyo, lo ignoramos silenciosamente.
         $client = new backend_client();
-        $response = $client->send_message(
-            (int) $params['courseid'],
-            (int) $USER->id,
-            $cleanquestion,
-            $cleansessionid
-        );
+
+        if (!empty($params['multicourse'])) {
+            // Feature B: resolver los cursos donde el alumno está inscripto.
+            // enrol_get_users_courses() es nativa de Moodle 4.1-4.5 y respeta
+            // visibilidad de cursos y enrolments activos.
+            $enrolledcourses = enrol_get_users_courses(
+                (int) $USER->id,
+                true,
+                ['id', 'shortname', 'fullname']
+            );
+            $courseids   = [];
+            $coursenames = [];
+            foreach ($enrolledcourses as $course) {
+                $cid = (int) $course->id;
+                $courseids[] = $cid;
+                $coursenames[(string) $cid] = $course->fullname
+                    ?? $course->shortname
+                    ?? 'Materia';
+            }
+            // Fallback defensivo: si no se pudo resolver, usar el curso actual.
+            if (empty($courseids)) {
+                $courseids   = [(int) $params['courseid']];
+                $coursenames = [(string) $params['courseid'] => 'Materia actual'];
+            }
+
+            $response = $client->send_message_multicourse(
+                $courseids,
+                $coursenames,
+                (int) $USER->id,
+                $cleanquestion,
+                $cleansessionid
+            );
+        } else {
+            $response = $client->send_message(
+                (int) $params['courseid'],
+                (int) $USER->id,
+                $cleanquestion,
+                $cleansessionid
+            );
+        }
 
         // ----- 5. Validar shape de la respuesta -----
         // El backend ya validó internamente con Pydantic, pero como external

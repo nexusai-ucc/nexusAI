@@ -97,14 +97,15 @@ async function getMoodleAjax() {
 /**
  * Envía un mensaje al asistente. Devuelve { session_id, answer, messages }.
  *
- * @param {Object} params
- * @param {string} params.question  Pregunta del alumno (1..2000 chars).
- * @param {number} params.courseId  ID del curso de Moodle.
- * @param {number} params.userId    ID del usuario logueado.
- * @param {string} [params.sessionId]  UUID de sesión existente (opcional).
+ * @param {Object}  params
+ * @param {string}  params.question     Pregunta del alumno (1..2000 chars).
+ * @param {number}  params.courseId     ID del curso de Moodle.
+ * @param {number}  params.userId       ID del usuario logueado.
+ * @param {string}  [params.sessionId]  UUID de sesión existente (opcional).
+ * @param {boolean} [params.multiCourse] Si true, busca en todos los cursos del alumno.
  * @returns {Promise<{session_id:string, answer:string, messages:Array}>}
  */
-export async function sendMessage({ question, courseId, userId, sessionId }) {
+export async function sendMessage({ question, courseId, userId, sessionId, multiCourse = false }) {
     if (!question || !question.trim()) {
         throw new Error("La pregunta no puede estar vacía");
     }
@@ -124,8 +125,9 @@ export async function sendMessage({ question, courseId, userId, sessionId }) {
     // este methodname tiene que coincidir con el declarado allí.
     const args = {
         question,
-        courseid: courseId,
-        userid: userId,
+        courseid:    courseId,
+        userid:      userId,
+        multicourse: multiCourse,
     };
     if (sessionId) {
         args.sessionid = sessionId;
@@ -150,4 +152,108 @@ export async function sendMessage({ question, courseId, userId, sessionId }) {
 export function resetMockState() {
     mockSessionMessages = [];
     mockResponseIdx = 0;
+}
+
+
+// ============================================================
+// STREAMING — Server-Sent Events vía endpoint PHP proxy
+// ============================================================
+
+/**
+ * Envía un mensaje en modo streaming. Los tokens llegan uno por uno via SSE.
+ *
+ * Flujo: React → fetch a /local/nexusai/chat_stream.php → cURL al backend
+ *        Python → LLM streaming → SSE de vuelta al browser tal como llega.
+ *
+ * @param {Object}  params
+ * @param {string}  params.question
+ * @param {number}  params.courseId
+ * @param {string}  [params.sessionId]
+ * @param {boolean} [params.multiCourse]
+ * @param {Object}  callbacks
+ * @param {(meta:{session_id:string,chunks:number}) => void} [callbacks.onMeta]
+ * @param {(token:string) => void}                          callbacks.onToken
+ * @param {(stats:{prompt_tokens:number,completion_tokens:number,total_tokens:number}) => void} [callbacks.onDone]
+ * @param {(detail:string) => void}                         [callbacks.onError]
+ * @returns {Promise<void>} resuelve cuando termina el stream
+ */
+export async function sendMessageStream(
+    { question, courseId, sessionId, multiCourse = false },
+    { onMeta, onToken, onDone, onError } = {}
+) {
+    if (!question || !question.trim()) {
+        throw new Error("La pregunta no puede estar vacía");
+    }
+
+    // Fuera de Moodle: caer al mock sync (no hay streaming en mock).
+    if (typeof window === "undefined" || !window.M?.cfg) {
+        const fake = await mockSendMessage({ question, sessionId });
+        onMeta?.({ session_id: fake.session_id, chunks: 0 });
+        // Simular streaming partiendo la respuesta en palabras.
+        const words = fake.answer.split(" ");
+        for (const w of words) {
+            await new Promise((r) => setTimeout(r, 30));
+            onToken?.(w + " ");
+        }
+        onDone?.({ prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 });
+        return;
+    }
+
+    const url = `${window.M.cfg.wwwroot}/local/nexusai/chat_stream.php`;
+    const body = new URLSearchParams();
+    body.set("sesskey", window.M.cfg.sesskey);
+    body.set("question", question);
+    body.set("courseid", String(courseId));
+    if (sessionId) body.set("sessionid", sessionId);
+    if (multiCourse) body.set("multicourse", "1");
+
+    const response = await fetch(url, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+            "Accept": "text/event-stream",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body,
+    });
+
+    if (!response.ok || !response.body) {
+        const text = await response.text().catch(() => "");
+        throw new Error(`HTTP ${response.status}: ${text.slice(0, 200)}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE delimita eventos con "\n\n". Procesamos los completos y dejamos
+        // en el buffer cualquier evento parcial.
+        let idx;
+        while ((idx = buffer.indexOf("\n\n")) >= 0) {
+            const rawEvent = buffer.slice(0, idx);
+            buffer = buffer.slice(idx + 2);
+
+            for (const line of rawEvent.split("\n")) {
+                if (!line.startsWith("data:")) continue;
+                const json = line.slice(5).trim();
+                if (!json) continue;
+                let parsed;
+                try { parsed = JSON.parse(json); }
+                catch { continue; }
+
+                switch (parsed.type) {
+                    case "meta":  onMeta?.(parsed); break;
+                    case "token": onToken?.(parsed.content || ""); break;
+                    case "done":  onDone?.(parsed); break;
+                    case "error": onError?.(parsed.detail || "stream error"); break;
+                }
+            }
+        }
+    }
 }
