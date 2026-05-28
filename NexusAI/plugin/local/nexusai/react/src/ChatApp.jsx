@@ -24,6 +24,7 @@ import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
 import TypingIndicator from "./components/TypingIndicator.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
+import QuizPanel from "./components/QuizPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
 import { getSessionMessages } from "./api/history.js";
@@ -134,7 +135,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "search"
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "search" | "quiz"
     const [historyOpen, setHistoryOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
@@ -375,6 +376,13 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         >
                             {lang === "es" ? "Buscador" : "Search"}
                         </button>
+                        <button
+                            type="button"
+                            className={`nexusai-tab ${activeTab === "quiz" ? "nexusai-tab--active" : ""}`}
+                            onClick={() => setActiveTab("quiz")}
+                        >
+                            {lang === "es" ? "Quiz" : "Quiz"}
+                        </button>
                     </div>
 
                     {activeTab === "chat" ? (
@@ -448,9 +456,13 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         <span>{t.poweredBy}</span>
                     </footer>
                     </>
-                    ) : (
+                    ) : activeTab === "search" ? (
                         <div className="nexusai-panel__body">
                             <SearchPanel courseId={courseid} lang={lang} />
+                        </div>
+                    ) : (
+                        <div className="nexusai-panel__body">
+                            <QuizPanel courseId={courseid} lang={lang} />
                         </div>
                     )}
                 </div>

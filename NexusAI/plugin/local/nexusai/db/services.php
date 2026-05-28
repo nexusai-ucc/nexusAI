@@ -70,6 +70,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Quiz generator — preguntas de opción múltiple desde el material (Feature F).
+    'local_nexusai_quiz_generate' => [
+        'classname'     => '\local_nexusai\external\quiz_generate',
+        'methodname'    => 'execute',
+        'description'   => 'Generate a multiple-choice practice quiz from the course material.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.

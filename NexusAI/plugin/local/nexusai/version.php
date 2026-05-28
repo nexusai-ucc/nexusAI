@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026052803;        // YYYYMMDDXX — Sprint 4: historial de conversaciones.
-$plugin->release   = '0.7.0';            // Sprint 4: Feature E (history dropdown).
+$plugin->version   = 2026052804;        // YYYYMMDDXX — Sprint 4: quiz generator.
+$plugin->release   = '0.8.0';            // Sprint 4: Feature F (multiple-choice quiz).
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

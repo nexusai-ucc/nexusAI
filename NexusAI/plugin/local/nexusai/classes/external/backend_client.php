@@ -197,6 +197,31 @@ class backend_client {
     }
 
     /**
+     * Genera un quiz de práctica desde el material indexado del curso (Feature F).
+     *
+     * @param int         $courseid     ID del curso.
+     * @param int         $userid       $USER->id real.
+     * @param string|null $topic        Tema opcional. Si vacío, variedad aleatoria.
+     * @param int         $numquestions Cantidad de preguntas (1..10).
+     * @return array{course_id:int, topic:?string, questions:array}
+     */
+    public function generate_quiz(int $courseid, int $userid, ?string $topic, int $numquestions): array {
+        $payload = [
+            'course_id'     => $courseid,
+            'user_id'       => $userid,
+            'num_questions' => $numquestions,
+        ];
+        if ($topic !== null && trim($topic) !== '') {
+            $payload['topic'] = trim($topic);
+        }
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/generate', $body);
+    }
+
+    /**
      * Búsqueda semántica en el material del curso (Feature A — sin LLM).
      *
      * @param int    $courseid ID del curso de Moodle.
