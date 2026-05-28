@@ -97,14 +97,15 @@ async function getMoodleAjax() {
 /**
  * Envía un mensaje al asistente. Devuelve { session_id, answer, messages }.
  *
- * @param {Object} params
- * @param {string} params.question  Pregunta del alumno (1..2000 chars).
- * @param {number} params.courseId  ID del curso de Moodle.
- * @param {number} params.userId    ID del usuario logueado.
- * @param {string} [params.sessionId]  UUID de sesión existente (opcional).
+ * @param {Object}  params
+ * @param {string}  params.question     Pregunta del alumno (1..2000 chars).
+ * @param {number}  params.courseId     ID del curso de Moodle.
+ * @param {number}  params.userId       ID del usuario logueado.
+ * @param {string}  [params.sessionId]  UUID de sesión existente (opcional).
+ * @param {boolean} [params.multiCourse] Si true, busca en todos los cursos del alumno.
  * @returns {Promise<{session_id:string, answer:string, messages:Array}>}
  */
-export async function sendMessage({ question, courseId, userId, sessionId }) {
+export async function sendMessage({ question, courseId, userId, sessionId, multiCourse = false }) {
     if (!question || !question.trim()) {
         throw new Error("La pregunta no puede estar vacía");
     }
@@ -124,8 +125,9 @@ export async function sendMessage({ question, courseId, userId, sessionId }) {
     // este methodname tiene que coincidir con el declarado allí.
     const args = {
         question,
-        courseid: courseId,
-        userid: userId,
+        courseid:    courseId,
+        userid:      userId,
+        multicourse: multiCourse,
     };
     if (sessionId) {
         args.sessionid = sessionId;

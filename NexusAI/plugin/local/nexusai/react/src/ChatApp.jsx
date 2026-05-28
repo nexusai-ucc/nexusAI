@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from "react";
 import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
 import TypingIndicator from "./components/TypingIndicator.jsx";
+import SearchPanel from "./components/SearchPanel.jsx";
 import { sendMessage } from "./api/chat.js";
 
 const STRINGS = {
@@ -122,6 +123,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
+    const [multiCourse, setMultiCourse] = useState(false);
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "search"
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
@@ -151,6 +154,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                 courseId: courseid,
                 userId: userid,
                 sessionId,
+                multiCourse,
             });
             setSessionId(response.session_id);
             setMessages(response.messages || []);
@@ -206,13 +210,33 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                     <span className="nexusai-panel__status-dot" />
                                     {!isInsideMoodle()
                                         ? <span className="nexusai-badge">{t.modeMock}</span>
-                                        : t.statusActive
+                                        : multiCourse
+                                            ? (lang === "es" ? "Activo · todos tus cursos" : "Active · all your courses")
+                                            : t.statusActive
                                     }
                                 </div>
                             </div>
                         </div>
 
                         <div className="nexusai-panel__actions">
+                            <button
+                                type="button"
+                                className={`nexusai-icon-btn nexusai-multicourse-toggle ${multiCourse ? "nexusai-multicourse-toggle--active" : ""}`}
+                                onClick={() => {
+                                    setMultiCourse((v) => !v);
+                                    clearChat();
+                                }}
+                                aria-label={multiCourse
+                                    ? (lang === "es" ? "Buscar solo en este curso" : "Limit to this course")
+                                    : (lang === "es" ? "Buscar en todos tus cursos" : "Search all your courses")
+                                }
+                                title={multiCourse
+                                    ? (lang === "es" ? "Buscando en todos tus cursos (click para solo este curso)" : "Searching all courses (click to limit to this course)")
+                                    : (lang === "es" ? "Solo este curso (click para buscar en todos tus cursos)" : "This course only (click to search all your courses)")
+                                }
+                            >
+                                {multiCourse ? "🌐" : "📚"}
+                            </button>
                             {messages.length > 0 && (
                                 <button
                                     type="button"
@@ -236,6 +260,26 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         </div>
                     </header>
 
+                    {/* Pestañas: Chat / Buscador */}
+                    <div className="nexusai-tabs">
+                        <button
+                            type="button"
+                            className={`nexusai-tab ${activeTab === "chat" ? "nexusai-tab--active" : ""}`}
+                            onClick={() => setActiveTab("chat")}
+                        >
+                            {lang === "es" ? "Chat" : "Chat"}
+                        </button>
+                        <button
+                            type="button"
+                            className={`nexusai-tab ${activeTab === "search" ? "nexusai-tab--active" : ""}`}
+                            onClick={() => setActiveTab("search")}
+                        >
+                            {lang === "es" ? "Buscador" : "Search"}
+                        </button>
+                    </div>
+
+                    {activeTab === "chat" ? (
+                    <>
                     {/* Mensajes */}
                     <div className="nexusai-panel__body">
                         {showWelcome && (
@@ -304,6 +348,12 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         <IconLightning />
                         <span>{t.poweredBy}</span>
                     </footer>
+                    </>
+                    ) : (
+                        <div className="nexusai-panel__body">
+                            <SearchPanel courseId={courseid} lang={lang} />
+                        </div>
+                    )}
                 </div>
             )}
         </div>

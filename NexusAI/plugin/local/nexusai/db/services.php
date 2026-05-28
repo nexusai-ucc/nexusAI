@@ -37,6 +37,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Búsqueda semántica en el material del curso (retrieval sin LLM — Feature A).
+    'local_nexusai_search_query' => [
+        'classname'     => '\local_nexusai\external\search_query',
+        'methodname'    => 'execute',
+        'description'   => 'Semantic search over the indexed course material (no LLM).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.
