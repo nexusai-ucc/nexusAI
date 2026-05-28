@@ -526,6 +526,83 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    cursor: default;
+    transition: background .12s, border-color .12s, box-shadow .12s;
+}
+.nexusai-msg__source-pill--clickable {
+    cursor: pointer;
+}
+.nexusai-msg__source-pill--clickable:hover {
+    background: #e6edfb;
+    border-color: var(--nexusai-primary);
+}
+.nexusai-msg__source-pill--active {
+    background: var(--nexusai-primary);
+    color: #fff;
+    border-color: var(--nexusai-primary);
+}
+.nexusai-msg__source-pill--active:hover {
+    background: var(--nexusai-primary);
+}
+.nexusai-msg__source-score {
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.6);
+    color: inherit;
+    margin-left: 2px;
+}
+.nexusai-msg__source-pill--active .nexusai-msg__source-score {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Panel expandido del fragmento citado */
+.nexusai-msg__source-panel {
+    margin-top: 6px;
+    background: #f7f8fc;
+    border: 1px solid var(--nexusai-primary-ring);
+    border-radius: 8px;
+    padding: 8px 10px;
+    animation: nexusai-source-panel-in .15s ease-out;
+}
+@keyframes nexusai-source-panel-in {
+    from { opacity: 0; transform: translateY(-3px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.nexusai-msg__source-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    gap: 8px;
+}
+.nexusai-msg__source-panel-file {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--nexusai-fg, #1E2761);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nexusai-msg__source-panel-close {
+    background: none;
+    border: none;
+    color: var(--nexusai-fg-muted, #94a3b8);
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+}
+.nexusai-msg__source-panel-close:hover {
+    color: var(--nexusai-fg, #1E2761);
+}
+.nexusai-msg__source-panel-content {
+    font-size: 11.5px;
+    color: #5a6a7a;
+    line-height: 1.5;
+    margin: 0;
+    white-space: pre-wrap;
 }
 
 /* ----- Timestamp ----- */

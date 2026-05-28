@@ -178,8 +178,17 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     multiCourse,
                 },
                 {
-                    onMeta: ({ session_id }) => {
+                    onMeta: ({ session_id, sources }) => {
                         if (session_id) setSessionId(session_id);
+                        if (Array.isArray(sources)) {
+                            setMessages((prev) =>
+                                prev.map((m) =>
+                                    m.id === streamingAssistantId
+                                        ? { ...m, sources }
+                                        : m
+                                )
+                            );
+                        }
                     },
                     onToken: appendToken,
                     onDone: () => {

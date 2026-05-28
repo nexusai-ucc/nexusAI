@@ -14,7 +14,7 @@
  *   - "system"    → no se muestra.
  */
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 
@@ -140,7 +140,15 @@ export default function MessageBubble({ message }) {
     }
 
     const isUser = message.role === "user";
-    const sources = isUser ? [] : extractSources(message.content);
+    // Si el backend mandó sources estructuradas (streaming meta event), usarlas.
+    // Si no (mensajes viejos sin sources), fallback al regex sobre el texto.
+    const structuredSources = !isUser && Array.isArray(message.sources) ? message.sources : null;
+    const sources = isUser
+        ? []
+        : (structuredSources && structuredSources.length > 0
+            ? structuredSources
+            : extractSources(message.content).map((filename) => ({ document_filename: filename })));
+    const [expandedIdx, setExpandedIdx] = useState(null);
     const markdownRef = useRef(null);
 
     const htmlContent = useMemo(() => {
@@ -180,14 +188,56 @@ export default function MessageBubble({ message }) {
             </div>
 
             {sources.length > 0 && (
-                <div className="nexusai-msg__sources" aria-label="Fuentes citadas" style={{ paddingLeft: "34px" }}>
-                    <span className="nexusai-msg__sources-label">Fuentes:</span>
-                    {sources.map((src) => (
-                        <span key={src} className="nexusai-msg__source-pill">
-                            <IconDoc />
-                            {src}
-                        </span>
-                    ))}
+                <div className="nexusai-msg__sources-wrap" style={{ paddingLeft: "34px" }}>
+                    <div className="nexusai-msg__sources" aria-label="Fuentes citadas">
+                        <span className="nexusai-msg__sources-label">Fuentes:</span>
+                        {sources.map((src, i) => {
+                            const key = `${src.document_filename}-${src.chunk_index ?? "x"}-${i}`;
+                            const hasContent = !!src.content;
+                            const isOpen = expandedIdx === i;
+                            return (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    className={`nexusai-msg__source-pill ${hasContent ? "nexusai-msg__source-pill--clickable" : ""} ${isOpen ? "nexusai-msg__source-pill--active" : ""}`}
+                                    onClick={() => hasContent && setExpandedIdx(isOpen ? null : i)}
+                                    disabled={!hasContent}
+                                    aria-expanded={isOpen}
+                                >
+                                    <IconDoc />
+                                    {src.document_filename}
+                                    {typeof src.similarity === "number" && (
+                                        <span className="nexusai-msg__source-score">
+                                            {Math.round(src.similarity * 100)}%
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {expandedIdx !== null && sources[expandedIdx]?.content && (
+                        <div className="nexusai-msg__source-panel">
+                            <div className="nexusai-msg__source-panel-header">
+                                <span className="nexusai-msg__source-panel-file">
+                                    📄 {sources[expandedIdx].document_filename}
+                                    {typeof sources[expandedIdx].chunk_index === "number" &&
+                                        ` · fragmento #${sources[expandedIdx].chunk_index}`}
+                                </span>
+                                <button
+                                    type="button"
+                                    className="nexusai-msg__source-panel-close"
+                                    onClick={() => setExpandedIdx(null)}
+                                    aria-label="Cerrar"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <p className="nexusai-msg__source-panel-content">
+                                {sources[expandedIdx].content}
+                            </p>
+                        </div>
+                    )}
                 </div>
             )}
 

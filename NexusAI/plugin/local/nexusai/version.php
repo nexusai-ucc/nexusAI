@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026052801;        // YYYYMMDDXX — Sprint 4: streaming SSE token-por-token.
-$plugin->release   = '0.5.0';            // Sprint 4: Feature C (streaming chat).
+$plugin->version   = 2026052802;        // YYYYMMDDXX — Sprint 4: citas clickeables con preview del fragmento.
+$plugin->release   = '0.6.0';            // Sprint 4: Feature D (citas trazables).
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
