@@ -26,6 +26,7 @@ class Document(Base):
     mime_type: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    file_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -34,7 +35,11 @@ class Document(Base):
     )
 
     chunks: Mapped[List["Chunk"]] = relationship(
-        back_populates="document", lazy="selectin", order_by="Chunk.chunk_index"
+        back_populates="document",
+        lazy="selectin",
+        order_by="Chunk.chunk_index",
+        cascade="all, delete-orphan",  # marca hijos como "deleted" cuando el padre se borra
+        passive_deletes=True,          # no emite SQL para los hijos; confía en ON DELETE CASCADE
     )
 
 

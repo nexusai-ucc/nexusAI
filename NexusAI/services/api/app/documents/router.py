@@ -25,6 +25,8 @@ Por qué JSON+base64 y no multipart:
 from __future__ import annotations
 
 import base64
+import hashlib
+from datetime import datetime
 from typing import Annotated, Optional
 from uuid import UUID
 
@@ -84,6 +86,8 @@ class DocumentOut(BaseModel):
     mime_type: str
     status: str  # pending | indexing | indexed | error
     error_message: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     @classmethod
     def from_orm(cls, doc: Document) -> "DocumentOut":
@@ -95,6 +99,8 @@ class DocumentOut(BaseModel):
             mime_type=doc.mime_type,
             status=doc.status,
             error_message=doc.error_message,
+            created_at=doc.created_at,
+            updated_at=doc.updated_at,
         )
 
 
@@ -143,6 +149,7 @@ async def upload_document(
     payload: DocumentUploadRequest,
     background_tasks: BackgroundTasks,
     _body: Annotated[bytes, Depends(verify_hmac)],
+    response: Response,
     db: AsyncSession = Depends(get_db),
     embeddings: EmbeddingProvider = Depends(get_embedding_provider),
 ) -> DocumentOut:
@@ -151,6 +158,8 @@ async def upload_document(
 
     Tipos aceptados: PDF, DOCX, TXT (máx 20 MB).
     Devuelve 202 Accepted con el document_id para polling.
+    Si el mismo archivo ya está indexado (mismo course_id + filename + hash),
+    devuelve 200 con el documento existente sin re-indexar (CONT-04).
     """
     if payload.mime_type not in SUPPORTED_MIME_TYPES:
         raise HTTPException(
@@ -158,6 +167,42 @@ async def upload_document(
             detail=(
                 f"Tipo de archivo no soportado: {payload.mime_type!r}. "
                 f"Tipos aceptados: {sorted(SUPPORTED_MIME_TYPES)}"
+            ),
+        )
+
+    # CONT-04: calcular hash antes de decodificar para early-return barato.
+    file_hash = hashlib.sha256(payload.content_b64.encode()).hexdigest()
+
+    # Si ya existe un documento indexado con el mismo contenido, devolverlo sin re-indexar.
+    existing_result = await db.execute(
+        select(Document).where(
+            Document.course_id == payload.course_id,
+            Document.filename == payload.filename,
+            Document.file_hash == file_hash,
+            Document.status == "indexed",
+        )
+    )
+    existing = existing_result.scalar_one_or_none()
+    if existing is not None:
+        response.status_code = status.HTTP_200_OK
+        return DocumentOut.from_orm(existing)
+
+    # Detectar colisión de nombre: mismo course_id + filename, estado activo.
+    # Se excluye 'error' porque un intento fallido no debe bloquear re-subida.
+    collision_result = await db.execute(
+        select(Document).where(
+            Document.course_id == payload.course_id,
+            Document.filename == payload.filename,
+            Document.status.in_(["pending", "indexing", "indexed"]),
+        )
+    )
+    if collision_result.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Ya existe un documento con el nombre '{payload.filename}' "
+                f"en el curso {payload.course_id}. "
+                "Eliminá el archivo existente antes de subir uno nuevo."
             ),
         )
 
@@ -199,6 +244,7 @@ async def upload_document(
         filename=payload.filename,
         mime_type=payload.mime_type,
         status="pending",
+        file_hash=file_hash,
     )
     db.add(document)
     await db.commit()

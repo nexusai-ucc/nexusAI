@@ -215,6 +215,12 @@
     0%, 100% { opacity: 0.4; transform: scale(0.85); }
     50%       { opacity: 1;   transform: scale(1); }
 }
+/* Specificity bumped a nivel de tabla para ganarle a los resets del tema Boost. */
+.nexusai-table .nexusai-badge--pending  { background: #f1f5f9 !important; color: #64748b !important; }
+.nexusai-table .nexusai-badge--indexing { background: #dbeafe !important; color: #1e40af !important; }
+.nexusai-table .nexusai-badge--indexed  { background: #d1fae5 !important; color: #065f46 !important; }
+.nexusai-table .nexusai-badge--error    { background: #fee2e2 !important; color: #991b1b !important; cursor: help; }
+.nexusai-table .nexusai-badge--unknown  { background: #f8fafc !important; color: #475569 !important; }
 
 /* ============================================================
    Buttons / links
@@ -278,4 +284,122 @@
     background: #fef2f2;
     border-color: #fecaca;
     color: #991b1b;
+}
+
+/* ============================================================
+   Modales (confirmación y error)
+============================================================ */
+.nexusai-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 24px;
+}
+.nexusai-modal {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18), 0 4px 16px rgba(15, 23, 42, 0.08);
+    padding: 28px 32px;
+    width: 100%;
+    max-width: 440px;
+}
+.nexusai-modal__title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 12px;
+}
+.nexusai-modal__title--error {
+    color: #991b1b;
+}
+.nexusai-modal__body {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+    margin: 0 0 24px;
+}
+.nexusai-modal__body--error {
+    color: #7f1d1d;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+.nexusai-modal__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+.nexusai-modal__actions--end {
+    justify-content: flex-end;
+}
+
+/* ============================================================
+   Toast
+============================================================ */
+.nexusai-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10000;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.14);
+    animation: nexusai-toast-in 0.22s ease;
+    pointer-events: none;
+}
+.nexusai-toast--success {
+    background: #059669;
+    color: #ffffff !important;
+}
+.nexusai-toast--warning {
+    background: #fef3c7;
+    color: #92400e !important;
+    border: 1px solid #fcd34d;
+}
+@keyframes nexusai-toast-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Botones de modal */
+.nexusai-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.nexusai-btn--secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+.nexusai-btn--secondary:hover {
+    background: #e2e8f0;
+}
+.nexusai-btn--danger {
+    background: #dc2626;
+    color: #ffffff;
+}
+.nexusai-btn--danger:hover {
+    background: #b91c1c;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+.nexusai-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
