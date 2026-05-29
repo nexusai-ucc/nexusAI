@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import { searchMaterial } from "../api/search.js";
+import { IconFile, IconSearch } from "./icons.jsx";
 
 export default function SearchPanel({ courseId, lang = "es" }) {
     const [query, setQuery]     = useState("");
@@ -85,7 +86,8 @@ export default function SearchPanel({ courseId, lang = "es" }) {
                 <div key={`${r.document_filename}-${r.chunk_index}-${i}`} className="nexusai-search__result">
                     <div className="nexusai-search__result-header">
                         <span className="nexusai-search__filename">
-                            📄 {r.document_filename}
+                            <IconFile size={13} />
+                            {r.document_filename}
                         </span>
                         <span
                             className="nexusai-search__score"

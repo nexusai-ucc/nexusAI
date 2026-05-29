@@ -578,24 +578,33 @@
     gap: 8px;
 }
 .nexusai-msg__source-panel-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 11px;
     font-weight: 600;
-    color: var(--nexusai-fg, #1E2761);
+    color: var(--nexusai-fg);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
 }
 .nexusai-msg__source-panel-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: none;
-    color: var(--nexusai-fg-muted, #94a3b8);
-    font-size: 16px;
+    color: var(--nexusai-fg-muted);
     cursor: pointer;
     line-height: 1;
-    padding: 0 4px;
+    padding: 2px;
+    border-radius: var(--nexusai-radius-sm);
+    transition: background .12s, color .12s;
 }
 .nexusai-msg__source-panel-close:hover {
-    color: var(--nexusai-fg, #1E2761);
+    background: var(--nexusai-bg-subtle);
+    color: var(--nexusai-fg);
 }
 .nexusai-msg__source-panel-content {
     font-size: 11.5px;
@@ -796,40 +805,58 @@
 
 /* ── Toggle multi-curso (Feature B) ── */
 .nexusai-multicourse-toggle {
-    opacity: 0.5;
+    opacity: 0.55;
     transition: opacity .15s, color .15s;
-    font-size: 14px;
-    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
-.nexusai-multicourse-toggle--active {
+.nexusai-multicourse-toggle:hover { opacity: 0.85; }
+.nexusai-multicourse-toggle--active,
+.nexusai-multicourse-toggle--active:hover {
     opacity: 1;
-    color: #4A7FD4;
+    color: var(--nexusai-primary);
 }
 
-/* ── Pestañas Chat / Buscador (Feature A) ── */
+/* ── Toggle historial (Feature E) ── */
+.nexusai-history-toggle {
+    opacity: 0.55;
+    transition: opacity .15s, color .15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.nexusai-history-toggle:hover { opacity: 0.85; }
+.nexusai-history-toggle--active,
+.nexusai-history-toggle--active:hover {
+    opacity: 1;
+    color: var(--nexusai-primary);
+}
+
+/* ── Pestañas Chat / Buscador / Quiz ── */
 .nexusai-tabs {
     display: flex;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--nexusai-border);
     padding: 0 12px;
-    background: #fff;
+    background: var(--nexusai-bg);
     flex-shrink: 0;
 }
 .nexusai-tab {
     flex: 1;
-    padding: 8px 0;
+    padding: 9px 0;
     font-size: 13px;
     font-weight: 500;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
     cursor: pointer;
     transition: color .15s, border-color .15s;
 }
-.nexusai-tab:hover { color: #64748b; }
+.nexusai-tab:hover { color: var(--nexusai-fg-muted); }
 .nexusai-tab--active {
-    color: #4A7FD4;
-    border-bottom-color: #4A7FD4;
+    color: var(--nexusai-primary);
+    border-bottom-color: var(--nexusai-primary);
 }
 
 /* ── Buscador (Feature A) ── */
@@ -847,10 +874,10 @@
     font-size: 13px;
     outline: none;
 }
-.nexusai-search__input:focus { border-color: #4A7FD4; }
+.nexusai-search__input:focus { border-color: var(--nexusai-primary); }
 .nexusai-search__btn {
     padding: 8px 14px;
-    background: #4A7FD4;
+    background: var(--nexusai-primary);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -882,12 +909,16 @@
     gap: 8px;
 }
 .nexusai-search__filename {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 12px;
     font-weight: 600;
-    color: #1E2761;
+    color: var(--nexusai-fg);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
 }
 .nexusai-search__score {
     font-size: 11px;
@@ -902,16 +933,6 @@
 }
 
 /* ── Historial de conversaciones (Feature E) ── */
-.nexusai-history-toggle {
-    opacity: 0.6;
-    transition: opacity .15s, color .15s;
-}
-.nexusai-history-toggle--active,
-.nexusai-history-toggle:hover {
-    opacity: 1;
-    color: #4A7FD4;
-}
-
 .nexusai-history {
     position: absolute;
     top: 56px;
@@ -937,7 +958,7 @@
 .nexusai-history__title {
     font-size: 13px;
     font-weight: 600;
-    color: #1E2761;
+    color: var(--nexusai-fg);
 }
 .nexusai-history__close {
     background: none;
@@ -948,7 +969,7 @@
     line-height: 1;
     padding: 0 4px;
 }
-.nexusai-history__close:hover { color: #1E2761; }
+.nexusai-history__close:hover { color: var(--nexusai-fg); }
 
 .nexusai-history__scope {
     display: flex;
@@ -968,9 +989,9 @@
     cursor: pointer;
     transition: background .12s, color .12s, border-color .12s;
 }
-.nexusai-history__scope-btn:hover { color: #1E2761; }
+.nexusai-history__scope-btn:hover { color: var(--nexusai-fg); }
 .nexusai-history__scope-btn--active {
-    color: #4A7FD4;
+    color: var(--nexusai-primary);
     background: #e6edfb;
     border-color: #c6d4f0;
 }
@@ -1013,7 +1034,7 @@
 }
 .nexusai-history__item-preview {
     font-size: 12.5px;
-    color: #1E2761;
+    color: var(--nexusai-fg);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1051,7 +1072,7 @@
 .nexusai-quiz__intro-title {
     font-size: 15px;
     font-weight: 600;
-    color: #1E2761;
+    color: var(--nexusai-fg);
     margin: 0 0 4px;
 }
 .nexusai-quiz__intro-text {
@@ -1079,7 +1100,7 @@
     outline: none;
     transition: border-color .12s;
 }
-.nexusai-quiz__input:focus { border-color: #4A7FD4; }
+.nexusai-quiz__input:focus { border-color: var(--nexusai-primary); }
 
 .nexusai-quiz__numbtns {
     display: flex;
@@ -1099,39 +1120,52 @@
 }
 .nexusai-quiz__numbtn:hover {
     border-color: #c6d4f0;
-    color: #4A7FD4;
+    color: var(--nexusai-primary);
 }
 .nexusai-quiz__numbtn--active {
-    background: #4A7FD4;
-    border-color: #4A7FD4;
+    background: var(--nexusai-primary);
+    border-color: var(--nexusai-primary);
     color: #fff;
 }
 
 .nexusai-quiz__primary {
-    padding: 10px 14px;
-    background: #4A7FD4;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 14px;
+    background: var(--nexusai-primary);
     color: #fff;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--nexusai-radius);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: background .12s, opacity .12s;
 }
-.nexusai-quiz__primary:hover:not(:disabled) { background: #3d6ec0; }
+.nexusai-quiz__primary:hover:not(:disabled) { background: var(--nexusai-primary-hover); }
 .nexusai-quiz__primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 .nexusai-quiz__secondary {
-    padding: 10px 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 14px;
     background: none;
-    color: #475569;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    color: var(--nexusai-fg-muted);
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
+    transition: background .12s, border-color .12s;
+}
+.nexusai-quiz__secondary:hover {
+    background: var(--nexusai-bg-muted);
+    border-color: var(--nexusai-border-strong);
 }
 
 /* Spinner */
@@ -1139,7 +1173,7 @@
     width: 32px;
     height: 32px;
     border: 3px solid #e2e8f0;
-    border-top-color: #4A7FD4;
+    border-top-color: var(--nexusai-primary);
     border-radius: 50%;
     animation: nexusai-quiz-spin .8s linear infinite;
 }
@@ -1171,7 +1205,7 @@
 }
 .nexusai-quiz__progress-fill {
     height: 100%;
-    background: #4A7FD4;
+    background: var(--nexusai-primary);
     transition: width .25s ease-out;
 }
 
@@ -1179,7 +1213,7 @@
 .nexusai-quiz__question {
     font-size: 14.5px;
     font-weight: 500;
-    color: #1E2761;
+    color: var(--nexusai-fg);
     line-height: 1.45;
     margin: 0;
 }
@@ -1198,7 +1232,7 @@
     border: 1.5px solid #e2e8f0;
     border-radius: 8px;
     font-size: 13px;
-    color: #1E2761;
+    color: var(--nexusai-fg);
     text-align: left;
     cursor: pointer;
     transition: border-color .12s, background .12s, transform .08s;
@@ -1214,7 +1248,7 @@
     cursor: default;
 }
 .nexusai-quiz__option--selected {
-    border-color: #4A7FD4;
+    border-color: var(--nexusai-primary);
     background: #e6edfb;
 }
 .nexusai-quiz__option--correct {
@@ -1253,20 +1287,26 @@
 /* Feedback */
 .nexusai-quiz__feedback {
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: var(--nexusai-radius);
     font-size: 12.5px;
     line-height: 1.45;
     animation: nexusai-source-panel-in .15s ease-out;
 }
 .nexusai-quiz__feedback--correct {
-    background: #dcfce7;
-    border: 1px solid #86efac;
-    color: #14532d;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
 }
 .nexusai-quiz__feedback--wrong {
-    background: #fee2e2;
-    border: 1px solid #fca5a5;
-    color: #7f1d1d;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+.nexusai-quiz__feedback-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
 }
 .nexusai-quiz__explanation {
     margin: 4px 0 0;
@@ -1276,10 +1316,13 @@
     line-height: 1.5;
 }
 .nexusai-quiz__source {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     margin: 6px 0 0;
     font-size: 11px;
     color: inherit;
-    opacity: 0.7;
+    opacity: 0.75;
 }
 
 .nexusai-quiz__actions {
@@ -1292,27 +1335,48 @@
 .nexusai-quiz__final {
     text-align: center;
     padding: 12px 0 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
 }
-.nexusai-quiz__final-emoji {
-    font-size: 48px;
-    line-height: 1;
-    margin-bottom: 8px;
+.nexusai-quiz__final-icon {
+    width: 56px;
+    height: 56px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--nexusai-radius-full);
+    margin-bottom: 6px;
+}
+.nexusai-quiz__final-icon--high {
+    background: #ecfdf5;
+    color: #047857;
+}
+.nexusai-quiz__final-icon--mid {
+    background: var(--nexusai-primary-light);
+    color: var(--nexusai-primary);
+}
+.nexusai-quiz__final-icon--low {
+    background: var(--nexusai-bg-subtle);
+    color: var(--nexusai-fg-muted);
 }
 .nexusai-quiz__final-title {
     font-size: 16px;
     font-weight: 600;
-    color: #1E2761;
-    margin: 0 0 6px;
+    color: var(--nexusai-fg);
+    margin: 0;
 }
 .nexusai-quiz__final-score {
     font-size: 13px;
-    color: #64748b;
-    margin: 0 0 12px;
+    color: var(--nexusai-fg-muted);
+    margin: 0 0 6px;
 }
 .nexusai-quiz__final-pct {
     font-size: 38px;
     font-weight: 700;
-    color: #4A7FD4;
+    color: var(--nexusai-primary);
+    letter-spacing: -0.02em;
 }
 
 /* ── Caret de streaming ── */
@@ -1320,7 +1384,7 @@
     content: "▍";
     display: inline-block;
     margin-left: 2px;
-    color: #4A7FD4;
+    color: var(--nexusai-primary);
     animation: nexusai-blink 1s steps(1) infinite;
 }
 @keyframes nexusai-blink {

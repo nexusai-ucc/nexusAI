@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026052805;        // YYYYMMDDXX — Sprint 4: detección de gaps del docente.
-$plugin->release   = '0.9.0';            // Sprint 4: Feature G (teacher gap detection).
+$plugin->version   = 2026052806;        // YYYYMMDDXX — Sprint 4: UI refinada estilo shadcn/ui (sin emojis).
+$plugin->release   = '0.9.1';            // Sprint 4: icon library + design tokens unification.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

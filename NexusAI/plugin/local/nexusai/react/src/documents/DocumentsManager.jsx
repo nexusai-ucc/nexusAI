@@ -17,6 +17,7 @@ import { listDocuments, uploadDocument } from "./api.js";
 import DocumentsTable, { ErrorModal } from "./DocumentsTable.jsx";
 import UploadZone from "./UploadZone.jsx";
 import GapsPanel from "./GapsPanel.jsx";
+import { IconBookOpen, IconTarget } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
@@ -139,14 +140,16 @@ export default function DocumentsManager({ courseid, userid, lang = "es" }) {
                     className={`nexusai-doc-tab ${activeTab === "material" ? "nexusai-doc-tab--active" : ""}`}
                     onClick={() => setActiveTab("material")}
                 >
-                    📚 Material
+                    <IconBookOpen size={15} />
+                    Material
                 </button>
                 <button
                     type="button"
                     className={`nexusai-doc-tab ${activeTab === "gaps" ? "nexusai-doc-tab--active" : ""}`}
                     onClick={() => setActiveTab("gaps")}
                 >
-                    🎯 Gaps detectados
+                    <IconTarget size={15} />
+                    Gaps detectados
                 </button>
             </div>
 

@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { listGaps } from "./api.js";
+import { IconCheck } from "../components/icons.jsx";
 
 function relativeTime(iso) {
     if (!iso) return "";
@@ -97,11 +98,12 @@ export default function GapsPanel({ courseId }) {
 
             {!loading && !error && items.length === 0 && (
                 <div className="nexusai-gaps__empty">
-                    <span className="nexusai-gaps__empty-icon">✨</span>
-                    <p>No hay gaps registrados en este período.</p>
+                    <div className="nexusai-gaps__empty-icon">
+                        <IconCheck size={20} />
+                    </div>
+                    <p className="nexusai-gaps__empty-title">No hay gaps registrados en este período.</p>
                     <p className="nexusai-gaps__empty-sub">
-                        Esto significa que el material respondió bien todas las consultas
-                        que llegaron al asistente.
+                        El material respondió bien todas las consultas que llegaron al asistente.
                     </p>
                 </div>
             )}

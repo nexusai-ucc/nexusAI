@@ -409,23 +409,26 @@
     display: flex;
     gap: 4px;
     margin-bottom: 18px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--nexusai-border, #e2e8f0);
 }
 .nexusai-doc-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     padding: 10px 16px;
     font-size: 14px;
     font-weight: 500;
-    color: #64748b;
+    color: var(--nexusai-fg-muted, #64748b);
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
     cursor: pointer;
     transition: color .15s, border-color .15s;
 }
-.nexusai-doc-tab:hover { color: #1E2761; }
+.nexusai-doc-tab:hover { color: var(--nexusai-fg, #1e293b); }
 .nexusai-doc-tab--active {
-    color: #4A7FD4;
-    border-bottom-color: #4A7FD4;
+    color: var(--nexusai-primary, #6366f1);
+    border-bottom-color: var(--nexusai-primary, #6366f1);
 }
 
 /* ── Panel de Gaps ── */
@@ -453,28 +456,44 @@
 }
 .nexusai-gaps__filter-btn:hover {
     border-color: #c6d4f0;
-    color: #4A7FD4;
+    color: var(--nexusai-primary, #6366f1);
 }
 .nexusai-gaps__filter-btn--active {
-    background: #4A7FD4;
-    border-color: #4A7FD4;
+    background: var(--nexusai-primary, #6366f1);
+    border-color: var(--nexusai-primary, #6366f1);
     color: #fff;
 }
 
 .nexusai-gaps__empty {
     text-align: center;
-    padding: 32px 16px;
-    color: #64748b;
+    padding: 36px 16px;
+    color: var(--nexusai-fg-muted, #64748b);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 }
 .nexusai-gaps__empty-icon {
-    font-size: 36px;
-    display: block;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: #f0fdf4;
+    color: #166534;
     margin-bottom: 8px;
 }
+.nexusai-gaps__empty-title {
+    font-size: 13px;
+    color: var(--nexusai-fg, #1e293b);
+    margin: 0;
+    font-weight: 500;
+}
 .nexusai-gaps__empty-sub {
-    font-size: 12.5px;
-    color: #94a3b8;
-    margin-top: 6px;
+    font-size: 12px;
+    color: var(--nexusai-fg-subtle, #94a3b8);
+    margin-top: 2px;
 }
 
 .nexusai-gaps__list {
@@ -485,7 +504,7 @@
 .nexusai-gap-item {
     background: #fff;
     border: 1px solid #e8edf5;
-    border-left: 3px solid #4A7FD4;
+    border-left: 3px solid var(--nexusai-primary, #6366f1);
     border-radius: 6px;
     padding: 10px 14px;
 }
@@ -498,14 +517,14 @@
 }
 .nexusai-gap-item__question {
     font-size: 14px;
-    color: #1E2761;
+    color: var(--nexusai-fg, #1e293b);
     line-height: 1.45;
     flex: 1;
 }
 .nexusai-gap-item__count {
     font-size: 12px;
     font-weight: 700;
-    color: #4A7FD4;
+    color: var(--nexusai-primary, #6366f1);
     background: #e6edfb;
     padding: 2px 8px;
     border-radius: 12px;

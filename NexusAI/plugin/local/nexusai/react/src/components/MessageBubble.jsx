@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
+import { IconFile, IconSparkles, IconX } from "./icons.jsx";
 
 // Regex conservador para detectar archivos citados en el texto del LLM.
 const SOURCE_REGEX = /([\w\-]+\.(pdf|docx|txt))/gi;
@@ -220,7 +221,8 @@ export default function MessageBubble({ message }) {
                         <div className="nexusai-msg__source-panel">
                             <div className="nexusai-msg__source-panel-header">
                                 <span className="nexusai-msg__source-panel-file">
-                                    📄 {sources[expandedIdx].document_filename}
+                                    <IconFile size={13} />
+                                    {sources[expandedIdx].document_filename}
                                     {typeof sources[expandedIdx].chunk_index === "number" &&
                                         ` · fragmento #${sources[expandedIdx].chunk_index}`}
                                 </span>
@@ -230,7 +232,7 @@ export default function MessageBubble({ message }) {
                                     onClick={() => setExpandedIdx(null)}
                                     aria-label="Cerrar"
                                 >
-                                    ×
+                                    <IconX size={14} />
                                 </button>
                             </div>
                             <p className="nexusai-msg__source-panel-content">

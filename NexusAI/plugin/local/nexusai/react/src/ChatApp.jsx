@@ -26,6 +26,7 @@ import TypingIndicator from "./components/TypingIndicator.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
 import QuizPanel from "./components/QuizPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
+import { IconBookOpen, IconGlobe } from "./components/icons.jsx";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
 import { getSessionMessages } from "./api/history.js";
 
@@ -326,7 +327,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                     : (lang === "es" ? "Solo este curso (click para buscar en todos tus cursos)" : "This course only (click to search all your courses)")
                                 }
                             >
-                                {multiCourse ? "🌐" : "📚"}
+                                {multiCourse ? <IconGlobe /> : <IconBookOpen />}
                             </button>
                             {messages.length > 0 && (
                                 <button

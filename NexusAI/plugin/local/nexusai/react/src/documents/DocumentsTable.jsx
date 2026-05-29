@@ -210,10 +210,10 @@ function formatIndexedAt(isoString) {
 
 function StatusBadge({ status, errorMessage }) {
     const labels = {
-        pending:  { text: "En cola",     cls: "pending" },
-        indexing: { text: "Indexando",   cls: "indexing" },
-        indexed:  { text: "✓ Indexado",  cls: "indexed" },
-        error:    { text: "✕ Error",     cls: "error" },
+        pending:  { text: "En cola",   cls: "pending" },
+        indexing: { text: "Indexando", cls: "indexing" },
+        indexed:  { text: "Indexado",  cls: "indexed" },
+        error:    { text: "Error",     cls: "error" },
     };
     const info = labels[status] || { text: status || "—", cls: "unknown" };
 

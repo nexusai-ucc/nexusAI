@@ -11,6 +11,7 @@
 
 import { useState } from "react";
 import { generateQuiz } from "../api/quiz.js";
+import { IconBook, IconCheck, IconChevronRight, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 
 export default function QuizPanel({ courseId, lang = "es" }) {
     const [stage, setStage] = useState("setup"); // setup | loading | playing | finished | error
@@ -123,7 +124,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
             <div className="nexusai-quiz">
                 <div className="nexusai-quiz__intro">
                     <h4 className="nexusai-quiz__intro-title">
-                        🎯 {lang === "es" ? "Quiz de práctica" : "Practice Quiz"}
+                        {lang === "es" ? "Quiz de práctica" : "Practice Quiz"}
                     </h4>
                     <p className="nexusai-quiz__intro-text">
                         {lang === "es"
@@ -188,7 +189,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                         {L.retry}
                     </button>
                     <button type="button" className="nexusai-quiz__secondary" onClick={resetAll}>
-                        ← {lang === "es" ? "Volver" : "Back"}
+                        {lang === "es" ? "Volver" : "Back"}
                     </button>
                 </div>
             </div>
@@ -245,13 +246,15 @@ export default function QuizPanel({ courseId, lang = "es" }) {
 
                 {reveal && (
                     <div className={`nexusai-quiz__feedback ${selectedIdx === q.correct_index ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong"}`}>
-                        <strong>
-                            {selectedIdx === q.correct_index ? `✓ ${L.correct}` : `✗ ${L.wrong}`}
+                        <strong className="nexusai-quiz__feedback-title">
+                            {selectedIdx === q.correct_index ? <IconCheck size={14} /> : <IconX size={14} />}
+                            {selectedIdx === q.correct_index ? L.correct : L.wrong}
                         </strong>
                         <p className="nexusai-quiz__explanation">{q.explanation}</p>
                         {q.source_filename && (
                             <p className="nexusai-quiz__source">
-                                📄 {L.source}: {q.source_filename}
+                                <IconFile size={12} />
+                                {L.source}: {q.source_filename}
                             </p>
                         )}
                     </div>
@@ -273,7 +276,8 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                             className="nexusai-quiz__primary"
                             onClick={next}
                         >
-                            {currentIdx >= total - 1 ? L.finish : L.next} →
+                            {currentIdx >= total - 1 ? L.finish : L.next}
+                            <IconChevronRight size={14} />
                         </button>
                     )}
                 </div>
@@ -285,11 +289,14 @@ export default function QuizPanel({ courseId, lang = "es" }) {
     if (stage === "finished" && quiz) {
         const total = quiz.questions.length;
         const pct = Math.round((score / total) * 100);
-        const emoji = pct >= 80 ? "🏆" : pct >= 50 ? "👍" : "📚";
+        const tier = pct >= 80 ? "high" : pct >= 50 ? "mid" : "low";
+        const FinalIcon = tier === "high" ? IconTrophy : tier === "mid" ? IconThumbsUp : IconBook;
         return (
             <div className="nexusai-quiz nexusai-quiz--center">
                 <div className="nexusai-quiz__final">
-                    <div className="nexusai-quiz__final-emoji">{emoji}</div>
+                    <div className={`nexusai-quiz__final-icon nexusai-quiz__final-icon--${tier}`}>
+                        <FinalIcon size={28} />
+                    </div>
                     <h4 className="nexusai-quiz__final-title">{L.finalTitle}</h4>
                     <p className="nexusai-quiz__final-score">{L.finalScore(score, total)}</p>
                     <div className="nexusai-quiz__final-pct">{pct}%</div>
