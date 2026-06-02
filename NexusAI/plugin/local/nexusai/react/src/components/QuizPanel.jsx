@@ -13,6 +13,20 @@ import { useState } from "react";
 import { generateQuiz } from "../api/quiz.js";
 import { IconBook, IconCheck, IconChevronRight, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 
+/**
+ * Extrae el mensaje legible de un error de Moodle/FastAPI.
+ * Moodle envuelve los errores así:
+ *   "Error del backend NexusAI: HTTP 404: {"detail": "no hay material..."}"
+ */
+function extractErrorMessage(err) {
+    const raw = err?.message || String(err);
+    const detailMatch = raw.match(/"detail"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (detailMatch) return detailMatch[1].replace(/\\"/g, '"');
+    const httpMatch = raw.match(/HTTP\s+\d+[:\s]+(.+)/s);
+    if (httpMatch) return httpMatch[1].trim();
+    return raw;
+}
+
 export default function QuizPanel({ courseId, lang = "es" }) {
     const [stage, setStage] = useState("setup"); // setup | loading | playing | finished | error
     const [topic, setTopic] = useState("");
@@ -84,7 +98,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
             setStage("playing");
         } catch (err) {
             console.error("[NexusAI] generateQuiz failed:", err);
-            setError(err.message || L.errorGeneric);
+            setError(extractErrorMessage(err) || L.errorGeneric);
             setStage("error");
         }
     };

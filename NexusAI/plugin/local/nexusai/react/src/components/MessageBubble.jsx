@@ -144,11 +144,35 @@ export default function MessageBubble({ message }) {
     // Si el backend mandó sources estructuradas (streaming meta event), usarlas.
     // Si no (mensajes viejos sin sources), fallback al regex sobre el texto.
     const structuredSources = !isUser && Array.isArray(message.sources) ? message.sources : null;
-    const sources = isUser
+    const rawSources = isUser
         ? []
         : (structuredSources && structuredSources.length > 0
             ? structuredSources
             : extractSources(message.content).map((filename) => ({ document_filename: filename })));
+    // Dedup por archivo (+curso en multi-curso): nos quedamos con el chunk de
+    // mayor similarity de cada (filename, course_id) único. Reduce ruido visual
+    // cuando el retrieval devuelve N chunks del mismo PDF — el alumno solo ve
+    // UN bubble por archivo. Normalizamos el filename con trim+lower para
+    // capturar variaciones invisibles (whitespace, casing) que vengan del
+    // backend o del extractor de PDF.
+    const sources = useMemo(() => {
+        const seen = new Map();
+        for (const src of rawSources) {
+            const normFile = (src.document_filename || "?").trim().toLowerCase();
+            // En multi-curso conservamos un slot por (file, course_id) para no
+            // colapsar el mismo PDF subido a dos materias distintas.
+            const key = src.course_id != null ? `${src.course_id}::${normFile}` : normFile;
+            const prev = seen.get(key);
+            const sim     = typeof src.similarity === "number" ? src.similarity : -1;
+            const prevSim = prev && typeof prev.similarity === "number" ? prev.similarity : -1;
+            if (!prev || sim > prevSim) {
+                seen.set(key, src);
+            }
+        }
+        return Array.from(seen.values());
+    }, [rawSources]);
+    // Mapa { course_id (string|number) → nombre } cuando es multi-curso.
+    const courseNames = !isUser && message.course_names ? message.course_names : null;
     const [expandedIdx, setExpandedIdx] = useState(null);
     const markdownRef = useRef(null);
 
@@ -196,6 +220,10 @@ export default function MessageBubble({ message }) {
                             const key = `${src.document_filename}-${src.chunk_index ?? "x"}-${i}`;
                             const hasContent = !!src.content;
                             const isOpen = expandedIdx === i;
+                            // En multi-curso, mostrar el nombre del curso al lado del archivo.
+                            const courseLabel = (courseNames && src.course_id)
+                                ? (courseNames[String(src.course_id)] || courseNames[src.course_id])
+                                : null;
                             return (
                                 <button
                                     key={key}
@@ -206,7 +234,14 @@ export default function MessageBubble({ message }) {
                                     aria-expanded={isOpen}
                                 >
                                     <IconDoc />
-                                    {src.document_filename}
+                                    {courseLabel && (
+                                        <span className="nexusai-msg__source-course">
+                                            {courseLabel}
+                                        </span>
+                                    )}
+                                    <span className="nexusai-msg__source-filename">
+                                        {src.document_filename}
+                                    </span>
                                     {typeof src.similarity === "number" && (
                                         <span className="nexusai-msg__source-score">
                                             {Math.round(src.similarity * 100)}%
@@ -217,29 +252,36 @@ export default function MessageBubble({ message }) {
                         })}
                     </div>
 
-                    {expandedIdx !== null && sources[expandedIdx]?.content && (
-                        <div className="nexusai-msg__source-panel">
-                            <div className="nexusai-msg__source-panel-header">
-                                <span className="nexusai-msg__source-panel-file">
-                                    <IconFile size={13} />
-                                    {sources[expandedIdx].document_filename}
-                                    {typeof sources[expandedIdx].chunk_index === "number" &&
-                                        ` · fragmento #${sources[expandedIdx].chunk_index}`}
-                                </span>
-                                <button
-                                    type="button"
-                                    className="nexusai-msg__source-panel-close"
-                                    onClick={() => setExpandedIdx(null)}
-                                    aria-label="Cerrar"
-                                >
-                                    <IconX size={14} />
-                                </button>
+                    {expandedIdx !== null && sources[expandedIdx]?.content && (() => {
+                        const exp = sources[expandedIdx];
+                        const expCourse = (courseNames && exp.course_id)
+                            ? (courseNames[String(exp.course_id)] || courseNames[exp.course_id])
+                            : null;
+                        return (
+                            <div className="nexusai-msg__source-panel">
+                                <div className="nexusai-msg__source-panel-header">
+                                    <span className="nexusai-msg__source-panel-file">
+                                        <IconFile size={13} />
+                                        {expCourse && <span className="nexusai-msg__source-panel-course">{expCourse}</span>}
+                                        <span>{exp.document_filename}</span>
+                                        {typeof exp.chunk_index === "number" &&
+                                            ` · fragmento #${exp.chunk_index}`}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        className="nexusai-msg__source-panel-close"
+                                        onClick={() => setExpandedIdx(null)}
+                                        aria-label="Cerrar"
+                                    >
+                                        <IconX size={14} />
+                                    </button>
+                                </div>
+                                <p className="nexusai-msg__source-panel-content">
+                                    {exp.content}
+                                </p>
                             </div>
-                            <p className="nexusai-msg__source-panel-content">
-                                {sources[expandedIdx].content}
-                            </p>
-                        </div>
-                    )}
+                        );
+                    })()}
                 </div>
             )}
 

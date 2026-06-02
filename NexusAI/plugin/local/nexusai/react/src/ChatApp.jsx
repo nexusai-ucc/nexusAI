@@ -191,13 +191,13 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     multiCourse,
                 },
                 {
-                    onMeta: ({ session_id, sources }) => {
+                    onMeta: ({ session_id, sources, course_names }) => {
                         if (session_id) setSessionId(session_id);
                         if (Array.isArray(sources)) {
                             setMessages((prev) =>
                                 prev.map((m) =>
                                     m.id === streamingAssistantId
-                                        ? { ...m, sources }
+                                        ? { ...m, sources, course_names: course_names || null }
                                         : m
                                 )
                             );
