@@ -33,6 +33,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
     const [numQuestions, setNumQuestions] = useState(5);
     const [quiz, setQuiz] = useState(null);
     const [error, setError] = useState(null);
+    const [topicError, setTopicError] = useState(null);
 
     // Estado del juego en curso
     const [currentIdx, setCurrentIdx] = useState(0);
@@ -82,6 +83,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
 
     const start = async () => {
         setError(null);
+        setTopicError(null);
         setStage("loading");
         setQuiz(null);
         setCurrentIdx(0);
@@ -98,8 +100,13 @@ export default function QuizPanel({ courseId, lang = "es" }) {
             setStage("playing");
         } catch (err) {
             console.error("[NexusAI] generateQuiz failed:", err);
-            setError(extractErrorMessage(err) || L.errorGeneric);
-            setStage("error");
+            if (String(err?.message).includes("422")) {
+                setTopicError(extractErrorMessage(err) || L.errorGeneric);
+                setStage("setup");
+            } else {
+                setError(extractErrorMessage(err) || L.errorGeneric);
+                setStage("error");
+            }
         }
     };
 
@@ -150,12 +157,15 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                     <label className="nexusai-quiz__label">{L.topicLabel}</label>
                     <input
                         type="text"
-                        className="nexusai-quiz__input"
+                        className={`nexusai-quiz__input${topicError ? " nexusai-quiz__input--error" : ""}`}
                         placeholder={L.topicPlaceholder}
                         value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
+                        onChange={(e) => { setTopic(e.target.value); setTopicError(null); }}
                         maxLength={200}
                     />
+                    {topicError && (
+                        <p className="nexusai-quiz__topic-error">{topicError}</p>
+                    )}
                 </div>
                 <div className="nexusai-quiz__field">
                     <label className="nexusai-quiz__label">{L.nQuestions}</label>

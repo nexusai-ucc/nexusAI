@@ -443,8 +443,13 @@ class backend_client {
             );
         }
 
+        // 204 No Content has an empty body — never attempt json_decode on it.
+        if ($httpcode === 204) {
+            return [];
+        }
+
         if (!$expectjson) {
-            return [];  // 204 No Content y similares.
+            return [];
         }
 
         $decoded = json_decode($response, true);

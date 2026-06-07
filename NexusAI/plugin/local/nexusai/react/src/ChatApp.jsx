@@ -160,6 +160,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
             created_at: new Date().toISOString(),
         };
         const streamingAssistantId = `local-asst-${ts}`;
+        // Captured here so onAnswerMeta's closure never races with a future send().
+        const assistantId = streamingAssistantId;
         const initialAssistant = {
             id: streamingAssistantId,
             role: "assistant",
@@ -191,19 +193,35 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     multiCourse,
                 },
                 {
-                    onMeta: ({ session_id, sources, course_names }) => {
+                    onMeta: ({ session_id, sources, course_names, has_relevant_context }) => {
                         if (session_id) setSessionId(session_id);
                         if (Array.isArray(sources)) {
                             setMessages((prev) =>
                                 prev.map((m) =>
                                     m.id === streamingAssistantId
-                                        ? { ...m, sources, course_names: course_names || null }
+                                        ? {
+                                            ...m,
+                                            sources,
+                                            course_names: course_names || null,
+                                            has_relevant_context: has_relevant_context !== false,
+                                          }
                                         : m
                                 )
                             );
                         }
                     },
                     onToken: appendToken,
+                    onAnswerMeta: ({ grounded }) => {
+                        if (grounded === false) {
+                            setMessages((prev) =>
+                                prev.map((m) =>
+                                    m.id === assistantId
+                                        ? { ...m, has_relevant_context: false }
+                                        : m
+                                )
+                            );
+                        }
+                    },
                     onDone: () => {
                         setMessages((prev) =>
                             prev.map((m) =>
@@ -415,7 +433,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         )}
 
                         {messages.map((msg) => (
-                            <MessageBubble key={msg.id} message={msg} />
+                            <MessageBubble key={msg.id} message={msg} sesskey={sesskey} />
                         ))}
 
                         {loading && !messages.some((m) => m.streaming && m.content) && <TypingIndicator />}

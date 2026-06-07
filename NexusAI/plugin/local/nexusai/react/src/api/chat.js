@@ -179,7 +179,7 @@ export function resetMockState() {
  */
 export async function sendMessageStream(
     { question, courseId, sessionId, multiCourse = false },
-    { onMeta, onToken, onDone, onError } = {}
+    { onMeta, onToken, onDone, onError, onAnswerMeta } = {}
 ) {
     if (!question || !question.trim()) {
         throw new Error("La pregunta no puede estar vacía");
@@ -248,10 +248,11 @@ export async function sendMessageStream(
                 catch { continue; }
 
                 switch (parsed.type) {
-                    case "meta":  onMeta?.(parsed); break;
-                    case "token": onToken?.(parsed.content || ""); break;
-                    case "done":  onDone?.(parsed); break;
-                    case "error": onError?.(parsed.detail || "stream error"); break;
+                    case "meta":        onMeta?.(parsed); break;
+                    case "token":       onToken?.(parsed.content || ""); break;
+                    case "answer_meta": onAnswerMeta?.(parsed); break;
+                    case "done":        onDone?.(parsed); break;
+                    case "error":       onError?.(parsed.detail || "stream error"); break;
                 }
             }
         }
