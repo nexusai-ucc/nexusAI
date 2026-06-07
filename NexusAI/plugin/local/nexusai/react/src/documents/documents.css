@@ -9,6 +9,32 @@
 .nexusai-documents {
     max-width: 900px;
     margin: 16px 0;
+
+    /* Design tokens — mirrors .nexusai-widget in styles.css.
+       Required because CSS variables are scoped to the element they're defined on,
+       and the documents page root is .nexusai-documents, not .nexusai-widget. */
+    --nexusai-primary:        #6366f1;
+    --nexusai-primary-hover:  #4f46e5;
+    --nexusai-primary-dark:   #3b5bdb;
+    --nexusai-primary-light:  rgba(99, 102, 241, 0.1);
+    --nexusai-primary-ring:   rgba(99, 102, 241, 0.2);
+    --nexusai-bg:             #ffffff;
+    --nexusai-bg-muted:       #f8fafc;
+    --nexusai-bg-subtle:      #f1f5f9;
+    --nexusai-border:         #e2e8f0;
+    --nexusai-border-strong:  #cbd5e1;
+    --nexusai-fg:             #0f172a;
+    --nexusai-fg-muted:       #64748b;
+    --nexusai-fg-subtle:      #94a3b8;
+    --nexusai-radius-sm:      4px;
+    --nexusai-radius:         8px;
+    --nexusai-radius-md:      10px;
+    --nexusai-radius-lg:      12px;
+    --nexusai-radius-xl:      16px;
+    --nexusai-radius-full:    9999px;
+    --nexusai-shadow-sm:      0 1px 2px 0 rgba(0,0,0,0.05);
+    --nexusai-shadow:         0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+    --nexusai-shadow-md:      0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
 }
 
 .nexusai-documents__intro {
@@ -540,4 +566,114 @@
 }
 .nexusai-gap-item__sep {
     color: #cbd5e1;
+}
+
+/* ============================================================
+   Search tab — scope toggle + new result elements
+============================================================ */
+
+/* "Este curso / Todos mis cursos" toggle */
+.nexusai-search__scope {
+    display: flex;
+    gap: 6px;
+    margin: 10px 0 6px;
+}
+
+.nexusai-search__scope-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: 20px;
+    background: transparent;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--nexusai-fg-muted, #64748b);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.nexusai-search__scope-btn:hover {
+    border-color: var(--nexusai-primary, #4f6ef7);
+    color: var(--nexusai-primary, #4f6ef7);
+}
+
+.nexusai-search__scope-btn--active {
+    background: var(--nexusai-primary-light, rgba(99,102,241,0.08));
+    border-color: var(--nexusai-primary, #4f6ef7);
+    color: var(--nexusai-primary, #4f6ef7);
+    font-weight: 500;
+}
+
+/* Filename rendered as a clickable download button */
+.nexusai-search__filename--btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: transparent;
+    transition: color 0.15s, text-decoration-color 0.15s;
+}
+
+.nexusai-search__filename--btn:hover {
+    color: var(--nexusai-primary, #4f6ef7);
+    text-decoration-color: var(--nexusai-primary, #4f6ef7);
+}
+
+/* Course name badge shown in global search results */
+.nexusai-search__course {
+    font-size: 11px;
+    color: var(--nexusai-fg-muted, #64748b);
+    background: var(--nexusai-primary-light, rgba(99,102,241,0.06));
+    border-radius: 4px;
+    padding: 2px 6px;
+    display: inline-block;
+    margin: 3px 0 4px;
+}
+
+/* ============================================================
+   Search form — input + submit button inline
+============================================================ */
+
+.nexusai-search__form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.nexusai-search__input {
+    flex: 1;
+    min-width: 0;
+}
+
+.nexusai-search__btn {
+    padding: 8px 18px;
+    background: var(--nexusai-primary, #4f6ef7);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.nexusai-search__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.nexusai-search__btn:hover:not(:disabled) {
+    background: var(--nexusai-primary-dark, #3b5bdb);
 }

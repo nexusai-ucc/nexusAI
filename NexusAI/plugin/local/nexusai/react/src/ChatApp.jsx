@@ -23,7 +23,6 @@ import { useEffect, useRef, useState } from "react";
 import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
 import TypingIndicator from "./components/TypingIndicator.jsx";
-import SearchPanel from "./components/SearchPanel.jsx";
 import QuizPanel from "./components/QuizPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import { IconBookOpen, IconGlobe } from "./components/icons.jsx";
@@ -136,7 +135,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "search" | "quiz"
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "quiz"
     const [historyOpen, setHistoryOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
@@ -379,7 +378,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         lang={lang}
                     />
 
-                    {/* Pestañas: Chat / Buscador */}
+                    {/* Pestañas: Chat / Quiz */}
                     <div className="nexusai-tabs">
                         <button
                             type="button"
@@ -387,13 +386,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             onClick={() => setActiveTab("chat")}
                         >
                             {lang === "es" ? "Chat" : "Chat"}
-                        </button>
-                        <button
-                            type="button"
-                            className={`nexusai-tab ${activeTab === "search" ? "nexusai-tab--active" : ""}`}
-                            onClick={() => setActiveTab("search")}
-                        >
-                            {lang === "es" ? "Buscador" : "Search"}
                         </button>
                         <button
                             type="button"
@@ -475,10 +467,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         <span>{t.poweredBy}</span>
                     </footer>
                     </>
-                    ) : activeTab === "search" ? (
-                        <div className="nexusai-panel__body">
-                            <SearchPanel courseId={courseid} lang={lang} />
-                        </div>
                     ) : (
                         <div className="nexusai-panel__body">
                             <QuizPanel courseId={courseid} lang={lang} />
