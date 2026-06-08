@@ -22,6 +22,7 @@ export default function SearchPanel({
     sesskey,
     isTeacher = false,
     lang = "es",
+    scopeOverride,
 }) {
     const [query, setQuery]           = useState("");
     const [results, setResults]       = useState(null);
@@ -29,6 +30,8 @@ export default function SearchPanel({
     const [loading, setLoading]       = useState(false);
     const [error, setError]           = useState(null);
     const [globalMode, setGlobalMode] = useState(false);
+
+    const effectiveGlobal = scopeOverride !== undefined ? scopeOverride : globalMode;
 
     const L = lang === "es" ? {
         placeholder:  "Buscá en el material del curso...",
@@ -53,7 +56,7 @@ export default function SearchPanel({
         setError(null);
         setLastQuery(q);
         try {
-            const data = await searchMaterial({ query: q, courseId, global: globalMode });
+            const data = await searchMaterial({ query: q, courseId, global: effectiveGlobal });
             setResults(data);
         } catch {
             setError(L.error);
@@ -109,7 +112,7 @@ export default function SearchPanel({
                 </button>
             </form>
 
-            {!isTeacher && (
+            {!isTeacher && scopeOverride === undefined && (
                 <div className="nexusai-search__scope">
                     <button
                         type="button"
@@ -165,7 +168,7 @@ export default function SearchPanel({
                                 </span>
                             )}
                         </div>
-                        {globalMode && r.course_name && (
+                        {effectiveGlobal && r.course_name && (
                             <p className="nexusai-search__course">{r.course_name}</p>
                         )}
                         <p className="nexusai-search__content">{r.content}</p>

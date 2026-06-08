@@ -25,8 +25,6 @@ import './styles.css';
 export const init = (params = {}) => {
     const container = document.getElementById('local-nexusai-container');
     if (!container) {
-        // eslint-disable-next-line no-console
-        console.warn('[NexusAI] container #local-nexusai-container not found, aborting mount');
         return;
     }
 
@@ -39,13 +37,11 @@ export const init = (params = {}) => {
                 sesskey={params.sesskey}
                 wwwroot={params.wwwroot}
                 lang={params.lang || 'es'}
+                isteacher={params.isteacher || 0}
             />
         );
-        // eslint-disable-next-line no-console
-        console.log('[NexusAI] widget mounted', params);
-    } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[NexusAI] failed to mount widget:', err);
+    } catch {
+        // Mount failure is silent — widget simply won't appear
     }
 };
 

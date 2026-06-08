@@ -24,6 +24,7 @@ import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
 import TypingIndicator from "./components/TypingIndicator.jsx";
 import QuizPanel from "./components/QuizPanel.jsx";
+import SearchPanel from "./components/SearchPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import { IconBookOpen, IconGlobe } from "./components/icons.jsx";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
@@ -127,7 +128,8 @@ const IconHistory = () => (
     </svg>
 );
 
-export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es" }) {
+export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es", isteacher = 0 }) {
+    const isTeacher = !!isteacher;
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [sessionId, setSessionId] = useState(null);
@@ -135,7 +137,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "quiz"
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "quiz" | "search"
     const [historyOpen, setHistoryOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
@@ -183,6 +185,10 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
             );
         };
 
+        // Bufferamos grounded para aplicarlo DESPUÉS de que el stream cierre,
+        // evitando cualquier race con el estado de streaming.
+        let bufferedGrounded;
+
         try {
             await sendMessageStream(
                 {
@@ -211,15 +217,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     },
                     onToken: appendToken,
                     onAnswerMeta: ({ grounded }) => {
-                        if (grounded === false) {
-                            setMessages((prev) =>
-                                prev.map((m) =>
-                                    m.id === assistantId
-                                        ? { ...m, has_relevant_context: false }
-                                        : m
-                                )
-                            );
-                        }
+                        bufferedGrounded = grounded;
                     },
                     onDone: () => {
                         setMessages((prev) =>
@@ -235,8 +233,19 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     },
                 }
             );
+            // Aplicar la señal grounded del backend tras el cierre del stream.
+            // Si grounded===false el LLM no pudo responder con el material →
+            // ocultar fuentes aunque el retrieval haya devuelto chunks.
+            if (bufferedGrounded === false) {
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === assistantId
+                            ? { ...m, has_relevant_context: false }
+                            : m
+                    )
+                );
+            }
         } catch (err) {
-            console.error("[NexusAI] sendMessageStream failed:", err);
             // Sacamos el bubble de assistant vacío + user optimista si el stream falló.
             setMessages((prev) =>
                 prev.filter(
@@ -269,7 +278,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
             setMessages(data.messages || []);
             setLastQuestion(null);
         } catch (err) {
-            console.error("[NexusAI] loadSession failed:", err);
             setError(err.message || "No se pudo cargar la conversación");
         } finally {
             setLoading(false);
@@ -378,7 +386,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         lang={lang}
                     />
 
-                    {/* Pestañas: Chat / Quiz */}
+                    {/* Pestañas: Chat / Quiz / Buscar (Buscar solo para alumnos) */}
                     <div className="nexusai-tabs">
                         <button
                             type="button"
@@ -394,6 +402,15 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         >
                             {lang === "es" ? "Quiz" : "Quiz"}
                         </button>
+                        {!isTeacher && (
+                            <button
+                                type="button"
+                                className={`nexusai-tab ${activeTab === "search" ? "nexusai-tab--active" : ""}`}
+                                onClick={() => setActiveTab("search")}
+                            >
+                                {lang === "es" ? "Buscar" : "Search"}
+                            </button>
+                        )}
                     </div>
 
                     {activeTab === "chat" ? (
@@ -467,9 +484,19 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         <span>{t.poweredBy}</span>
                     </footer>
                     </>
-                    ) : (
+                    ) : activeTab === "quiz" ? (
                         <div className="nexusai-panel__body">
                             <QuizPanel courseId={courseid} lang={lang} />
+                        </div>
+                    ) : (
+                        <div className="nexusai-panel__body">
+                            <SearchPanel
+                                courseId={courseid}
+                                sesskey={sesskey}
+                                isTeacher={false}
+                                lang={lang}
+                                scopeOverride={multiCourse}
+                            />
                         </div>
                     )}
                 </div>
