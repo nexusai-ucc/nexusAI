@@ -30,6 +30,7 @@ export const init = (params = {}) => {
             <DocumentsManager
                 courseid={params.courseid}
                 userid={params.userid}
+                sesskey={params.sesskey}
                 lang={params.lang || "es"}
             />
         );

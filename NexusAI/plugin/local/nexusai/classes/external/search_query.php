@@ -8,6 +8,9 @@
  * Devuelve fragmentos del material del curso relevantes a la consulta,
  * sin pasar por el LLM (retrieval puro).
  *
+ * Modo global (global=true): busca en TODOS los cursos donde el alumno
+ * tiene la capability local/nexusai:use, no solo en el curso actual.
+ *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -23,8 +26,9 @@ class search_query extends \external_api {
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'query'    => new \external_value(PARAM_RAW, 'Consulta de búsqueda', VALUE_REQUIRED),
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'ID del curso actual', VALUE_REQUIRED),
             'topk'     => new \external_value(PARAM_INT, 'Cantidad de resultados (1..10)', VALUE_OPTIONAL, 5),
+            'global'   => new \external_value(PARAM_BOOL, 'Buscar en todos los cursos del usuario', VALUE_OPTIONAL, false),
         ]);
     }
 
@@ -34,7 +38,10 @@ class search_query extends \external_api {
             'total'   => new \external_value(PARAM_INT, 'Total de resultados'),
             'results' => new \external_multiple_structure(
                 new \external_single_structure([
+                    'document_id'       => new \external_value(PARAM_RAW, 'UUID del documento', VALUE_OPTIONAL, ''),
                     'document_filename' => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
+                    'course_id'         => new \external_value(PARAM_INT, 'ID del curso fuente', VALUE_OPTIONAL, 0),
+                    'course_name'       => new \external_value(PARAM_TEXT, 'Nombre del curso (solo en modo global)', VALUE_OPTIONAL, ''),
                     'chunk_index'       => new \external_value(PARAM_INT, 'Índice del fragmento'),
                     'content'           => new \external_value(PARAM_RAW, 'Texto del fragmento'),
                     'similarity'        => new \external_value(PARAM_FLOAT, 'Score de similitud 0-1'),
@@ -43,13 +50,14 @@ class search_query extends \external_api {
         ]);
     }
 
-    public static function execute(string $query, int $courseid, int $topk = 5): array {
+    public static function execute(string $query, int $courseid, int $topk = 5, bool $global = false): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'query'    => $query,
             'courseid' => $courseid,
             'topk'     => $topk,
+            'global'   => $global,
         ]);
 
         $context = \context_course::instance($params['courseid']);
@@ -66,12 +74,34 @@ class search_query extends \external_api {
 
         $topk = max(1, min(10, (int) $params['topk']));
 
+        // Build the list of course IDs and a name map for the response.
+        $courseids  = [(int) $params['courseid']];
+        $coursenames = [(int) $params['courseid'] => ''];
+
+        if (!empty($params['global'])) {
+            $enrolled = enrol_get_users_courses($USER->id, true, 'id,fullname');
+            $allowedids   = [];
+            $allowednames = [];
+            foreach ($enrolled as $c) {
+                $ctx = \context_course::instance($c->id);
+                if (has_capability('local/nexusai:use', $ctx)) {
+                    $allowedids[]              = (int) $c->id;
+                    $allowednames[(int) $c->id] = $c->fullname;
+                }
+            }
+            if (!empty($allowedids)) {
+                $courseids   = $allowedids;
+                $coursenames = $allowednames;
+            }
+        }
+
         $client   = new backend_client();
         $response = $client->search(
             (int) $params['courseid'],
             (int) $USER->id,
             $cleanquery,
-            $topk
+            $topk,
+            count($courseids) > 1 ? $courseids : []
         );
 
         if (!isset($response['results'], $response['total'])) {
@@ -82,12 +112,18 @@ class search_query extends \external_api {
             'query'   => (string) ($response['query'] ?? $cleanquery),
             'total'   => (int) $response['total'],
             'results' => array_map(
-                static fn(array $r) => [
-                    'document_filename' => (string) ($r['document_filename'] ?? ''),
-                    'chunk_index'       => (int) ($r['chunk_index'] ?? 0),
-                    'content'           => (string) ($r['content'] ?? ''),
-                    'similarity'        => (float) ($r['similarity'] ?? 0.0),
-                ],
+                static function (array $r) use ($coursenames): array {
+                    $resultcourseid = (int) ($r['course_id'] ?? 0);
+                    return [
+                        'document_id'       => (string) ($r['document_id'] ?? ''),
+                        'document_filename' => (string) ($r['document_filename'] ?? ''),
+                        'course_id'         => $resultcourseid,
+                        'course_name'       => $coursenames[$resultcourseid] ?? '',
+                        'chunk_index'       => (int) ($r['chunk_index'] ?? 0),
+                        'content'           => (string) ($r['content'] ?? ''),
+                        'similarity'        => (float) ($r['similarity'] ?? 0.0),
+                    ];
+                },
                 $response['results']
             ),
         ];

@@ -23,7 +23,6 @@ import { useEffect, useRef, useState } from "react";
 import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
 import TypingIndicator from "./components/TypingIndicator.jsx";
-import SearchPanel from "./components/SearchPanel.jsx";
 import QuizPanel from "./components/QuizPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import { IconBookOpen, IconGlobe } from "./components/icons.jsx";
@@ -136,7 +135,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "search" | "quiz"
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "quiz"
     const [historyOpen, setHistoryOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
@@ -160,6 +159,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
             created_at: new Date().toISOString(),
         };
         const streamingAssistantId = `local-asst-${ts}`;
+        // Captured here so onAnswerMeta's closure never races with a future send().
+        const assistantId = streamingAssistantId;
         const initialAssistant = {
             id: streamingAssistantId,
             role: "assistant",
@@ -191,19 +192,35 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     multiCourse,
                 },
                 {
-                    onMeta: ({ session_id, sources, course_names }) => {
+                    onMeta: ({ session_id, sources, course_names, has_relevant_context }) => {
                         if (session_id) setSessionId(session_id);
                         if (Array.isArray(sources)) {
                             setMessages((prev) =>
                                 prev.map((m) =>
                                     m.id === streamingAssistantId
-                                        ? { ...m, sources, course_names: course_names || null }
+                                        ? {
+                                            ...m,
+                                            sources,
+                                            course_names: course_names || null,
+                                            has_relevant_context: has_relevant_context !== false,
+                                          }
                                         : m
                                 )
                             );
                         }
                     },
                     onToken: appendToken,
+                    onAnswerMeta: ({ grounded }) => {
+                        if (grounded === false) {
+                            setMessages((prev) =>
+                                prev.map((m) =>
+                                    m.id === assistantId
+                                        ? { ...m, has_relevant_context: false }
+                                        : m
+                                )
+                            );
+                        }
+                    },
                     onDone: () => {
                         setMessages((prev) =>
                             prev.map((m) =>
@@ -361,7 +378,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         lang={lang}
                     />
 
-                    {/* Pestañas: Chat / Buscador */}
+                    {/* Pestañas: Chat / Quiz */}
                     <div className="nexusai-tabs">
                         <button
                             type="button"
@@ -369,13 +386,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             onClick={() => setActiveTab("chat")}
                         >
                             {lang === "es" ? "Chat" : "Chat"}
-                        </button>
-                        <button
-                            type="button"
-                            className={`nexusai-tab ${activeTab === "search" ? "nexusai-tab--active" : ""}`}
-                            onClick={() => setActiveTab("search")}
-                        >
-                            {lang === "es" ? "Buscador" : "Search"}
                         </button>
                         <button
                             type="button"
@@ -415,7 +425,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         )}
 
                         {messages.map((msg) => (
-                            <MessageBubble key={msg.id} message={msg} />
+                            <MessageBubble key={msg.id} message={msg} sesskey={sesskey} />
                         ))}
 
                         {loading && !messages.some((m) => m.streaming && m.content) && <TypingIndicator />}
@@ -457,10 +467,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         <span>{t.poweredBy}</span>
                     </footer>
                     </>
-                    ) : activeTab === "search" ? (
-                        <div className="nexusai-panel__body">
-                            <SearchPanel courseId={courseid} lang={lang} />
-                        </div>
                     ) : (
                         <div className="nexusai-panel__body">
                             <QuizPanel courseId={courseid} lang={lang} />

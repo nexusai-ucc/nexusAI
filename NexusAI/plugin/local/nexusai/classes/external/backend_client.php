@@ -253,13 +253,19 @@ class backend_client {
      *
      * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
      */
-    public function search(int $courseid, int $userid, string $query, int $topk = 5): array {
+    /**
+     * @param int[]  $courseids  When non-empty, overrides course_id for multi-course search.
+     */
+    public function search(int $courseid, int $userid, string $query, int $topk = 5, array $courseids = []): array {
         $payload = [
             'query'     => $query,
             'course_id' => $courseid,
             'user_id'   => $userid,
             'top_k'     => $topk,
         ];
+        if (!empty($courseids)) {
+            $payload['course_ids'] = array_map('intval', $courseids);
+        }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
@@ -443,8 +449,13 @@ class backend_client {
             );
         }
 
+        // 204 No Content has an empty body — never attempt json_decode on it.
+        if ($httpcode === 204) {
+            return [];
+        }
+
         if (!$expectjson) {
-            return [];  // 204 No Content y similares.
+            return [];
         }
 
         $decoded = json_decode($response, true);

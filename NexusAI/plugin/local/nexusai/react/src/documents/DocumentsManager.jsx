@@ -17,7 +17,8 @@ import { listDocuments, uploadDocument } from "./api.js";
 import DocumentsTable, { ErrorModal } from "./DocumentsTable.jsx";
 import UploadZone from "./UploadZone.jsx";
 import GapsPanel from "./GapsPanel.jsx";
-import { IconBookOpen, IconTarget } from "../components/icons.jsx";
+import SearchPanel from "../components/SearchPanel.jsx";
+import { IconBookOpen, IconSearch, IconTarget } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
@@ -40,13 +41,13 @@ function extractErrorMessage(err) {
     return raw;
 }
 
-export default function DocumentsManager({ courseid, userid, lang = "es" }) {
+export default function DocumentsManager({ courseid, userid, sesskey, lang = "es" }) {
     const [documents, setDocuments]       = useState([]);
     const [loading, setLoading]           = useState(true);
     const [uploading, setUploading]       = useState(false);
     const [error, setError]               = useState(null);
     const [warningToast, setWarningToast] = useState(null);
-    const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps"
+    const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps" | "search"
     const warningTimerRef = useRef(null);
 
     // Ref para acceder al estado actual desde el closure del setInterval
@@ -133,7 +134,7 @@ export default function DocumentsManager({ courseid, userid, lang = "es" }) {
 
     return (
         <div className="nexusai-documents">
-            {/* Tabs Material / Gaps (Feature G) */}
+            {/* Tabs Material / Gaps / Buscar */}
             <div className="nexusai-doc-tabs">
                 <button
                     type="button"
@@ -151,9 +152,24 @@ export default function DocumentsManager({ courseid, userid, lang = "es" }) {
                     <IconTarget size={15} />
                     Gaps detectados
                 </button>
+                <button
+                    type="button"
+                    className={`nexusai-doc-tab ${activeTab === "search" ? "nexusai-doc-tab--active" : ""}`}
+                    onClick={() => setActiveTab("search")}
+                >
+                    <IconSearch size={15} />
+                    Buscar
+                </button>
             </div>
 
-            {activeTab === "material" ? (
+            {activeTab === "search" ? (
+                <SearchPanel
+                    courseId={courseid}
+                    sesskey={sesskey}
+                    isTeacher={true}
+                    lang={lang}
+                />
+            ) : activeTab === "material" ? (
                 loading ? (
                     <div className="nexusai-loading">Cargando documentos...</div>
                 ) : (
@@ -193,6 +209,7 @@ export default function DocumentsManager({ courseid, userid, lang = "es" }) {
             ) : (
                 <GapsPanel courseId={courseid} />
             )}
+
         </div>
     );
 }

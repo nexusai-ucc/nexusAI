@@ -100,6 +100,8 @@ services:
       # Hot-reload del código en dev (sin esto, hay que rebuild en cada cambio)
       - ./services/api/app:/app/app
       - ./services/api/migrations:/app/migrations:ro
+      # Archivos originales subidos — persisten entre restarts del container
+      - ./services/api/uploads:/app/uploads
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

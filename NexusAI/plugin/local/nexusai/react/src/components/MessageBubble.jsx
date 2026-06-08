@@ -132,7 +132,7 @@ function useCopyButtons(ref, htmlContent) {
     }, [htmlContent]);
 }
 
-export default function MessageBubble({ message }) {
+export default function MessageBubble({ message, sesskey }) {
     if (!message || message.role === "system") return null;
     // Ocultar burbuja del asistente vacía (esperando primer token del stream).
     // El TypingIndicator se muestra en su lugar.
@@ -173,6 +173,7 @@ export default function MessageBubble({ message }) {
     }, [rawSources]);
     // Mapa { course_id (string|number) → nombre } cuando es multi-curso.
     const courseNames = !isUser && message.course_names ? message.course_names : null;
+
     const [expandedIdx, setExpandedIdx] = useState(null);
     const markdownRef = useRef(null);
 
@@ -212,26 +213,44 @@ export default function MessageBubble({ message }) {
                 </div>
             </div>
 
-            {sources.length > 0 && (
+            {sources.length > 0 && message.has_relevant_context !== false && (
                 <div className="nexusai-msg__sources-wrap" style={{ paddingLeft: "34px" }}>
                     <div className="nexusai-msg__sources" aria-label="Fuentes citadas">
                         <span className="nexusai-msg__sources-label">Fuentes:</span>
                         {sources.map((src, i) => {
                             const key = `${src.document_filename}-${src.chunk_index ?? "x"}-${i}`;
+                            const hasDownload = !!src.document_id;
                             const hasContent = !!src.content;
+                            const isClickable = hasDownload || hasContent;
                             const isOpen = expandedIdx === i;
                             // En multi-curso, mostrar el nombre del curso al lado del archivo.
                             const courseLabel = (courseNames && src.course_id)
                                 ? (courseNames[String(src.course_id)] || courseNames[src.course_id])
                                 : null;
+                            const handleClick = () => {
+                                if (hasDownload) {
+                                    const params = new URLSearchParams({
+                                        document_id: src.document_id,
+                                        courseid: String(src.course_id || ""),
+                                        sesskey: sesskey || "",
+                                    });
+                                    window.open(
+                                        `/local/nexusai/document_download.php?${params}`,
+                                        "_blank",
+                                        "noopener,noreferrer"
+                                    );
+                                } else if (hasContent) {
+                                    setExpandedIdx(isOpen ? null : i);
+                                }
+                            };
                             return (
                                 <button
                                     key={key}
                                     type="button"
-                                    className={`nexusai-msg__source-pill ${hasContent ? "nexusai-msg__source-pill--clickable" : ""} ${isOpen ? "nexusai-msg__source-pill--active" : ""}`}
-                                    onClick={() => hasContent && setExpandedIdx(isOpen ? null : i)}
-                                    disabled={!hasContent}
-                                    aria-expanded={isOpen}
+                                    className={`nexusai-msg__source-pill ${isClickable ? "nexusai-msg__source-pill--clickable" : ""} ${!hasDownload && isOpen ? "nexusai-msg__source-pill--active" : ""}`}
+                                    onClick={handleClick}
+                                    disabled={!isClickable}
+                                    title={hasDownload ? "Descargar archivo original" : undefined}
                                 >
                                     <IconDoc />
                                     {courseLabel && (
@@ -242,11 +261,6 @@ export default function MessageBubble({ message }) {
                                     <span className="nexusai-msg__source-filename">
                                         {src.document_filename}
                                     </span>
-                                    {typeof src.similarity === "number" && (
-                                        <span className="nexusai-msg__source-score">
-                                            {Math.round(src.similarity * 100)}%
-                                        </span>
-                                    )}
                                 </button>
                             );
                         })}

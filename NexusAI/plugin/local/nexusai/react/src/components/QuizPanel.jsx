@@ -15,16 +15,36 @@ import { IconBook, IconCheck, IconChevronRight, IconFile, IconThumbsUp, IconTrop
 
 /**
  * Extrae el mensaje legible de un error de Moodle/FastAPI.
- * Moodle envuelve los errores así:
- *   "Error del backend NexusAI: HTTP 404: {"detail": "no hay material..."}"
+ * Moodle puede entregar el error en dos formas:
+ *   1. Parseado:   "...HTTP 422: {"detail": "msg"}"   → regex directo
+ *   2. Escapado:   "...HTTP 422: {\"detail\":\"msg\"}" → JSON.parse con unescape
  */
 function extractErrorMessage(err) {
     const raw = err?.message || String(err);
+    // Intento 1: regex — funciona cuando las comillas ya son literales.
     const detailMatch = raw.match(/"detail"\s*:\s*"((?:[^"\\]|\\.)*)"/);
     if (detailMatch) return detailMatch[1].replace(/\\"/g, '"');
+    // Intento 2: JSON.parse del fragmento después de "HTTP NNN:" —
+    // cubre el caso donde Moodle entrega la string con backslash-escapes.
+    const jsonFrag = raw.match(/HTTP\s+\d+[:\s]+(\{.+\})/s);
+    if (jsonFrag) {
+        try {
+            const parsed = JSON.parse(jsonFrag[1]);
+            if (typeof parsed?.detail === "string") return parsed.detail;
+        } catch { /* not valid JSON as-is */ }
+        try {
+            const parsed = JSON.parse(jsonFrag[1].replace(/\\"/g, '"'));
+            if (typeof parsed?.detail === "string") return parsed.detail;
+        } catch { /* fall through */ }
+    }
     const httpMatch = raw.match(/HTTP\s+\d+[:\s]+(.+)/s);
     if (httpMatch) return httpMatch[1].trim();
     return raw;
+}
+
+function is422(err) {
+    const msg = err?.message || String(err);
+    return msg.includes("422");
 }
 
 export default function QuizPanel({ courseId, lang = "es" }) {
@@ -33,6 +53,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
     const [numQuestions, setNumQuestions] = useState(5);
     const [quiz, setQuiz] = useState(null);
     const [error, setError] = useState(null);
+    const [topicError, setTopicError] = useState(null);
 
     // Estado del juego en curso
     const [currentIdx, setCurrentIdx] = useState(0);
@@ -41,6 +62,8 @@ export default function QuizPanel({ courseId, lang = "es" }) {
     const [score, setScore] = useState(0);
 
     const L = lang === "es" ? {
+        introTitle:    "Quiz de práctica",
+        introText:     "Generá preguntas de opción múltiple sobre el material del curso para repasar.",
         topicLabel:    "Tema (opcional)",
         topicPlaceholder: "Ej: derivadas, estructuras de datos, fotosíntesis...",
         nQuestions:    "Cantidad de preguntas",
@@ -58,8 +81,11 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         source:        "Fuente",
         emptyTopic:    "Variedad",
         retry:         "Reintentar",
+        back:          "Volver",
         errorGeneric:  "No se pudo generar el quiz",
     } : {
+        introTitle:    "Practice Quiz",
+        introText:     "I generate multiple-choice questions from the course material so you can review.",
         topicLabel:    "Topic (optional)",
         topicPlaceholder: "Ex: derivatives, data structures, photosynthesis...",
         nQuestions:    "Number of questions",
@@ -77,11 +103,13 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         source:        "Source",
         emptyTopic:    "Mixed",
         retry:         "Retry",
+        back:          "Back",
         errorGeneric:  "Could not generate quiz",
     };
 
     const start = async () => {
         setError(null);
+        setTopicError(null);
         setStage("loading");
         setQuiz(null);
         setCurrentIdx(0);
@@ -97,9 +125,13 @@ export default function QuizPanel({ courseId, lang = "es" }) {
             setQuiz(data);
             setStage("playing");
         } catch (err) {
-            console.error("[NexusAI] generateQuiz failed:", err);
-            setError(extractErrorMessage(err) || L.errorGeneric);
-            setStage("error");
+            if (is422(err)) {
+                setTopicError(extractErrorMessage(err) || L.errorGeneric);
+                setStage("setup");
+            } else {
+                setError(extractErrorMessage(err) || L.errorGeneric);
+                setStage("error");
+            }
         }
     };
 
@@ -137,25 +169,22 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         return (
             <div className="nexusai-quiz">
                 <div className="nexusai-quiz__intro">
-                    <h4 className="nexusai-quiz__intro-title">
-                        {lang === "es" ? "Quiz de práctica" : "Practice Quiz"}
-                    </h4>
-                    <p className="nexusai-quiz__intro-text">
-                        {lang === "es"
-                            ? "Genero preguntas de opción múltiple desde el material del curso para que repases."
-                            : "I generate multiple-choice questions from the course material so you can review."}
-                    </p>
+                    <h4 className="nexusai-quiz__intro-title">{L.introTitle}</h4>
+                    <p className="nexusai-quiz__intro-text">{L.introText}</p>
                 </div>
                 <div className="nexusai-quiz__field">
                     <label className="nexusai-quiz__label">{L.topicLabel}</label>
                     <input
                         type="text"
-                        className="nexusai-quiz__input"
+                        className={`nexusai-quiz__input${topicError ? " nexusai-quiz__input--error" : ""}`}
                         placeholder={L.topicPlaceholder}
                         value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
+                        onChange={(e) => { setTopic(e.target.value); setTopicError(null); }}
                         maxLength={200}
                     />
+                    {topicError && (
+                        <p className="nexusai-quiz__topic-error">{topicError}</p>
+                    )}
                 </div>
                 <div className="nexusai-quiz__field">
                     <label className="nexusai-quiz__label">{L.nQuestions}</label>
@@ -203,7 +232,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                         {L.retry}
                     </button>
                     <button type="button" className="nexusai-quiz__secondary" onClick={resetAll}>
-                        {lang === "es" ? "Volver" : "Back"}
+                        {L.back}
                     </button>
                 </div>
             </div>
