@@ -46,7 +46,7 @@ async function getMoodleAjax() {
  * @param {number} [params.numQuestions]  Cantidad de preguntas (default 5).
  * @returns {Promise<{course_id:number, topic:?string, questions:Array}>}
  */
-export async function generateQuiz({ courseId, topic = "", numQuestions = 5 }) {
+export async function generateQuiz({ courseId, topic = "", numQuestions = 5, global: isGlobal = false }) {
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
@@ -58,6 +58,7 @@ export async function generateQuiz({ courseId, topic = "", numQuestions = 5 }) {
         courseid: courseId,
         topic: topic || "",
         numquestions: numQuestions,
+        global: isGlobal,
     };
 
     const [response] = await ajax.call([{

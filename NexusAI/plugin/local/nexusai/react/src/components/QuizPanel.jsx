@@ -47,7 +47,7 @@ function is422(err) {
     return msg.includes("422");
 }
 
-export default function QuizPanel({ courseId, lang = "es" }) {
+export default function QuizPanel({ courseId, lang = "es", allCourses = false }) {
     const [stage, setStage] = useState("setup"); // setup | loading | playing | finished | error
     const [topic, setTopic] = useState("");
     const [numQuestions, setNumQuestions] = useState(5);
@@ -118,7 +118,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         setScore(0);
 
         try {
-            const data = await generateQuiz({ courseId, topic, numQuestions });
+            const data = await generateQuiz({ courseId, topic, numQuestions, global: allCourses });
             if (!data?.questions?.length) {
                 throw new Error(L.errorGeneric);
             }

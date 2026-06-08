@@ -226,7 +226,7 @@ class backend_client {
      * @param int         $numquestions Cantidad de preguntas (1..10).
      * @return array{course_id:int, topic:?string, questions:array}
      */
-    public function generate_quiz(int $courseid, int $userid, ?string $topic, int $numquestions): array {
+    public function generate_quiz(int $courseid, int $userid, ?string $topic, int $numquestions, array $courseids = []): array {
         $payload = [
             'course_id'     => $courseid,
             'user_id'       => $userid,
@@ -234,6 +234,9 @@ class backend_client {
         ];
         if ($topic !== null && trim($topic) !== '') {
             $payload['topic'] = trim($topic);
+        }
+        if (!empty($courseids)) {
+            $payload['course_ids'] = array_map('intval', $courseids);
         }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {

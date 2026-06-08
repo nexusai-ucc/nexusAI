@@ -144,7 +144,7 @@ export default function SearchPanel({
             )}
 
             {results && results.results.map((r, i) => {
-                const canDownload = !!r.document_id && !!sesskey;
+                const canDownload = !!r.document_id && !!sesskey && !!r.has_file;
                 return (
                     <div
                         key={`${r.document_filename}-${r.chunk_index}-${i}`}

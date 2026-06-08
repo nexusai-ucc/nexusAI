@@ -25,6 +25,7 @@ class quiz_generate extends \external_api {
             'courseid'     => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
             'topic'        => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_OPTIONAL, ''),
             'numquestions' => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..10)', VALUE_OPTIONAL, 5),
+            'global'       => new \external_value(PARAM_BOOL, 'Generar usando todos los cursos del usuario', VALUE_OPTIONAL, false),
         ]);
     }
 
@@ -46,13 +47,14 @@ class quiz_generate extends \external_api {
         ]);
     }
 
-    public static function execute(int $courseid, string $topic = '', int $numquestions = 5): array {
+    public static function execute(int $courseid, string $topic = '', int $numquestions = 5, bool $global = false): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'     => $courseid,
             'topic'        => $topic,
             'numquestions' => $numquestions,
+            'global'       => $global,
         ]);
 
         $context = \context_course::instance($params['courseid']);
@@ -65,12 +67,29 @@ class quiz_generate extends \external_api {
         }
         $numq = max(1, min(10, (int) $params['numquestions']));
 
+        // Construir lista de cursos para modo global.
+        $courseids = [(int) $params['courseid']];
+        if (!empty($params['global'])) {
+            $enrolled   = enrol_get_users_courses($USER->id, true, 'id,fullname');
+            $allowedids = [];
+            foreach ($enrolled as $c) {
+                $ctx = \context_course::instance($c->id);
+                if (has_capability('local/nexusai:use', $ctx)) {
+                    $allowedids[] = (int) $c->id;
+                }
+            }
+            if (!empty($allowedids)) {
+                $courseids = $allowedids;
+            }
+        }
+
         $client   = new backend_client();
         $response = $client->generate_quiz(
             (int) $params['courseid'],
             (int) $USER->id,
             $cleantopic !== '' ? $cleantopic : null,
-            $numq
+            $numq,
+            count($courseids) > 1 ? $courseids : []
         );
 
         if (!isset($response['questions']) || !is_array($response['questions'])) {

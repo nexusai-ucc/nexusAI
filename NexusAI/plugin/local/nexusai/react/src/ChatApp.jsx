@@ -486,7 +486,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     </>
                     ) : activeTab === "quiz" ? (
                         <div className="nexusai-panel__body">
-                            <QuizPanel courseId={courseid} lang={lang} />
+                            <QuizPanel courseId={courseid} lang={lang} allCourses={multiCourse} />
                         </div>
                     ) : (
                         <div className="nexusai-panel__body">
