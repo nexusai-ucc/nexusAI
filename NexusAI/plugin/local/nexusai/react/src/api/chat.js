@@ -87,9 +87,7 @@ async function getMoodleAjax() {
         });
         cachedFetchMany = ajax.call;
         return cachedFetchMany;
-    } catch (err) {
-        // eslint-disable-next-line no-console
-        console.warn("[NexusAI] core/ajax no disponible:", err);
+    } catch {
         return null;
     }
 }

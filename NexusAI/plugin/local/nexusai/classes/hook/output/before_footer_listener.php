@@ -53,11 +53,12 @@ class before_footer_listener {
         // 2. Cargar el bundle React vía AMD/RequireJS.
         $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
             [
-                'courseid' => (int) $COURSE->id,
-                'userid'   => (int) $USER->id,
-                'sesskey'  => sesskey(),
-                'wwwroot'  => (string) (new \moodle_url('/'))->out(false),
-                'lang'     => current_language(),
+                'courseid'   => (int) $COURSE->id,
+                'userid'     => (int) $USER->id,
+                'sesskey'    => sesskey(),
+                'wwwroot'    => (string) (new \moodle_url('/'))->out(false),
+                'lang'       => current_language(),
+                'isteacher'  => (int) has_capability('local/nexusai:manage', $context),
             ],
         ]);
 
