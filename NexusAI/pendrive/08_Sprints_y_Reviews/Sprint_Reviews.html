@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusAI — Sprint Review Sprint 1 & 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#07101d; --bg-card:#0c1a2e; --bg-card2:#091525;
+  --blue-mid:#1a4fc4; --blue:#3b82f6; --teal:#0ea5a0;
+  --green:#22c55e; --green-lt:#4ade80;
+  --white:#eef6ff; --muted:#7a9cc0; --dim:#3d5a7a;
+  --border:rgba(59,130,246,0.14); --border2:rgba(59,130,246,0.28);
+}
+html,body { width:100%; height:100%; background:var(--bg); color:var(--white); font-family:'Manrope',sans-serif; overflow:hidden; }
+.deck { position:relative; width:100vw; height:100vh; }
+
+/* ── SLIDES ── */
+.slide {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  padding:32px 60px 56px;
+  opacity:0; pointer-events:none;
+  transform:translateX(48px);
+  transition:opacity .42s cubic-bezier(.4,0,.2,1), transform .42s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+}
+.slide.active  { opacity:1; pointer-events:all; transform:translateX(0); }
+.slide.exit    { opacity:0; transform:translateX(-48px); }
+.slide::after  { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(59,130,246,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.022) 1px,transparent 1px); background-size:56px 56px; pointer-events:none; }
+
+.top-bar { position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#1a4fc4 0%,#0ea5a0 50%,#22c55e 100%); }
+.orb { position:absolute; border-radius:50%; filter:blur(90px); pointer-events:none; z-index:0; }
+.orb-bl { width:520px; height:520px; background:rgba(26,79,196,.13); top:-180px; left:-180px; }
+.orb-tr { width:380px; height:380px; background:rgba(14,165,160,.10); bottom:-80px; right:-80px; }
+.orb-gr { width:260px; height:260px; background:rgba(34,197,94,.07); top:40%; right:8%; }
+
+/* footer — solo número */
+.footer { position:absolute; bottom:16px; left:60px; right:60px; display:flex; align-items:center; justify-content:flex-end; z-index:10; }
+.slide-num { font-family:'Syne',sans-serif; font-size:13px; color:var(--dim); letter-spacing:.14em; }
+
+/* ── TYPO ── */
+.label { font-family:'Syne',sans-serif; font-size:16px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--teal); margin-bottom:4px; position:relative; z-index:1; }
+h2 { font-family:'Syne',sans-serif; font-size:clamp(38px,5.2vw,62px); font-weight:800; line-height:1.04; letter-spacing:-.022em; margin-bottom:14px; position:relative; z-index:1; }
+h3 { font-family:'Syne',sans-serif; font-size:24px; font-weight:700; line-height:1.2; color:var(--white); }
+p,li { font-size:20px; line-height:1.5; color:var(--muted); }
+.grad { background:linear-gradient(135deg,#3b82f6,#0ea5a0,#22c55e); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+/* ── CARDS ── */
+.card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; position:relative; overflow:hidden; padding:18px 22px; z-index:1; }
+.card-top { position:absolute; top:0; left:0; right:0; height:2.5px; }
+.card-top.blue   { background:linear-gradient(90deg,var(--blue-mid),var(--blue)); }
+.card-top.teal   { background:linear-gradient(90deg,var(--teal),var(--green)); }
+.card-top.green  { background:linear-gradient(90deg,var(--green),var(--green-lt)); }
+.card-top.purple { background:linear-gradient(90deg,#7c3aed,var(--blue-mid)); }
+.card-top.dim    { background:linear-gradient(90deg,var(--blue-mid),var(--teal)); }
+
+/* ── TAG / CODE ── */
+.tag { display:inline-block; padding:5px 13px; background:rgba(14,165,160,.08); border:1px solid rgba(14,165,160,.2); border-radius:5px; font-family:'DM Mono',monospace; font-size:14px; color:var(--teal); }
+code { font-family:'DM Mono',monospace; font-size:15px; color:var(--green-lt); }
+
+/* ── ARROW LIST ── */
+.arrow-list { list-style:none; display:flex; flex-direction:column; }
+.arrow-list li { display:flex; align-items:flex-start; gap:10px; font-size:20px; color:var(--muted); line-height:1.4; }
+.arrow-list li::before { content:"→"; color:var(--dim); flex-shrink:0; margin-top:3px; font-size:15px; }
+.arrow-list li.hi::before { color:var(--green-lt); }
+.arrow-list li.hi { color:var(--green-lt); font-weight:600; }
+
+/* ── TABLE ── */
+.tbl { width:100%; border-collapse:collapse; }
+.tbl th { font-family:'Syne',sans-serif; font-size:14px; font-weight:600; letter-spacing:.13em; text-transform:uppercase; color:var(--dim); text-align:left; padding:12px 16px; border-bottom:1px solid var(--border); }
+.tbl td { padding:0 16px; border-bottom:1px solid rgba(59,130,246,.05); color:var(--muted); vertical-align:middle; font-size:18px; line-height:1.3; }
+.tbl tr:last-child td { border-bottom:none; }
+.tbl td:first-child { color:var(--white); font-weight:600; font-family:'Syne',sans-serif; font-size:17px; white-space:nowrap; }
+.tbl td.teal { color:var(--teal); font-family:'DM Mono',monospace; font-size:15px; }
+.tbl td.green-bold { color:var(--green-lt); font-weight:700; }
+
+/* ── FLOW ── */
+.flow-chain { display:flex; flex-direction:column; padding-left:28px; position:relative; flex:1; justify-content:space-between; }
+.flow-vline { position:absolute; left:9px; top:10px; bottom:10px; width:2px; background:linear-gradient(to bottom,#1a4fc4,#0ea5a0,#22c55e); opacity:.4; }
+.flow-node { display:flex; flex-direction:column; gap:2px; position:relative; }
+.flow-node::before { content:''; position:absolute; left:-23px; top:10px; width:12px; height:12px; border-radius:50%; background:var(--bg-card); border:2.5px solid var(--blue); }
+.flow-node:nth-child(1)::before,.flow-node:nth-child(2)::before { border-color:#1a4fc4; }
+.flow-node:nth-child(3)::before { border-color:#3b82f6; }
+.flow-node:nth-child(4)::before,.flow-node:nth-child(5)::before { border-color:var(--teal); }
+.flow-node:nth-child(6)::before { border-color:#34d399; }
+.flow-node:nth-child(7)::before { border-color:var(--green-lt); }
+.flow-node-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; color:var(--white); }
+.flow-node-tech  { font-family:'DM Mono',monospace; font-size:14px; color:var(--dim); }
+
+/* ── BANNER ── */
+.banner { background:var(--bg-card2); border:1px solid rgba(34,197,94,.18); border-radius:10px; padding:14px 22px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; font-size:19px; z-index:1; position:relative; margin-top:12px; }
+
+/* ── NAV ── */
+.nav { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:center; align-items:center; gap:14px; padding:14px 24px; background:linear-gradient(to top,rgba(7,16,29,.95) 0%,transparent 100%); z-index:100; }
+.nav-btn { background:rgba(255,255,255,.04); border:1px solid var(--border); color:var(--muted); padding:10px 28px; border-radius:7px; font-family:'Syne',sans-serif; font-size:13px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; transition:all .18s; }
+.nav-btn:hover { background:rgba(59,130,246,.1); border-color:var(--border2); color:var(--white); }
+.nav-dots { display:flex; gap:6px; align-items:center; }
+.nav-dot  { width:7px; height:7px; border-radius:50%; background:var(--dim); cursor:pointer; transition:all .2s; }
+.nav-dot.active { background:var(--blue); width:22px; border-radius:3px; }
+
+/* ═══════════════ S1 PORTADA ═══════════════ */
+#s1 { justify-content:center; align-items:center; text-align:center; }
+.cover-sprint { font-family:'Syne',sans-serif; font-size:16px; font-weight:600; letter-spacing:.28em; text-transform:uppercase; color:var(--muted); margin-bottom:22px; z-index:1; position:relative; }
+.cover-name   { font-family:'Syne',sans-serif; font-size:clamp(82px,12vw,130px); font-weight:800; letter-spacing:-.035em; line-height:1; margin-bottom:20px; z-index:1; position:relative; }
+.cover-sub    { font-size:24px; color:var(--muted); margin-bottom:56px; font-weight:300; z-index:1; position:relative; }
+.cover-meta   { display:flex; gap:36px; justify-content:center; align-items:center; flex-wrap:wrap; z-index:1; position:relative; }
+.cover-meta-sep  { width:1px; height:36px; background:var(--border); }
+.cover-meta-item { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.cover-meta-key  { font-family:'Syne',sans-serif; font-size:13px; letter-spacing:.2em; text-transform:uppercase; color:var(--dim); }
+.cover-meta-val  { font-size:20px; font-weight:500; color:var(--white); }
+
+/* ═══════════════ S2 ═══════════════ */
+.s2-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; }
+.sprint-tag   { font-family:'Syne',sans-serif; font-size:14px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; }
+.sprint-tag.s1 { color:var(--blue); }
+.sprint-tag.s2 { color:var(--teal); }
+.sprint-title  { font-family:'Syne',sans-serif; font-size:39px; font-weight:700; line-height:1.15; color:var(--white); }
+.sprint-dates  { font-size:20px; color:var(--dim); }
+
+/* ═══════════════ S3 ═══════════════ */
+.s3-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; flex:1; }
+.note-icon-title { display:flex; align-items:center; gap:12px; }
+.note-icon-title span { font-size:28px; }
+
+/* ═══════════════ S4 ═══════════════ */
+.decisions-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; flex:1; }
+.dec-icon-title { display:flex; align-items:flex-start; gap:12px; }
+.dec-icon { font-size:28px; flex-shrink:0; margin-top:1px; }
+.dec-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+
+/* ═══════════════ S5 INFRA ═══════════════ */
+.s5-grid { display:grid; grid-template-columns:1.55fr 1fr; gap:18px; flex:1; }
+.infra-table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+/* tabla que llena el wrapper */
+.infra-table-wrap table { flex:1; table-layout:fixed; }
+.infra-table-wrap .tbl td { height:72px; vertical-align:middle; }
+.infra-table-wrap .tbl th { height:48px; }
+
+.scale-col { display:flex; flex-direction:column; gap:12px; flex:1; }
+.scale-card { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:16px 18px; flex:1; display:flex; flex-direction:column; justify-content:space-between; }
+.scale-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--dim); margin-bottom:10px; }
+.scale-row { display:flex; justify-content:space-between; align-items:center; padding:0; font-size:22px; flex:1; }
+.scale-row span:first-child { color:var(--muted); }
+.scale-row span:last-child  { color:var(--white); font-family:'Syne',sans-serif; font-weight:700; font-size:22px; }
+.deploy-box { background:linear-gradient(135deg,rgba(15,42,110,.4),rgba(14,165,160,.1)); border:1px solid rgba(14,165,160,.2); border-radius:10px; padding:16px 18px; flex:1.4; display:flex; flex-direction:column; justify-content:space-around; }
+.deploy-title { font-family:'Syne',sans-serif; font-size:22px; font-weight:700; color:var(--teal); margin-bottom:10px; }
+.mono-cmd { font-family:'DM Mono',monospace; font-size:19px; color:var(--green-lt); display:block; margin-top:10px; }
+
+/* ═══════════════ S6 BUILT ═══════════════ */
+.built-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; flex:1; }
+.built-role { font-family:'Syne',sans-serif; font-size:16px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; margin-bottom:8px; }
+.built-role.al { color:var(--blue); }
+.built-role.do { color:var(--teal); }
+.built-role.si { color:#a78bfa; }
+.built-main { font-size:28px; font-weight:600; color:var(--white); line-height:1.2; margin-bottom:10px; }
+.card-div { height:1px; background:var(--border); margin:0 0 10px; }
+
+/* ═══════════════ S7 COSTOS ═══════════════ */
+/* S7 rediseño */
+.s7-top { display:grid; grid-template-columns:1fr 2fr; gap:16px; margin-bottom:14px; }
+.mvp-box { background:var(--bg-card); border:1px solid rgba(34,197,94,.3); border-radius:12px; padding:20px 26px; display:flex; flex-direction:column; justify-content:center; position:relative; overflow:hidden; }
+.mvp-box::before { content:''; position:absolute; top:0; left:0; right:0; height:2.5px; background:linear-gradient(90deg,var(--green),var(--green-lt)); }
+.mvp-label { font-family:'Syne',sans-serif; font-size:12px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--green-lt); margin-bottom:8px; }
+.mvp-price { font-family:'Syne',sans-serif; font-size:80px; font-weight:800; color:var(--green-lt); line-height:1; margin-bottom:6px; }
+.mvp-sub { font-size:18px; color:var(--muted); }
+.s7-prod { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+.s7-prod-label { font-family:'Syne',sans-serif; font-size:12px; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--dim); padding:14px 20px 8px; border-bottom:1px solid var(--border); }
+.s7-prod-grid { display:grid; grid-template-columns:1fr 1fr 1fr; flex:1; }
+.s7-prod-col { display:flex; flex-direction:column; border-right:1px solid var(--border); }
+.s7-prod-col:last-child { border-right:none; }
+.s7-prod-head { font-family:'Syne',sans-serif; font-size:12px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); padding:10px 20px; border-bottom:1px solid var(--border); }
+.s7-prod-row { display:flex; flex-direction:column; flex:1; border-bottom:1px solid rgba(59,130,246,.06); padding:14px 20px; justify-content:center; }
+.s7-prod-row:last-child { border-bottom:none; }
+.s7-prod-alumnos { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--white); line-height:1; }
+.s7-prod-val { font-size:26px; font-weight:600; color:var(--muted); }
+.s7-prod-total { font-family:'Syne',sans-serif; font-size:34px; font-weight:800; color:var(--green-lt); line-height:1; }
+.s7-bottom { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.ucc-box { background:var(--bg-card); border:1px solid rgba(59,130,246,.3); border-radius:12px; padding:18px 22px; position:relative; overflow:hidden; }
+.ucc-box::before { content:''; position:absolute; top:0; left:0; right:0; height:2.5px; background:linear-gradient(90deg,var(--blue-mid),var(--blue)); }
+.ucc-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--blue); margin-bottom:8px; }
+.ucc-desc { font-size:16px; color:var(--muted); line-height:1.45; margin-bottom:14px; }
+.ucc-nums { display:flex; gap:0; }
+.ucc-num { flex:1; display:flex; flex-direction:column; gap:3px; padding-right:16px; border-right:1px solid var(--border); margin-right:16px; }
+.ucc-num:last-child { border-right:none; margin-right:0; padding-right:0; }
+.ucc-num-val { font-family:'Syne',sans-serif; font-size:38px; font-weight:800; color:var(--blue); line-height:1; }
+.ucc-num-lbl { font-size:13px; color:var(--dim); text-transform:uppercase; letter-spacing:.1em; margin-top:4px; }
+.inst-box { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:18px 22px; display:flex; flex-direction:column; gap:10px; }
+.inst-title { font-family:'Syne',sans-serif; font-size:19px; font-weight:700; color:var(--teal); }
+.inst-highlight { font-family:'Syne',sans-serif; font-size:32px; font-weight:800; color:var(--white); margin:4px 0; }
+.opt-box { background:var(--bg-card2); border:1px solid rgba(59,130,246,.12); border-radius:9px; padding:12px 16px; margin-top:auto; }
+.opt-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--blue); margin-bottom:5px; }
+
+/* ═══════════════ S8 ROADMAP ═══════════════ */
+.roadmap-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; }
+.rm-label { font-family:'Syne',sans-serif; font-size:13px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; }
+.rm-label.s3 { color:var(--teal); }
+.rm-label.s4 { color:var(--green-lt); }
+.rm-title { font-family:'Syne',sans-serif; font-size:26px; font-weight:700; color:var(--white); line-height:1.2; }
+.rm-dates { font-size:15px; color:var(--dim); }
+.mvp-badge { background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(14,165,160,.08)); border:1px solid rgba(34,197,94,.28); border-radius:8px; padding:14px 18px; font-family:'Syne',sans-serif; font-size:20px; font-weight:700; color:var(--green-lt); text-align:center; margin-top:auto; }
+
+/* ═══════════════ S9 CIERRE ═══════════════ */
+#s9 { justify-content:center; align-items:center; text-align:center; }
+.close-name   { font-family:'Syne',sans-serif; font-size:clamp(66px,10vw,114px); font-weight:800; letter-spacing:-.03em; line-height:1; margin-bottom:24px; z-index:1; position:relative; }
+.close-phrase { font-size:28px; color:var(--muted); line-height:1.5; margin-bottom:48px; z-index:1; position:relative; max-width:700px; }
+.close-phrase strong { color:var(--white); }
+.close-mvp-lbl  { font-family:'Syne',sans-serif; font-size:14px; letter-spacing:.24em; text-transform:uppercase; color:var(--dim); margin-bottom:10px; }
+.close-mvp-date { font-family:'Syne',sans-serif; font-size:clamp(40px,6.5vw,70px); font-weight:800; background:linear-gradient(135deg,#3b82f6,#0ea5a0,#22c55e); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- ═══ S1 ═══ -->
+<div class="slide active" id="s1">
+  <div class="top-bar"></div>
+  <div class="orb orb-bl"></div><div class="orb orb-tr"></div><div class="orb orb-gr"></div>
+  <div class="cover-sprint">Sprint Review — Sprint 1 &amp; 2</div>
+  <div class="cover-name grad">NexusAI</div>
+  <div class="cover-sub">Asistente Académico Inteligente para Campus Virtual</div>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><span class="cover-meta-key">Sprints</span><span class="cover-meta-val">Sprint 1 &amp; 2</span></div>
+    <div class="cover-meta-sep"></div>
+    <div class="cover-meta-item"><span class="cover-meta-key">Equipo</span><span class="cover-meta-val">Santiago Tricherri · Delfina Salinas</span></div>
+    <div class="cover-meta-sep"></div>
+    <div class="cover-meta-item"><span class="cover-meta-key">Fecha</span><span class="cover-meta-val">Mayo 2026</span></div>
+  </div>
+  <div class="footer"><span class="slide-num">01 / 09</span></div>
+</div>
+
+<!-- ═══ S2 ═══ -->
+<div class="slide" id="s2">
+  <div class="top-bar"></div>
+  <div class="orb orb-bl" style="opacity:.4"></div>
+  <div class="label">Período</div>
+  <h2>¿Qué cubrió este período?</h2>
+  <div class="s2-grid">
+    <div class="card" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card-top blue"></div>
+      <div class="sprint-tag s1">Sprint 1</div>
+      <div class="sprint-title">Plugin base + API Python + React inicial</div>
+      <div class="sprint-dates">23 Abr – 6 May 2026</div>
+      <ul class="arrow-list" style="flex:1;justify-content:space-evenly;margin-top:8px;">
+        <li>Servidor FastAPI conectado a Moodle</li>
+        <li>Plugin PHP <code>local_nexusai</code> instalado en Moodle</li>
+        <li>Widget de chat React en el aula virtual</li>
+        <li>Autenticación HMAC entre PHP y FastAPI</li>
+        <li>Extracción de texto de PDFs y chunking</li>
+      </ul>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card-top teal"></div>
+      <div class="sprint-tag s2">Sprint 2</div>
+      <div class="sprint-title">RAG completo + chat end-to-end</div>
+      <div class="sprint-dates">7 May – 20 May 2026</div>
+      <ul class="arrow-list" style="flex:1;justify-content:space-evenly;margin-top:8px;">
+        <li>Pipeline RAG: embeddings → pgvector → retrieval</li>
+        <li>Integración con Gemini 2.5 Flash como LLM</li>
+        <li>Respuestas citando fuente del material</li>
+        <li>Panel de gestión de documentos docentes</li>
+        <li>Historial, manejo de errores, UI bilingüe</li>
+      </ul>
+    </div>
+  </div>
+  <div class="banner">
+    <span style="color:var(--green-lt);font-weight:700;font-family:Syne,sans-serif;">25 issues completados</span>
+    <span style="color:var(--dim)">·</span>
+    <span style="color:var(--white);font-weight:600">7 endpoints REST</span>
+    <span style="color:var(--dim)">·</span>
+    <span style="color:var(--white);font-weight:600">Pipeline RAG operativo</span>
+    <span style="color:var(--dim)">·</span>
+    <span style="color:var(--muted)">Plugin v0.3 · Moodle 4.1–4.5</span>
+  </div>
+  <div class="footer"><span class="slide-num">02 / 09</span></div>
+</div>
+
+<!-- ═══ S3 ═══ -->
+<div class="slide" id="s3">
+  <div class="top-bar"></div>
+  <div class="label">Arquitectura</div>
+  <h2>Cómo funciona</h2>
+  <div class="s3-grid">
+    <div class="flow-chain">
+      <div class="flow-vline"></div>
+      <div class="flow-node"><div class="flow-node-title">Alumno — React widget</div><div class="flow-node-tech">React 18 · AMD bundle en Moodle</div></div>
+      <div class="flow-node"><div class="flow-node-title">Moodle PHP — External Function</div><div class="flow-node-tech">local_nexusai · valida identidad y rol</div></div>
+      <div class="flow-node"><div class="flow-node-title">Firma HMAC-SHA256</div><div class="flow-node-tech">Bearer key + timestamp + nonce + body</div></div>
+      <div class="flow-node"><div class="flow-node-title">FastAPI — Backend Python</div><div class="flow-node-tech">Embedea la pregunta del alumno</div></div>
+      <div class="flow-node"><div class="flow-node-title">PostgreSQL + pgvector</div><div class="flow-node-tech">Búsqueda semántica · top-5 chunks del curso</div></div>
+      <div class="flow-node"><div class="flow-node-title">Gemini 2.5 Flash / GPT-4o-mini</div><div class="flow-node-tech">Genera respuesta con contexto RAG inyectado</div></div>
+      <div class="flow-node"><div class="flow-node-title">Respuesta con fuente citada</div><div class="flow-node-tech">"Según apunte-derivadas.pdf..."</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;flex:1;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;gap:10px;">
+        <div class="note-icon-title"><span>🔒</span><h3>Seguridad por diseño</h3></div>
+        <p>El browser nunca habla directo con el backend de IA. Todo pasa por Moodle PHP. Las claves de API nunca llegan al cliente.</p>
+      </div>
+      <div class="card" style="flex:1;display:flex;flex-direction:column;gap:10px;">
+        <div class="note-icon-title"><span>⚡</span><h3>Fallback graceful</h3></div>
+        <p>Si el retrieval falla (cuota, Redis caído), el chat sigue sin contexto en lugar de devolver error 503.</p>
+      </div>
+      <div class="card" style="flex:1;display:flex;flex-direction:column;gap:10px;">
+        <div class="note-icon-title"><span>📚</span><h3>Indexación async</h3></div>
+        <p>PDF → extracción → chunking 512 tokens / 64 overlap → embeddings → pgvector. Estado: <code>pending → indexing → indexed</code></p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span class="slide-num">03 / 09</span></div>
+</div>
+
+<!-- ═══ S4 ═══ -->
+<div class="slide" id="s4">
+  <div class="top-bar"></div>
+  <div class="orb orb-tr" style="opacity:.35"></div>
+  <div class="label">ADRs — Architecture Decision Records</div>
+  <h2>Decisiones que tomamos</h2>
+  <div class="decisions-grid">
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card-top blue"></div>
+      <div class="dec-icon-title"><span class="dec-icon">🗄️</span><h3>Una sola base de datos para todo</h3></div>
+      <p>En lugar de operar ChromaDB separado, extendimos PostgreSQL con pgvector. Un motor para datos relacionales y vectoriales. Queries SQL + vector en una operación. Backup con <code>pg_dump</code> estándar.</p>
+      <div class="dec-tags"><span class="tag">PostgreSQL 16</span><span class="tag">pgvector</span><span class="tag">HNSW index</span></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card-top teal"></div>
+      <div class="dec-icon-title"><span class="dec-icon">🔄</span><h3>El proveedor de IA es intercambiable</h3></div>
+      <p>La capa <code>LLMProvider</code> usa el SDK de OpenAI en modo compatibilidad. Cambiar de Gemini a GPT-4o-mini es solo cambiar variables de entorno, sin modificar código.</p>
+      <div class="dec-tags"><span class="tag">Gemini 2.5 Flash (dev)</span><span class="tag">GPT-4o-mini (prod)</span></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card-top dim"></div>
+      <div class="dec-icon-title"><span class="dec-icon">🔐</span><h3>Seguridad por diseño — HMAC 3 capas</h3></div>
+      <p>Bearer API key + firma HMAC-SHA256(timestamp ‖ nonce ‖ body) + anti-replay en Redis (ventana 5 min). El browser solo habla con Moodle. Sin CORS, sin JWT, sin OAuth.</p>
+      <div class="dec-tags"><span class="tag">HMAC-SHA256</span><span class="tag">Redis nonces</span><span class="tag">Anti-replay</span></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card-top green"></div>
+      <div class="dec-icon-title"><span class="dec-icon">🧩</span><h3>Plugin local — no modifica Moodle</h3></div>
+      <p><code>before_footer()</code> inyecta el widget en todas las páginas sin que el docente configure nada. React compilado como bundle AMD único. Compatible Moodle 4.1–4.5 LTS.</p>
+      <div class="dec-tags"><span class="tag">local_nexusai</span><span class="tag">Webpack AMD</span><span class="tag">4.1–4.5 LTS</span></div>
+    </div>
+  </div>
+  <div class="footer"><span class="slide-num">04 / 09</span></div>
+</div>
+
+<!-- ═══ S5 INFRA ═══ -->
+<div class="slide" id="s5">
+  <div class="top-bar"></div>
+  <div class="label">Infraestructura</div>
+  <h2>Stack de servicios</h2>
+  <div class="s5-grid">
+    <!-- tabla que ocupa todo el alto disponible -->
+    <div class="infra-table-wrap" style="flex:1;">
+      <table class="tbl" style="height:100%;">
+        <thead><tr><th>Servicio</th><th>Tecnología</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>Backend</td><td class="teal">FastAPI + Uvicorn</td><td>Async nativo, ideal para pipelines de IA con llamadas concurrentes</td></tr>
+          <tr><td>Base de datos</td><td class="teal">PostgreSQL 16 + pgvector</td><td>Un motor para datos relacionales y vectoriales. Sin ChromaDB separado</td></tr>
+          <tr><td>Cache / Anti-replay</td><td class="teal">Redis 7</td><td>Nonces HMAC con TTL automático. Sin queries a PG por cada request</td></tr>
+          <tr><td>Frontend</td><td class="teal">React 18 + Webpack AMD</td><td>Bundle único compatible con RequireJS de Moodle</td></tr>
+          <tr><td>Plugin</td><td class="teal">PHP / Moodle local</td><td>Proxy seguro. Credenciales nunca salen del servidor Moodle</td></tr>
+          <tr><td>Migraciones</td><td class="teal">Alembic</td><td>Versionado de schema, incluye migración HNSW para pgvector</td></tr>
+          <tr><td>Orquestación</td><td class="teal">Docker Compose</td><td>Stack completo en un solo comando para dev y staging</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- col derecha que también llena todo el alto -->
+    <div class="scale-col">
+      <div class="scale-card">
+        <div class="scale-title">Requerimientos por escala</div>
+        <div class="scale-row"><span>Piloto 10 materias</span><span>~200MB RAM</span></div>
+        <div class="scale-row"><span>UCC completa (~240K vec.)</span><span>~2GB RAM</span></div>
+        <div class="scale-row"><span>5 instituciones</span><span>~10GB RAM</span></div>
+        <div class="scale-row"><span>Disco UCC completa</span><span>~3.5GB</span></div>
+      </div>
+      <div class="deploy-box">
+        <div class="deploy-title">📦 Deployment</div>
+        <p style="font-size:21px;">Una instancia por institución. Datos dentro de la infra propia. Backup con <code>pg_dump</code> estándar.</p>
+        <code class="mono-cmd">docker compose up -d postgres redis api</code>
+        <span style="font-size:17px;color:var(--dim);font-family:DM Mono,monospace;display:block;margin-top:8px;">FastAPI :8001 · PG :5432 · Redis :6379</span>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span class="slide-num">05 / 09</span></div>
+</div>
+
+<!-- ═══ S6 BUILT ═══ -->
+<div class="slide" id="s6">
+  <div class="top-bar"></div>
+  <div class="label">Entregables</div>
+  <h2>Qué construimos</h2>
+  <div class="built-grid">
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card-top blue"></div>
+      <div class="built-role al">Para el alumno</div>
+      <div class="built-main">Widget de chat flotante en cualquier página del aula virtual</div>
+      <div class="card-div"></div>
+      <ul class="arrow-list" style="flex:1;justify-content:space-evenly;">
+        <li>Historial de conversación por sesión</li>
+        <li>Indicador de carga (TypingIndicator)</li>
+        <li>Manejo de errores con Retry / Dismiss</li>
+        <li>Optimistic UI — mensaje visible de inmediato</li>
+        <li>Respuestas que citan el archivo fuente</li>
+        <li>Nueva conversación · UI bilingüe (es/en)</li>
+      </ul>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card-top teal"></div>
+      <div class="built-role do">Para el docente</div>
+      <div class="built-main">Panel de gestión de materiales del curso en Moodle</div>
+      <div class="card-div"></div>
+      <ul class="arrow-list" style="flex:1;justify-content:space-evenly;">
+        <li>Zona drag &amp; drop para subir PDFs</li>
+        <li>Tabla con estado de indexación en tiempo real</li>
+        <li>Pipeline async: extracción → chunking → indexed</li>
+        <li>Eliminar docs con cascada de chunks</li>
+        <li>Acceso restringido con capability <code>manage</code></li>
+      </ul>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card-top purple"></div>
+      <div class="built-role si">Para el sistema</div>
+      <div class="built-main">Infraestructura de autenticación, roles y datos</div>
+      <div class="card-div"></div>
+      <ul class="arrow-list" style="flex:1;justify-content:space-evenly;">
+        <li>HMAC 3 capas con anti-replay en Redis</li>
+        <li>3 capabilities: use / manage / viewanalytics</li>
+        <li>7 endpoints REST · 4 modelos de DB</li>
+        <li>Document, Chunk, ChatSession, Message</li>
+        <li>Privacy API GDPR desde el inicio</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span class="slide-num">06 / 09</span></div>
+</div>
+
+<!-- ═══ S7 COSTOS ═══ -->
+<div class="slide" id="s7">
+  <div class="top-bar"></div>
+  <div class="label">Análisis económico</div>
+  <h2>Análisis de costos</h2>
+
+  <!-- FILA 1: MVP + tabla producción -->
+  <div class="s7-top">
+    <div class="mvp-box">
+      <div class="mvp-label">MVP — Hoy (Gemini gratuito)</div>
+      <div class="mvp-price">$0<span style="font-size:28px;color:var(--muted);font-weight:400"> /mes</span></div>
+      <div class="mvp-sub">~75 alumnos activos · Hosting demo ~$5/mes</div>
+    </div>
+    <div class="s7-prod">
+      <div class="s7-prod-label">Producción — GPT-4o-mini · Supuestos: 15 consultas/alumno/día · 20 días activos/mes · ~3.000 tokens/consulta</div>
+      <div class="s7-prod-grid" style="flex:1;">
+        <div class="s7-prod-col">
+          <div class="s7-prod-head">Alumnos</div>
+          <div class="s7-prod-row"><div class="s7-prod-alumnos">200</div></div>
+          <div class="s7-prod-row"><div class="s7-prod-alumnos">500</div></div>
+          <div class="s7-prod-row"><div class="s7-prod-alumnos">1.000</div></div>
+        </div>
+        <div class="s7-prod-col">
+          <div class="s7-prod-head">Costo IA + Hosting</div>
+          <div class="s7-prod-row"><div class="s7-prod-val">~$41 + $6</div></div>
+          <div class="s7-prod-row"><div class="s7-prod-val">~$102 + $6</div></div>
+          <div class="s7-prod-row"><div class="s7-prod-val">~$203 + $6</div></div>
+        </div>
+        <div class="s7-prod-col">
+          <div class="s7-prod-head">Total mensual</div>
+          <div class="s7-prod-row"><div class="s7-prod-total">~$47</div></div>
+          <div class="s7-prod-row"><div class="s7-prod-total">~$108</div></div>
+          <div class="s7-prod-row"><div class="s7-prod-total">~$209</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILA 2: UCC + cualquier institución -->
+  <div class="s7-bottom">
+    <div class="ucc-box">
+      <div class="ucc-title">🏛 Caso UCC — Estimación real</div>
+      <div class="ucc-desc">~12.000 alumnos. Estimando 15% activos diarios (~1.800/día) · 10 consultas promedio:</div>
+      <div class="ucc-nums">
+        <div class="ucc-num"><div class="ucc-num-val">~$580</div><div class="ucc-num-lbl">por mes</div></div>
+        <div class="ucc-num"><div class="ucc-num-val">~$0.05</div><div class="ucc-num-lbl">/alumno/mes</div></div>
+        <div class="ucc-num"><div class="ucc-num-val">~$7</div><div class="ucc-num-lbl">/alumno/año</div></div>
+      </div>
+    </div>
+    <div class="inst-box">
+      <div class="inst-title">🏫 Para cualquier institución</div>
+      <div class="inst-highlight">~$0.20 / alumno / mes</div>
+      <p style="font-size:18px;">Hosting fijo (~$6/mes). El costo variable escala solo con el uso real. El equivalente al costo de una fotocopia.</p>
+      <div class="opt-box">
+        <div class="opt-title">⚙️ Optimizaciones disponibles</div>
+        <p style="font-size:16px;">Prompt caching OpenAI (~30% menos inputs) · rate limiting por materia · cache Redis (post-MVP)</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><span class="slide-num">07 / 09</span></div>
+</div>
+
+<!-- ═══ S8 ROADMAP ═══ -->
+<div class="slide" id="s8">
+  <div class="top-bar"></div>
+  <div class="orb orb-gr" style="opacity:.5"></div>
+  <div class="label">Próximos pasos</div>
+  <h2>Hacia el MVP</h2>
+  <div class="roadmap-grid">
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card-top teal"></div>
+      <div class="rm-label s3">Sprint 3</div>
+      <div class="rm-title">Integración Moodle completa + Contenido docente</div>
+      <div class="rm-dates">21 May – 27 May 2026</div>
+      <ul class="arrow-list" style="flex:1;justify-content:space-evenly;margin-top:8px;">
+        <li>Interfaz docente completa para carga de materiales</li>
+        <li>Sincronización automática de PDFs del curso</li>
+        <li>Soporte DOCX y TXT además de PDF</li>
+        <li>Renderizado Markdown en respuestas</li>
+        <li>Página principal del plugin en Moodle</li>
+        <li>Bundle React integrado en producción</li>
+        <li>Manejo de errores de API y autenticación</li>
+      </ul>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+      <div class="card-top green"></div>
+      <div class="rm-label s4">Sprint 4 — MVP ⭐</div>
+      <div class="rm-title">Testing &amp; Validación con usuarios reales</div>
+      <div class="rm-dates">28 May – 1 Jun 2026</div>
+      <ul class="arrow-list" style="flex:1;justify-content:space-evenly;margin-top:8px;">
+        <li>Plan de testing y criterios de aceptación</li>
+        <li>Testing unitario del backend Python</li>
+        <li>Testing integración backend ↔ frontend</li>
+        <li>Testing integración plugin Moodle</li>
+        <li>Testing funcional end-to-end</li>
+        <li class="hi">Pruebas con usuarios reales — UCC</li>
+        <li>Corrección de bugs post-testing</li>
+      </ul>
+      <div class="mvp-badge">🎯 MVP entregado el 1 de junio de 2026</div>
+    </div>
+  </div>
+  <div class="footer"><span class="slide-num">08 / 09</span></div>
+</div>
+
+<!-- ═══ S9 ═══ -->
+<div class="slide" id="s9">
+  <div class="top-bar"></div>
+  <div class="orb orb-bl"></div><div class="orb orb-tr"></div>
+  <div class="close-name grad">NexusAI</div>
+  <div class="close-phrase">Del anteproyecto al sistema funcionando<br><strong>en dos sprints.</strong></div>
+  <div style="z-index:1;position:relative;">
+    <div class="close-mvp-lbl">Fecha objetivo MVP</div>
+    <div class="close-mvp-date">1 de junio de 2026</div>
+  </div>
+  <div class="footer"><span class="slide-num">09 / 09</span></div>
+</div>
+
+</div>
+
+<nav class="nav">
+  <button class="nav-btn" id="btn-prev" onclick="navigate(-1)">← Anterior</button>
+  <div class="nav-dots" id="dots"></div>
+  <button class="nav-btn" id="btn-next" onclick="navigate(1)">Siguiente →</button>
+</nav>
+
+<script>
+const TOTAL=9; let cur=1;
+const dots=document.getElementById('dots');
+for(let i=1;i<=TOTAL;i++){const d=document.createElement('div');d.className='nav-dot'+(i===1?' active':'');d.onclick=()=>goTo(i);dots.appendChild(d);}
+function goTo(n){
+  const p=document.getElementById('s'+cur);
+  p.classList.remove('active');p.classList.add('exit');
+  setTimeout(()=>p.classList.remove('exit'),500);
+  cur=n;document.getElementById('s'+cur).classList.add('active');
+  document.querySelectorAll('.nav-dot').forEach((d,i)=>d.classList.toggle('active',i+1===cur));
+  document.getElementById('btn-prev').style.opacity=cur===1?'0.3':'1';
+  document.getElementById('btn-next').style.opacity=cur===TOTAL?'0.3':'1';
+}
+function navigate(dir){const n=cur+dir;if(n<1||n>TOTAL)return;goTo(n);}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')navigate(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')navigate(-1);
+});
+document.getElementById('btn-prev').style.opacity='0.3';
+</script>
+</body>
+</html>

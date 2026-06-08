@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NexusAI · Proyecto Integrador 2026</title>
+
+<!-- Tailwind (CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Inter font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Mermaid -->
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "base", themeVariables: {
+    primaryColor: "#ffffff", primaryTextColor: "#18181b", primaryBorderColor: "#e4e4e7",
+    lineColor: "#a1a1aa", secondaryColor: "#fafafa", tertiaryColor: "#fafafa",
+    fontFamily: "Inter, sans-serif"
+  }});
+  window.mermaid = mermaid;
+  document.addEventListener("DOMContentLoaded", () => mermaid.run());
+</script>
+
+<style>
+  :root {
+    --c-fg: #18181b;       /* zinc-900 */
+    --c-fg-muted: #52525b; /* zinc-600 */
+    --c-fg-subtle: #a1a1aa;/* zinc-400 */
+    --c-bg: #ffffff;
+    --c-bg-subtle: #fafafa;/* zinc-50 */
+    --c-border: #e4e4e7;   /* zinc-200 */
+    --c-primary: #4A7FD4;  /* primary del plugin */
+    --c-primary-soft: #eef2fb;
+    --c-primary-strong: #3d6ec0;
+    --c-accent: #7c3aed;   /* violet-600, complemento */
+    --c-success: #16a34a;
+    --c-success-soft: #f0fdf4;
+    --c-danger: #dc2626;
+    --c-danger-soft: #fef2f2;
+    --c-warning: #d97706;
+  }
+  html, body {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    color: var(--c-fg);
+    background: var(--c-bg);
+    overflow: hidden;
+    margin: 0;
+    height: 100vh;
+    width: 100vw;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+  /* Container del deck */
+  #deck {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+  }
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 5rem 7rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease;
+  }
+  .slide.is-active { opacity: 1; pointer-events: auto; }
+
+  /* Slide number bottom right */
+  .pageno {
+    position: absolute;
+    bottom: 2rem;
+    right: 3rem;
+    font-size: 0.75rem;
+    color: var(--c-fg-subtle);
+    letter-spacing: 0.05em;
+  }
+  .brand {
+    position: absolute;
+    bottom: 2rem;
+    left: 3rem;
+    font-size: 0.75rem;
+    color: var(--c-fg-subtle);
+    letter-spacing: 0.05em;
+  }
+
+  /* Section eyebrow (tag arriba del título) */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--c-border);
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--c-fg-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: var(--c-bg-subtle);
+  }
+
+  /* Headings */
+  .h1-display {
+    font-size: 5.5rem;
+    line-height: 1.02;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+  }
+  .h1 {
+    font-size: 3.5rem;
+    line-height: 1.05;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+  .h2 {
+    font-size: 2rem;
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .lead {
+    font-size: 1.25rem;
+    line-height: 1.5;
+    color: var(--c-fg-muted);
+    max-width: 64rem;
+  }
+
+  /* Cards */
+  .card {
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    background: #fff;
+    transition: border-color .12s, box-shadow .12s;
+  }
+  .card-soft {
+    background: var(--c-bg-subtle);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  /* Stat KPI big */
+  .kpi {
+    font-size: 4.5rem;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+  }
+  .kpi-label {
+    font-size: 0.85rem;
+    color: var(--c-fg-muted);
+    margin-top: 0.5rem;
+    line-height: 1.4;
+  }
+
+  /* Demo overlay */
+  .demo-card {
+    background: linear-gradient(180deg, var(--c-bg-subtle) 0%, #fff 100%);
+    border: 1.5px solid var(--c-border);
+    border-radius: 14px;
+  }
+  .demo-mock {
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  /* Mermaid contenedor */
+  .mermaid {
+    text-align: center;
+    font-size: 14px;
+  }
+
+  /* Overview (Esc) */
+  #overview {
+    position: fixed;
+    inset: 0;
+    background: rgba(24,24,27,0.92);
+    z-index: 50;
+    display: none;
+    padding: 3rem;
+    overflow: auto;
+    backdrop-filter: blur(8px);
+  }
+  #overview.is-open { display: block; }
+  #overview .ov-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  #overview .ov-tile {
+    aspect-ratio: 16/9;
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: transform .12s;
+    overflow: hidden;
+  }
+  #overview .ov-tile:hover { transform: scale(1.02); }
+  #overview .ov-tile .num {
+    font-family: "JetBrains Mono", monospace;
+    color: var(--c-primary);
+    font-weight: 600;
+    font-size: 0.65rem;
+  }
+  #overview .ov-tile .ttl {
+    font-weight: 600;
+    color: var(--c-fg);
+    margin-top: 0.4rem;
+    line-height: 1.2;
+  }
+
+  /* Help hint */
+  #help {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: var(--c-fg-subtle);
+    background: rgba(255,255,255,0.92);
+    border: 1px solid var(--c-border);
+    border-radius: 9999px;
+    padding: 0.35rem 1rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    backdrop-filter: blur(6px);
+    z-index: 40;
+    transition: opacity .3s;
+  }
+  #help.hidden-help { opacity: 0; pointer-events: none; }
+  #help kbd {
+    font-family: "JetBrains Mono", monospace;
+    background: var(--c-bg-subtle);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 0.05rem 0.4rem;
+    font-size: 0.65rem;
+  }
+
+  /* Print: each slide → page */
+  @media print {
+    html, body { overflow: visible !important; height: auto !important; }
+    #deck { position: static; }
+    #help, #overview { display: none !important; }
+    .slide {
+      position: relative !important;
+      inset: auto !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      page-break-after: always;
+      width: 100%;
+      height: 100vh;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="deck">
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 1 — PORTADA                                                -->
+  <!-- ============================================================== -->
+  <section class="slide is-active" data-slide="1">
+    <div class="flex items-center justify-between mb-12">
+      <span class="eyebrow">Proyecto Integrador · 2026</span>
+      <span class="mono text-xs text-zinc-400">UCC · Ingeniería en Sistemas</span>
+    </div>
+    <div class="flex-1 flex flex-col justify-center">
+      <h1 class="h1-display">Nexus<span style="color: var(--c-primary)">AI</span><span class="text-zinc-300">.</span></h1>
+      <p class="lead mt-6 max-w-3xl">
+        Un asistente académico con inteligencia artificial integrado en Moodle.
+        Responde sobre el material real del curso, genera quizzes de práctica
+        y le da al docente datos sobre qué temas no están cubiertos.
+      </p>
+      <div class="mt-16 flex gap-12">
+        <div>
+          <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Project Manager · Backend & AI</div>
+          <div class="text-2xl font-semibold mt-1">Santiago Tricherri</div>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Scrum Master · Frontend & RAG</div>
+          <div class="text-2xl font-semibold mt-1">Delfina Salinas</div>
+        </div>
+      </div>
+    </div>
+    <span class="brand">Universidad Católica de Córdoba · Facultad de Ingeniería</span>
+    <span class="pageno">01 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 2 — EL PROBLEMA                                            -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="2">
+    <span class="eyebrow mb-6">Punto de partida</span>
+    <h2 class="h1 max-w-4xl">Moodle hoy es un repositorio<br/>de archivos, no un asistente.</h2>
+    <p class="lead mt-8">
+      Las plataformas LMS son fundamentales en la universidad, pero en la
+      práctica se usan para descargar PDFs. Las consultas reales pasan por
+      otro lado: ChatGPT, WhatsApp, Drive.
+    </p>
+
+    <div class="grid grid-cols-3 gap-6 mt-16">
+      <div class="card">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Para el alumno</div>
+        <p class="mt-3 text-base text-zinc-700 leading-relaxed">
+          Las dudas van directo al docente o a ChatGPT genérico — sin
+          contexto del material real del curso.
+        </p>
+      </div>
+      <div class="card">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Para el docente</div>
+        <p class="mt-3 text-base text-zinc-700 leading-relaxed">
+          No tiene visibilidad de qué le preguntan a la IA sus alumnos,
+          ni qué temas le faltan al material que subió.
+        </p>
+      </div>
+      <div class="card">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Para la institución</div>
+        <p class="mt-3 text-base text-zinc-700 leading-relaxed">
+          Datos académicos en servicios SaaS externos. Cero soberanía
+          sobre cómo se procesa el contenido.
+        </p>
+      </div>
+    </div>
+    <span class="pageno">02 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 3 — EVIDENCIA                                              -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="3">
+    <span class="eyebrow mb-6">Diagnóstico</span>
+    <h2 class="h1 max-w-4xl">Los datos del relevamiento UCC<br/>confirman el problema.</h2>
+
+    <div class="grid grid-cols-2 gap-16 mt-16 items-start">
+      <div>
+        <div class="kpi" style="color: var(--c-primary)">+70%</div>
+        <div class="kpi-label max-w-md">
+          de los estudiantes encuestados reporta dificultades para
+          encontrar información, dispersa entre Moodle, WhatsApp y Drive.
+        </div>
+        <div class="text-xs text-zinc-400 mt-4 mono">Relevamiento UCC · 2026</div>
+      </div>
+
+      <div>
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium mb-4">
+          Funcionalidades más solicitadas
+        </div>
+        <ol class="space-y-3">
+          <li class="flex items-center gap-4">
+            <span class="mono text-zinc-300 text-sm w-6">#1</span>
+            <span class="text-base">Asistente que responde dudas de la materia</span>
+          </li>
+          <li class="flex items-center gap-4">
+            <span class="mono text-zinc-300 text-sm w-6">#2</span>
+            <span class="text-base">Buscador inteligente de documentos</span>
+          </li>
+          <li class="flex items-center gap-4">
+            <span class="mono text-zinc-300 text-sm w-6">#3</span>
+            <span class="text-base">Generación automática de quizzes y resúmenes</span>
+          </li>
+          <li class="flex items-center gap-4">
+            <span class="mono text-zinc-300 text-sm w-6">#4</span>
+            <span class="text-base">Detección de temas que faltan en el material</span>
+          </li>
+        </ol>
+      </div>
+    </div>
+    <span class="pageno">03 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 4 — SOLUCIÓN                                               -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="4">
+    <span class="eyebrow mb-6">La solución</span>
+    <h2 class="h1 max-w-4xl">NexusAI es un plugin Moodle con<br/>un asistente IA que responde sobre tu material.</h2>
+
+    <div class="grid grid-cols-2 gap-8 mt-12">
+      <div class="card">
+        <div class="text-sm font-semibold text-zinc-900 mb-2">RAG auténtico con citas trazables</div>
+        <p class="text-sm text-zinc-600 leading-relaxed">
+          Cada respuesta enlaza al fragmento exacto del material del curso.
+          Si la pregunta no se puede responder con el material disponible,
+          el sistema lo admite — no inventa.
+        </p>
+      </div>
+      <div class="card">
+        <div class="text-sm font-semibold text-zinc-900 mb-2">Self-hosted, datos en la institución</div>
+        <p class="text-sm text-zinc-600 leading-relaxed">
+          El patrón Hybrid PHP Proxy garantiza que la API key del LLM nunca
+          llega al navegador. Datos académicos en infra controlada por la
+          institución.
+        </p>
+      </div>
+      <div class="card">
+        <div class="text-sm font-semibold text-zinc-900 mb-2">Multi-curso opcional</div>
+        <p class="text-sm text-zinc-600 leading-relaxed">
+          El alumno puede consultar el material de todos sus cursos a la
+          vez. Las respuestas citan la materia de cada fragmento.
+        </p>
+      </div>
+      <div class="card">
+        <div class="text-sm font-semibold text-zinc-900 mb-2">Feedback loop al docente</div>
+        <p class="text-sm text-zinc-600 leading-relaxed">
+          El sistema mide su propia ceguera: registra preguntas que no
+          pudo responder y se las muestra al docente para mejorar el
+          material.
+        </p>
+      </div>
+    </div>
+    <span class="pageno">04 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 5 — ARQUITECTURA                                           -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="5">
+    <span class="eyebrow mb-6">Arquitectura</span>
+    <h2 class="h1 max-w-4xl">Tres capas, una sola base de datos,<br/>HMAC server-to-server.</h2>
+
+    <div class="mt-8 mermaid">
+flowchart LR
+    A["Navegador<br/>(React 18)"] -->|"core/ajax + sesskey"| B["Plugin Moodle<br/>(PHP)"]
+    B -->|"cURL + HMAC SHA-256"| C["Backend<br/>FastAPI"]
+    C -.->|"SQL + Vector"| D[("PostgreSQL<br/>+ pgvector")]
+    C -.-> E[("Redis<br/>nonces + cache")]
+    C -->|"API key"| F["LLM Provider<br/>(Gemini · OpenAI · Ollama)"]
+    style A fill:#fff,stroke:#4A7FD4
+    style B fill:#fff,stroke:#a1a1aa
+    style C fill:#fff,stroke:#4A7FD4,stroke-width:2px
+    style F fill:#fff,stroke:#a1a1aa
+    </div>
+
+    <div class="grid grid-cols-3 gap-6 mt-10">
+      <div class="card-soft">
+        <div class="text-xs uppercase tracking-wider text-zinc-500 font-semibold">Hybrid PHP Proxy</div>
+        <p class="text-sm text-zinc-600 mt-2 leading-relaxed">
+          La API key del LLM nunca toca el navegador.
+        </p>
+      </div>
+      <div class="card-soft">
+        <div class="text-xs uppercase tracking-wider text-zinc-500 font-semibold">Multi-provider LLM</div>
+        <p class="text-sm text-zinc-600 mt-2 leading-relaxed">
+          Switch entre Gemini, OpenAI o Ollama con solo cambiar variables de entorno.
+        </p>
+      </div>
+      <div class="card-soft">
+        <div class="text-xs uppercase tracking-wider text-zinc-500 font-semibold">Una sola DB</div>
+        <p class="text-sm text-zinc-600 mt-2 leading-relaxed">
+          PostgreSQL con pgvector. Filtros SQL + búsqueda vectorial en una sola query.
+        </p>
+      </div>
+    </div>
+    <span class="pageno">05 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 6 — STACK                                                  -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="6">
+    <span class="eyebrow mb-6">Stack tecnológico</span>
+    <h2 class="h1 max-w-4xl">Cinco tecnologías, todas estándar.</h2>
+
+    <div class="grid grid-cols-5 gap-4 mt-16">
+      <div class="card text-center">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Frontend</div>
+        <div class="text-3xl font-bold mt-3" style="color: var(--c-primary)">React 18</div>
+        <div class="text-xs text-zinc-500 mt-3 leading-relaxed">
+          Webpack bundle AMD embebido en el plugin Moodle. Sin chunks lazy.
+        </div>
+      </div>
+      <div class="card text-center">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Plugin</div>
+        <div class="text-3xl font-bold mt-3" style="color: var(--c-primary)">PHP 8</div>
+        <div class="text-xs text-zinc-500 mt-3 leading-relaxed">
+          Tipo <code class="mono">local</code>. Hook API en 4.4+, callback legacy en 4.1-4.3.
+        </div>
+      </div>
+      <div class="card text-center">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Backend IA</div>
+        <div class="text-3xl font-bold mt-3" style="color: var(--c-primary)">FastAPI</div>
+        <div class="text-xs text-zinc-500 mt-3 leading-relaxed">
+          Python 3.11. Async + tipado. Monolito modular (ADR-001).
+        </div>
+      </div>
+      <div class="card text-center">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Vectores</div>
+        <div class="text-3xl font-bold mt-3" style="color: var(--c-primary)">pgvector</div>
+        <div class="text-xs text-zinc-500 mt-3 leading-relaxed">
+          HNSW index con distancia coseno sobre PostgreSQL 16.
+        </div>
+      </div>
+      <div class="card text-center">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">LLM</div>
+        <div class="text-3xl font-bold mt-3" style="color: var(--c-primary)">Gemini 2.5</div>
+        <div class="text-xs text-zinc-500 mt-3 leading-relaxed">
+          Flash en MVP (tier gratuito). GPT-4o-mini en producción.
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-12 text-center">
+      <span class="eyebrow">6 ADRs · 5 diagramas Mermaid · 47 documentos de investigación</span>
+    </div>
+    <span class="pageno">06 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 7 — DEMO INTRO                                             -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="7" style="background: var(--c-bg-subtle)">
+    <div class="flex-1 flex flex-col items-center justify-center text-center">
+      <span class="eyebrow mb-6">Demo en vivo</span>
+      <h2 class="h1 max-w-4xl text-center">Vamos a verlo funcionando.</h2>
+      <p class="lead mt-8 text-center max-w-3xl">
+        Cinco minutos: subimos un PDF como docente, hacemos consultas
+        como alumno con citas trazables, generamos un quiz de práctica
+        y vemos el reporte de gaps detectados.
+      </p>
+
+      <div class="mt-16 grid grid-cols-2 gap-12 max-w-3xl">
+        <div class="card text-left">
+          <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium mb-2">Backend en producción</div>
+          <div class="mono text-sm break-all" style="color: var(--c-primary)">
+            nexusai-production-e414.up.railway.app
+          </div>
+        </div>
+        <div class="card text-left">
+          <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium mb-2">Moodle local de demo</div>
+          <div class="mono text-sm">
+            localhost:8082
+          </div>
+        </div>
+      </div>
+    </div>
+    <span class="pageno">07 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 8 — DEMO FLOW                                              -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="8">
+    <span class="eyebrow mb-6">Demo · flujo</span>
+    <h2 class="h1 max-w-4xl">Lo que vamos a mostrar.</h2>
+
+    <div class="grid grid-cols-2 gap-8 mt-12">
+      <div class="card-soft">
+        <div class="text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-3">Rol docente</div>
+        <ol class="space-y-3 text-sm text-zinc-700">
+          <li class="flex gap-3"><span class="mono text-zinc-300 w-4">1</span>Subir un PDF al curso</li>
+          <li class="flex gap-3"><span class="mono text-zinc-300 w-4">2</span>Ver la indexación en tiempo real</li>
+          <li class="flex gap-3"><span class="mono text-zinc-300 w-4">3</span>Revisar la pestaña "Gaps detectados"</li>
+        </ol>
+      </div>
+      <div class="card-soft">
+        <div class="text-xs uppercase tracking-wider text-zinc-500 font-semibold mb-3">Rol alumno</div>
+        <ol class="space-y-3 text-sm text-zinc-700">
+          <li class="flex gap-3"><span class="mono text-zinc-300 w-4">4</span>Chat con respuesta streaming</li>
+          <li class="flex gap-3"><span class="mono text-zinc-300 w-4">5</span>Citas clickeables → ver fragmento exacto</li>
+          <li class="flex gap-3"><span class="mono text-zinc-300 w-4">6</span>Pestaña Buscador: retrieval sin LLM</li>
+          <li class="flex gap-3"><span class="mono text-zinc-300 w-4">7</span>Quiz generator: 3 preguntas + score</li>
+          <li class="flex gap-3"><span class="mono text-zinc-300 w-4">8</span>Toggle multi-curso</li>
+        </ol>
+      </div>
+    </div>
+    <span class="pageno">08 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 9 — SPRINTS                                                -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="9">
+    <span class="eyebrow mb-6">Cómo lo construimos</span>
+    <h2 class="h1 max-w-4xl">Cinco sprints, dos personas,<br/>290 story points planificados.</h2>
+
+    <div class="space-y-3 mt-12">
+      <div class="grid grid-cols-12 gap-4 items-center">
+        <div class="col-span-2 mono text-xs text-zinc-400">9 - 22 Abr</div>
+        <div class="col-span-3 text-sm font-semibold">Sprint 0 · Setup e Investigación</div>
+        <div class="col-span-5 text-sm text-zinc-600">47 documentos de investigación, 6 ADRs, entorno completo</div>
+        <div class="col-span-2 text-right mono text-xs text-zinc-400">60 SP</div>
+      </div>
+      <div class="border-t border-zinc-100"></div>
+      <div class="grid grid-cols-12 gap-4 items-center">
+        <div class="col-span-2 mono text-xs text-zinc-400">23 Abr - 6 May</div>
+        <div class="col-span-3 text-sm font-semibold">Sprint 1 · Core chat</div>
+        <div class="col-span-5 text-sm text-zinc-600">Backend FastAPI, plugin base, React widget, HMAC funcionando</div>
+        <div class="col-span-2 text-right mono text-xs text-zinc-400">45 / 50 SP</div>
+      </div>
+      <div class="border-t border-zinc-100"></div>
+      <div class="grid grid-cols-12 gap-4 items-center">
+        <div class="col-span-2 mono text-xs text-zinc-400">7 - 20 May</div>
+        <div class="col-span-3 text-sm font-semibold">Sprint 2 · RAG completo</div>
+        <div class="col-span-5 text-sm text-zinc-600">Pipeline de indexación, vista docente, retrieval con pgvector</div>
+        <div class="col-span-2 text-right mono text-xs text-zinc-400">55 / 60 SP</div>
+      </div>
+      <div class="border-t border-zinc-100"></div>
+      <div class="grid grid-cols-12 gap-4 items-center">
+        <div class="col-span-2 mono text-xs text-zinc-400">21 - 27 May</div>
+        <div class="col-span-3 text-sm font-semibold">Sprint 3 · Calidad</div>
+        <div class="col-span-5 text-sm text-zinc-600">Retry, rate limiting, logging JSON, CI/CD inicial</div>
+        <div class="col-span-2 text-right mono text-xs text-zinc-400">25 / 25 SP</div>
+      </div>
+      <div class="border-t border-zinc-100"></div>
+      <div class="grid grid-cols-12 gap-4 items-center" style="background: var(--c-primary-soft); margin: 0 -1rem; padding: 0.5rem 1rem; border-radius: 8px;">
+        <div class="col-span-2 mono text-xs text-zinc-500">28 May - 1 Jun</div>
+        <div class="col-span-3 text-sm font-semibold">Sprint 4 · MVP completo</div>
+        <div class="col-span-5 text-sm text-zinc-700">7 features: Search, Multi-curso, Streaming, Citas, Historial, Quiz, Gaps</div>
+        <div class="col-span-2 text-right mono text-xs font-semibold" style="color: var(--c-primary)">70 / 70 SP</div>
+      </div>
+    </div>
+
+    <div class="mt-12 grid grid-cols-4 gap-8">
+      <div>
+        <div class="kpi" style="color: var(--c-primary)">96%</div>
+        <div class="kpi-label">Velocity promedio</div>
+      </div>
+      <div>
+        <div class="kpi">255</div>
+        <div class="kpi-label">SP completados / 265 planificados</div>
+      </div>
+      <div>
+        <div class="kpi">70+</div>
+        <div class="kpi-label">Historias de usuario cerradas</div>
+      </div>
+      <div>
+        <div class="kpi">~250</div>
+        <div class="kpi-label">Commits al repositorio</div>
+      </div>
+    </div>
+    <span class="pageno">09 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 10 — DEPLOY                                                -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="10">
+    <span class="eyebrow mb-6">Deploy en producción</span>
+    <h2 class="h1 max-w-4xl">El backend está vivo en Railway,<br/>el plugin es un ZIP descargable.</h2>
+
+    <div class="grid grid-cols-2 gap-10 mt-12">
+      <div class="card">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium mb-3">Backend en producción</div>
+        <div class="text-2xl font-bold mb-4" style="color: var(--c-primary)">Railway</div>
+        <div class="space-y-2 text-sm text-zinc-600">
+          <div class="flex gap-3"><span class="text-zinc-400 mono w-20">URL</span><span class="mono text-xs" style="color: var(--c-primary)">nexusai-production-e414.up.railway.app</span></div>
+          <div class="flex gap-3"><span class="text-zinc-400 mono w-20">Stack</span><span>FastAPI + Postgres 16 + pgvector + Redis</span></div>
+          <div class="flex gap-3"><span class="text-zinc-400 mono w-20">Costo</span><span class="font-semibold">$0 / mes</span> <span class="text-zinc-400">(free tier $5/mes disponible)</span></div>
+          <div class="flex gap-3"><span class="text-zinc-400 mono w-20">CI/CD</span><span>Autodeploy desde <code class="mono">main</code> en GitHub</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium mb-3">Distribución del plugin</div>
+        <div class="text-2xl font-bold mb-4" style="color: var(--c-primary)">GitHub Release</div>
+        <div class="space-y-2 text-sm text-zinc-600">
+          <div class="flex gap-3"><span class="text-zinc-400 mono w-20">Versión</span><span class="mono">v0.9.3</span></div>
+          <div class="flex gap-3"><span class="text-zinc-400 mono w-20">Tamaño</span><span class="mono">192 KB</span></div>
+          <div class="flex gap-3"><span class="text-zinc-400 mono w-20">Compat</span><span>Moodle 4.1 LTS hasta 4.5</span></div>
+          <div class="flex gap-3"><span class="text-zinc-400 mono w-20">Install</span><span>Site administration → Install plugins → ZIP</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-10 card-soft">
+      <div class="text-sm leading-relaxed text-zinc-700">
+        Cualquier admin de Moodle 4.x del mundo puede descargar el ZIP,
+        instalarlo en su plataforma y configurarlo con la URL del backend.
+        El sistema arranca sin instalar nada del lado servidor.
+      </div>
+    </div>
+    <span class="pageno">10 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 11 — MÉTRICAS                                              -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="11">
+    <span class="eyebrow mb-6">Métricas del MVP</span>
+    <h2 class="h1 max-w-4xl">Cómo medimos la calidad.</h2>
+
+    <div class="grid grid-cols-4 gap-8 mt-16">
+      <div class="card">
+        <div class="kpi" style="color: var(--c-primary)">37</div>
+        <div class="kpi-label">tests automatizados<br/>en backend Python</div>
+      </div>
+      <div class="card">
+        <div class="kpi" style="color: var(--c-primary)">51</div>
+        <div class="kpi-label">casos de testing manual<br/>cubriendo 9 áreas</div>
+      </div>
+      <div class="card">
+        <div class="kpi" style="color: var(--c-primary)">~80%</div>
+        <div class="kpi-label">cobertura<br/>de tests backend</div>
+      </div>
+      <div class="card">
+        <div class="kpi" style="color: var(--c-primary)">&lt;1s</div>
+        <div class="kpi-label">primer token<br/>en streaming SSE</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-8 mt-12">
+      <div>
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Performance</div>
+        <ul class="mt-3 space-y-2 text-sm text-zinc-700">
+          <li>Latencia chat completo: 3-6s</li>
+          <li>Latencia buscador puro: 0.3-0.8s</li>
+          <li>Indexación PDF 50p: ~30-50s</li>
+        </ul>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Costos del MVP</div>
+        <ul class="mt-3 space-y-2 text-sm text-zinc-700">
+          <li>Backend Railway: <span class="font-semibold">$0/mes</span></li>
+          <li>LLM Gemini: <span class="font-semibold">$0/mes</span> (free tier)</li>
+          <li>Producción 500 alumnos: ~$100/mes</li>
+        </ul>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Cobertura funcional</div>
+        <ul class="mt-3 space-y-2 text-sm text-zinc-700">
+          <li>7 features del MVP entregadas</li>
+          <li>16 endpoints HTTP en backend</li>
+          <li>10 External Functions en plugin</li>
+        </ul>
+      </div>
+    </div>
+    <span class="pageno">11 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 12 — LECCIONES                                             -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="12">
+    <span class="eyebrow mb-6">Lecciones aprendidas</span>
+    <h2 class="h1 max-w-4xl">Lo que volveríamos a hacer<br/>y lo que cambiaríamos.</h2>
+
+    <div class="grid grid-cols-2 gap-10 mt-12">
+      <div>
+        <div class="text-sm font-semibold mb-4" style="color: var(--c-success)">+ Volveríamos a hacer</div>
+        <div class="space-y-4">
+          <div class="card">
+            <div class="text-sm font-medium">Investigar mucho al inicio</div>
+            <p class="text-xs text-zinc-600 mt-1 leading-relaxed">Las 8 semanas de Sprint 0 con 47 documentos ahorraron meses de refactor después.</p>
+          </div>
+          <div class="card">
+            <div class="text-sm font-medium">Documentar con ADRs desde el día uno</div>
+            <p class="text-xs text-zinc-600 mt-1 leading-relaxed">Discusiones zanjadas no se re-discuten. Material académico defendible.</p>
+          </div>
+          <div class="card">
+            <div class="text-sm font-medium">Monolito modular sobre microservicios</div>
+            <p class="text-xs text-zinc-600 mt-1 leading-relaxed">Para 2 personas y plazo fijo, no había otra opción razonable.</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="text-sm font-semibold mb-4" style="color: var(--c-warning)">− Cambiaríamos</div>
+        <div class="space-y-4">
+          <div class="card">
+            <div class="text-sm font-medium">Tests automatizados desde el sprint 1</div>
+            <p class="text-xs text-zinc-600 mt-1 leading-relaxed">Entraron en Sprint 3 — deberían haber estado desde el inicio.</p>
+          </div>
+          <div class="card">
+            <div class="text-sm font-medium">Demos internas por sprint</div>
+            <p class="text-xs text-zinc-600 mt-1 leading-relaxed">Las hicimos en Sprint 2 y 4 — debería haber sido obligatorio en cada uno.</p>
+          </div>
+          <div class="card">
+            <div class="text-sm font-medium">CI/CD desde la primera semana</div>
+            <p class="text-xs text-zinc-600 mt-1 leading-relaxed">Lo deployamos en Sprint 3 — debería haber sido en Sprint 0.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <span class="pageno">12 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 13 — TRABAJO FUTURO                                        -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="13">
+    <span class="eyebrow mb-6">Trabajo futuro</span>
+    <h2 class="h1 max-w-4xl">El MVP es entregable.<br/>El roadmap está claro.</h2>
+
+    <div class="grid grid-cols-3 gap-6 mt-16">
+      <div class="card">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium mb-2">Inmediato</div>
+        <div class="text-base font-semibold mb-3">Plugin Directory de Moodle</div>
+        <p class="text-sm text-zinc-600 leading-relaxed">
+          Submission a moodle.org/plugins para defendibilidad académica
+          adicional. Mediana de revisión: 8 días.
+        </p>
+      </div>
+      <div class="card">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium mb-2">Corto plazo</div>
+        <div class="text-base font-semibold mb-3">Analytics para el alumno</div>
+        <p class="text-sm text-zinc-600 leading-relaxed">
+          Hoy el docente ve gaps. El alumno necesita su propio dashboard:
+          temas más consultados, tokens usados, sesiones.
+        </p>
+      </div>
+      <div class="card">
+        <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium mb-2">Mediano plazo</div>
+        <div class="text-base font-semibold mb-3">Pilotos UCC reales</div>
+        <p class="text-sm text-zinc-600 leading-relaxed">
+          Instalar el plugin en cursos reales y medir métricas de uso e
+          impacto pedagógico durante un cuatrimestre completo.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-12 card-soft">
+      <div class="text-sm text-zinc-700 leading-relaxed">
+        <span class="font-semibold">Investigación futura:</span> clustering
+        semántico de gaps (no string), sugerencias proactivas al alumno
+        basadas en su historial, planes de estudio adaptativos combinando
+        gaps + quiz scores, fine-tuning del LLM con material del curso.
+      </div>
+    </div>
+    <span class="pageno">13 / 14</span>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 14 — CIERRE                                                -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="14">
+    <div class="flex-1 flex flex-col items-center justify-center text-center">
+      <span class="eyebrow mb-6">Cierre</span>
+      <h2 class="h1-display max-w-5xl text-center" style="font-size: 4.5rem">Gracias.</h2>
+      <p class="lead mt-8 text-center max-w-3xl">
+        NexusAI está en producción, es entregable, y se puede instalar
+        en cualquier Moodle 4.x del mundo apuntando al backend que
+        mantenemos en Railway.
+      </p>
+
+      <div class="mt-12 grid grid-cols-3 gap-8 max-w-4xl">
+        <div class="text-left">
+          <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Repo</div>
+          <div class="mono text-xs mt-1 break-all" style="color: var(--c-primary)">github.com/nexusai-ucc/nexusAI</div>
+        </div>
+        <div class="text-left">
+          <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Backend</div>
+          <div class="mono text-xs mt-1 break-all" style="color: var(--c-primary)">nexusai-production-e414.up.railway.app</div>
+        </div>
+        <div class="text-left">
+          <div class="text-xs uppercase tracking-wider text-zinc-400 font-medium">Release</div>
+          <div class="mono text-xs mt-1" style="color: var(--c-primary)">v0.9.3 · 192 KB</div>
+        </div>
+      </div>
+
+      <div class="mt-16 text-sm text-zinc-500">¿Preguntas?</div>
+    </div>
+    <span class="pageno">14 / 14</span>
+  </section>
+
+</div>
+
+<!-- Overview Esc -->
+<div id="overview">
+  <div class="text-white text-sm uppercase tracking-widest mb-6">Slides — presionar Esc para volver</div>
+  <div class="ov-grid" id="ov-grid"></div>
+</div>
+
+<!-- Help hint -->
+<div id="help">
+  <span><kbd>←</kbd><kbd>→</kbd> navegar</span>
+  <span><kbd>Espacio</kbd> avanzar</span>
+  <span><kbd>F</kbd> fullscreen</span>
+  <span><kbd>Esc</kbd> overview</span>
+  <span><kbd>P</kbd> imprimir</span>
+</div>
+
+<script>
+  const slides = document.querySelectorAll(".slide");
+  const total = slides.length;
+  let current = 0;
+
+  function show(i) {
+    if (i < 0) i = 0;
+    if (i >= total) i = total - 1;
+    slides[current].classList.remove("is-active");
+    slides[i].classList.add("is-active");
+    current = i;
+    history.replaceState(null, "", "#" + (i + 1));
+  }
+
+  function next() { if (current < total - 1) show(current + 1); }
+  function prev() { if (current > 0) show(current - 1); }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+
+  // Overview
+  const ov = document.getElementById("overview");
+  const ovGrid = document.getElementById("ov-grid");
+  function buildOverview() {
+    ovGrid.innerHTML = "";
+    slides.forEach((s, idx) => {
+      const tile = document.createElement("div");
+      tile.className = "ov-tile";
+      const num = String(idx + 1).padStart(2, "0");
+      // Extract slide title (first h1/h2)
+      const heading = s.querySelector("h1, h2");
+      const title = heading ? heading.textContent.trim().slice(0, 80) : "(sin título)";
+      tile.innerHTML = `<div class="num">${num} / ${String(total).padStart(2, "0")}</div><div class="ttl">${title}</div>`;
+      tile.addEventListener("click", () => { show(idx); closeOverview(); });
+      ovGrid.appendChild(tile);
+    });
+  }
+  function openOverview() { buildOverview(); ov.classList.add("is-open"); }
+  function closeOverview() { ov.classList.remove("is-open"); }
+
+  // Keyboard
+  document.addEventListener("keydown", (e) => {
+    if (ov.classList.contains("is-open")) {
+      if (e.key === "Escape") closeOverview();
+      return;
+    }
+    if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); next(); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); prev(); }
+    else if (e.key === "Home") show(0);
+    else if (e.key === "End") show(total - 1);
+    else if (e.key.toLowerCase() === "f") toggleFullscreen();
+    else if (e.key === "Escape") openOverview();
+    else if (e.key.toLowerCase() === "p") window.print();
+  });
+
+  // Click navigation
+  document.addEventListener("click", (e) => {
+    if (ov.classList.contains("is-open")) return;
+    const w = window.innerWidth;
+    if (e.clientX > w / 2) next(); else prev();
+  });
+
+  // Hash navigation
+  function fromHash() {
+    const m = location.hash.match(/^#(\d+)/);
+    if (m) show(parseInt(m[1], 10) - 1);
+  }
+  window.addEventListener("hashchange", fromHash);
+  fromHash();
+
+  // Auto-hide help after 5s
+  setTimeout(() => document.getElementById("help").classList.add("hidden-help"), 5000);
+  document.addEventListener("mousemove", () => {
+    const h = document.getElementById("help");
+    h.classList.remove("hidden-help");
+    clearTimeout(window._ht);
+    window._ht = setTimeout(() => h.classList.add("hidden-help"), 3000);
+  });
+</script>
+
+</body>
+</html>
