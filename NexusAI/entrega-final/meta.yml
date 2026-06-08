@@ -1,0 +1,44 @@
+---
+title: "NexusAI"
+subtitle: "Asistente académico con IA integrado en Moodle"
+author:
+  - "Santiago Tricherri"
+  - "Delfina Salinas"
+date: "2026"
+institute: "Universidad Católica de Córdoba — Ingeniería en Sistemas"
+subject: "Proyecto Integrador — Administración de Proyectos de Software"
+documentclass: report
+classoption:
+  - 11pt
+  - oneside
+geometry:
+  - margin=2.5cm
+  - a4paper
+mainfont: "Helvetica"
+monofont: "Menlo"
+toc: true
+toc-depth: 3
+numbersections: true
+secnumdepth: 3
+linkcolor: "blue!60!black"
+urlcolor: "blue!60!black"
+toccolor: "black"
+header-includes:
+  - \usepackage{graphicx}
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \fancyhead[L]{NexusAI — Entrega final}
+  - \fancyhead[R]{\thepage}
+  - \fancyfoot[C]{UCC · Ingeniería en Sistemas · 2026}
+  - \providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+  - \providecommand{\pandocbounded}[1]{#1}
+  - \providecommand{\xmpquote}[1]{#1}
+  - \providecommand{\xmpcomma}{,}
+  - \providecommand{\real}[1]{#1}
+abstract: |
+  TODO — Resumen ejecutivo del proyecto NexusAI: asistente académico
+  basado en IA con RAG real sobre el material de cada curso, integrado
+  como plugin de Moodle. Este documento presenta la entrega final del
+  proyecto correspondiente a la asignatura Administración de Proyectos
+  de Software.
+---

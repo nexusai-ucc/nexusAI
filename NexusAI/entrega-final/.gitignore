@@ -1,0 +1,23 @@
+# PDF compilado — se regenera con build.sh
+*.pdf
+
+# Archivos temporales de Pandoc / LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+
+# Mermaid filter cache
+.mermaid-filter-cache/
+
+# macOS
+.DS_Store
+
+# Editores
+*.swp
+*~

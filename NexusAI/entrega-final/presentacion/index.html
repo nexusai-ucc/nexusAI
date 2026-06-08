@@ -1,0 +1,1354 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NexusAI · Entrega Final del MVP</title>
+
+<!-- Inter (display + body) + Archivo (display alternativo)  -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Archivo:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Mermaid -->
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: false, theme: "base", themeVariables: {
+    primaryColor: "#f5efde", primaryTextColor: "#1f3158", primaryBorderColor: "#1f3158",
+    lineColor: "#1f3158", secondaryColor: "#ece5d4", tertiaryColor: "#ece5d4",
+    fontFamily: "Inter, sans-serif", fontSize: "13px"
+  }});
+  window.mermaid = mermaid;
+  document.addEventListener("DOMContentLoaded", () => mermaid.run());
+</script>
+
+<style>
+  :root {
+    --c-cream:        #ece5d4;
+    --c-cream-soft:   #f5efde;
+    --c-cream-card:   #ffffff;
+    --c-navy:         #1f3158;
+    --c-navy-soft:    #3b5078;
+    --c-navy-muted:   #6c7a98;
+    --c-navy-pale:    #c8d0e0;
+    --c-ink:          #1a1a1a;
+    --c-line:         #d6cdb7;
+    --c-line-strong:  #c0b69a;
+  }
+  * { box-sizing: border-box; }
+  /* ============================================================
+     RESPONSIVE: el rem base escala con el viewport
+     - 1366x768 (laptop)    → ~14.5px
+     - 1600x900             → ~17px
+     - 1920x1080 (Full HD)  → ~20.5px
+     - 2560x1440 (QHD)      → ~25px
+     - iPad 1024x768        → ~13px
+     - mobile 414x896       → ~12px
+     Toda la tipografía y paddings escalan en bloque. */
+  html {
+    font-size: clamp(11px, calc(0.55vw + 0.55vh + 4px), 26px);
+  }
+  html, body {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    color: var(--c-navy);
+    background: var(--c-cream);
+    overflow: hidden;
+    margin: 0;
+    height: 100vh;
+    width: 100vw;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+  .display { font-family: "Archivo", "Inter", sans-serif; }
+
+  /* Container del deck */
+  #deck { position: fixed; inset: 0; overflow: hidden; }
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 2.5rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+    overflow: hidden;
+  }
+  .slide.is-active { opacity: 1; pointer-events: auto; }
+  .slide.cover {
+    background: var(--c-cream);
+    justify-content: center;
+    align-items: center;
+    padding: 4rem;
+  }
+
+  /* Tarjeta de portada (estilo CHANGAPP) */
+  .cover-card {
+    width: 100%;
+    max-width: min(1180px, 92vw);
+    background: var(--c-cream-soft);
+    border-radius: 32px;
+    padding: clamp(2rem, 4.5vw, 4.5rem) clamp(2rem, 5vw, 5rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: 0 4px 24px rgba(31, 49, 88, 0.08);
+  }
+
+  /* Display gigante de la portada — fluid font-size */
+  .cover-title {
+    font-family: "Archivo", sans-serif;
+    font-weight: 900;
+    font-size: clamp(3.5rem, 9vw, 9.5rem);
+    line-height: 0.92;
+    color: var(--c-navy);
+    letter-spacing: -0.04em;
+    margin: 0;
+  }
+
+  .cover-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 1.5rem;
+    gap: 3rem;
+  }
+  .cover-subtitle {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 1.7rem;
+    line-height: 1.25;
+    color: var(--c-navy);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    max-width: 32rem;
+  }
+  .ucc-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--c-navy);
+    color: #f5efde;
+    padding: 0.55rem 1.1rem 0.55rem 0.65rem;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .ucc-logo .ucc-mark {
+    font-family: "Archivo", sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    background: #f5efde;
+    color: var(--c-navy);
+    padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+  }
+  .ucc-logo .ucc-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.05;
+  }
+  .ucc-logo .ucc-line-1 {
+    font-family: "Archivo", sans-serif;
+    font-weight: 800;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+  }
+  .ucc-logo .ucc-line-2 {
+    font-family: "Archivo", sans-serif;
+    font-weight: 800;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+  }
+  .ucc-logo .ucc-line-3 {
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+    margin-top: 0.15rem;
+    opacity: 0.85;
+  }
+
+  .cover-separator-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    gap: 2rem;
+    margin-top: 3.5rem;
+    padding-top: 2rem;
+    border-top: 0;
+  }
+  .cover-tag {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c-navy);
+  }
+  .cover-divider {
+    color: var(--c-navy);
+    font-weight: 700;
+  }
+  .cover-dots {
+    margin-top: 1.5rem;
+    color: var(--c-navy);
+    font-size: 0.95rem;
+    letter-spacing: 0.15em;
+    line-height: 0.8;
+    text-align: center;
+    user-select: none;
+  }
+
+  /* Slides normales */
+  .slide:not(.cover) {
+    background: var(--c-cream);
+    justify-content: flex-start;
+  }
+  .slide-card {
+    flex: 1;
+    background: var(--c-cream-soft);
+    border-radius: 22px;
+    padding: 2.75rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: hidden;
+    min-height: 0;
+  }
+  /* Cuerpo principal del card — centra verticalmente todo lo que NO
+     sea el footer. JS lo crea automáticamente al cargar. */
+  .slide-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--c-navy-soft);
+    padding-bottom: 0.45rem;
+    border-bottom: 2px solid var(--c-line-strong);
+    width: max-content;
+    margin-bottom: 0;
+  }
+
+  .h-display {
+    font-family: "Archivo", sans-serif;
+    font-weight: 800;
+    font-size: 4rem;
+    line-height: 1.02;
+    color: var(--c-navy);
+    letter-spacing: -0.025em;
+    margin: 0;
+  }
+  .h-section {
+    font-family: "Archivo", sans-serif;
+    font-weight: 700;
+    font-size: 2.5rem;
+    line-height: 1.1;
+    color: var(--c-navy);
+    margin: 0;
+  }
+  .lead {
+    font-family: "Inter", sans-serif;
+    font-weight: 400;
+    font-size: 1.55rem;
+    line-height: 1.45;
+    color: var(--c-navy-soft);
+    max-width: 64rem;
+    margin-top: 1.25rem;
+  }
+
+  /* Cards interior */
+  .card {
+    background: var(--c-cream-card);
+    border: 1px solid var(--c-line);
+    border-radius: 12px;
+    padding: 1.35rem 1.6rem;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .card-soft {
+    background: rgba(255,255,255,0.55);
+    border: 1px solid var(--c-line);
+    border-radius: 12px;
+    padding: 1.35rem 1.6rem;
+  }
+  .card-navy {
+    background: var(--c-navy);
+    color: var(--c-cream-soft);
+    border-radius: 12px;
+    padding: 1.35rem 1.6rem;
+  }
+  .card-navy .label { color: var(--c-cream); opacity: 0.7; }
+
+  .card-title {
+    font-family: "Archivo", sans-serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: var(--c-navy);
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+  .card-body {
+    font-family: "Inter", sans-serif;
+    font-size: 1.2rem;
+    color: var(--c-navy-soft);
+    line-height: 1.5;
+  }
+  .label {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--c-navy-muted);
+  }
+
+  /* KPIs */
+  .kpi {
+    font-family: "Archivo", sans-serif;
+    font-weight: 800;
+    font-size: 5.25rem;
+    line-height: 1;
+    color: var(--c-navy);
+    letter-spacing: -0.04em;
+  }
+  .kpi-label {
+    font-family: "Inter", sans-serif;
+    font-size: 1.15rem;
+    color: var(--c-navy-soft);
+    margin-top: 0.7rem;
+    line-height: 1.35;
+  }
+
+  /* Footer común */
+  .slide-footer {
+    margin-top: auto;
+    padding-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: "Inter", sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--c-navy-muted);
+  }
+  .slide-footer .dots { letter-spacing: 0.15em; }
+
+  /* Mermaid contenedor */
+  .mermaid-wrap {
+    background: var(--c-cream-card);
+    border-radius: 12px;
+    border: 1px solid var(--c-line);
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+  }
+  .mermaid { text-align: center; font-size: 12px; }
+
+  /* Overview Esc */
+  #overview {
+    position: fixed;
+    inset: 0;
+    background: rgba(31, 49, 88, 0.95);
+    z-index: 50;
+    display: none;
+    padding: 3rem;
+    overflow: auto;
+    backdrop-filter: blur(8px);
+  }
+  #overview.is-open { display: block; }
+  #overview .ov-title {
+    color: var(--c-cream);
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  #overview .ov-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  #overview .ov-tile {
+    aspect-ratio: 16/9;
+    background: var(--c-cream-soft);
+    border-radius: 10px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: transform .12s;
+    overflow: hidden;
+  }
+  #overview .ov-tile:hover { transform: scale(1.03); }
+  #overview .ov-tile .num {
+    font-family: "JetBrains Mono", monospace;
+    color: var(--c-navy-soft);
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+  }
+  #overview .ov-tile .ttl {
+    font-family: "Archivo", sans-serif;
+    font-weight: 700;
+    color: var(--c-navy);
+    margin-top: 0.5rem;
+    line-height: 1.2;
+    font-size: 1rem;
+  }
+
+  /* Help hint */
+  #help {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    color: var(--c-navy-soft);
+    background: rgba(245,239,222,0.92);
+    border: 1px solid var(--c-line);
+    border-radius: 9999px;
+    padding: 0.4rem 1.1rem;
+    display: flex;
+    gap: 1.1rem;
+    align-items: center;
+    backdrop-filter: blur(6px);
+    z-index: 40;
+    transition: opacity .3s;
+    font-family: "Inter", sans-serif;
+  }
+  #help.hidden-help { opacity: 0; pointer-events: none; }
+  #help kbd {
+    font-family: "JetBrains Mono", monospace;
+    background: var(--c-cream);
+    border: 1px solid var(--c-line);
+    border-radius: 4px;
+    padding: 0.08rem 0.4rem;
+    font-size: 0.62rem;
+    color: var(--c-navy);
+  }
+
+  /* ============================================================
+     RESPONSIVE — Pantallas medianas (tablets, laptops chicas)
+     ============================================================ */
+  @media (max-width: 1024px) {
+    .slide { padding: 1.75rem 2.5rem; }
+    .slide-card { padding: 2rem 2.5rem; }
+    .cover-card { padding: 2.5rem 3rem; border-radius: 24px; }
+    /* Grids de 2 columnas → 1 columna si la viewport es chica */
+    .slide [style*="grid-template-columns: 1fr 1fr"],
+    .slide [style*="grid-template-columns: repeat(2"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* ============================================================
+     RESPONSIVE — Portrait (vertical) y mobile
+     ============================================================ */
+  @media (max-aspect-ratio: 1/1) {
+    .slide { padding: 1.25rem 1.5rem; }
+    .slide-card { padding: 1.5rem 1.75rem; border-radius: 16px; }
+    .cover-card { padding: 2rem; border-radius: 20px; }
+    .cover-title { font-size: clamp(3rem, 14vw, 7rem); }
+    .cover-meta-row { flex-direction: column; align-items: flex-start; gap: 1.25rem; }
+    .cover-separator-row { flex-direction: column; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; }
+    .cover-divider { display: none; }
+    /* Cualquier grid o flex de 2+ columnas → apilado */
+    .slide [style*="grid-template-columns"]:not([style*="1fr"]):not([style*="auto"]),
+    .slide [style*="grid-template-columns: 1fr 1fr"],
+    .slide [style*="grid-template-columns: repeat(2"],
+    .slide [style*="grid-template-columns: repeat(3"],
+    .slide [style*="grid-template-columns: repeat(4"] {
+      grid-template-columns: 1fr !important;
+    }
+    .mermaid { font-size: 10px; }
+  }
+
+  /* ============================================================
+     RESPONSIVE — Pantallas muy chicas (mobile portrait)
+     ============================================================ */
+  @media (max-width: 480px) {
+    .slide { padding: 1rem 1rem; }
+    .slide-card { padding: 1.25rem 1.25rem; }
+    #help { font-size: 0.6rem; padding: 0.3rem 0.75rem; gap: 0.5rem; }
+    #help kbd { font-size: 0.55rem; padding: 0.05rem 0.3rem; }
+  }
+
+  /* Print: cada slide → página */
+  @media print {
+    html, body { overflow: visible !important; height: auto !important; }
+    #deck { position: static; }
+    #help, #overview { display: none !important; }
+    .slide {
+      position: relative !important;
+      inset: auto !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      page-break-after: always;
+      width: 100%;
+      height: 100vh;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="deck">
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 1 — PORTADA (estilo CHANGAPP)                              -->
+  <!-- ============================================================== -->
+  <section class="slide cover is-active" data-slide="1">
+    <div class="cover-card">
+      <h1 class="cover-title">NEXUS<span style="color: #4a7fd4">AI</span></h1>
+
+      <div class="cover-meta-row">
+        <div class="cover-subtitle">
+          Asistente académico<br/>
+          con IA integrado en<br/>
+          Moodle
+        </div>
+        <div class="ucc-logo" aria-label="Universidad Católica de Córdoba">
+          <span class="ucc-mark">UCC</span>
+          <span class="ucc-text">
+            <span class="ucc-line-1">UNIVERSIDAD</span>
+            <span class="ucc-line-2">CATÓLICA</span>
+            <span class="ucc-line-2">DE CÓRDOBA</span>
+            <span class="ucc-line-3">JESUITAS</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="cover-separator-row">
+        <span class="cover-tag">Ingeniería en Sistemas</span>
+        <span class="cover-divider">|</span>
+        <span class="cover-tag">Santiago Tricherri · Delfina Salinas</span>
+      </div>
+
+      <div class="cover-dots">
+        • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 2 — EL PROBLEMA                                            -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="2">
+    <div class="slide-card">
+      <span class="eyebrow">01 · Punto de partida</span>
+      <h2 class="h-display">Moodle hoy es un<br/>repositorio de archivos,<br/>no un asistente.</h2>
+      <p class="lead">
+        Las plataformas LMS son fundamentales en la universidad, pero en la
+        práctica se usan para descargar PDFs. Las consultas reales pasan por
+        otro lado: ChatGPT, WhatsApp, Drive.
+      </p>
+
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: auto;">
+        <div class="card">
+          <div class="label">Para el alumno</div>
+          <div class="card-body" style="margin-top: 0.75rem;">
+            Las dudas van directo al docente o a ChatGPT genérico, sin
+            contexto del material real del curso.
+          </div>
+        </div>
+        <div class="card">
+          <div class="label">Para el docente</div>
+          <div class="card-body" style="margin-top: 0.75rem;">
+            No tiene visibilidad de qué le preguntan a la IA sus alumnos,
+            ni qué temas le faltan al material que subió.
+          </div>
+        </div>
+        <div class="card">
+          <div class="label">Para la institución</div>
+          <div class="card-body" style="margin-top: 0.75rem;">
+            Datos académicos en servicios SaaS externos. Cero soberanía
+            sobre cómo se procesa el contenido.
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>02 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 3 — EVIDENCIA                                              -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="3">
+    <div class="slide-card">
+      <span class="eyebrow">02 · Diagnóstico</span>
+      <h2 class="h-display">Los datos del<br/>relevamiento UCC<br/>confirman el problema.</h2>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-top: 3rem; align-items: start;">
+        <div>
+          <div class="kpi" style="font-size: 7rem;">+70%</div>
+          <div class="kpi-label" style="max-width: 24rem;">
+            de los estudiantes encuestados reporta dificultades para
+            encontrar información, dispersa entre Moodle, WhatsApp y Drive.
+          </div>
+          <div class="mono" style="font-size: 0.95rem; color: var(--c-navy-muted); margin-top: 1.5rem; letter-spacing: 0.05em; font-size: 0.95rem;">
+            Relevamiento UCC · 2026
+          </div>
+        </div>
+
+        <div>
+          <div class="label" style="margin-bottom: 1rem;">Funcionalidades más solicitadas</div>
+          <ol style="list-style: none; padding: 0; margin: 0;">
+            <li style="display: flex; align-items: center; gap: 1.5rem; padding: 0.7rem 0; border-bottom: 1px solid var(--c-line);">
+              <span class="mono" style="color: var(--c-navy-muted); font-size: 1rem; min-width: 1.75rem;">#1</span>
+              <span style="font-size: 1.15rem;">Asistente que responde dudas de la materia</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 1.5rem; padding: 0.7rem 0; border-bottom: 1px solid var(--c-line);">
+              <span class="mono" style="color: var(--c-navy-muted); font-size: 1rem; min-width: 1.75rem;">#2</span>
+              <span style="font-size: 1.15rem;">Buscador inteligente de documentos</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 1.5rem; padding: 0.7rem 0; border-bottom: 1px solid var(--c-line);">
+              <span class="mono" style="color: var(--c-navy-muted); font-size: 1rem; min-width: 1.75rem;">#3</span>
+              <span style="font-size: 1.15rem;">Generación automática de quizzes y resúmenes</span>
+            </li>
+            <li style="display: flex; align-items: center; gap: 1.5rem; padding: 0.7rem 0;">
+              <span class="mono" style="color: var(--c-navy-muted); font-size: 1rem; min-width: 1.75rem;">#4</span>
+              <span style="font-size: 1.15rem;">Detección de temas que faltan en el material</span>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>03 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 4 — SOLUCIÓN                                               -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="4">
+    <div class="slide-card">
+      <span class="eyebrow">03 · La solución</span>
+      <h2 class="h-display">NexusAI es un plugin Moodle<br/>con un asistente IA que responde<br/>sobre tu material.</h2>
+
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-top: 2.5rem;">
+        <div class="card">
+          <div class="card-title">RAG auténtico con citas trazables</div>
+          <div class="card-body">
+            Cada respuesta enlaza al fragmento exacto del material del curso.
+            Si la pregunta no se puede responder con el material disponible,
+            el sistema lo admite, no inventa.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Self-hosted, datos en la institución</div>
+          <div class="card-body">
+            El patrón Hybrid PHP Proxy garantiza que la API key del LLM
+            nunca llega al navegador. Datos académicos en infraestructura
+            controlada por la institución.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Multi-curso opcional</div>
+          <div class="card-body">
+            El alumno puede consultar el material de todos sus cursos a la
+            vez. Las respuestas citan la materia de cada fragmento.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Feedback loop al docente</div>
+          <div class="card-body">
+            El sistema registra automáticamente las preguntas que no pudo
+            responder y se las muestra al docente para mejorar el material.
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>04 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 5 — ARQUITECTURA                                           -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="5">
+    <div class="slide-card">
+      <span class="eyebrow">04 · Arquitectura</span>
+      <h2 class="h-display">Tres capas, una sola base,<br/>HMAC server-to-server.</h2>
+
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart LR
+    A["Navegador<br/>(React 18)"] -->|"core/ajax + sesskey"| B["Plugin Moodle<br/>(PHP)"]
+    B -->|"cURL + HMAC SHA-256"| C["Backend<br/>FastAPI"]
+    C -.->|"SQL + Vector"| D[("PostgreSQL<br/>+ pgvector")]
+    C -.-> E[("Redis<br/>nonces + cache")]
+    C -->|"API key"| F["LLM Provider<br/>(Gemini · OpenAI · Ollama)"]
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem;">
+        <div class="card-soft">
+          <div class="label">Hybrid PHP Proxy</div>
+          <div class="card-body" style="margin-top: 0.5rem;">
+            La API key del LLM nunca toca el navegador.
+          </div>
+        </div>
+        <div class="card-soft">
+          <div class="label">Multi-provider LLM</div>
+          <div class="card-body" style="margin-top: 0.5rem;">
+            Switch entre Gemini, OpenAI u Ollama con variables de entorno.
+          </div>
+        </div>
+        <div class="card-soft">
+          <div class="label">Una sola DB</div>
+          <div class="card-body" style="margin-top: 0.5rem;">
+            PostgreSQL con pgvector. Filtros SQL y búsqueda vectorial en una sola query.
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>05 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 6 — STACK                                                  -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="6">
+    <div class="slide-card">
+      <span class="eyebrow">05 · Stack tecnológico</span>
+      <h2 class="h-display">Cinco tecnologías,<br/>todas estándar.</h2>
+
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-top: 3rem;">
+        <div class="card" style="text-align: center;">
+          <div class="label">Frontend</div>
+          <div class="display" style="font-size: 1.75rem; color: var(--c-navy); font-weight: 800; margin: 0.75rem 0;">React 18</div>
+          <div class="card-body" style="font-size: 1rem;">
+            Webpack bundle AMD embebido en el plugin Moodle.
+          </div>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div class="label">Plugin</div>
+          <div class="display" style="font-size: 1.75rem; color: var(--c-navy); font-weight: 800; margin: 0.75rem 0;">PHP 8</div>
+          <div class="card-body" style="font-size: 1rem;">
+            Tipo <code class="mono" style="font-size: 0.95rem;">local</code>. Hook API 4.4+, callback legacy 4.1-4.3.
+          </div>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div class="label">Backend IA</div>
+          <div class="display" style="font-size: 1.75rem; color: var(--c-navy); font-weight: 800; margin: 0.75rem 0;">FastAPI</div>
+          <div class="card-body" style="font-size: 1rem;">
+            Python 3.11. Async + tipado. Monolito modular.
+          </div>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div class="label">Vectores</div>
+          <div class="display" style="font-size: 1.75rem; color: var(--c-navy); font-weight: 800; margin: 0.75rem 0;">pgvector</div>
+          <div class="card-body" style="font-size: 1rem;">
+            HNSW index con distancia coseno sobre PostgreSQL 16.
+          </div>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div class="label">LLM</div>
+          <div class="display" style="font-size: 1.75rem; color: var(--c-navy); font-weight: 800; margin: 0.75rem 0;">Gemini 2.5</div>
+          <div class="card-body" style="font-size: 1rem;">
+            Flash gratuito en MVP. Swap a OpenAI configurable.
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 3rem; padding: 1.25rem 1.5rem; background: rgba(31, 49, 88, 0.06); border-radius: 12px; text-align: center;">
+        <span class="label" style="color: var(--c-navy);">
+          6 ADRs · 5 diagramas Mermaid · 47 documentos de investigación
+        </span>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>06 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 7 — DEMO INTRO                                             -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="7">
+    <div class="slide-card" style="justify-content: center; align-items: center; text-align: center;">
+      <span class="eyebrow" style="margin: 0 auto 2rem auto;">06 · Demo en vivo</span>
+      <h2 class="h-display" style="text-align: center;">Vamos a verlo funcionando.</h2>
+      <p class="lead" style="text-align: center; margin: 2rem auto;">
+        Cinco minutos. Subimos un PDF como docente, hacemos consultas
+        como alumno con citas trazables, generamos un quiz de práctica
+        y vemos el reporte de gaps detectados.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 720px; width: 100%; margin-top: 3rem;">
+        <div class="card-navy">
+          <div class="label" style="color: var(--c-cream); opacity: 0.7;">Backend en producción</div>
+          <div class="mono" style="font-size: 1rem; margin-top: 0.6rem; word-break: break-all;">
+            nexusai-production-e414.up.railway.app
+          </div>
+        </div>
+        <div class="card">
+          <div class="label">Moodle local de demo</div>
+          <div class="mono" style="font-size: 1rem; margin-top: 0.6rem; color: var(--c-navy);">
+            localhost:8082
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer" style="width: 100%;">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>07 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 8 — DEMO FLOW                                              -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="8">
+    <div class="slide-card">
+      <span class="eyebrow">06 · Demo · guion</span>
+      <h2 class="h-display">Lo que vamos a mostrar.</h2>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2.5rem;">
+        <div class="card-soft">
+          <div class="label" style="margin-bottom: 1rem;">Rol docente</div>
+          <ol style="list-style: none; padding: 0; margin: 0;">
+            <li style="display: flex; gap: 1rem; padding: 0.5rem 0;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 1rem;">1</span>
+              <span style="font-size: 1.15rem;">Subir un PDF al curso</span>
+            </li>
+            <li style="display: flex; gap: 1rem; padding: 0.5rem 0;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 1rem;">2</span>
+              <span style="font-size: 1.15rem;">Ver la indexación en tiempo real</span>
+            </li>
+            <li style="display: flex; gap: 1rem; padding: 0.5rem 0;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 1rem;">3</span>
+              <span style="font-size: 1.15rem;">Revisar la pestaña "Gaps detectados"</span>
+            </li>
+          </ol>
+        </div>
+        <div class="card-soft">
+          <div class="label" style="margin-bottom: 1rem;">Rol alumno</div>
+          <ol style="list-style: none; padding: 0; margin: 0;">
+            <li style="display: flex; gap: 1rem; padding: 0.5rem 0;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 1rem;">4</span>
+              <span style="font-size: 1.15rem;">Chat con respuesta streaming</span>
+            </li>
+            <li style="display: flex; gap: 1rem; padding: 0.5rem 0;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 1rem;">5</span>
+              <span style="font-size: 1.15rem;">Citas clickeables con preview del fragmento</span>
+            </li>
+            <li style="display: flex; gap: 1rem; padding: 0.5rem 0;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 1rem;">6</span>
+              <span style="font-size: 1.15rem;">Pestaña Buscador: retrieval sin LLM</span>
+            </li>
+            <li style="display: flex; gap: 1rem; padding: 0.5rem 0;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 1rem;">7</span>
+              <span style="font-size: 1.15rem;">Quiz generator: 3 preguntas y score</span>
+            </li>
+            <li style="display: flex; gap: 1rem; padding: 0.5rem 0;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 1rem;">8</span>
+              <span style="font-size: 1.15rem;">Toggle multi-curso</span>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>08 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 9 — SPRINTS                                                -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="9">
+    <div class="slide-card">
+      <span class="eyebrow">07 · Cómo lo construimos</span>
+      <h2 class="h-display">Cinco sprints, dos personas,<br/>290 story points planificados.</h2>
+
+      <div style="margin-top: 2.5rem; background: var(--c-cream-card); border-radius: 12px; border: 1px solid var(--c-line); overflow: hidden;">
+        <div style="display: grid; grid-template-columns: 8rem 1fr 1fr 5rem; padding: 0.75rem 1.25rem; background: rgba(31,49,88,0.06); border-bottom: 1px solid var(--c-line);">
+          <span class="label">Fechas</span>
+          <span class="label">Sprint</span>
+          <span class="label">Entregable</span>
+          <span class="label" style="text-align: right;">SP</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 8rem 1fr 1fr 5rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--c-line); align-items: center;">
+          <span class="mono" style="font-size: 0.95rem; color: var(--c-navy-muted);">9 – 22 Abr</span>
+          <span style="font-weight: 600; font-size: 1.15rem;">Sprint 0 · Setup</span>
+          <span style="font-size: 1rem; color: var(--c-navy-soft);">47 docs investigación + ADRs</span>
+          <span class="mono" style="text-align: right; font-size: 1rem;">60 / 60</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 8rem 1fr 1fr 5rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--c-line); align-items: center;">
+          <span class="mono" style="font-size: 0.95rem; color: var(--c-navy-muted);">23 Abr – 6 May</span>
+          <span style="font-weight: 600; font-size: 1.15rem;">Sprint 1 · Core chat</span>
+          <span style="font-size: 1rem; color: var(--c-navy-soft);">Backend, plugin, React, HMAC</span>
+          <span class="mono" style="text-align: right; font-size: 1rem;">45 / 50</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 8rem 1fr 1fr 5rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--c-line); align-items: center;">
+          <span class="mono" style="font-size: 0.95rem; color: var(--c-navy-muted);">7 – 20 May</span>
+          <span style="font-weight: 600; font-size: 1.15rem;">Sprint 2 · RAG completo</span>
+          <span style="font-size: 1rem; color: var(--c-navy-soft);">Indexación, vista docente, retrieval</span>
+          <span class="mono" style="text-align: right; font-size: 1rem;">55 / 60</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 8rem 1fr 1fr 5rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--c-line); align-items: center;">
+          <span class="mono" style="font-size: 0.95rem; color: var(--c-navy-muted);">21 – 27 May</span>
+          <span style="font-weight: 600; font-size: 1.15rem;">Sprint 3 · Calidad</span>
+          <span style="font-size: 1rem; color: var(--c-navy-soft);">Retry, rate limiting, logging, CI/CD</span>
+          <span class="mono" style="text-align: right; font-size: 1rem;">25 / 25</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 8rem 1fr 1fr 5rem; padding: 0.85rem 1.25rem; background: var(--c-navy); color: var(--c-cream-soft); align-items: center;">
+          <span class="mono" style="font-size: 0.95rem; opacity: 0.85;">28 May – 1 Jun</span>
+          <span style="font-weight: 700; font-size: 1.15rem;">Sprint 4 · MVP completo</span>
+          <span style="font-size: 1rem; opacity: 0.95;">7 features: Search, Multi-curso, Streaming, Citas, Historial, Quiz, Gaps</span>
+          <span class="mono" style="text-align: right; font-size: 1rem; font-weight: 700;">70 / 70</span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-top: 2rem;">
+        <div>
+          <div class="kpi" style="font-size: 3.25rem;">96%</div>
+          <div class="kpi-label">Velocity promedio</div>
+        </div>
+        <div>
+          <div class="kpi" style="font-size: 3.25rem;">255</div>
+          <div class="kpi-label">SP completados de 265</div>
+        </div>
+        <div>
+          <div class="kpi" style="font-size: 3.25rem;">70+</div>
+          <div class="kpi-label">Historias de usuario</div>
+        </div>
+        <div>
+          <div class="kpi" style="font-size: 3.25rem;">~250</div>
+          <div class="kpi-label">Commits al repositorio</div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>09 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 10 — DEPLOY                                                -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="10">
+    <div class="slide-card">
+      <span class="eyebrow">08 · Deploy en producción</span>
+      <h2 class="h-display">El backend está vivo en Railway,<br/>el plugin se distribuye como ZIP.</h2>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+        <div class="card">
+          <div class="label">Backend en producción</div>
+          <div class="display" style="font-size: 1.8rem; color: var(--c-navy); font-weight: 800; margin: 0.6rem 0 1rem;">Railway</div>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 1rem;">
+            <div style="display: flex; gap: 1rem;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 5rem;">URL</span>
+              <span class="mono" style="word-break: break-all; color: var(--c-navy);">nexusai-production-e414.up.railway.app</span>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 5rem;">Stack</span>
+              <span style="color: var(--c-navy-soft);">FastAPI + Postgres 16 + pgvector + Redis</span>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 5rem;">Costo</span>
+              <span style="color: var(--c-navy-soft);"><strong>$0 / mes</strong> (free tier $5 disponible)</span>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 5rem;">CI/CD</span>
+              <span style="color: var(--c-navy-soft);">Autodeploy desde <code class="mono">main</code></span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="label">Distribución del plugin</div>
+          <div class="display" style="font-size: 1.8rem; color: var(--c-navy); font-weight: 800; margin: 0.6rem 0 1rem;">GitHub Release</div>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 1rem;">
+            <div style="display: flex; gap: 1rem;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 5rem;">Versión</span>
+              <span class="mono" style="color: var(--c-navy);">v0.9.3</span>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 5rem;">Tamaño</span>
+              <span class="mono" style="color: var(--c-navy-soft);">192 KB</span>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 5rem;">Compat</span>
+              <span style="color: var(--c-navy-soft);">Moodle 4.1 LTS hasta 4.5</span>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+              <span class="mono" style="color: var(--c-navy-muted); min-width: 5rem;">Install</span>
+              <span style="color: var(--c-navy-soft);">Site administration → Install plugins → ZIP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-navy" style="margin-top: 1.75rem;">
+        <div style="font-size: 0.95rem; line-height: 1.55; font-size: 1.1rem;">
+          Cualquier admin de Moodle 4.x del mundo puede descargar el ZIP,
+          instalarlo en su plataforma y configurarlo con la URL del backend.
+          El MVP arranca sin instalar nada del lado servidor.
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>10 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 11 — MÉTRICAS DEL MVP                                      -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="11">
+    <div class="slide-card">
+      <span class="eyebrow">09 · Métricas del MVP</span>
+      <h2 class="h-display">Cómo medimos la calidad.</h2>
+
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 2.5rem;">
+        <div class="card">
+          <div class="kpi" style="font-size: 3rem;">37</div>
+          <div class="kpi-label">tests automatizados en backend Python</div>
+        </div>
+        <div class="card">
+          <div class="kpi" style="font-size: 3rem;">51</div>
+          <div class="kpi-label">casos de testing manual en 9 áreas</div>
+        </div>
+        <div class="card">
+          <div class="kpi" style="font-size: 3rem;">~80%</div>
+          <div class="kpi-label">cobertura de tests backend</div>
+        </div>
+        <div class="card">
+          <div class="kpi" style="font-size: 3rem;">&lt;1s</div>
+          <div class="kpi-label">primer token en streaming SSE</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2rem;">
+        <div>
+          <div class="label" style="margin-bottom: 0.6rem;">Performance</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 1.05rem; color: var(--c-navy-soft); line-height: 1.7;">
+            <li>Latencia chat completo: 3-6 s</li>
+            <li>Latencia buscador puro: 0.3-0.8 s</li>
+            <li>Indexación PDF 50p: ~30-50 s</li>
+          </ul>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom: 0.6rem;">Costos del MVP</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 1.05rem; color: var(--c-navy-soft); line-height: 1.7;">
+            <li>Railway: <strong style="color: var(--c-navy);">$0 / mes</strong></li>
+            <li>Gemini: <strong style="color: var(--c-navy);">$0 / mes</strong> (free tier)</li>
+            <li>Proyección 500 alumnos: ~$100 / mes</li>
+          </ul>
+        </div>
+        <div>
+          <div class="label" style="margin-bottom: 0.6rem;">Cobertura funcional</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 1.05rem; color: var(--c-navy-soft); line-height: 1.7;">
+            <li>7 features del MVP entregadas</li>
+            <li>16 endpoints HTTP en backend</li>
+            <li>10 External Functions en plugin</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>11 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 12 — LECCIONES                                             -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="12">
+    <div class="slide-card">
+      <span class="eyebrow">10 · Lecciones aprendidas</span>
+      <h2 class="h-display">Lo que volveríamos a hacer<br/>y lo que cambiaríamos.</h2>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2.5rem;">
+        <div>
+          <div class="label" style="color: #2f7d4f; margin-bottom: 1rem;">+ Volveríamos a hacer</div>
+          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+            <div class="card">
+              <div class="card-title" style="font-size: 1rem;">Investigar mucho al inicio</div>
+              <div class="card-body" style="font-size: 1rem; margin-top: 0.3rem;">
+                Las 8 semanas del Sprint 0 con 47 documentos ahorraron meses
+                de refactor.
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title" style="font-size: 1rem;">Documentar con ADRs desde el día uno</div>
+              <div class="card-body" style="font-size: 1rem; margin-top: 0.3rem;">
+                Discusiones zanjadas no se re-discuten. Material defendible.
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title" style="font-size: 1rem;">Monolito modular sobre microservicios</div>
+              <div class="card-body" style="font-size: 1rem; margin-top: 0.3rem;">
+                Para 2 personas y plazo fijo, no había otra opción razonable.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="label" style="color: #b85e1d; margin-bottom: 1rem;">− Cambiaríamos</div>
+          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+            <div class="card">
+              <div class="card-title" style="font-size: 1rem;">Tests automatizados desde el Sprint 1</div>
+              <div class="card-body" style="font-size: 1rem; margin-top: 0.3rem;">
+                Entraron en Sprint 3, deberían haber estado desde el inicio.
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title" style="font-size: 1rem;">Demos internas por sprint</div>
+              <div class="card-body" style="font-size: 1rem; margin-top: 0.3rem;">
+                Las hicimos en Sprint 2 y 4, debería haber sido obligatorio en cada uno.
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title" style="font-size: 1rem;">CI/CD desde la primera semana</div>
+              <div class="card-body" style="font-size: 1rem; margin-top: 0.3rem;">
+                Lo deployamos en Sprint 3, debería haber sido en Sprint 0.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>12 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 13 — PRÓXIMOS PASOS POST-MVP                               -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="13">
+    <div class="slide-card">
+      <span class="eyebrow">11 · Próximos pasos</span>
+      <h2 class="h-display">El MVP está entregado.<br/>El roadmap está claro.</h2>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 3rem;">
+        <div class="card">
+          <div class="label">Inmediato</div>
+          <div class="card-title" style="margin-top: 0.75rem;">Plugin Directory de Moodle</div>
+          <div class="card-body">
+            Submission a moodle.org/plugins para distribución oficial.
+            Mediana de revisión: 8 días.
+          </div>
+        </div>
+        <div class="card">
+          <div class="label">Corto plazo</div>
+          <div class="card-title" style="margin-top: 0.75rem;">Analytics para el alumno</div>
+          <div class="card-body">
+            Hoy el docente ve gaps. El alumno necesita su propio dashboard:
+            temas más consultados, tokens, sesiones.
+          </div>
+        </div>
+        <div class="card">
+          <div class="label">Mediano plazo</div>
+          <div class="card-title" style="margin-top: 0.75rem;">Pilotos UCC reales</div>
+          <div class="card-body">
+            Instalar el plugin en cursos reales y medir métricas de uso e
+            impacto pedagógico durante un cuatrimestre.
+          </div>
+        </div>
+      </div>
+
+      <div class="card-soft" style="margin-top: 2rem;">
+        <div class="card-body">
+          <strong style="color: var(--c-navy);">Líneas de evolución del producto:</strong>
+          clustering semántico de gaps, sugerencias proactivas al alumno
+          basadas en su historial, planes de estudio adaptativos combinando
+          gaps y quiz scores, y fine-tuning del LLM con material del curso.
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>13 / 14</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 14 — CIERRE                                                -->
+  <!-- ============================================================== -->
+  <section class="slide cover" data-slide="14">
+    <div class="cover-card" style="text-align: center;">
+      <span class="eyebrow" style="margin: 0 auto 2rem auto;">12 · Cierre</span>
+      <h2 class="cover-title" style="font-size: 7rem; text-align: center;">Gracias.</h2>
+      <p class="lead" style="text-align: center; max-width: 36rem; margin: 2rem auto;">
+        El MVP de NexusAI está en producción, es entregable y se puede
+        instalar en cualquier Moodle 4.x apuntando al backend que
+        mantenemos en Railway.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 2.5rem; max-width: 900px;">
+        <div style="text-align: left;">
+          <div class="label">Repo</div>
+          <div class="mono" style="font-size: 0.95rem; margin-top: 0.3rem; word-break: break-all; color: var(--c-navy);">github.com/nexusai-ucc/nexusAI</div>
+        </div>
+        <div style="text-align: left;">
+          <div class="label">Backend</div>
+          <div class="mono" style="font-size: 0.95rem; margin-top: 0.3rem; word-break: break-all; color: var(--c-navy);">nexusai-production-e414.up.railway.app</div>
+        </div>
+        <div style="text-align: left;">
+          <div class="label">Release</div>
+          <div class="mono" style="font-size: 0.95rem; margin-top: 0.3rem; color: var(--c-navy);">v0.9.3 · 192 KB</div>
+        </div>
+      </div>
+
+      <div class="cover-dots" style="margin-top: 3rem;">
+        • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •
+      </div>
+
+      <div style="margin-top: 2rem; font-size: 0.95rem; color: var(--c-navy-soft); letter-spacing: 0.15em; text-transform: uppercase;">
+        ¿Preguntas?
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Overview Esc -->
+<div id="overview">
+  <div class="ov-title">Slides — Esc para volver</div>
+  <div class="ov-grid" id="ov-grid"></div>
+</div>
+
+<!-- Help hint -->
+<div id="help">
+  <span><kbd>←</kbd><kbd>→</kbd> navegar</span>
+  <span><kbd>Espacio</kbd> avanzar</span>
+  <span><kbd>F</kbd> fullscreen</span>
+  <span><kbd>Esc</kbd> overview</span>
+  <span><kbd>P</kbd> imprimir</span>
+</div>
+
+<script>
+  // Wrap auto: dentro de cada .slide-card, agrupar todo lo que NO sea
+  // .slide-footer en un .slide-card-body para poder centrarlo
+  // verticalmente con flexbox. (Mantiene el footer pegado al fondo.)
+  document.querySelectorAll(".slide-card").forEach((card) => {
+    const footer = card.querySelector(":scope > .slide-footer");
+    const body = document.createElement("div");
+    body.className = "slide-card-body";
+    while (card.firstChild && card.firstChild !== footer) {
+      body.appendChild(card.firstChild);
+    }
+    card.insertBefore(body, footer);
+  });
+
+  const slides = document.querySelectorAll(".slide");
+  const total = slides.length;
+  let current = 0;
+
+  function show(i) {
+    if (i < 0) i = 0;
+    if (i >= total) i = total - 1;
+    slides[current].classList.remove("is-active");
+    slides[i].classList.add("is-active");
+    current = i;
+    history.replaceState(null, "", "#" + (i + 1));
+  }
+  function next() { if (current < total - 1) show(current + 1); }
+  function prev() { if (current > 0) show(current - 1); }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+
+  // Overview
+  const ov = document.getElementById("overview");
+  const ovGrid = document.getElementById("ov-grid");
+  function buildOverview() {
+    ovGrid.innerHTML = "";
+    slides.forEach((s, idx) => {
+      const tile = document.createElement("div");
+      tile.className = "ov-tile";
+      const num = String(idx + 1).padStart(2, "0");
+      const heading = s.querySelector(".cover-title, .h-display, .h-section, h2");
+      const title = heading ? heading.textContent.trim().slice(0, 60) : "(sin título)";
+      tile.innerHTML = `<div class="num">${num} / ${String(total).padStart(2, "0")}</div><div class="ttl">${title}</div>`;
+      tile.addEventListener("click", () => { show(idx); closeOverview(); });
+      ovGrid.appendChild(tile);
+    });
+  }
+  function openOverview() { buildOverview(); ov.classList.add("is-open"); }
+  function closeOverview() { ov.classList.remove("is-open"); }
+
+  document.addEventListener("keydown", (e) => {
+    if (ov.classList.contains("is-open")) {
+      if (e.key === "Escape") closeOverview();
+      return;
+    }
+    if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); next(); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); prev(); }
+    else if (e.key === "Home") show(0);
+    else if (e.key === "End") show(total - 1);
+    else if (e.key.toLowerCase() === "f") toggleFullscreen();
+    else if (e.key === "Escape") openOverview();
+    else if (e.key.toLowerCase() === "p") window.print();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (ov.classList.contains("is-open")) return;
+    const w = window.innerWidth;
+    if (e.clientX > w / 2) next(); else prev();
+  });
+
+  function fromHash() {
+    const m = location.hash.match(/^#(\d+)/);
+    if (m) show(parseInt(m[1], 10) - 1);
+  }
+  window.addEventListener("hashchange", fromHash);
+  fromHash();
+
+  setTimeout(() => document.getElementById("help").classList.add("hidden-help"), 5000);
+  document.addEventListener("mousemove", () => {
+    const h = document.getElementById("help");
+    h.classList.remove("hidden-help");
+    clearTimeout(window._ht);
+    window._ht = setTimeout(() => h.classList.add("hidden-help"), 3000);
+  });
+</script>
+
+</body>
+</html>
