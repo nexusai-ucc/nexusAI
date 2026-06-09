@@ -168,7 +168,7 @@ Una vez listo:
 | | |
 |---|---|
 | **GitHub del proyecto** | `https://github.com/nexusai-ucc/nexusAI` |
-| **Release del plugin (v0.9.3)** | `https://github.com/nexusai-ucc/nexusAI/releases/latest` |
+| **Release del plugin (v0.9.4)** | `https://github.com/nexusai-ucc/nexusAI/releases/latest` |
 | **Issues del MVP** | `https://github.com/nexusai-ucc/nexusAI/issues?q=label:mvp` |
 | **GitHub Actions (CI/CD)** | `https://github.com/nexusai-ucc/nexusAI/actions` |
 

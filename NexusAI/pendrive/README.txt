@@ -21,11 +21,26 @@ CONTENIDO DEL PENDRIVE
     deploy, retrospectivas, conclusiones y anexos.
 
 02_Presentacion/
-    Presentación de defensa (15 minutos, 14 slides).
-    - index.html → presentación completa en HTML estilo shadcn/ui.
-      Abrir en cualquier navegador moderno (Chrome, Safari, Firefox).
-      Atajos: → / ← para navegar, F = fullscreen, Esc = overview, P = PDF.
-    - README.md → guía de uso de la presentación.
+    Presentación de defensa (15 minutos, 17 slides).
+
+    - index.html → presentación HTML custom (17 slides, estilo editorial
+      cream + navy). Abrir en cualquier navegador moderno.
+      Atajos: → / ← navegar, F = fullscreen, Esc = overview, P = imprimir.
+      Responsive: el rem escala con el viewport (1366px a 4K).
+
+    - script-defensa.md → guion CORTO para la defensa (recomendado para
+      ensayo). Lenguaje natural, 2-3 frases por slide, alternado Santi/Delfi.
+
+    - guion-presentacion.md → guion EXTENDIDO (versión larga con más
+      detalle técnico, transiciones explícitas y tips de ensayo).
+
+    - gamma-input.md → input optimizado (10 slides) para regenerar la
+      presentación en Gamma.app si fuera necesario.
+
+    - presentacion-input-expandido.md → input optimizado (16 slides)
+      para herramientas tipo Tome.app, Decktopus o Plus AI.
+
+    - README.md → guía de uso de la presentación HTML.
 
 03_Anteproyecto.pdf
     Anteproyecto original presentado al inicio del proyecto.
@@ -43,13 +58,24 @@ CONTENIDO DEL PENDRIVE
     (Mismo contenido que 04_WBS_y_Backlog/Backlog_Excel.xlsx)
 
 06_Codigo_Fuente/
-    Código fuente del MVP en dos formatos:
+    Código fuente del MVP en dos formatos.
+    Generados el 2026-06-08, sincronizados con el commit más reciente
+    de la rama main (PR #261 mergeado).
+
     - nexusAI-source.zip → snapshot completo del repositorio.
-      Incluye backend Python, plugin Moodle, frontend React, tests,
-      migraciones, scripts y toda la documentación técnica.
-    - local_nexusai-plugin-v0.9.3.zip → plugin Moodle listo para
+      Incluye backend Python (FastAPI), plugin Moodle (PHP),
+      frontend React, tests automatizados, migraciones Alembic,
+      scripts y toda la documentación técnica.
+
+    - local_nexusai-plugin-v0.9.4.zip → plugin Moodle listo para
       instalar en cualquier Moodle 4.1 LTS a 4.5.
       Instalación: Site administration → Plugins → Install plugins.
+
+      Cambios incluidos en esta versión respecto a la 0.9.3:
+        - Endpoint document_download para descarga directa de PDFs
+        - Hybrid search mejorado (semántico + keyword)
+        - Validación de topic en quiz generator
+        - Polish de UI en DocumentsManager, SearchPanel y QuizPanel
 
 07_Acceso_Sistema.pdf  (también .md para edición)
     Documento con URLs y credenciales para acceder al sistema:
@@ -74,6 +100,7 @@ Repositorio GitHub:
 
 Release del plugin:
     https://github.com/nexusai-ucc/nexusAI/releases/latest
+    Versión en este pendrive: v0.9.4 (entrega final del MVP)
 
 
 VERIFICACIÓN RÁPIDA POR EL TRIBUNAL
@@ -84,7 +111,7 @@ Para verificar que el sistema está realmente en producción:
     curl https://nexusai-production-e414.up.railway.app/health
 
 Devuelve un JSON tipo:
-    { "status": "ok", "version": "0.9.3", "env": "production", ... }
+    { "status": "ok", "version": "0.9.4", "env": "production", ... }
 
 
 CHECKLIST DE ENTREGABLES SEGÚN EL SYLLABUS

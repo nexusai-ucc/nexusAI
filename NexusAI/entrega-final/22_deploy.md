@@ -130,7 +130,7 @@ puede descargarlo e instalarlo sin construir nada del lado servidor.
 
 | Atributo | Valor |
 |---|---|
-| Versión actual | `v0.9.3` |
+| Versión actual | `v0.9.4` |
 | Tamaño del ZIP | ~192 KB |
 | Compatibilidad | Moodle 4.1 LTS, 4.2, 4.3, 4.4, 4.5 |
 | Dependencias servidor | Ninguna (solo Moodle estándar) |

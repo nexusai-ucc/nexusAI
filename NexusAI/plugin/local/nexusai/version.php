@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026060201;        // YYYYMMDDXX — Multi-curso: nombre del curso visible en pills + system prompt mejorado.
-$plugin->release   = '0.9.3';            // Multi-course pills hardening.
+$plugin->version   = 2026060801;        // YYYYMMDDXX — Document download endpoint + hybrid search + UI polish + quiz topic validation.
+$plugin->release   = '0.9.4';            // MVP entrega final.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

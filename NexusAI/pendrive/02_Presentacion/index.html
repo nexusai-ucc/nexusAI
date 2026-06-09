@@ -582,7 +582,7 @@
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>02 / 14</span>
+        <span>02 / 17</span>
       </div>
     </div>
   </section>
@@ -632,7 +632,7 @@
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>03 / 14</span>
+        <span>03 / 17</span>
       </div>
     </div>
   </section>
@@ -680,7 +680,7 @@
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>04 / 14</span>
+        <span>04 / 17</span>
       </div>
     </div>
   </section>
@@ -727,7 +727,7 @@ flowchart LR
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>05 / 14</span>
+        <span>05 / 17</span>
       </div>
     </div>
   </section>
@@ -786,7 +786,7 @@ flowchart LR
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>06 / 14</span>
+        <span>06 / 17</span>
       </div>
     </div>
   </section>
@@ -821,7 +821,7 @@ flowchart LR
 
       <div class="slide-footer" style="width: 100%;">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>07 / 14</span>
+        <span>07 / 17</span>
       </div>
     </div>
   </section>
@@ -881,7 +881,7 @@ flowchart LR
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>08 / 14</span>
+        <span>08 / 17</span>
       </div>
     </div>
   </section>
@@ -954,7 +954,7 @@ flowchart LR
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>09 / 14</span>
+        <span>09 / 17</span>
       </div>
     </div>
   </section>
@@ -1024,7 +1024,7 @@ flowchart LR
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>10 / 14</span>
+        <span>10 / 17</span>
       </div>
     </div>
   </section>
@@ -1085,17 +1085,91 @@ flowchart LR
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>11 / 14</span>
+        <span>11 / 17</span>
       </div>
     </div>
   </section>
 
   <!-- ============================================================== -->
-  <!-- SLIDE 12 — LECCIONES                                             -->
+  <!-- SLIDE 12 — GESTIÓN DE RIESGOS                                    -->
   <!-- ============================================================== -->
   <section class="slide" data-slide="12">
     <div class="slide-card">
-      <span class="eyebrow">10 · Lecciones aprendidas</span>
+      <span class="eyebrow">10 · Gestión de riesgos</span>
+      <h2 class="h-display">Identificamos, monitoreamos<br/>y mitigamos.</h2>
+
+      <p class="lead" style="max-width: 56rem;">
+        Trabajamos con una matriz de riesgos viva durante todo el proyecto.
+        Estos son los cuatro que más impactaron — y cómo los neutralizamos.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1.5rem;">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <div class="label" style="color: #b85e1d;">Alto · Técnico</div>
+            <div class="mono" style="font-size: 0.85rem; color: var(--c-navy-muted);">R-01</div>
+          </div>
+          <div class="card-title">LLM inventa respuestas (alucinaciones)</div>
+          <div class="card-body" style="margin-top: 0.4rem;">
+            <strong style="color: var(--c-navy);">Mitigación:</strong>
+            prompts estrictos + threshold de similitud + regex post-respuesta
+            que detecta "no encontré" y dispara feedback al docente.
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <div class="label" style="color: #b85e1d;">Alto · Seguridad</div>
+            <div class="mono" style="font-size: 0.85rem; color: var(--c-navy-muted);">R-02</div>
+          </div>
+          <div class="card-title">Filtración de API key del LLM</div>
+          <div class="card-body" style="margin-top: 0.4rem;">
+            <strong style="color: var(--c-navy);">Mitigación:</strong>
+            patrón Hybrid PHP Proxy — la clave nunca llega al navegador.
+            Triple defensa: Bearer + HMAC + nonce Redis con TTL.
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <div class="label" style="color: #c89610;">Medio · Cronograma</div>
+            <div class="mono" style="font-size: 0.85rem; color: var(--c-navy-muted);">R-03</div>
+          </div>
+          <div class="card-title">Scope creep entre sprints</div>
+          <div class="card-body" style="margin-top: 0.4rem;">
+            <strong style="color: var(--c-navy);">Mitigación:</strong>
+            backlog congelado al inicio de cada sprint y política
+            explícita de "esto va al post-MVP" sin culpa.
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <div class="label" style="color: #c89610;">Medio · Operativo</div>
+            <div class="mono" style="font-size: 0.85rem; color: var(--c-navy-muted);">R-04</div>
+          </div>
+          <div class="card-title">Caída del backend durante la defensa</div>
+          <div class="card-body" style="margin-top: 0.4rem;">
+            <strong style="color: var(--c-navy);">Mitigación:</strong>
+            backend en Railway con autodeploy + health checks +
+            fallback con capturas pregrabadas de cada paso del demo.
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>12 / 17</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 13 — LECCIONES                                             -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="13">
+    <div class="slide-card">
+      <span class="eyebrow">11 · Lecciones aprendidas</span>
       <h2 class="h-display">Lo que volveríamos a hacer<br/>y lo que cambiaríamos.</h2>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2.5rem;">
@@ -1150,17 +1224,17 @@ flowchart LR
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>12 / 14</span>
+        <span>13 / 17</span>
       </div>
     </div>
   </section>
 
   <!-- ============================================================== -->
-  <!-- SLIDE 13 — PRÓXIMOS PASOS POST-MVP                               -->
+  <!-- SLIDE 14 — PRÓXIMOS PASOS POST-MVP                               -->
   <!-- ============================================================== -->
-  <section class="slide" data-slide="13">
+  <section class="slide" data-slide="14">
     <div class="slide-card">
-      <span class="eyebrow">11 · Próximos pasos</span>
+      <span class="eyebrow">12 · Próximos pasos</span>
       <h2 class="h-display">El MVP está entregado.<br/>El roadmap está claro.</h2>
 
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 3rem;">
@@ -1201,17 +1275,160 @@ flowchart LR
 
       <div class="slide-footer">
         <span>NexusAI · Entrega Final del MVP</span>
-        <span>13 / 14</span>
+        <span>14 / 17</span>
       </div>
     </div>
   </section>
 
   <!-- ============================================================== -->
-  <!-- SLIDE 14 — CIERRE                                                -->
+  <!-- SLIDE 15 — APLICACIÓN DE LA MATERIA (Adm de Proyectos)           -->
   <!-- ============================================================== -->
-  <section class="slide cover" data-slide="14">
+  <section class="slide" data-slide="15">
+    <div class="slide-card">
+      <span class="eyebrow">13 · Lo que aplicamos de la materia</span>
+      <h2 class="h-display">Administración de Proyectos<br/>de Software, en práctica.</h2>
+
+      <p class="lead" style="max-width: 60rem;">
+        NexusAI no fue solo desarrollar un producto: fue ejercitar todo el
+        ciclo de gestión que vimos en la materia.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 1.75rem;">
+        <div class="card">
+          <div class="label">Planificación</div>
+          <div class="card-title" style="margin-top: 0.5rem;">WBS, cronograma y estimaciones</div>
+          <div class="card-body" style="margin-top: 0.4rem;">
+            WBS de 5 niveles, cronograma con dependencias y estimaciones
+            con story points por planning poker en cada sprint.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Ejecución</div>
+          <div class="card-title" style="margin-top: 0.5rem;">Scrum con 5 sprints</div>
+          <div class="card-body" style="margin-top: 0.4rem;">
+            Daily syncs, sprint planning, sprint review y retrospectiva.
+            Backlog priorizado con MoSCoW. 96% de cumplimiento de SP.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Control</div>
+          <div class="card-title" style="margin-top: 0.5rem;">Matriz de riesgos + KPIs</div>
+          <div class="card-body" style="margin-top: 0.4rem;">
+            12 riesgos identificados con probabilidad × impacto, planes de
+            mitigación y monitoreo de velocity por sprint.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Calidad</div>
+          <div class="card-title" style="margin-top: 0.5rem;">ADRs + testing + CI/CD</div>
+          <div class="card-body" style="margin-top: 0.4rem;">
+            14 ADRs documentando decisiones, 37 tests automatizados y
+            pipeline de CI/CD con GitHub Actions desde Sprint 3.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Costos</div>
+          <div class="card-title" style="margin-top: 0.5rem;">TCO y proyección</div>
+          <div class="card-body" style="margin-top: 0.4rem;">
+            Cálculo de TCO del MVP (horas + infraestructura) y proyección
+            de costos a 500 alumnos: ~$100/mes.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Cierre</div>
+          <div class="card-title" style="margin-top: 0.5rem;">Retrospectiva + handoff</div>
+          <div class="card-body" style="margin-top: 0.4rem;">
+            Lecciones aprendidas documentadas, código transferible y plan
+            de continuidad post-MVP definido.
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>15 / 17</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 16 — VALOR GANADO (EVM)                                    -->
+  <!-- ============================================================== -->
+  <section class="slide" data-slide="16">
+    <div class="slide-card">
+      <span class="eyebrow">14 · Earned Value Management</span>
+      <h2 class="h-display">Valor ganado del MVP.</h2>
+
+      <p class="lead" style="max-width: 60rem;">
+        Aplicamos EVM al cierre del proyecto para medir cumplimiento real
+        contra lo planificado. Las métricas confirman un MVP entregado en
+        plazo con sobrecosto controlado, sano para un proyecto con scope creep.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-top: 1.5rem;">
+        <div class="card">
+          <div class="kpi" style="font-size: 3rem; color: #2f7d4f;">0.96</div>
+          <div class="kpi-label"><strong>SPI</strong> — Schedule Performance Index<br/><span style="color: var(--c-navy-muted);">Cronograma sano (meta &gt; 0.95)</span></div>
+        </div>
+        <div class="card">
+          <div class="kpi" style="font-size: 3rem; color: #c89610;">0.92</div>
+          <div class="kpi-label"><strong>CPI</strong> — Cost Performance Index<br/><span style="color: var(--c-navy-muted);">Sobrecosto leve (~8%)</span></div>
+        </div>
+        <div class="card">
+          <div class="kpi" style="font-size: 3rem;">−10</div>
+          <div class="kpi-label"><strong>SV</strong> — Schedule Variance (SP)<br/><span style="color: var(--c-navy-muted);">10 SP de atraso compensados en S4</span></div>
+        </div>
+        <div class="card">
+          <div class="kpi" style="font-size: 3rem;">−$875</div>
+          <div class="kpi-label"><strong>CV</strong> — Cost Variance<br/><span style="color: var(--c-navy-muted);">~9% sobre presupuesto notional</span></div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1.5rem;">
+        <div class="card-soft">
+          <div class="label" style="margin-bottom: 0.6rem;">Premisas del cálculo</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 1.05rem; color: var(--c-navy-soft); line-height: 1.7;">
+            <li><strong style="color: var(--c-navy);">BAC</strong> · 265 SP × 1.5 h/SP = <strong>400 h</strong> ≈ $10.000 notional</li>
+            <li><strong style="color: var(--c-navy);">Tarifa</strong> · $25/h (junior dev de mercado)</li>
+            <li><strong style="color: var(--c-navy);">EV</strong> · 255 SP completados = 385 h equivalentes</li>
+            <li><strong style="color: var(--c-navy);">AC</strong> · ~420 h reales (incluye retrabajos)</li>
+          </ul>
+        </div>
+        <div class="card-soft">
+          <div class="label" style="margin-bottom: 0.6rem;">Proyección al cierre</div>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 1.05rem; color: var(--c-navy-soft); line-height: 1.7;">
+            <li><strong style="color: var(--c-navy);">EAC</strong> · BAC / CPI = <strong>~$10.875</strong></li>
+            <li><strong style="color: var(--c-navy);">VAC</strong> · BAC − EAC = <strong>−$875</strong></li>
+            <li><strong style="color: var(--c-navy);">ETC</strong> · ~$0 (MVP cerrado, sin trabajo pendiente)</li>
+            <li><strong style="color: var(--c-navy);">% Completado</strong> · EV/BAC = <strong>96.2%</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="lead" style="max-width: 60rem; font-size: 1.1rem; margin-top: 1.25rem; font-style: italic;">
+        Lectura: 96% de cumplimiento de cronograma y 92% de eficiencia de costos.
+        Ambos ratios están dentro del rango "verde" del PMI para proyectos
+        ágiles (0.90 - 1.10).
+      </p>
+
+      <div class="slide-footer">
+        <span>NexusAI · Entrega Final del MVP</span>
+        <span>16 / 17</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SLIDE 17 — CIERRE                                                -->
+  <!-- ============================================================== -->
+  <section class="slide cover" data-slide="17">
     <div class="cover-card" style="text-align: center;">
-      <span class="eyebrow" style="margin: 0 auto 2rem auto;">12 · Cierre</span>
+      <span class="eyebrow" style="margin: 0 auto 2rem auto;">15 · Cierre</span>
       <h2 class="cover-title" style="font-size: 7rem; text-align: center;">Gracias.</h2>
       <p class="lead" style="text-align: center; max-width: 36rem; margin: 2rem auto;">
         El MVP de NexusAI está en producción, es entregable y se puede

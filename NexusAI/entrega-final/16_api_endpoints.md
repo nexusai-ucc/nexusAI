@@ -35,7 +35,7 @@ Liveness probe. Sin autenticación. Devuelve estado del backend y modelo LLM
 activo. Usado por Docker, Kubernetes y monitoreo externo.
 
 ```json
-{ "status": "ok", "version": "0.9.3", "env": "production", "llm_model": "gemini-2.5-flash" }
+{ "status": "ok", "version": "0.9.4", "env": "production", "llm_model": "gemini-2.5-flash" }
 ```
 
 ### `GET /`
