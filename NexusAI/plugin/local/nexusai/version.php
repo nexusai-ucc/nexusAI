@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026060801;        // YYYYMMDDXX — Multi-curso: quiz y search soportan todos los cursos del alumno.
-$plugin->release   = '0.9.4';            // Multi-course quiz + search fix.
+$plugin->version   = 2026070101;        // YYYYMMDDXX — SP-03/SP-05/SP-10: quiz V/F, preguntas abiertas, tab Repaso.
+$plugin->release   = '0.9.5';            // Quiz multi-tipo + evaluación IA + repaso de errores.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
