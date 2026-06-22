@@ -55,5 +55,13 @@ $string['admin_page_title']        = 'NexusAI · Panel de administración';
 $string['documents_page_title']    = 'NexusAI · Material';
 $string['documents_page_noscript'] = 'Esta página requiere JavaScript habilitado para gestionar el material indexado por el asistente NexusAI.';
 
+// Prompt de confirmación al subir archivo a sección del curso.
+$string['upload_prompt_title']   = 'NexusAI — nuevo material';
+$string['upload_prompt_body']    = '¿Querés indexar <strong>{$a}</strong> en los materiales de NexusAI para que los alumnos puedan consultarlo en el asistente?';
+$string['upload_prompt_yes']     = 'Sí, agregar';
+$string['upload_prompt_no']      = 'No por ahora';
+$string['upload_prompt_success'] = '"{$a}" fue agregado a NexusAI correctamente.';
+$string['upload_prompt_error']   = 'No se pudo indexar el archivo en NexusAI. Podés intentarlo desde la sección de materiales.';
+
 // Privacy API.
 $string['privacy:metadata'] = 'El plugin NexusAI no almacena datos personales en Moodle. El historial de chat vive en el servicio backend externo de NexusAI.';
