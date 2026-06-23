@@ -77,6 +77,15 @@ wait_healthy() {
     warn "'$service' todavía no está healthy después de ${max} intentos — seguimos igual."
 }
 
+run_migrations() {
+    log "Aplicando migraciones de Alembic en el backend..."
+    if nexusai_compose exec -T api alembic upgrade head; then
+        ok "Migraciones aplicadas (DB del backend al día)."
+    else
+        warn "No se pudieron aplicar las migraciones — el endpoint /documents puede fallar. Revisá: docker compose logs api"
+    fi
+}
+
 cmd_start() {
     check_prereqs
     set -a; source .env 2>/dev/null || true; set +a
@@ -85,6 +94,7 @@ cmd_start() {
     nexusai_compose up -d postgres redis api
     wait_healthy postgres
     wait_healthy api
+    run_migrations
 
     log "Levantando Moodle (moodle-docker)..."
     moodle_compose up -d
@@ -101,6 +111,7 @@ cmd_backend() {
     nexusai_compose up -d postgres redis api
     wait_healthy postgres
     wait_healthy api
+    run_migrations
     ok "Backend listo."
     print_urls_backend
     echo ""
