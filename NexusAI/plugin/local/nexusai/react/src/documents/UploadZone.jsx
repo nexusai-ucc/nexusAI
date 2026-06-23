@@ -8,7 +8,22 @@
 
 import { useRef, useState } from "react";
 
-const ACCEPT_TYPES = "application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain";
+const ACCEPT_TYPES = [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain",
+    "text/csv",
+    "text/markdown",
+    "text/html",
+    // Algunos navegadores no resuelven bien estos MIME types por extensión;
+    // se agregan explícitamente para que el file picker los muestre siempre.
+    ".csv",
+    ".md",
+    ".html",
+    ".htm",
+].join(",");
 
 export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES }) {
     const inputRef = useRef(null);
@@ -81,7 +96,7 @@ export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES }
                 {disabled ? "Por favor esperá a que termine" : "o hacé click para seleccionar"}
             </div>
             <div className="nexusai-dropzone__formats">
-                Formatos: PDF · DOCX · TXT · Tamaño máximo: 20 MB
+                Formatos: PDF · DOCX · PPTX · XLSX · CSV · MD · HTML · TXT · Tamaño máximo: 20 MB
             </div>
         </div>
     );

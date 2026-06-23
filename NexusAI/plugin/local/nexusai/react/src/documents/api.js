@@ -120,13 +120,47 @@ export async function getDocumentStatus(courseId, documentId) {
 const ACCEPTED_MIME_TYPES = new Set([
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "text/plain",
+    "text/csv",
+    "text/markdown",
+    "text/html",
 ]);
+
+// El navegador suele mandar file.type vacío (o genérico, ej. "application/octet-stream")
+// para CSV, Markdown y a veces HTML. Si pasa eso, derivamos el MIME por extensión
+// en lugar de rechazar el archivo.
+const EXTENSION_MIME_TYPES = {
+    pdf: "application/pdf",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    txt: "text/plain",
+    csv: "text/csv",
+    md: "text/markdown",
+    markdown: "text/markdown",
+    html: "text/html",
+    htm: "text/html",
+};
+
+function resolveMimeType(file) {
+    if (ACCEPTED_MIME_TYPES.has(file.type)) return file.type;
+
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    const byExtension = ext ? EXTENSION_MIME_TYPES[ext] : undefined;
+    return byExtension || file.type;
+}
 
 export async function uploadDocument(courseId, file) {
     if (!file) throw new Error("No file provided");
-    if (!ACCEPTED_MIME_TYPES.has(file.type)) {
-        throw new Error(`Formato no soportado: ${file.type || "desconocido"}. Se aceptan PDF, DOCX y TXT.`);
+
+    const mimeType = resolveMimeType(file);
+    if (!ACCEPTED_MIME_TYPES.has(mimeType)) {
+        throw new Error(
+            `Formato no soportado: ${file.type || "desconocido"}. `
+            + "Se aceptan PDF, DOCX, PPTX, XLSX, CSV, MD, HTML y TXT."
+        );
     }
     if (file.size > 20 * 1024 * 1024) {
         throw new Error(`Archivo muy grande (${formatBytes(file.size)}). Máximo: 20 MB`);
@@ -146,7 +180,7 @@ export async function uploadDocument(courseId, file) {
             course_id: courseId,
             uploader_id: 2,
             filename: file.name,
-            mime_type: file.type,
+            mime_type: mimeType,
             status: "pending",
             error_message: null,
         };
@@ -160,7 +194,7 @@ export async function uploadDocument(courseId, file) {
     return callMoodle("local_nexusai_document_upload", {
         courseid:    courseId,
         filename:    file.name,
-        mimetype:    file.type,
+        mimetype:    mimeType,
         content_b64: contentB64,
     });
 }
