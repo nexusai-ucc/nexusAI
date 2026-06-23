@@ -5,13 +5,13 @@
  * Event observer for local_nexusai — auto-sync on course module creation.
  *
  * Cuando un docente crea un módulo de tipo "resource" (Archivo) que contiene
- * un PDF, DOCX o TXT, este observer lo envía automáticamente al backend NexusAI
- * para indexación RAG.
+ * un formato soportado (PDF, DOCX, PPTX, XLSX, CSV, MD, HTML o TXT), este
+ * observer lo envía automáticamente al backend NexusAI para indexación RAG.
  *
  * Comportamiento de errores:
  *   - Si el plugin está deshabilitado → skip silencioso.
  *   - Si el módulo no es del tipo "resource" → skip silencioso.
- *   - Si el archivo no es PDF/DOCX/TXT → skip silencioso.
+ *   - Si el archivo no tiene un formato soportado → skip silencioso.
  *   - Si el backend falla → log error, NO interrumpe Moodle (excepción atrapada).
  *
  * Dependencias:
@@ -34,7 +34,12 @@ class observer {
     const SUPPORTED_MIME_TYPES = [
         'application/pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'text/plain',
+        'text/csv',
+        'text/markdown',
+        'text/html',
     ];
 
     /**

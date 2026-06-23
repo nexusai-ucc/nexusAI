@@ -129,7 +129,12 @@ if ($filename === '') {
     $ext_map = [
         'application/pdf'  => '.pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => '.docx',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation' => '.pptx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => '.xlsx',
         'text/plain'       => '.txt',
+        'text/csv'         => '.csv',
+        'text/markdown'    => '.md',
+        'text/html'        => '.html',
     ];
     $clean_ct = strtolower(trim(explode(';', $content_type ?: '')[0]));
     $ext      = $ext_map[$clean_ct] ?? '';

@@ -54,13 +54,18 @@ class document_upload extends \external_api {
     private const ALLOWED_MIME_TYPES = [
         'application/pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'text/plain',
+        'text/csv',
+        'text/markdown',
+        'text/html',
     ];
 
     /**
      * @param int    $courseid    ID del curso (el contexto del curso valida acceso).
      * @param string $filename    Nombre del archivo subido.
-     * @param string $mimetype    MIME type: PDF, DOCX o TXT.
+     * @param string $mimetype    MIME type: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML o TXT.
      * @param string $contentb64  Contenido binario del archivo en base64.
      * @return array Document state después del upload.
      */
@@ -82,7 +87,8 @@ class document_upload extends \external_api {
         // Validar tipo MIME contra la lista de tipos permitidos.
         if (!in_array($params['mimetype'], self::ALLOWED_MIME_TYPES, true)) {
             throw new \invalid_parameter_exception(
-                'Unsupported file type. Allowed: PDF, DOCX, TXT. Got: ' . $params['mimetype']
+                'Unsupported file type. Allowed: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML, TXT. '
+                . 'Got: ' . $params['mimetype']
             );
         }
 
@@ -158,10 +164,25 @@ class document_upload extends \external_api {
                     throw new \invalid_parameter_exception('File does not look like a valid DOCX');
                 }
                 break;
+            case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                // PPTX es un ZIP, igual que DOCX.
+                if (substr($bytes, 0, 4) !== "PK\x03\x04") {
+                    throw new \invalid_parameter_exception('File does not look like a valid PPTX');
+                }
+                break;
+            case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                // XLSX es un ZIP, igual que DOCX.
+                if (substr($bytes, 0, 4) !== "PK\x03\x04") {
+                    throw new \invalid_parameter_exception('File does not look like a valid XLSX');
+                }
+                break;
             case 'text/plain':
-                // TXT: verificar que sea UTF-8 válido (mb_check_encoding).
+            case 'text/csv':
+            case 'text/markdown':
+            case 'text/html':
+                // Formatos de texto: verificar que sea UTF-8 válido (mb_check_encoding).
                 if (!mb_check_encoding($bytes, 'UTF-8')) {
-                    throw new \invalid_parameter_exception('TXT file is not valid UTF-8');
+                    throw new \invalid_parameter_exception('Text file is not valid UTF-8');
                 }
                 break;
         }
