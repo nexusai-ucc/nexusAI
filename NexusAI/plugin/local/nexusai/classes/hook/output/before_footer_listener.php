@@ -50,6 +50,8 @@ class before_footer_listener {
             return;
         }
 
+        $isteacher = has_capability('local/nexusai:manage', $context);
+
         // 2. Cargar el bundle React vía AMD/RequireJS.
         $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
             [
@@ -58,9 +60,17 @@ class before_footer_listener {
                 'sesskey'    => sesskey(),
                 'wwwroot'    => (string) (new \moodle_url('/'))->out(false),
                 'lang'       => current_language(),
-                'isteacher'  => (int) has_capability('local/nexusai:manage', $context),
+                'isteacher'  => (int) $isteacher,
             ],
         ]);
+
+        // Para docentes: cargar el módulo que muestra el prompt de confirmación
+        // cuando suben un archivo a una sección del curso.
+        if ($isteacher) {
+            $PAGE->requires->js_call_amd('local_nexusai/upload-prompt', 'init', [
+                ['courseid' => (int) $COURSE->id],
+            ]);
+        }
 
         // 3. Inyectar el contenedor donde React monta el componente.
         //    En el sistema nuevo se usa $hook->add_html() en lugar de retornar string.

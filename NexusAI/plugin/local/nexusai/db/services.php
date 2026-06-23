@@ -141,6 +141,40 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // ----- CONFIRMACIÓN DE CARGA DESDE SECCIÓN DEL CURSO -----
+
+    // Lista los archivos subidos al curso (tab general) pendientes de confirmación.
+    'local_nexusai_get_pending_uploads' => [
+        'classname'     => '\local_nexusai\external\get_pending_uploads',
+        'methodname'    => 'execute',
+        'description'   => 'Get files uploaded to a course section that are pending NexusAI indexing confirmation.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    // El docente confirmó que quiere indexar el archivo en NexusAI.
+    'local_nexusai_confirm_pending_upload' => [
+        'classname'     => '\local_nexusai\external\confirm_pending_upload',
+        'methodname'    => 'execute',
+        'description'   => 'Confirm indexing of a pending course file into NexusAI.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    // El docente eligió no indexar el archivo en NexusAI.
+    'local_nexusai_dismiss_pending_upload' => [
+        'classname'     => '\local_nexusai\external\dismiss_pending_upload',
+        'methodname'    => 'execute',
+        'description'   => 'Dismiss a pending course file without indexing it into NexusAI.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'loginrequired' => true,
+    ],
+
 ];
 
 // $services queda vacío: no exponemos un service preconfigurado todavía. La

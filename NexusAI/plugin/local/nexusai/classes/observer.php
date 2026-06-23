@@ -5,13 +5,13 @@
  * Event observer for local_nexusai — auto-sync on course module creation.
  *
  * Cuando un docente crea un módulo de tipo "resource" (Archivo) que contiene
- * un PDF, DOCX o TXT, este observer lo envía automáticamente al backend NexusAI
- * para indexación RAG.
+ * un formato soportado (PDF, DOCX, PPTX, XLSX, CSV, MD, HTML o TXT), este
+ * observer lo envía automáticamente al backend NexusAI para indexación RAG.
  *
  * Comportamiento de errores:
  *   - Si el plugin está deshabilitado → skip silencioso.
  *   - Si el módulo no es del tipo "resource" → skip silencioso.
- *   - Si el archivo no es PDF/DOCX/TXT → skip silencioso.
+ *   - Si el archivo no tiene un formato soportado → skip silencioso.
  *   - Si el backend falla → log error, NO interrumpe Moodle (excepción atrapada).
  *
  * Dependencias:
@@ -34,7 +34,12 @@ class observer {
     const SUPPORTED_MIME_TYPES = [
         'application/pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'text/plain',
+        'text/csv',
+        'text/markdown',
+        'text/html',
     ];
 
     /**
@@ -84,46 +89,54 @@ class observer {
      * @throws \moodle_exception Si el backend rechaza o hay error de red.
      * @throws \coding_exception  Si no se puede leer el archivo.
      */
+    /**
+     * Nombre de la user preference donde se acumulan los uploads pendientes de confirmación.
+     * Valor: JSON object {cmid: {courseid, context_id, filename, mimetype}}.
+     */
+    const PENDING_PREF = 'local_nexusai_pending_uploads';
+
     private static function index_resource_module(int $cmid, int $courseid, int $userid): void {
-        global $CFG;
+        global $CFG, $USER;
 
         require_once($CFG->dirroot . '/mod/resource/lib.php');
 
-        // Obtener el context del módulo para buscar en el filestore.
         $context = \context_module::instance($cmid);
 
-        // Los archivos de "resource" están en el filearea 'content'.
         $fs    = get_file_storage();
         $files = $fs->get_area_files($context->id, 'mod_resource', 'content', false, 'itemid, filepath, filename', false);
 
         if (empty($files)) {
-            // Módulo resource sin archivo adjunto — skip.
             return;
         }
 
-        // Tomar solo el primer archivo (resource solo admite 1 archivo principal).
         $file = reset($files);
 
         $mimetype = $file->get_mimetype();
         if (!in_array($mimetype, self::SUPPORTED_MIME_TYPES, true)) {
-            // Tipo no soportado (imagen, video, ZIP...) — skip silencioso.
             return;
         }
 
-        $filename  = $file->get_filename();
-        $filebytes = $file->get_content();  // Raw bytes del archivo.
+        $filename = $file->get_filename();
 
-        if (empty($filebytes)) {
-            debugging('[NexusAI] Empty file content for cmid=' . $cmid, DEBUG_NORMAL);
-            return;
+        // En lugar de indexar automáticamente, guardamos la info en una user preference
+        // para que el docente confirme en el próximo page load (modal de confirmación).
+        $raw     = get_user_preferences(self::PENDING_PREF, '{}', $userid);
+        $pending = json_decode($raw, true);
+        if (!is_array($pending)) {
+            $pending = [];
         }
 
-        // Enviar al backend NexusAI para indexación.
-        $client = new \local_nexusai\external\backend_client();
-        $client->upload_document($courseid, $userid, $filename, $mimetype, $filebytes);
+        $pending[(string) $cmid] = [
+            'courseid'   => $courseid,
+            'context_id' => $context->id,
+            'filename'   => $filename,
+            'mimetype'   => $mimetype,
+        ];
+
+        set_user_preference(self::PENDING_PREF, json_encode($pending), $userid);
 
         debugging(
-            '[NexusAI] Auto-indexed "' . $filename . '" (cmid=' . $cmid . ', course=' . $courseid . ')',
+            '[NexusAI] Pending upload queued for "' . $filename . '" (cmid=' . $cmid . ', course=' . $courseid . ')',
             DEBUG_DEVELOPER
         );
     }

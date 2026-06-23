@@ -5,8 +5,9 @@
  * Event observer registration for local_nexusai.
  *
  * Registra los observadores de eventos de Moodle. Cuando un docente sube un
- * recurso compatible (PDF, DOCX, TXT) a un módulo del curso, el observer
- * lo detecta y lo envía al backend NexusAI para indexación automática.
+ * recurso compatible (PDF, DOCX, PPTX, XLSX, CSV, MD, HTML, TXT) a un módulo
+ * del curso, el observer lo detecta y lo envía al backend NexusAI para
+ * indexación automática.
  *
  * Esto complementa la carga manual desde la vista docente (/documents.php):
  * con este observer, cualquier recurso que el docente suba desde la interfaz
