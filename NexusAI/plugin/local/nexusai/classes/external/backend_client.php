@@ -226,23 +226,46 @@ class backend_client {
      * @param int         $numquestions Cantidad de preguntas (1..10).
      * @return array{course_id:int, topic:?string, questions:array}
      */
-    public function generate_quiz(int $courseid, int $userid, ?string $topic, int $numquestions, array $courseids = []): array {
+    public function generate_quiz(int $courseid, int $userid, ?string $topic, int $numquestions, string $questiontype = 'multiple_choice'): array {
         $payload = [
             'course_id'     => $courseid,
             'user_id'       => $userid,
             'num_questions' => $numquestions,
+            'question_type' => $questiontype,
         ];
         if ($topic !== null && trim($topic) !== '') {
             $payload['topic'] = trim($topic);
-        }
-        if (!empty($courseids)) {
-            $payload['course_ids'] = array_map('intval', $courseids);
         }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
         return $this->post('/api/v1/quiz/generate', $body);
+    }
+
+    /**
+     * Evalúa la respuesta libre de un alumno a una pregunta abierta (SP-05).
+     *
+     * @param int    $courseid    ID del curso.
+     * @param int    $userid      $USER->id real.
+     * @param string $question    Texto de la pregunta.
+     * @param string $modelanswer Respuesta modelo / explanation del quiz.
+     * @param string $useranswer  Respuesta escrita por el alumno.
+     * @return array{correct:bool, score:float, feedback:string}
+     */
+    public function evaluate_quiz_answer(int $courseid, int $userid, string $question, string $modelanswer, string $useranswer): array {
+        $payload = [
+            'course_id'   => $courseid,
+            'user_id'     => $userid,
+            'question'    => $question,
+            'model_answer' => $modelanswer,
+            'user_answer'  => $useranswer,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/evaluate', $body);
     }
 
     /**

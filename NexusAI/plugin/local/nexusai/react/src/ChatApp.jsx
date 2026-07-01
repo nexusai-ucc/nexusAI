@@ -25,6 +25,7 @@ import MessageBubble from "./components/MessageBubble.jsx";
 import TypingIndicator from "./components/TypingIndicator.jsx";
 import QuizPanel from "./components/QuizPanel.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
+import ReviewPanel from "./components/ReviewPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import { IconBookOpen, IconGlobe } from "./components/icons.jsx";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
@@ -411,6 +412,13 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                 {lang === "es" ? "Buscar" : "Search"}
                             </button>
                         )}
+                        <button
+                            type="button"
+                            className={`nexusai-tab ${activeTab === "review" ? "nexusai-tab--active" : ""}`}
+                            onClick={() => setActiveTab("review")}
+                        >
+                            {lang === "es" ? "Repaso" : "Review"}
+                        </button>
                     </div>
 
                     {activeTab === "chat" ? (
@@ -487,6 +495,10 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     ) : activeTab === "quiz" ? (
                         <div className="nexusai-panel__body">
                             <QuizPanel courseId={courseid} lang={lang} allCourses={multiCourse} />
+                        </div>
+                    ) : activeTab === "review" ? (
+                        <div className="nexusai-panel__body">
+                            <ReviewPanel courseId={courseid} sesskey={sesskey} lang={lang} />
                         </div>
                     ) : (
                         <div className="nexusai-panel__body">

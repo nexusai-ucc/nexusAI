@@ -70,11 +70,22 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Quiz generator — preguntas de opción múltiple desde el material (Feature F).
+    // Quiz generator — preguntas de práctica desde el material (Feature F / SP-03).
     'local_nexusai_quiz_generate' => [
         'classname'     => '\local_nexusai\external\quiz_generate',
         'methodname'    => 'execute',
-        'description'   => 'Generate a multiple-choice practice quiz from the course material.',
+        'description'   => 'Generate a practice quiz (multiple choice, true/false, open or mix) from the course material.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Quiz evaluator — evalúa respuestas abiertas con IA (SP-05).
+    'local_nexusai_quiz_evaluate' => [
+        'classname'     => '\local_nexusai\external\quiz_evaluate',
+        'methodname'    => 'execute',
+        'description'   => 'Evaluate a student open answer against the course material using LLM.',
         'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:use',

@@ -1168,6 +1168,85 @@
     color: #fff;
 }
 
+/* Selector de tipo de pregunta */
+.nexusai-quiz__typebtns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+.nexusai-quiz__typebtn {
+    padding: 7px 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f7f8fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .12s;
+    text-align: center;
+    line-height: 1.3;
+}
+.nexusai-quiz__typebtn:hover {
+    border-color: #c6d4f0;
+    color: var(--nexusai-primary);
+}
+.nexusai-quiz__typebtn--active {
+    background: var(--nexusai-primary);
+    border-color: var(--nexusai-primary);
+    color: #fff;
+}
+
+/* Layout compacto para V/F (sólo 2 opciones en fila) */
+.nexusai-quiz__options--tf {
+    flex-direction: row;
+    gap: 10px;
+}
+.nexusai-quiz__options--tf .nexusai-quiz__option {
+    flex: 1;
+    justify-content: center;
+}
+
+/* Preguntas abiertas */
+.nexusai-quiz__open-area {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.nexusai-quiz__open-hint {
+    font-size: 11.5px;
+    color: #64748b;
+    margin: 0;
+    font-style: italic;
+}
+.nexusai-quiz__open-textarea {
+    padding: 10px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--nexusai-fg);
+    background: #fff;
+    resize: vertical;
+    outline: none;
+    font-family: inherit;
+    line-height: 1.5;
+    transition: border-color .12s;
+    min-height: 100px;
+}
+.nexusai-quiz__open-textarea:focus { border-color: var(--nexusai-primary); }
+.nexusai-quiz__open-textarea:disabled { background: #f8fafc; color: #94a3b8; }
+
+/* Spinner inline dentro del botón Verificar (preguntas abiertas) */
+.nexusai-quiz__btn-spinner {
+    width: 13px;
+    height: 13px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: nexusai-quiz-spin .7s linear infinite;
+    flex-shrink: 0;
+}
+
 .nexusai-quiz__primary {
     display: inline-flex;
     align-items: center;
@@ -1417,6 +1496,279 @@
     font-weight: 700;
     color: var(--nexusai-primary);
     letter-spacing: -0.02em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ReviewPanel — Repaso basado en errores del quiz (SP-10)
+   ═══════════════════════════════════════════════════════════ */
+
+.nexusai-review {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Empty state */
+.nexusai-review--empty {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 220px;
+    gap: 10px;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-review__empty-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--nexusai-bg-subtle);
+    border-radius: var(--nexusai-radius-full);
+    color: var(--nexusai-fg-subtle);
+}
+.nexusai-review__empty-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+    margin: 0;
+}
+.nexusai-review__empty-hint {
+    font-size: 12px;
+    color: var(--nexusai-fg-muted);
+    margin: 0;
+    max-width: 240px;
+    line-height: 1.5;
+}
+
+/* Header */
+.nexusai-review__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+.nexusai-review__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+    margin: 0 0 2px;
+}
+.nexusai-review__subtitle {
+    font-size: 11.5px;
+    color: var(--nexusai-fg-muted);
+    margin: 0;
+}
+.nexusai-review__clear-btn {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    font-size: 11.5px;
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--nexusai-radius-sm);
+    cursor: pointer;
+    transition: background .12s;
+}
+.nexusai-review__clear-btn:hover { background: #fee2e2; }
+
+/* Card list */
+.nexusai-review__list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Individual card */
+.nexusai-review__card {
+    background: #fff;
+    border: 1.5px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-md);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Card top: badge + date */
+.nexusai-review__card-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.nexusai-review__badge {
+    padding: 2px 8px;
+    border-radius: var(--nexusai-radius-full);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+.nexusai-review__badge--multiple_choice {
+    background: var(--nexusai-primary-light);
+    color: var(--nexusai-primary);
+}
+.nexusai-review__badge--true_false {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+.nexusai-review__badge--open {
+    background: #f0fdf4;
+    color: #15803d;
+}
+.nexusai-review__date {
+    margin-left: auto;
+    font-size: 10.5px;
+    color: var(--nexusai-fg-subtle);
+}
+
+/* Question text */
+.nexusai-review__question {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--nexusai-fg);
+    line-height: 1.45;
+    margin: 0;
+}
+
+/* Options for MC / T/F */
+.nexusai-review__options {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.nexusai-review__opt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    background: var(--nexusai-bg-muted);
+    border: 1px solid transparent;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-review__opt--correct {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+    font-weight: 500;
+}
+.nexusai-review__opt--wrong {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+    font-weight: 500;
+}
+.nexusai-review__opt-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: rgba(0,0,0,0.06);
+    border-radius: 5px;
+    font-weight: 700;
+    font-size: 10.5px;
+    flex-shrink: 0;
+}
+.nexusai-review__opt-text {
+    flex: 1;
+    line-height: 1.4;
+}
+
+/* Open answer */
+.nexusai-review__open-answer {
+    background: var(--nexusai-bg-muted);
+    border-radius: var(--nexusai-radius);
+    padding: 8px 10px;
+    font-size: 12.5px;
+}
+.nexusai-review__open-label {
+    font-weight: 600;
+    color: var(--nexusai-fg-muted);
+    font-size: 11px;
+    display: block;
+    margin-bottom: 3px;
+}
+.nexusai-review__open-text {
+    color: var(--nexusai-fg);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Toggle explicación */
+.nexusai-review__toggle {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 11.5px;
+    color: var(--nexusai-primary);
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.nexusai-review__toggle:hover { color: var(--nexusai-primary-hover); }
+
+/* Explicación expandida */
+.nexusai-review__explanation {
+    background: #fafbff;
+    border: 1px solid #e0e7ff;
+    border-radius: var(--nexusai-radius);
+    padding: 8px 10px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    animation: nexusai-source-panel-in .15s ease-out;
+}
+.nexusai-review__explanation-label {
+    font-weight: 600;
+    color: #4338ca;
+    font-size: 11px;
+    margin: 0 0 4px;
+}
+.nexusai-review__explanation-text {
+    color: var(--nexusai-fg);
+    margin: 0;
+}
+.nexusai-review__score {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: var(--nexusai-fg-muted);
+    font-style: italic;
+}
+
+/* Archivo fuente */
+.nexusai-review__source {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    background: var(--nexusai-bg-subtle);
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-sm);
+    font-size: 11.5px;
+    color: var(--nexusai-fg-muted);
+    cursor: default;
+    align-self: flex-start;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nexusai-review__source--link {
+    cursor: pointer;
+    color: var(--nexusai-primary);
+    border-color: #c7d2fe;
+    background: var(--nexusai-primary-light);
+}
+.nexusai-review__source--link:hover {
+    background: #e0e7ff;
+    border-color: #a5b4fc;
+}
+.nexusai-review__source:disabled {
+    opacity: 0.6;
 }
 
 /* ── Caret de streaming ── */

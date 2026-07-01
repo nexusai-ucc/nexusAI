@@ -22,10 +22,10 @@ class quiz_generate extends \external_api {
 
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'     => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'topic'        => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_OPTIONAL, ''),
-            'numquestions' => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..10)', VALUE_OPTIONAL, 5),
-            'global'       => new \external_value(PARAM_BOOL, 'Generar usando todos los cursos del usuario', VALUE_OPTIONAL, false),
+            'courseid'      => new \external_value(PARAM_INT,   'ID del curso', VALUE_REQUIRED),
+            'topic'         => new \external_value(PARAM_RAW,   'Tema (opcional)', VALUE_OPTIONAL, ''),
+            'numquestions'  => new \external_value(PARAM_INT,   'Cantidad de preguntas (1..10)', VALUE_OPTIONAL, 5),
+            'questiontype'  => new \external_value(PARAM_ALPHA, 'Tipo de pregunta (multiple_choice|true_false|open|mix)', VALUE_OPTIONAL, 'multiple_choice'),
         ]);
     }
 
@@ -35,26 +35,28 @@ class quiz_generate extends \external_api {
             'topic'     => new \external_value(PARAM_RAW, 'Tema solicitado', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'questions' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'question'        => new \external_value(PARAM_RAW, 'Texto de la pregunta'),
-                    'options'         => new \external_multiple_structure(
+                    'question_type'      => new \external_value(PARAM_ALPHA, 'Tipo de pregunta'),
+                    'question'           => new \external_value(PARAM_RAW,  'Texto de la pregunta'),
+                    'options'            => new \external_multiple_structure(
                         new \external_value(PARAM_RAW, 'Opción')
                     ),
-                    'correct_index'   => new \external_value(PARAM_INT, 'Índice de la opción correcta (0..3)'),
-                    'explanation'     => new \external_value(PARAM_RAW, 'Explicación de la respuesta'),
-                    'source_filename' => new \external_value(PARAM_TEXT, 'Archivo del que sale la pregunta'),
+                    'correct_index'      => new \external_value(PARAM_INT,  'Índice de la opción correcta (-1..3)'),
+                    'explanation'        => new \external_value(PARAM_RAW,  'Explicación / respuesta modelo'),
+                    'source_filename'    => new \external_value(PARAM_TEXT, 'Archivo del que sale la pregunta'),
+                    'source_document_id' => new \external_value(PARAM_INT,  'ID del documento fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
                 ])
             ),
         ]);
     }
 
-    public static function execute(int $courseid, string $topic = '', int $numquestions = 5, bool $global = false): array {
+    public static function execute(int $courseid, string $topic = '', int $numquestions = 5, string $questiontype = 'multiple_choice'): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'     => $courseid,
             'topic'        => $topic,
             'numquestions' => $numquestions,
-            'global'       => $global,
+            'questiontype' => $questiontype,
         ]);
 
         $context = \context_course::instance($params['courseid']);
@@ -67,21 +69,8 @@ class quiz_generate extends \external_api {
         }
         $numq = max(1, min(10, (int) $params['numquestions']));
 
-        // Construir lista de cursos para modo global.
-        $courseids = [(int) $params['courseid']];
-        if (!empty($params['global'])) {
-            $enrolled   = enrol_get_users_courses($USER->id, true, 'id,fullname');
-            $allowedids = [];
-            foreach ($enrolled as $c) {
-                $ctx = \context_course::instance($c->id);
-                if (has_capability('local/nexusai:use', $ctx)) {
-                    $allowedids[] = (int) $c->id;
-                }
-            }
-            if (!empty($allowedids)) {
-                $courseids = $allowedids;
-            }
-        }
+        $allowed_types = ['multiple_choice', 'true_false', 'open', 'mix'];
+        $qtype = in_array($params['questiontype'], $allowed_types, true) ? $params['questiontype'] : 'multiple_choice';
 
         $client   = new backend_client();
         $response = $client->generate_quiz(
@@ -89,7 +78,7 @@ class quiz_generate extends \external_api {
             (int) $USER->id,
             $cleantopic !== '' ? $cleantopic : null,
             $numq,
-            count($courseids) > 1 ? $courseids : []
+            $qtype
         );
 
         if (!isset($response['questions']) || !is_array($response['questions'])) {
@@ -103,11 +92,13 @@ class quiz_generate extends \external_api {
                 static function (array $q): array {
                     $opts = $q['options'] ?? [];
                     return [
-                        'question'        => (string) ($q['question'] ?? ''),
-                        'options'         => array_map(static fn($o) => (string) $o, is_array($opts) ? $opts : []),
-                        'correct_index'   => (int) ($q['correct_index'] ?? 0),
-                        'explanation'     => (string) ($q['explanation'] ?? ''),
-                        'source_filename' => (string) ($q['source_filename'] ?? ''),
+                        'question_type'      => (string) ($q['question_type'] ?? 'multiple_choice'),
+                        'question'           => (string) ($q['question'] ?? ''),
+                        'options'            => array_map(static fn($o) => (string) $o, is_array($opts) ? $opts : []),
+                        'correct_index'      => (int) ($q['correct_index'] ?? -1),
+                        'explanation'        => (string) ($q['explanation'] ?? ''),
+                        'source_filename'    => (string) ($q['source_filename'] ?? ''),
+                        'source_document_id' => isset($q['source_document_id']) ? (int) $q['source_document_id'] : null,
                     ];
                 },
                 $response['questions']
