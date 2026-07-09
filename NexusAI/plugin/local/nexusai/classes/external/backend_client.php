@@ -389,6 +389,27 @@ class backend_client {
         return $this->post('/api/v1/forums/similar-posts', $body);
     }
 
+    /**
+     * Llama a /api/v1/forums/summarize-thread para resumir una discusión.
+     *
+     * @param int   $discussionid ID de la discusión.
+     * @param int   $courseid     ID del curso.
+     * @param array $posts        Array de ['post_id','author','content'].
+     * @return array {summary, key_points, resolved, posts_used, posts_truncated}
+     */
+    public function summarize_thread(int $discussionid, int $courseid, array $posts): array {
+        $payload = [
+            'discussion_id' => $discussionid,
+            'course_id'     => $courseid,
+            'posts'         => $posts,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/summarize-thread', $body);
+    }
+
     // =========================================================
     // Documentos
     // =========================================================

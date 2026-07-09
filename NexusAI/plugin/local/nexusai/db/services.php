@@ -107,6 +107,18 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Resume una discusión de foro con el LLM (F-04/F-10).
+    // Usado por el forum-thread-summarizer AMD module en mod-forum-discuss.
+    'local_nexusai_forum_summarize_thread' => [
+        'classname'     => '\local_nexusai\external\forum_summarize_thread',
+        'methodname'    => 'execute',
+        'description'   => 'Summarize a forum discussion thread using the LLM.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.

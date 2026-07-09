@@ -85,6 +85,20 @@ class before_footer_listener {
             ]);
         }
 
+        // F-10: resumen de hilo con IA.
+        // Solo en mod-forum-discuss (discuss.php?d=X) — páginas de discusión abierta.
+        if ($PAGE->pagetype === 'mod-forum-discuss') {
+            $discussionid = (int) optional_param('d', 0, PARAM_INT);
+            if ($discussionid > 0) {
+                $PAGE->requires->js_call_amd('local_nexusai/forum-thread-summarizer', 'init', [
+                    [
+                        'discussionid' => $discussionid,
+                        'courseid'     => (int) $COURSE->id,
+                    ],
+                ]);
+            }
+        }
+
         // 3. Inyectar el contenedor donde React monta el componente.
         //    En el sistema nuevo se usa $hook->add_html() en lugar de retornar string.
         $hook->add_html('<div id="local-nexusai-container" data-plugin="nexusai"></div>');
