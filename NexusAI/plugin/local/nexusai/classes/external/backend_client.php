@@ -351,6 +351,44 @@ class backend_client {
         $this->delete('/api/v1/forums/index-post/' . $postid);
     }
 
+    /**
+     * Busca posts de foro similares al texto que el alumno está escribiendo.
+     *
+     * Usa similitud coseno sobre los embeddings almacenados en forum_post_embeddings.
+     * Solo busca dentro del mismo curso. Devuelve lista vacía si nada supera el threshold.
+     *
+     * @param int        $courseid      ID del curso.
+     * @param string     $text          Texto del post en redacción (mín 10 chars).
+     * @param int|null   $excludepostid Post a excluir (al editar un post existente).
+     * @param float      $threshold     Similitud mínima 0.0–1.0 (default 0.75).
+     * @param int        $topk          Resultados máximos 1–10 (default 5).
+     * @return array{similar_posts:array, threshold_used:float}
+     *
+     * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
+     */
+    public function search_similar_posts(
+        int $courseid,
+        string $text,
+        ?int $excludepostid = null,
+        float $threshold = 0.75,
+        int $topk = 5
+    ): array {
+        $payload = [
+            'course_id' => $courseid,
+            'text'      => $text,
+            'threshold' => $threshold,
+            'top_k'     => $topk,
+        ];
+        if ($excludepostid !== null) {
+            $payload['exclude_post_id'] = $excludepostid;
+        }
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/similar-posts', $body);
+    }
+
     // =========================================================
     // Documentos
     // =========================================================

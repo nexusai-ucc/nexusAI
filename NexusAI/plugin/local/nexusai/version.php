@@ -22,7 +22,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026070902;        // YYYYMMDDXX — Épica 06: add discussion_created observer (Moodle 5.x compat).
+$plugin->version   = 2026070904;        // YYYYMMDDXX — Épica 06: fix threshold en forum_search_similar (hardcode PHP).
 $plugin->release   = '0.9.5';
 $plugin->maturity  = MATURITY_ALPHA;
 

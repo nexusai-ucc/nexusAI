@@ -93,6 +93,20 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // ----- FOROS — Épica 06 -----
+
+    // Detecta posts similares al texto que el alumno está escribiendo (F-07).
+    // Usado por el forum-duplicate-checker AMD module antes de publicar.
+    'local_nexusai_forum_search_similar' => [
+        'classname'     => '\local_nexusai\external\forum_search_similar',
+        'methodname'    => 'execute',
+        'description'   => 'Find semantically similar forum posts in the same course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.
