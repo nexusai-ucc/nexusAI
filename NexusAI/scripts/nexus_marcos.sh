@@ -1,20 +1,14 @@
 #!/bin/bash
-# nexus.sh — levantar y cerrar el sistema NexusAI completo
+# nexus_marcos.sh — versión personal de marcos (rutas absolutas de su máquina)
 #
 # USO:
-#   ./scripts/nexus.sh start      # Backend + Moodle (sistema completo)
-#   ./scripts/nexus.sh backend    # Solo backend (sin Moodle)
-#   ./scripts/nexus.sh stop       # Para todo y preserva datos
-#   ./scripts/nexus.sh restart    # Para y vuelve a levantar (completo)
-#   ./scripts/nexus.sh status     # Estado de containers + URLs
-#   ./scripts/nexus.sh logs [svc] # Logs en tiempo real (api, moodle, postgres, redis)
-#   ./scripts/nexus.sh --help
-#
-# CONFIGURACIÓN DE RUTAS (setear antes de correr o exportar en tu shell):
-#   export MOODLE_DOCKER_DIR=/ruta/a/moodle-docker
-#   export MOODLE_DOCKER_WWWROOT=/ruta/a/moodle
-#
-# Para configuración personal sin tocar este archivo, copiá a nexus_tuNombre.sh
+#   ./scripts/nexus_marcos.sh start      # Backend + Moodle (sistema completo)
+#   ./scripts/nexus_marcos.sh backend    # Solo backend (sin Moodle)
+#   ./scripts/nexus_marcos.sh stop       # Para todo y preserva datos
+#   ./scripts/nexus_marcos.sh restart    # Para y vuelve a levantar (completo)
+#   ./scripts/nexus_marcos.sh status     # Estado de containers + URLs
+#   ./scripts/nexus_marcos.sh logs [svc] # Logs en tiempo real (api, moodle, postgres, redis)
+#   ./scripts/nexus_marcos.sh --help
 
 set -euo pipefail
 
@@ -23,11 +17,9 @@ cd "$REPO_ROOT"
 
 NEXUSAI_DOCKER_CONTEXT="${NEXUSAI_DOCKER_CONTEXT:-default}"
 
-# Las rutas a moodle-docker y moodle source DEBEN ser configuradas por cada
-# desarrollador vía variable de entorno (cada uno las tiene en un lugar distinto).
-# Si no están seteadas, moodle_compose falla con un mensaje claro.
-MOODLE_DOCKER_DIR="${MOODLE_DOCKER_DIR:-}"
-export MOODLE_DOCKER_WWWROOT="${MOODLE_DOCKER_WWWROOT:-}"
+# Rutas absolutas de la máquina de Marcos
+MOODLE_DOCKER_DIR="${MOODLE_DOCKER_DIR:-/home/marcos/Escritorio/tesis/moodle-docker}"
+export MOODLE_DOCKER_WWWROOT="${MOODLE_DOCKER_WWWROOT:-/home/marcos/Escritorio/tesis/moodle}"
 export MOODLE_DOCKER_DB="${MOODLE_DOCKER_DB:-pgsql}"
 export MOODLE_DOCKER_PHP_VERSION="${MOODLE_DOCKER_PHP_VERSION:-8.3}"
 export MOODLE_DOCKER_WEB_PORT="${MOODLE_DOCKER_WEB_PORT:-8080}"
@@ -44,10 +36,8 @@ nexusai_compose() {
 }
 
 moodle_compose() {
-    [[ -n "$MOODLE_DOCKER_DIR" ]] || die "MOODLE_DOCKER_DIR no está seteada. Exportála antes de correr el script."
-    [[ -n "$MOODLE_DOCKER_WWWROOT" ]] || die "MOODLE_DOCKER_WWWROOT no está seteada. Exportála antes de correr el script."
-    [[ -d "$MOODLE_DOCKER_DIR" ]] || die "moodle-docker no encontrado en $MOODLE_DOCKER_DIR. Cloná con: git clone https://github.com/moodlehq/moodle-docker.git $MOODLE_DOCKER_DIR"
-    [[ -d "$MOODLE_DOCKER_WWWROOT" ]] || die "Moodle source no encontrado en $MOODLE_DOCKER_WWWROOT. Cloná con: git clone -b MOODLE_404_STABLE https://git.in.moodle.com/moodle/moodle.git $MOODLE_DOCKER_WWWROOT"
+    [[ -d "$MOODLE_DOCKER_DIR" ]] || die "moodle-docker no encontrado en $MOODLE_DOCKER_DIR"
+    [[ -d "$MOODLE_DOCKER_WWWROOT" ]] || die "Moodle source no encontrado en $MOODLE_DOCKER_WWWROOT"
     "$MOODLE_DOCKER_DIR/bin/moodle-docker-compose" "$@"
 }
 
@@ -70,6 +60,49 @@ print_urls_backend() {
 
 print_urls_moodle() {
     echo -e "  ${BOLD}Moodle:${NC}         http://localhost:${MOODLE_DOCKER_WEB_PORT}  (admin / admin)"
+}
+
+print_setup_reminder() {
+    echo ""
+    echo -e "  ${YELLOW}Primera vez?${NC} Configurar el plugin en Moodle:"
+    echo -e "  Site admin → Plugins → Local plugins → NexusAI → completar:"
+    echo -e "    Backend URL:    ${BOLD}http://host.docker.internal:${API_PORT:-8001}${NC}"
+    echo -e "    API key:        valor de NEXUSAI_API_KEY en .env"
+    echo -e "    Shared secret:  valor de NEXUSAI_SHARED_SECRET en .env"
+    echo ""
+    echo -e "  ${YELLOW}También:${NC} Site admin → Security → HTTP security"
+    echo -e "    cURL blocked hosts list → vaciar"
+    echo -e "    cURL allowed ports list → agregar ${BOLD}${API_PORT:-8001}${NC}"
+}
+
+wait_moodle_db() {
+    log "Esperando a que la DB de Moodle esté lista..."
+    "$MOODLE_DOCKER_DIR/bin/moodle-docker-wait-for-db" 2>/dev/null \
+        && ok "DB de Moodle lista." \
+        || warn "Timeout esperando DB de Moodle — puede tardar un poco más."
+}
+
+moodle_install_if_needed() {
+    log "Verificando instalación de Moodle (puede tardar ~30s la primera vez)..."
+    local output
+    output=$(moodle_compose exec -T webserver php admin/cli/install_database.php \
+        --agree-license \
+        --fullname="NexusAI Dev" \
+        --shortname="nexusai-dev" \
+        --adminpass="admin" \
+        --adminemail="admin@nexusai.dev" 2>&1 || true)
+
+    if echo "$output" | grep -qi "already installed\|ya está instalado\|already exist"; then
+        ok "Moodle ya estaba instalado — usando datos existentes."
+    elif echo "$output" | grep -qi "Installation completed\|Instalación completada\|Success"; then
+        ok "Base de datos de Moodle instalada."
+    else
+        if curl -sf "http://localhost:${MOODLE_DOCKER_WEB_PORT}/login/index.php" -o /dev/null 2>/dev/null; then
+            ok "Moodle respondiendo en http://localhost:${MOODLE_DOCKER_WEB_PORT}"
+        else
+            warn "No se pudo verificar el estado de Moodle. Abrí http://localhost:${MOODLE_DOCKER_WEB_PORT} y seguí el wizard si aparece."
+        fi
+    fi
 }
 
 wait_healthy() {
@@ -107,9 +140,12 @@ cmd_start() {
 
     log "Levantando Moodle (moodle-docker)..."
     moodle_compose up -d
+    wait_moodle_db
+    moodle_install_if_needed
     ok "Sistema NexusAI levantado."
     print_urls_backend
     print_urls_moodle
+    print_setup_reminder
     echo ""
 }
 
@@ -146,7 +182,7 @@ cmd_status() {
     nexusai_compose ps 2>/dev/null || warn "Backend no está corriendo."
     echo ""
     echo -e "${BOLD}=== Moodle ===${NC}"
-    moodle_compose ps 2>/dev/null || warn "Moodle no está corriendo (o MOODLE_DOCKER_DIR no seteado)."
+    moodle_compose ps 2>/dev/null || warn "Moodle no está corriendo."
     echo ""
     echo -e "${BOLD}URLs:${NC}"
     print_urls_backend
@@ -168,32 +204,22 @@ cmd_logs() {
 cmd_help() {
     cat <<EOF
 
-${BOLD}nexus.sh — Sistema NexusAI${NC}
+${BOLD}nexus_marcos.sh — Sistema NexusAI (config de Marcos)${NC}
+
+  moodle-docker: $MOODLE_DOCKER_DIR
+  Moodle source: $MOODLE_DOCKER_WWWROOT
 
 USO:
-  ./scripts/nexus.sh <comando> [opciones]
+  ./scripts/nexus_marcos.sh <comando>
 
 COMANDOS:
-  start           Levanta el sistema completo (backend + Moodle)
-  backend         Levanta solo el backend (postgres + redis + api)
-  stop            Para todos los servicios (preserva los datos)
-  restart         Para y vuelve a levantar el sistema completo
-  status          Muestra estado de containers y URLs
-  logs [servicio] Sigue los logs en tiempo real
-                  Servicios: api, moodle, postgres, redis
-  --help / -h     Muestra esta ayuda
-
-CONFIGURACIÓN REQUERIDA (cada dev setea las suyas):
-  export MOODLE_DOCKER_DIR=/ruta/a/moodle-docker
-  export MOODLE_DOCKER_WWWROOT=/ruta/a/moodle
-
-  O copiá scripts/nexus.sh a scripts/nexus_tuNombre.sh y hardcodeá tus rutas.
-
-NOTAS:
-  - Backend corre en el daemon Docker del sistema (contexto: $NEXUSAI_DOCKER_CONTEXT).
-  - Los datos (DB, uploads) sobreviven al stop. Para borrar volúmenes: docker compose down -v
-  - Para más opciones (psql, rebuild, pgAdmin): ./scripts/dev.sh --help
-  - Documentación completa: docs/CORRER_PROYECTO.md
+  start     Levanta el sistema completo (backend + Moodle) con auto-install
+  backend   Levanta solo el backend (postgres + redis + api)
+  stop      Para todos los servicios (preserva los datos)
+  restart   Para y vuelve a levantar el sistema completo
+  status    Muestra estado de containers y URLs
+  logs [s]  Sigue los logs (api, moodle, postgres, redis)
+  --help    Muestra esta ayuda
 
 EOF
 }
