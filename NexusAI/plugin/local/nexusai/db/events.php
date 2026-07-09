@@ -28,4 +28,27 @@ $observers = [
         'internal'     => false,
         'priority'     => 0,
     ],
+
+    // Foros — Épica 06: indexar posts al crear/editar/borrar.
+    [
+        'eventname'   => '\mod_forum\event\post_created',
+        'callback'    => '\local_nexusai\observer::forum_post_created',
+        'includefile' => null,
+        'internal'    => false,
+        'priority'    => 200,
+    ],
+    [
+        'eventname'   => '\mod_forum\event\post_updated',
+        'callback'    => '\local_nexusai\observer::forum_post_updated',
+        'includefile' => null,
+        'internal'    => false,
+        'priority'    => 200,
+    ],
+    [
+        'eventname'   => '\mod_forum\event\post_deleted',
+        'callback'    => '\local_nexusai\observer::forum_post_deleted',
+        'includefile' => null,
+        'internal'    => false,
+        'priority'    => 200,
+    ],
 ];

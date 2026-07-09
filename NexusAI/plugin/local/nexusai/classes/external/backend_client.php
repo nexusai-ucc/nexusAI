@@ -306,6 +306,55 @@ class backend_client {
         return $this->post('/api/v1/documents', $body);
     }
 
+    // =========================================================
+    // Foros — Épica 06
+    // =========================================================
+
+    /**
+     * Indexa (o re-indexa) el embedding de un post de foro.
+     *
+     * El backend calcula el content_hash y hace skip si el contenido no cambió
+     * desde la última indexación (evita re-embeddear en ediciones triviales).
+     *
+     * @param int    $postid       ID de mdl_forum_posts.
+     * @param int    $discussionid ID de mdl_forum_discussions.
+     * @param int    $courseid     ID del curso de Moodle.
+     * @param string $content      Texto plano del post (sin HTML).
+     * @return array{post_id:int, status:string}  status = 'indexed' | 'skipped'
+     *
+     * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
+     */
+    public function index_forum_post(int $postid, int $discussionid, int $courseid, string $content): array {
+        $payload = [
+            'post_id'       => $postid,
+            'discussion_id' => $discussionid,
+            'course_id'     => $courseid,
+            'content'       => $content,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/index-post', $body);
+    }
+
+    /**
+     * Elimina el embedding de un post borrado de Moodle.
+     *
+     * El endpoint es idempotente: si el post no tenía embedding, no hace nada.
+     *
+     * @param int $postid ID de mdl_forum_posts.
+     *
+     * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
+     */
+    public function delete_forum_post(int $postid): void {
+        $this->delete('/api/v1/forums/index-post/' . $postid);
+    }
+
+    // =========================================================
+    // Documentos
+    // =========================================================
+
     /**
      * Lista los documentos indexados de un curso.
      *

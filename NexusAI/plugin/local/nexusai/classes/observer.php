@@ -95,6 +95,116 @@ class observer {
      */
     const PENDING_PREF = 'local_nexusai_pending_uploads';
 
+    // =========================================================
+    // Foros — Épica 06
+    // =========================================================
+
+    /**
+     * Indexa el embedding de un post de foro recién creado.
+     *
+     * Cubre tanto posts de respuesta como el primer post de una nueva discusión
+     * (Moodle dispara post_created en ambos casos).
+     *
+     * @param \mod_forum\event\post_created $event
+     */
+    public static function forum_post_created(\mod_forum\event\post_created $event): void {
+        if (!get_config('local_nexusai', 'enabled')) {
+            return;
+        }
+        self::index_forum_post_from_event(
+            (int) $event->objectid,
+            (int) $event->courseid,
+            (int) ($event->other['discussionid'] ?? 0)
+        );
+    }
+
+    /**
+     * Re-indexa el embedding de un post editado.
+     *
+     * El backend compara el content_hash y hace skip si el contenido no cambió.
+     *
+     * @param \mod_forum\event\post_updated $event
+     */
+    public static function forum_post_updated(\mod_forum\event\post_updated $event): void {
+        if (!get_config('local_nexusai', 'enabled')) {
+            return;
+        }
+        self::index_forum_post_from_event(
+            (int) $event->objectid,
+            (int) $event->courseid,
+            (int) ($event->other['discussionid'] ?? 0)
+        );
+    }
+
+    /**
+     * Elimina el embedding de un post borrado.
+     *
+     * El post ya no está en la DB cuando este evento dispara, así que solo
+     * necesitamos el post_id para llamar al backend.
+     *
+     * @param \mod_forum\event\post_deleted $event
+     */
+    public static function forum_post_deleted(\mod_forum\event\post_deleted $event): void {
+        if (!get_config('local_nexusai', 'enabled')) {
+            return;
+        }
+
+        $postid = (int) $event->objectid;
+
+        try {
+            $client = new \local_nexusai\external\backend_client();
+            $client->delete_forum_post($postid);
+        } catch (\Throwable $e) {
+            debugging(
+                '[NexusAI] forum_post_deleted failed for post=' . $postid . ': ' . $e->getMessage(),
+                DEBUG_NORMAL
+            );
+            error_log('[NexusAI] forum_post_deleted error post=' . $postid . ' — ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Lee el contenido del post desde la DB y llama al backend para indexarlo.
+     *
+     * Lógica compartida entre forum_post_created y forum_post_updated.
+     *
+     * @param int $postid       ID de mdl_forum_posts.
+     * @param int $courseid     ID del curso.
+     * @param int $discussionid ID de mdl_forum_discussions.
+     */
+    private static function index_forum_post_from_event(int $postid, int $courseid, int $discussionid): void {
+        global $DB;
+
+        try {
+            $post = $DB->get_record('forum_posts', ['id' => $postid]);
+            if (!$post) {
+                return;
+            }
+
+            // El mensaje se guarda como HTML — strip para texto limpio.
+            $content = trim(strip_tags($post->message ?? ''));
+
+            // Posts muy cortos (botones de "Gracias", etc.) no aportan al RAG.
+            if (strlen($content) < 10) {
+                return;
+            }
+
+            $client = new \local_nexusai\external\backend_client();
+            $client->index_forum_post($postid, $discussionid, $courseid, $content);
+
+        } catch (\Throwable $e) {
+            debugging(
+                '[NexusAI] forum post indexing failed for post=' . $postid . ': ' . $e->getMessage(),
+                DEBUG_NORMAL
+            );
+            error_log('[NexusAI] forum post index error post=' . $postid . ' — ' . $e->getMessage());
+        }
+    }
+
+    // =========================================================
+    // Módulos de recurso (documentos)
+    // =========================================================
+
     private static function index_resource_module(int $cmid, int $courseid, int $userid): void {
         global $CFG, $USER;
 
