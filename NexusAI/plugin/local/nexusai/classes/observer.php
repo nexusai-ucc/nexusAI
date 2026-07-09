@@ -100,10 +100,40 @@ class observer {
     // =========================================================
 
     /**
-     * Indexa el embedding de un post de foro recién creado.
+     * Indexa el primer post de una nueva discusión de foro.
      *
-     * Cubre tanto posts de respuesta como el primer post de una nueva discusión
-     * (Moodle dispara post_created en ambos casos).
+     * En Moodle 5.x crear una discusión dispara discussion_created pero NO post_created.
+     * Leemos el firstpost de la tabla m_forum_discussions para indexar el contenido.
+     *
+     * @param \mod_forum\event\discussion_created $event
+     */
+    public static function forum_discussion_created(\mod_forum\event\discussion_created $event): void {
+        if (!get_config('local_nexusai', 'enabled')) {
+            return;
+        }
+
+        global $DB;
+
+        $discussionid = (int) $event->objectid;
+        $courseid     = (int) $event->courseid;
+
+        try {
+            $discussion = $DB->get_record('forum_discussions', ['id' => $discussionid], 'id, firstpost');
+            if (!$discussion || empty($discussion->firstpost)) {
+                return;
+            }
+            self::index_forum_post_from_event((int) $discussion->firstpost, $courseid, $discussionid);
+        } catch (\Throwable $e) {
+            debugging(
+                '[NexusAI] forum_discussion_created failed for discussion=' . $discussionid . ': ' . $e->getMessage(),
+                DEBUG_NORMAL
+            );
+            error_log('[NexusAI] forum_discussion_created error discussion=' . $discussionid . ' — ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Indexa el embedding de un post de foro recién creado (respuestas a discusiones existentes).
      *
      * @param \mod_forum\event\post_created $event
      */

@@ -163,11 +163,19 @@ cmd_backend() {
 }
 
 cmd_stop() {
-    log "Parando Moodle..."
-    moodle_compose down 2>/dev/null || warn "moodle-docker no estaba corriendo."
+    log "Parando Moodle (stop, preserva DB y config)..."
+    moodle_compose stop 2>/dev/null || warn "moodle-docker no estaba corriendo."
     log "Parando backend nexusai..."
     nexusai_compose down
     ok "Sistema detenido. Los datos siguen en los volúmenes."
+}
+
+cmd_moodle_reset() {
+    warn "Esto borra TODOS los datos de Moodle (DB, uploads, config)."
+    read -r -p "¿Seguro? Escribí 'borrar moodle': " confirm
+    [[ "$confirm" == "borrar moodle" ]] || { log "Cancelado."; return; }
+    moodle_compose down 2>/dev/null || true
+    ok "Moodle reseteado. La próxima vez que levantes se instalará de cero."
 }
 
 cmd_restart() {
@@ -219,7 +227,8 @@ COMANDOS:
   restart   Para y vuelve a levantar el sistema completo
   status    Muestra estado de containers y URLs
   logs [s]  Sigue los logs (api, moodle, postgres, redis)
-  --help    Muestra esta ayuda
+  --help        Muestra esta ayuda
+  moodle-reset  Borra TODOS los datos de Moodle (empezar de cero)
 
 EOF
 }
@@ -231,6 +240,7 @@ case "${1:-}" in
     restart)        cmd_restart ;;
     status|ps)      cmd_status ;;
     logs)           cmd_logs "${2:-}" ;;
+    moodle-reset)   cmd_moodle_reset ;;
     --help|-h|help) cmd_help ;;
     "")             cmd_help ;;
     *)              err "Comando desconocido: $1"; cmd_help; exit 1 ;;
