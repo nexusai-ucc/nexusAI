@@ -410,6 +410,29 @@ class backend_client {
         return $this->post('/api/v1/forums/summarize-thread', $body);
     }
 
+    /**
+     * Genera una sugerencia de respuesta para un post de foro (F-05).
+     *
+     * @param int    $discussionid   ID de la discusión.
+     * @param int    $courseid       ID del curso.
+     * @param array  $posts          Array de ['post_id', 'author', 'content'].
+     * @param string $question       Texto del post al que se responde (para RAG).
+     * @return array {suggested_reply, has_course_material, sources_used}
+     */
+    public function suggest_reply(int $discussionid, int $courseid, array $posts, string $question): array {
+        $payload = [
+            'discussion_id' => $discussionid,
+            'course_id'     => $courseid,
+            'posts'         => $posts,
+            'question'      => $question,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/suggest-reply', $body);
+    }
+
     // =========================================================
     // Documentos
     // =========================================================

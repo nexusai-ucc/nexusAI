@@ -85,17 +85,17 @@ class before_footer_listener {
             ]);
         }
 
-        // F-10: resumen de hilo con IA.
+        // F-10/F-11: resumen de hilo + sugerencia de respuesta con IA.
         // Solo en mod-forum-discuss (discuss.php?d=X) — páginas de discusión abierta.
         if ($PAGE->pagetype === 'mod-forum-discuss') {
             $discussionid = (int) optional_param('d', 0, PARAM_INT);
             if ($discussionid > 0) {
-                $PAGE->requires->js_call_amd('local_nexusai/forum-thread-summarizer', 'init', [
-                    [
-                        'discussionid' => $discussionid,
-                        'courseid'     => (int) $COURSE->id,
-                    ],
-                ]);
+                $amdparams = [
+                    'discussionid' => $discussionid,
+                    'courseid'     => (int) $COURSE->id,
+                ];
+                $PAGE->requires->js_call_amd('local_nexusai/forum-thread-summarizer', 'init', [$amdparams]);
+                $PAGE->requires->js_call_amd('local_nexusai/forum-reply-suggester',   'init', [$amdparams]);
             }
         }
 

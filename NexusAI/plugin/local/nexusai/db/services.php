@@ -119,6 +119,18 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Genera una sugerencia de respuesta para un post de foro con RAG + LLM (F-05/F-11).
+    // Usado por el forum-reply-suggester AMD module cuando el usuario abre el formulario de reply.
+    'local_nexusai_forum_suggest_reply' => [
+        'classname'     => '\local_nexusai\external\forum_suggest_reply',
+        'methodname'    => 'execute',
+        'description'   => 'Generate an AI-powered reply suggestion for a forum post using RAG.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.
