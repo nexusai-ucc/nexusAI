@@ -8,11 +8,10 @@
 
 define([
     'core/ajax',
-    'core/modal_factory',
-    'core/modal_events',
+    'core/modal',
     'core/str',
     'core/notification',
-], function(Ajax, ModalFactory, ModalEvents, Str, Notification) {
+], function(Ajax, Modal, Str, Notification) {
 
     /**
      * Muestra el modal de confirmación para un archivo pendiente.
@@ -31,15 +30,16 @@ define([
             {key: 'upload_prompt_success', component: 'local_nexusai', param: item.filename},
             {key: 'upload_prompt_error',   component: 'local_nexusai'},
         ]).then(function(strings) {
-            var title   = strings[0];
-            var body    = strings[1];
-            var btnYes  = strings[2];
-            var btnNo   = strings[3];
-            var msgOk   = strings[4];
-            var msgErr  = strings[5];
+            var title  = strings[0];
+            var body   = strings[1];
+            var btnYes = strings[2];
+            var btnNo  = strings[3];
+            var msgOk  = strings[4];
+            var msgErr = strings[5];
 
-            return ModalFactory.create({
-                type: ModalFactory.types.SAVE_CANCEL,
+            // core/modal reemplaza a core/modal_factory en Moodle 4.3+/5.x.
+            return Modal.create({
+                type: Modal.types.SAVE_CANCEL,
                 title: title,
                 body: body,
                 buttons: {
@@ -51,7 +51,7 @@ define([
             modal.show();
 
             return new Promise(function(resolve) {
-                modal.getRoot().on(ModalEvents.save, function() {
+                modal.getRoot().on('modal-save-cancel:save', function() {
                     modal.hide();
                     Ajax.call([{
                         methodname: 'local_nexusai_confirm_pending_upload',
@@ -67,7 +67,7 @@ define([
                     });
                 });
 
-                modal.getRoot().on(ModalEvents.cancel, function() {
+                modal.getRoot().on('modal-save-cancel:cancel', function() {
                     modal.hide();
                     Ajax.call([{
                         methodname: 'local_nexusai_dismiss_pending_upload',
@@ -76,8 +76,7 @@ define([
                     resolve();
                 });
 
-                // Si el usuario cierra con la X también lo descartamos.
-                modal.getRoot().on(ModalEvents.hidden, function() {
+                modal.getRoot().on('hidden.bs.modal', function() {
                     resolve();
                 });
             });

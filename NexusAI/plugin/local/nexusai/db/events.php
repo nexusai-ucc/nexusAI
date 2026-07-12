@@ -28,4 +28,36 @@ $observers = [
         'internal'     => false,
         'priority'     => 0,
     ],
+
+    // Foros — Épica 06: indexar posts al crear/editar/borrar.
+    // En Moodle 5.x crear una nueva discusión dispara discussion_created (NO post_created).
+    // post_created solo dispara para respuestas a discusiones existentes.
+    [
+        'eventname'   => '\mod_forum\event\discussion_created',
+        'callback'    => '\local_nexusai\observer::forum_discussion_created',
+        'includefile' => null,
+        'internal'    => false,
+        'priority'    => 200,
+    ],
+    [
+        'eventname'   => '\mod_forum\event\post_created',
+        'callback'    => '\local_nexusai\observer::forum_post_created',
+        'includefile' => null,
+        'internal'    => false,
+        'priority'    => 200,
+    ],
+    [
+        'eventname'   => '\mod_forum\event\post_updated',
+        'callback'    => '\local_nexusai\observer::forum_post_updated',
+        'includefile' => null,
+        'internal'    => false,
+        'priority'    => 200,
+    ],
+    [
+        'eventname'   => '\mod_forum\event\post_deleted',
+        'callback'    => '\local_nexusai\observer::forum_post_deleted',
+        'includefile' => null,
+        'internal'    => false,
+        'priority'    => 200,
+    ],
 ];
