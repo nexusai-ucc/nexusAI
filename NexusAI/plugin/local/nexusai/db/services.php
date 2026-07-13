@@ -148,6 +148,44 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // ----- FOROS — Épica 06 -----
+
+    // Detecta posts similares al texto que el alumno está escribiendo (F-07).
+    // Usado por el forum-duplicate-checker AMD module antes de publicar.
+    'local_nexusai_forum_search_similar' => [
+        'classname'     => '\local_nexusai\external\forum_search_similar',
+        'methodname'    => 'execute',
+        'description'   => 'Find semantically similar forum posts in the same course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Resume una discusión de foro con el LLM (F-04/F-10).
+    // Usado por el forum-thread-summarizer AMD module en mod-forum-discuss.
+    'local_nexusai_forum_summarize_thread' => [
+        'classname'     => '\local_nexusai\external\forum_summarize_thread',
+        'methodname'    => 'execute',
+        'description'   => 'Summarize a forum discussion thread using the LLM.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Genera una sugerencia de respuesta para un post de foro con RAG + LLM (F-05/F-11).
+    // Usado por el forum-reply-suggester AMD module cuando el usuario abre el formulario de reply.
+    'local_nexusai_forum_suggest_reply' => [
+        'classname'     => '\local_nexusai\external\forum_suggest_reply',
+        'methodname'    => 'execute',
+        'description'   => 'Generate an AI-powered reply suggestion for a forum post using RAG.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.

@@ -72,6 +72,33 @@ class before_footer_listener {
             ]);
         }
 
+        // F-08: detector de posts similares en formularios de foro.
+        // Se carga en cualquier página de foro (mod-forum-*): en Moodle 5.x el
+        // formulario de nueva discusión puede mostrarse inline en mod-forum-view,
+        // no solo en mod-forum-post. El JS se auto-limita si no hay input[name="subject"].
+        if (strpos($PAGE->pagetype, 'mod-forum') === 0) {
+            $PAGE->requires->js_call_amd('local_nexusai/forum-duplicate-checker', 'init', [
+                [
+                    'courseid' => (int) $COURSE->id,
+                    'wwwroot'  => (string) (new \moodle_url('/'))->out(false),
+                ],
+            ]);
+        }
+
+        // F-10/F-11: resumen de hilo + sugerencia de respuesta con IA.
+        // Solo en mod-forum-discuss (discuss.php?d=X) — páginas de discusión abierta.
+        if ($PAGE->pagetype === 'mod-forum-discuss') {
+            $discussionid = (int) optional_param('d', 0, PARAM_INT);
+            if ($discussionid > 0) {
+                $amdparams = [
+                    'discussionid' => $discussionid,
+                    'courseid'     => (int) $COURSE->id,
+                ];
+                $PAGE->requires->js_call_amd('local_nexusai/forum-thread-summarizer', 'init', [$amdparams]);
+                $PAGE->requires->js_call_amd('local_nexusai/forum-reply-suggester',   'init', [$amdparams]);
+            }
+        }
+
         // 3. Inyectar el contenedor donde React monta el componente.
         //    En el sistema nuevo se usa $hook->add_html() en lugar de retornar string.
         $hook->add_html('<div id="local-nexusai-container" data-plugin="nexusai"></div>');

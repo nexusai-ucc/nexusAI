@@ -416,6 +416,137 @@ class backend_client {
         return $this->post('/api/v1/documents', $body);
     }
 
+    // =========================================================
+    // Foros — Épica 06
+    // =========================================================
+
+    /**
+     * Indexa (o re-indexa) el embedding de un post de foro.
+     *
+     * El backend calcula el content_hash y hace skip si el contenido no cambió
+     * desde la última indexación (evita re-embeddear en ediciones triviales).
+     *
+     * @param int    $postid       ID de mdl_forum_posts.
+     * @param int    $discussionid ID de mdl_forum_discussions.
+     * @param int    $courseid     ID del curso de Moodle.
+     * @param string $content      Texto plano del post (sin HTML).
+     * @return array{post_id:int, status:string}  status = 'indexed' | 'skipped'
+     *
+     * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
+     */
+    public function index_forum_post(int $postid, int $discussionid, int $courseid, string $content): array {
+        $payload = [
+            'post_id'       => $postid,
+            'discussion_id' => $discussionid,
+            'course_id'     => $courseid,
+            'content'       => $content,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/index-post', $body);
+    }
+
+    /**
+     * Elimina el embedding de un post borrado de Moodle.
+     *
+     * El endpoint es idempotente: si el post no tenía embedding, no hace nada.
+     *
+     * @param int $postid ID de mdl_forum_posts.
+     *
+     * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
+     */
+    public function delete_forum_post(int $postid): void {
+        $this->delete('/api/v1/forums/index-post/' . $postid);
+    }
+
+    /**
+     * Busca posts de foro similares al texto que el alumno está escribiendo.
+     *
+     * Usa similitud coseno sobre los embeddings almacenados en forum_post_embeddings.
+     * Solo busca dentro del mismo curso. Devuelve lista vacía si nada supera el threshold.
+     *
+     * @param int        $courseid      ID del curso.
+     * @param string     $text          Texto del post en redacción (mín 10 chars).
+     * @param int|null   $excludepostid Post a excluir (al editar un post existente).
+     * @param float      $threshold     Similitud mínima 0.0–1.0 (default 0.75).
+     * @param int        $topk          Resultados máximos 1–10 (default 5).
+     * @return array{similar_posts:array, threshold_used:float}
+     *
+     * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
+     */
+    public function search_similar_posts(
+        int $courseid,
+        string $text,
+        ?int $excludepostid = null,
+        float $threshold = 0.75,
+        int $topk = 5
+    ): array {
+        $payload = [
+            'course_id' => $courseid,
+            'text'      => $text,
+            'threshold' => $threshold,
+            'top_k'     => $topk,
+        ];
+        if ($excludepostid !== null) {
+            $payload['exclude_post_id'] = $excludepostid;
+        }
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/similar-posts', $body);
+    }
+
+    /**
+     * Llama a /api/v1/forums/summarize-thread para resumir una discusión.
+     *
+     * @param int   $discussionid ID de la discusión.
+     * @param int   $courseid     ID del curso.
+     * @param array $posts        Array de ['post_id','author','content'].
+     * @return array {summary, key_points, resolved, posts_used, posts_truncated}
+     */
+    public function summarize_thread(int $discussionid, int $courseid, array $posts): array {
+        $payload = [
+            'discussion_id' => $discussionid,
+            'course_id'     => $courseid,
+            'posts'         => $posts,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/summarize-thread', $body);
+    }
+
+    /**
+     * Genera una sugerencia de respuesta para un post de foro (F-05).
+     *
+     * @param int    $discussionid   ID de la discusión.
+     * @param int    $courseid       ID del curso.
+     * @param array  $posts          Array de ['post_id', 'author', 'content'].
+     * @param string $question       Texto del post al que se responde (para RAG).
+     * @return array {suggested_reply, has_course_material, sources_used}
+     */
+    public function suggest_reply(int $discussionid, int $courseid, array $posts, string $question): array {
+        $payload = [
+            'discussion_id' => $discussionid,
+            'course_id'     => $courseid,
+            'posts'         => $posts,
+            'question'      => $question,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/suggest-reply', $body);
+    }
+
+    // =========================================================
+    // Documentos
+    // =========================================================
+
     /**
      * Lista los documentos indexados de un curso.
      *
