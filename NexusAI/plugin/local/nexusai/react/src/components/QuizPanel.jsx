@@ -16,20 +16,15 @@
  */
 
 import { useState, useRef } from "react";
-import { generateQuiz, evaluateOpenAnswer } from "../api/quiz.js";
+import { generateQuiz, evaluateOpenAnswer, recordQuizErrors } from "../api/quiz.js";
 import { IconBook, IconCheck, IconChevronRight, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 
-// ── localStorage helpers para persistir errores del quiz (SP-10) ──
-const LS_KEY = (courseId) => `nexusai_quiz_errors_${courseId}`;
-const MAX_STORED_ERRORS = 100;
-
-function appendErrorsToStorage(courseId, newErrors) {
+// ── Persistencia de errores del quiz en el backend (SP-10) ──
+// Best-effort: si falla, no bloquea el flujo del quiz (el alumno ya vio su
+// resultado). El historial vive en Postgres, no en localStorage.
+function persistErrors(courseId, newErrors) {
     if (!newErrors.length) return;
-    try {
-        const existing = JSON.parse(localStorage.getItem(LS_KEY(courseId)) || "[]");
-        const combined = [...newErrors, ...existing].slice(0, MAX_STORED_ERRORS);
-        localStorage.setItem(LS_KEY(courseId), JSON.stringify(combined));
-    } catch { /* localStorage puede no estar disponible (modo privado, etc.) */ }
+    recordQuizErrors({ courseId, errors: newErrors }).catch(() => { /* best-effort */ });
 }
 
 function extractErrorMessage(err) {
@@ -240,7 +235,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         const isLast = currentIdx >= quiz.questions.length - 1;
         if (isLast) {
             // Persistir errores antes de mostrar el resultado final
-            appendErrorsToStorage(courseId, wrongAnswersRef.current);
+            persistErrors(courseId, wrongAnswersRef.current);
             setStage("finished");
         } else {
             setCurrentIdx((i) => i + 1);

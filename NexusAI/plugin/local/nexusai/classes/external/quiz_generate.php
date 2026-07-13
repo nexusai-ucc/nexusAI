@@ -25,7 +25,7 @@ class quiz_generate extends \external_api {
             'courseid'      => new \external_value(PARAM_INT,   'ID del curso', VALUE_REQUIRED),
             'topic'         => new \external_value(PARAM_RAW,   'Tema (opcional)', VALUE_OPTIONAL, ''),
             'numquestions'  => new \external_value(PARAM_INT,   'Cantidad de preguntas (1..10)', VALUE_OPTIONAL, 5),
-            'questiontype'  => new \external_value(PARAM_ALPHA, 'Tipo de pregunta (multiple_choice|true_false|open|mix)', VALUE_OPTIONAL, 'multiple_choice'),
+            'questiontype'  => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta (multiple_choice|true_false|open|mix)', VALUE_OPTIONAL, 'multiple_choice'),
         ]);
     }
 
@@ -35,7 +35,7 @@ class quiz_generate extends \external_api {
             'topic'     => new \external_value(PARAM_RAW, 'Tema solicitado', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'questions' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'question_type'      => new \external_value(PARAM_ALPHA, 'Tipo de pregunta'),
+                    'question_type'      => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta'),
                     'question'           => new \external_value(PARAM_RAW,  'Texto de la pregunta'),
                     'options'            => new \external_multiple_structure(
                         new \external_value(PARAM_RAW, 'Opción')
@@ -43,7 +43,7 @@ class quiz_generate extends \external_api {
                     'correct_index'      => new \external_value(PARAM_INT,  'Índice de la opción correcta (-1..3)'),
                     'explanation'        => new \external_value(PARAM_RAW,  'Explicación / respuesta modelo'),
                     'source_filename'    => new \external_value(PARAM_TEXT, 'Archivo del que sale la pregunta'),
-                    'source_document_id' => new \external_value(PARAM_INT,  'ID del documento fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id' => new \external_value(PARAM_ALPHANUMEXT, 'ID del documento fuente (UUID)', VALUE_OPTIONAL, null, NULL_ALLOWED),
                 ])
             ),
         ]);
@@ -98,7 +98,7 @@ class quiz_generate extends \external_api {
                         'correct_index'      => (int) ($q['correct_index'] ?? -1),
                         'explanation'        => (string) ($q['explanation'] ?? ''),
                         'source_filename'    => (string) ($q['source_filename'] ?? ''),
-                        'source_document_id' => isset($q['source_document_id']) ? (int) $q['source_document_id'] : null,
+                        'source_document_id' => isset($q['source_document_id']) ? (string) $q['source_document_id'] : null,
                     ];
                 },
                 $response['questions']

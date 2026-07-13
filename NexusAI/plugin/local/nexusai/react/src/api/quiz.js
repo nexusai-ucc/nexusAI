@@ -1,6 +1,8 @@
 /**
- * Cliente API del generador de quiz (Feature F / SP-03 / SP-05).
- * Llama a local_nexusai_quiz_generate y local_nexusai_quiz_evaluate vía core/ajax.
+ * Cliente API del generador de quiz (Feature F / SP-03 / SP-05 / SP-10).
+ * Llama a local_nexusai_quiz_generate, local_nexusai_quiz_evaluate y a las
+ * funciones de repaso de errores (quiz_errors_*, quiz_review_suggestions)
+ * vía core/ajax.
  */
 
 const MOCK_QUIZ = {
@@ -119,6 +121,101 @@ export async function evaluateOpenAnswer({ courseId, question, modelAnswer, user
             modelanswer: modelAnswer,
             useranswer:  userAnswer,
         },
+    }]);
+
+    return response;
+}
+
+/**
+ * Persiste las preguntas que el alumno respondió mal en un quiz (SP-10).
+ * Best-effort: si falla (red, Moodle no disponible), el caller no debe
+ * bloquear el flujo del quiz por esto.
+ *
+ * @param {Object} params
+ * @param {number} params.courseId
+ * @param {Array}  params.errors  Errores en el shape que arma QuizPanel.
+ * @returns {Promise<{stored:number}>}
+ */
+export async function recordQuizErrors({ courseId, errors }) {
+    if (!errors?.length) return { stored: 0 };
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { stored: 0 };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_errors_record",
+        args: {
+            courseid: courseId,
+            errors:   errors.map((e) => ({
+                question_type:       e.question_type,
+                question:            e.question,
+                explanation:         e.explanation || "",
+                source_filename:     e.source_filename || null,
+                source_document_id:  e.source_document_id != null ? String(e.source_document_id) : null,
+                options:             e.options || [],
+                correct_index:       typeof e.correct_index === "number" ? e.correct_index : -1,
+                user_selected_index: typeof e.user_selected_index === "number" ? e.user_selected_index : null,
+                user_answer:         e.user_answer ?? null,
+                ai_feedback:         e.ai_feedback ?? null,
+                ai_score:            typeof e.ai_score === "number" ? e.ai_score : null,
+            })),
+        },
+    }]);
+
+    return response;
+}
+
+/**
+ * Lista el historial de errores de quiz del alumno en el curso (SP-10).
+ *
+ * @param {number} courseId
+ * @param {number} [days=90]
+ * @param {number} [limit=100]
+ * @returns {Promise<{course_id:number, total:number, items:Array}>}
+ */
+export async function listQuizErrors(courseId, days = 90, limit = 100) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { course_id: courseId, total: 0, items: [] };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_errors_list",
+        args: { courseid: courseId, days, limit },
+    }]);
+
+    return response;
+}
+
+/**
+ * Borra el historial de errores de quiz del alumno en el curso (SP-10).
+ *
+ * @param {number} courseId
+ * @returns {Promise<{deleted:number}>}
+ */
+export async function clearQuizErrors(courseId) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { deleted: 0 };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_errors_clear",
+        args: { courseid: courseId },
+    }]);
+
+    return response;
+}
+
+/**
+ * Sugerencias de repaso basadas en los errores más frecuentes del alumno (SP-10).
+ *
+ * @param {number} courseId
+ * @param {number} [days=90]
+ * @returns {Promise<{course_id:number, total_errors:number, suggestions:Array}>}
+ */
+export async function getReviewSuggestions(courseId, days = 90) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { course_id: courseId, total_errors: 0, suggestions: [] };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_review_suggestions",
+        args: { courseid: courseId, days },
     }]);
 
     return response;

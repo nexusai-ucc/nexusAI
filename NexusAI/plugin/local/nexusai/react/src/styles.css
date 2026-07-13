@@ -1771,6 +1771,91 @@
     opacity: 0.6;
 }
 
+/* Sugerencias de repaso (SP-10) */
+.nexusai-review__suggestions {
+    background: #fafbff;
+    border: 1px solid #e0e7ff;
+    border-radius: var(--nexusai-radius-md);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.nexusai-review__suggestions-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #4338ca;
+}
+.nexusai-review__suggestions-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+    margin: 0 0 2px;
+}
+.nexusai-review__suggestions-subtitle {
+    font-size: 11.5px;
+    color: var(--nexusai-fg-muted);
+    margin: 0;
+}
+.nexusai-review__suggestions-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-review__suggestions-loading .nexusai-quiz__spinner {
+    width: 14px;
+    height: 14px;
+}
+.nexusai-review__suggestions-empty {
+    font-size: 12px;
+    color: var(--nexusai-fg-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+.nexusai-review__suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nexusai-review__suggestion-card {
+    background: #fff;
+    border: 1px solid #e0e7ff;
+    border-radius: var(--nexusai-radius);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.nexusai-review__suggestion-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.nexusai-review__suggestion-topic {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+}
+.nexusai-review__suggestion-count {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: var(--nexusai-radius-full);
+    font-size: 10.5px;
+    font-weight: 600;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+.nexusai-review__suggestion-text {
+    font-size: 12px;
+    color: var(--nexusai-fg-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
 /* ── Caret de streaming ── */
 .nexusai-msg__markdown--streaming::after {
     content: "▍";

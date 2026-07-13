@@ -269,6 +269,90 @@ class backend_client {
     }
 
     /**
+     * Persiste las preguntas que el alumno respondió mal en un quiz (SP-10).
+     *
+     * @param int   $courseid ID del curso.
+     * @param int   $userid   $USER->id real.
+     * @param array $errors   Lista de errores (shape QuizErrorItem del backend).
+     * @return array{stored:int}
+     */
+    public function record_quiz_errors(int $courseid, int $userid, array $errors): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'errors'    => $errors,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/errors', $body);
+    }
+
+    /**
+     * Lista el historial de errores de quiz del alumno en un curso (SP-10).
+     *
+     * @param int $courseid ID del curso.
+     * @param int $userid   $USER->id real.
+     * @param int $days     Días hacia atrás (1..365).
+     * @param int $limit    Máximo de items (1..200).
+     * @return array{course_id:int, total:int, items:array}
+     */
+    public function list_quiz_errors(int $courseid, int $userid, int $days = 90, int $limit = 100): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'days'      => $days,
+            'limit'     => $limit,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/errors/list', $body);
+    }
+
+    /**
+     * Borra el historial de errores de quiz del alumno en un curso (SP-10).
+     *
+     * @param int $courseid ID del curso.
+     * @param int $userid   $USER->id real.
+     * @return array{deleted:int}
+     */
+    public function clear_quiz_errors(int $courseid, int $userid): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/errors/clear', $body);
+    }
+
+    /**
+     * Sugerencias de repaso basadas en los errores más frecuentes del alumno (SP-10).
+     *
+     * @param int $courseid ID del curso.
+     * @param int $userid   $USER->id real.
+     * @param int $days     Días hacia atrás (1..365).
+     * @return array{course_id:int, total_errors:int, suggestions:array}
+     */
+    public function quiz_review_suggestions(int $courseid, int $userid, int $days = 90): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'days'      => $days,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/review-suggestions', $body);
+    }
+
+    /**
      * Búsqueda semántica en el material del curso (Feature A — sin LLM).
      *
      * @param int    $courseid ID del curso de Moodle.

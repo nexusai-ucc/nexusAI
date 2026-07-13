@@ -1,25 +1,19 @@
 /**
  * ReviewPanel — Repaso basado en errores del quiz (SP-10).
  *
- * Muestra las preguntas respondidas incorrectamente en quizes anteriores,
- * con la explicación de cada una y el archivo fuente clickeable para descarga.
+ * Muestra:
+ *   - Sugerencias de repaso generadas por IA, agrupadas por archivo fuente,
+ *     a partir de los errores más frecuentes del alumno.
+ *   - El historial completo de preguntas respondidas incorrectamente, con
+ *     la explicación de cada una y el archivo fuente clickeable para descarga.
  *
- * Los errores se leen de localStorage (clave: nexusai_quiz_errors_{courseId})
- * y son guardados por QuizPanel al finalizar cada quiz.
+ * Ambos datasets viven en el backend (tabla quiz_errors, por alumno+curso) —
+ * antes esto era solo localStorage del navegador, efímero y no cross-device.
  */
 
-import { useState } from "react";
-import { IconBook, IconCheck, IconFile, IconX } from "./icons.jsx";
-
-const LS_KEY = (courseId) => `nexusai_quiz_errors_${courseId}`;
-
-function loadErrors(courseId) {
-    try {
-        return JSON.parse(localStorage.getItem(LS_KEY(courseId)) || "[]");
-    } catch {
-        return [];
-    }
-}
+import { useEffect, useState } from "react";
+import { listQuizErrors, clearQuizErrors, getReviewSuggestions } from "../api/quiz.js";
+import { IconBook, IconCheck, IconFile, IconTarget, IconX } from "./icons.jsx";
 
 function formatDate(iso) {
     try {
@@ -30,7 +24,11 @@ function formatDate(iso) {
 }
 
 export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
-    const [errors, setErrors] = useState(() => loadErrors(courseId));
+    const [errors, setErrors] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [expanded, setExpanded] = useState({});
 
     const L = lang === "es" ? {
@@ -52,6 +50,12 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         showMore:       "Ver explicación",
         showLess:       "Ocultar",
         score:          (n) => `${Math.round(n * 100)}% de la respuesta correcta`,
+        suggTitle:      "Sugerencias de repaso",
+        suggSubtitle:   "Basadas en tus errores más frecuentes.",
+        suggLoading:    "Analizando tu historial...",
+        suggEmpty:      "Todavía no hay suficientes errores para sugerirte algo. ¡Seguí practicando!",
+        suggErrorCount: (n) => `${n} error${n === 1 ? "" : "es"}`,
+        loadError:      "No se pudo cargar el historial de errores.",
     } : {
         title:          "Error review",
         subtitle:       "Questions you answered incorrectly in previous quizzes.",
@@ -71,6 +75,12 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         showMore:       "See explanation",
         showLess:       "Hide",
         score:          (n) => `${Math.round(n * 100)}% of the correct answer`,
+        suggTitle:      "Review suggestions",
+        suggSubtitle:   "Based on your most frequent mistakes.",
+        suggLoading:    "Analyzing your history...",
+        suggEmpty:      "Not enough errors yet to suggest something. Keep practicing!",
+        suggErrorCount: (n) => `${n} error${n === 1 ? "" : "s"}`,
+        loadError:      "Could not load the error history.",
     };
 
     const typeLabel = (qt) => ({
@@ -79,12 +89,36 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         open:            L.typeOpen,
     }[qt] || qt);
 
-    const clearAll = () => {
-        try { localStorage.removeItem(LS_KEY(courseId)); } catch { /* */ }
+    useEffect(() => {
+        let cancelled = false;
+
+        setLoading(true);
+        setError(null);
+        listQuizErrors(courseId)
+            .then((data) => { if (!cancelled) setErrors(data?.items || []); })
+            .catch((err) => { if (!cancelled) setError(err.message || L.loadError); })
+            .finally(() => { if (!cancelled) setLoading(false); });
+
+        setSuggestionsLoading(true);
+        getReviewSuggestions(courseId)
+            .then((data) => { if (!cancelled) setSuggestions(data?.suggestions || []); })
+            .catch(() => { if (!cancelled) setSuggestions([]); })
+            .finally(() => { if (!cancelled) setSuggestionsLoading(false); });
+
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseId]);
+
+    const clearAll = async () => {
         setErrors([]);
+        setSuggestions([]);
+        try { await clearQuizErrors(courseId); } catch { /* best-effort */ }
     };
 
     const toggleExpand = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isValidDocumentId = (id) => typeof id === "string" && UUID_RE.test(id);
 
     const openDownload = (documentId) => {
         if (!documentId || !sesskey) return;
@@ -96,7 +130,25 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         window.open(`/local/nexusai/document_download.php?${params}`, "_blank", "noopener,noreferrer");
     };
 
-    // ── Empty state ──
+    // ── Loading state (primer fetch) ──
+    if (loading) {
+        return (
+            <div className="nexusai-review nexusai-review--empty">
+                <div className="nexusai-quiz__spinner" />
+            </div>
+        );
+    }
+
+    // ── Error state ──
+    if (error) {
+        return (
+            <div className="nexusai-alert nexusai-alert--error" role="alert">
+                <span>{error}</span>
+            </div>
+        );
+    }
+
+    // ── Empty state (sin errores ni sugerencias) ──
     if (!errors.length) {
         return (
             <div className="nexusai-review nexusai-review--empty">
@@ -111,6 +163,59 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
 
     return (
         <div className="nexusai-review">
+            {/* Sugerencias de repaso (SP-10) */}
+            <div className="nexusai-review__suggestions">
+                <div className="nexusai-review__suggestions-header">
+                    <IconTarget size={16} />
+                    <div>
+                        <h4 className="nexusai-review__suggestions-title">{L.suggTitle}</h4>
+                        <p className="nexusai-review__suggestions-subtitle">{L.suggSubtitle}</p>
+                    </div>
+                </div>
+
+                {suggestionsLoading && (
+                    <div className="nexusai-review__suggestions-loading">
+                        <div className="nexusai-quiz__spinner" />
+                        <span>{L.suggLoading}</span>
+                    </div>
+                )}
+
+                {!suggestionsLoading && suggestions.length === 0 && (
+                    <p className="nexusai-review__suggestions-empty">{L.suggEmpty}</p>
+                )}
+
+                {!suggestionsLoading && suggestions.length > 0 && (
+                    <div className="nexusai-review__suggestions-list">
+                        {suggestions.map((s, i) => {
+                            const canDownload = isValidDocumentId(s.source_document_id) && !!sesskey;
+                            return (
+                                <div key={i} className="nexusai-review__suggestion-card">
+                                    <div className="nexusai-review__suggestion-top">
+                                        <span className="nexusai-review__suggestion-topic">{s.topic}</span>
+                                        <span className="nexusai-review__suggestion-count">
+                                            {L.suggErrorCount(s.error_count)}
+                                        </span>
+                                    </div>
+                                    <p className="nexusai-review__suggestion-text">{s.suggestion}</p>
+                                    {s.source_filename && (
+                                        <button
+                                            type="button"
+                                            className={`nexusai-review__source ${canDownload ? "nexusai-review__source--link" : ""}`}
+                                            onClick={() => canDownload && openDownload(s.source_document_id)}
+                                            disabled={!canDownload}
+                                            title={canDownload ? L.download : L.noFile}
+                                        >
+                                            <IconFile size={12} />
+                                            <span>{s.source_filename}</span>
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
             {/* Header */}
             <div className="nexusai-review__header">
                 <div>
@@ -133,7 +238,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                     const isOpen  = err.question_type === "open";
                     const isTF    = err.question_type === "true_false";
                     const exp     = expanded[err.id];
-                    const canDownload = !!(err.source_document_id && sesskey);
+                    const canDownload = isValidDocumentId(err.source_document_id) && !!sesskey;
                     const tfLetters  = ["V", "F"];
 
                     return (
@@ -143,7 +248,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                                 <span className={`nexusai-review__badge nexusai-review__badge--${err.question_type}`}>
                                     {typeLabel(err.question_type)}
                                 </span>
-                                <span className="nexusai-review__date">{formatDate(err.timestamp)}</span>
+                                <span className="nexusai-review__date">{formatDate(err.created_at)}</span>
                             </div>
 
                             {/* Question text */}
