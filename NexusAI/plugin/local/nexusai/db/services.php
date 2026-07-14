@@ -70,11 +70,66 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Quiz generator — preguntas de opción múltiple desde el material (Feature F).
+    // Quiz generator — preguntas de práctica desde el material (Feature F / SP-03).
     'local_nexusai_quiz_generate' => [
         'classname'     => '\local_nexusai\external\quiz_generate',
         'methodname'    => 'execute',
-        'description'   => 'Generate a multiple-choice practice quiz from the course material.',
+        'description'   => 'Generate a practice quiz (multiple choice, true/false, open or mix) from the course material.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Quiz evaluator — evalúa respuestas abiertas con IA (SP-05).
+    'local_nexusai_quiz_evaluate' => [
+        'classname'     => '\local_nexusai\external\quiz_evaluate',
+        'methodname'    => 'execute',
+        'description'   => 'Evaluate a student open answer against the course material using LLM.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Repaso de errores — persiste preguntas mal respondidas en un quiz (SP-10).
+    'local_nexusai_quiz_errors_record' => [
+        'classname'     => '\local_nexusai\external\quiz_errors_record',
+        'methodname'    => 'execute',
+        'description'   => 'Persist the questions a student answered wrong in a quiz.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Repaso de errores — historial del alumno en un curso (SP-10).
+    'local_nexusai_quiz_errors_list' => [
+        'classname'     => '\local_nexusai\external\quiz_errors_list',
+        'methodname'    => 'execute',
+        'description'   => 'List the quiz-error history of the current student in a course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Repaso de errores — borra el historial del alumno (SP-10).
+    'local_nexusai_quiz_errors_clear' => [
+        'classname'     => '\local_nexusai\external\quiz_errors_clear',
+        'methodname'    => 'execute',
+        'description'   => 'Clear the quiz-error history of the current student in a course.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Repaso de errores — sugerencias de repaso basadas en errores frecuentes (SP-10).
+    'local_nexusai_quiz_review_suggestions' => [
+        'classname'     => '\local_nexusai\external\quiz_review_suggestions',
+        'methodname'    => 'execute',
+        'description'   => 'Get AI-generated review suggestions based on the student quiz-error history.',
         'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:use',

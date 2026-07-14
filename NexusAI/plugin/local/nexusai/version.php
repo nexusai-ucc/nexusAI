@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026070906;        // YYYYMMDDXX — Épica 06: F-05/F-11 sugerencia de respuesta RAG+LLM.
-$plugin->release   = '0.9.6';
+$plugin->version   = 2026070907;        // YYYYMMDDXX — Merge: SP-10 (repaso de errores) + Épica 06 (F-05/F-11 sugerencia de respuesta RAG+LLM).
+$plugin->release   = '0.9.6';            // Quiz multi-tipo + evaluación IA + repaso de errores + sugerencias de repaso + foros IA.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

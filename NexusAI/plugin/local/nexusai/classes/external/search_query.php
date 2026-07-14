@@ -45,6 +45,7 @@ class search_query extends \external_api {
                     'chunk_index'       => new \external_value(PARAM_INT, 'Índice del fragmento'),
                     'content'           => new \external_value(PARAM_RAW, 'Texto del fragmento'),
                     'similarity'        => new \external_value(PARAM_FLOAT, 'Score de similitud 0-1'),
+                    'has_file'          => new \external_value(PARAM_BOOL, 'El archivo original está disponible para descarga', VALUE_OPTIONAL, false),
                 ])
             ),
         ]);
@@ -101,7 +102,7 @@ class search_query extends \external_api {
             (int) $USER->id,
             $cleanquery,
             $topk,
-            count($courseids) > 1 ? $courseids : []
+            $courseids
         );
 
         if (!isset($response['results'], $response['total'])) {
@@ -122,6 +123,7 @@ class search_query extends \external_api {
                         'chunk_index'       => (int) ($r['chunk_index'] ?? 0),
                         'content'           => (string) ($r['content'] ?? ''),
                         'similarity'        => (float) ($r['similarity'] ?? 0.0),
+                        'has_file'          => (bool) ($r['has_file'] ?? false),
                     ];
                 },
                 $response['results']

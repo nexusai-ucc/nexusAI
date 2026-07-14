@@ -1,31 +1,36 @@
 /**
- * QuizPanel — generador de quiz de práctica (Feature F).
+ * QuizPanel — generador de quiz de práctica (Feature F / SP-03 / SP-05).
  *
  * Estados:
- *   - "setup":    selector de tema + cantidad de preguntas + botón Generar
+ *   - "setup":    selector de tema + tipo de pregunta + cantidad + botón Generar
  *   - "loading":  spinner mientras el LLM genera
- *   - "playing":  una pregunta por vez con feedback inmediato al seleccionar
+ *   - "playing":  una pregunta por vez con feedback inmediato
  *   - "finished": score final + opción de empezar otro
  *   - "error":    mensaje de error + botón Reintentar
+ *
+ * Tipos de pregunta:
+ *   - multiple_choice: 4 opciones A/B/C/D
+ *   - true_false:      2 opciones Verdadero / Falso
+ *   - open:            textarea libre evaluado por IA
+ *   - mix:             combinación de los tres anteriores
  */
 
-import { useState } from "react";
-import { generateQuiz } from "../api/quiz.js";
+import { useState, useRef } from "react";
+import { generateQuiz, evaluateOpenAnswer, recordQuizErrors } from "../api/quiz.js";
 import { IconBook, IconCheck, IconChevronRight, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 
-/**
- * Extrae el mensaje legible de un error de Moodle/FastAPI.
- * Moodle puede entregar el error en dos formas:
- *   1. Parseado:   "...HTTP 422: {"detail": "msg"}"   → regex directo
- *   2. Escapado:   "...HTTP 422: {\"detail\":\"msg\"}" → JSON.parse con unescape
- */
+// ── Persistencia de errores del quiz en el backend (SP-10) ──
+// Best-effort: si falla, no bloquea el flujo del quiz (el alumno ya vio su
+// resultado). El historial vive en Postgres, no en localStorage.
+function persistErrors(courseId, newErrors) {
+    if (!newErrors.length) return;
+    recordQuizErrors({ courseId, errors: newErrors }).catch(() => { /* best-effort */ });
+}
+
 function extractErrorMessage(err) {
     const raw = err?.message || String(err);
-    // Intento 1: regex — funciona cuando las comillas ya son literales.
     const detailMatch = raw.match(/"detail"\s*:\s*"((?:[^"\\]|\\.)*)"/);
     if (detailMatch) return detailMatch[1].replace(/\\"/g, '"');
-    // Intento 2: JSON.parse del fragmento después de "HTTP NNN:" —
-    // cubre el caso donde Moodle entrega la string con backslash-escapes.
     const jsonFrag = raw.match(/HTTP\s+\d+[:\s]+(\{.+\})/s);
     if (jsonFrag) {
         try {
@@ -51,60 +56,91 @@ export default function QuizPanel({ courseId, lang = "es" }) {
     const [stage, setStage] = useState("setup"); // setup | loading | playing | finished | error
     const [topic, setTopic] = useState("");
     const [numQuestions, setNumQuestions] = useState(5);
+    const [questionType, setQuestionType] = useState("multiple_choice");
     const [quiz, setQuiz] = useState(null);
     const [error, setError] = useState(null);
     const [topicError, setTopicError] = useState(null);
 
     // Estado del juego en curso
     const [currentIdx, setCurrentIdx] = useState(0);
-    const [selectedIdx, setSelectedIdx] = useState(null);
+    const [selectedIdx, setSelectedIdx] = useState(null);  // MC / T/F
+    const [openAnswer, setOpenAnswer] = useState("");       // preguntas abiertas
+    const [evaluating, setEvaluating] = useState(false);   // spinner inline de evaluación
+    const [evaluation, setEvaluation] = useState(null);    // { correct, score, feedback }
     const [reveal, setReveal] = useState(false);
     const [score, setScore] = useState(0);
 
+    // Acumula respuestas incorrectas durante la partida (no causa re-render)
+    const wrongAnswersRef = useRef([]);
+
     const L = lang === "es" ? {
-        introTitle:    "Quiz de práctica",
-        introText:     "Generá preguntas de opción múltiple sobre el material del curso para repasar.",
-        topicLabel:    "Tema (opcional)",
-        topicPlaceholder: "Ej: derivadas, estructuras de datos, fotosíntesis...",
-        nQuestions:    "Cantidad de preguntas",
-        generate:      "Generar quiz",
-        generating:    "Generando preguntas...",
-        verify:        "Verificar",
-        next:          "Siguiente",
-        finish:        "Ver resultado",
-        correct:       "¡Correcto!",
-        wrong:         "Incorrecto",
-        questionOf:    (a, b) => `Pregunta ${a} de ${b}`,
-        finalTitle:    "Quiz terminado",
-        finalScore:    (a, b) => `Acertaste ${a} de ${b}`,
-        again:         "Nuevo quiz",
-        source:        "Fuente",
-        emptyTopic:    "Variedad",
-        retry:         "Reintentar",
-        back:          "Volver",
-        errorGeneric:  "No se pudo generar el quiz",
+        introTitle:      "Quiz de práctica",
+        introText:       "Generá preguntas de práctica sobre el material del curso para repasar.",
+        topicLabel:      "Tema (opcional)",
+        topicPlaceholder:"Ej: derivadas, estructuras de datos, fotosíntesis...",
+        typeLabel:       "Tipo de preguntas",
+        typeMC:          "Opción múltiple",
+        typeTF:          "V / F",
+        typeOpen:        "Preguntas abiertas",
+        typeMix:         "Mix",
+        nQuestions:      "Cantidad de preguntas",
+        generate:        "Generar quiz",
+        generating:      "Generando preguntas...",
+        verify:          "Verificar",
+        evaluating:      "Evaluando...",
+        next:            "Siguiente",
+        finish:          "Ver resultado",
+        correct:         "¡Correcto!",
+        wrong:           "Incorrecto",
+        questionOf:      (a, b) => `Pregunta ${a} de ${b}`,
+        finalTitle:      "Quiz terminado",
+        finalScore:      (a, b) => `Acertaste ${a} de ${b}`,
+        again:           "Nuevo quiz",
+        source:          "Fuente",
+        emptyTopic:      "Variedad",
+        retry:           "Reintentar",
+        back:            "Volver",
+        errorGeneric:    "No se pudo generar el quiz",
+        openPlaceholder: "Escribí tu respuesta aquí...",
+        openHint:        "Esta pregunta será evaluada por IA.",
     } : {
-        introTitle:    "Practice Quiz",
-        introText:     "I generate multiple-choice questions from the course material so you can review.",
-        topicLabel:    "Topic (optional)",
-        topicPlaceholder: "Ex: derivatives, data structures, photosynthesis...",
-        nQuestions:    "Number of questions",
-        generate:      "Generate quiz",
-        generating:    "Generating questions...",
-        verify:        "Check",
-        next:          "Next",
-        finish:        "See result",
-        correct:       "Correct!",
-        wrong:         "Incorrect",
-        questionOf:    (a, b) => `Question ${a} of ${b}`,
-        finalTitle:    "Quiz finished",
-        finalScore:    (a, b) => `You got ${a} out of ${b}`,
-        again:         "New quiz",
-        source:        "Source",
-        emptyTopic:    "Mixed",
-        retry:         "Retry",
-        back:          "Back",
-        errorGeneric:  "Could not generate quiz",
+        introTitle:      "Practice Quiz",
+        introText:       "Generate practice questions from the course material to review.",
+        topicLabel:      "Topic (optional)",
+        topicPlaceholder:"Ex: derivatives, data structures, photosynthesis...",
+        typeLabel:       "Question type",
+        typeMC:          "Multiple choice",
+        typeTF:          "True / False",
+        typeOpen:        "Open questions",
+        typeMix:         "Mix",
+        nQuestions:      "Number of questions",
+        generate:        "Generate quiz",
+        generating:      "Generating questions...",
+        verify:          "Check",
+        evaluating:      "Evaluating...",
+        next:            "Next",
+        finish:          "See result",
+        correct:         "Correct!",
+        wrong:           "Incorrect",
+        questionOf:      (a, b) => `Question ${a} of ${b}`,
+        finalTitle:      "Quiz finished",
+        finalScore:      (a, b) => `You got ${a} out of ${b}`,
+        again:           "New quiz",
+        source:          "Source",
+        emptyTopic:      "Mixed",
+        retry:           "Retry",
+        back:            "Back",
+        errorGeneric:    "Could not generate quiz",
+        openPlaceholder: "Write your answer here...",
+        openHint:        "This question will be evaluated by AI.",
+    };
+
+    const resetQuestionState = () => {
+        setSelectedIdx(null);
+        setOpenAnswer("");
+        setEvaluating(false);
+        setEvaluation(null);
+        setReveal(false);
     };
 
     const start = async () => {
@@ -113,15 +149,13 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         setStage("loading");
         setQuiz(null);
         setCurrentIdx(0);
-        setSelectedIdx(null);
-        setReveal(false);
         setScore(0);
+        wrongAnswersRef.current = [];
+        resetQuestionState();
 
         try {
-            const data = await generateQuiz({ courseId, topic, numQuestions });
-            if (!data?.questions?.length) {
-                throw new Error(L.errorGeneric);
-            }
+            const data = await generateQuiz({ courseId, topic, numQuestions, questionType });
+            if (!data?.questions?.length) throw new Error(L.errorGeneric);
             setQuiz(data);
             setStage("playing");
         } catch (err) {
@@ -135,37 +169,98 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         }
     };
 
+    // ── Verificar respuesta de opción múltiple o V/F ──
     const verify = () => {
         if (selectedIdx === null) return;
         setReveal(true);
-        if (quiz.questions[currentIdx].correct_index === selectedIdx) {
+        const q = quiz.questions[currentIdx];
+        if (q.correct_index === selectedIdx) {
             setScore((s) => s + 1);
+        } else {
+            wrongAnswersRef.current.push({
+                id: `${Date.now()}-${Math.random()}`,
+                timestamp: new Date().toISOString(),
+                question_type: q.question_type || "multiple_choice",
+                question:            q.question,
+                explanation:         q.explanation,
+                source_filename:     q.source_filename,
+                source_document_id:  q.source_document_id ?? null,
+                options:             q.options,
+                correct_index:       q.correct_index,
+                user_selected_index: selectedIdx,
+            });
+        }
+    };
+
+    // ── Verificar respuesta abierta (llama al LLM evaluador) ──
+    const verifyOpen = async () => {
+        if (!openAnswer.trim()) return;
+        const q = quiz.questions[currentIdx];
+        setEvaluating(true);
+        try {
+            const result = await evaluateOpenAnswer({
+                courseId,
+                question:    q.question,
+                modelAnswer: q.explanation,
+                userAnswer:  openAnswer,
+            });
+            setEvaluation(result);
+            if (result.correct) {
+                setScore((s) => s + 1);
+            } else {
+                wrongAnswersRef.current.push({
+                    id: `${Date.now()}-${Math.random()}`,
+                    timestamp: new Date().toISOString(),
+                    question_type:      "open",
+                    question:           q.question,
+                    explanation:        q.explanation,
+                    source_filename:    q.source_filename,
+                    source_document_id: q.source_document_id ?? null,
+                    options:            [],
+                    correct_index:      -1,
+                    user_answer:        openAnswer,
+                    ai_feedback:        result.feedback,
+                    ai_score:           result.score,
+                });
+            }
+        } catch {
+            setEvaluation({ correct: false, score: 0, feedback: "Error al evaluar la respuesta. Intentá de nuevo." });
+        } finally {
+            setEvaluating(false);
+            setReveal(true);
         }
     };
 
     const next = () => {
         const isLast = currentIdx >= quiz.questions.length - 1;
         if (isLast) {
+            // Persistir errores antes de mostrar el resultado final
+            persistErrors(courseId, wrongAnswersRef.current);
             setStage("finished");
         } else {
             setCurrentIdx((i) => i + 1);
-            setSelectedIdx(null);
-            setReveal(false);
+            resetQuestionState();
         }
     };
 
     const resetAll = () => {
+        wrongAnswersRef.current = [];
         setStage("setup");
         setQuiz(null);
         setError(null);
         setCurrentIdx(0);
-        setSelectedIdx(null);
-        setReveal(false);
         setScore(0);
+        resetQuestionState();
     };
 
     // ─── SETUP ───
     if (stage === "setup") {
+        const typeOptions = [
+            { key: "multiple_choice", label: L.typeMC },
+            { key: "true_false",      label: L.typeTF },
+            { key: "open",            label: L.typeOpen },
+            { key: "mix",             label: L.typeMix },
+        ];
         return (
             <div className="nexusai-quiz">
                 <div className="nexusai-quiz__intro">
@@ -185,6 +280,21 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                     {topicError && (
                         <p className="nexusai-quiz__topic-error">{topicError}</p>
                     )}
+                </div>
+                <div className="nexusai-quiz__field">
+                    <label className="nexusai-quiz__label">{L.typeLabel}</label>
+                    <div className="nexusai-quiz__typebtns">
+                        {typeOptions.map(({ key, label }) => (
+                            <button
+                                key={key}
+                                type="button"
+                                className={`nexusai-quiz__typebtn ${questionType === key ? "nexusai-quiz__typebtn--active" : ""}`}
+                                onClick={() => setQuestionType(key)}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
                 <div className="nexusai-quiz__field">
                     <label className="nexusai-quiz__label">{L.nQuestions}</label>
@@ -243,6 +353,10 @@ export default function QuizPanel({ courseId, lang = "es" }) {
     if (stage === "playing" && quiz) {
         const q = quiz.questions[currentIdx];
         const total = quiz.questions.length;
+        const qType = q.question_type || "multiple_choice";
+        const isOpen = qType === "open";
+        const isTF   = qType === "true_false";
+
         return (
             <div className="nexusai-quiz">
                 <div className="nexusai-quiz__progress">
@@ -259,41 +373,70 @@ export default function QuizPanel({ courseId, lang = "es" }) {
 
                 <p className="nexusai-quiz__question">{q.question}</p>
 
-                <div className="nexusai-quiz__options">
-                    {q.options.map((opt, i) => {
-                        const isCorrect = i === q.correct_index;
-                        const isSelected = i === selectedIdx;
-                        let cls = "nexusai-quiz__option";
-                        if (reveal) {
-                            if (isCorrect) cls += " nexusai-quiz__option--correct";
-                            else if (isSelected) cls += " nexusai-quiz__option--wrong";
-                        } else if (isSelected) {
-                            cls += " nexusai-quiz__option--selected";
-                        }
-                        return (
-                            <button
-                                key={i}
-                                type="button"
-                                className={cls}
-                                onClick={() => !reveal && setSelectedIdx(i)}
-                                disabled={reveal}
-                            >
-                                <span className="nexusai-quiz__option-letter">
-                                    {String.fromCharCode(65 + i)}
-                                </span>
-                                <span className="nexusai-quiz__option-text">{opt}</span>
-                            </button>
-                        );
-                    })}
-                </div>
+                {/* ── Opciones: MC y T/F ── */}
+                {!isOpen && (
+                    <div className={`nexusai-quiz__options${isTF ? " nexusai-quiz__options--tf" : ""}`}>
+                        {q.options.map((opt, i) => {
+                            const isCorrect  = i === q.correct_index;
+                            const isSelected = i === selectedIdx;
+                            let cls = "nexusai-quiz__option";
+                            if (reveal) {
+                                if (isCorrect) cls += " nexusai-quiz__option--correct";
+                                else if (isSelected) cls += " nexusai-quiz__option--wrong";
+                            } else if (isSelected) {
+                                cls += " nexusai-quiz__option--selected";
+                            }
+                            // Label: T/F uses V/F, MC uses A/B/C/D
+                            const letter = isTF
+                                ? (i === 0 ? "V" : "F")
+                                : String.fromCharCode(65 + i);
+                            return (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    className={cls}
+                                    onClick={() => !reveal && setSelectedIdx(i)}
+                                    disabled={reveal}
+                                >
+                                    <span className="nexusai-quiz__option-letter">{letter}</span>
+                                    <span className="nexusai-quiz__option-text">{opt}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
 
+                {/* ── Textarea: preguntas abiertas ── */}
+                {isOpen && (
+                    <div className="nexusai-quiz__open-area">
+                        <p className="nexusai-quiz__open-hint">{L.openHint}</p>
+                        <textarea
+                            className="nexusai-quiz__open-textarea"
+                            placeholder={L.openPlaceholder}
+                            value={openAnswer}
+                            onChange={(e) => setOpenAnswer(e.target.value)}
+                            disabled={reveal || evaluating}
+                            rows={5}
+                        />
+                    </div>
+                )}
+
+                {/* ── Feedback después de verificar ── */}
                 {reveal && (
-                    <div className={`nexusai-quiz__feedback ${selectedIdx === q.correct_index ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong"}`}>
+                    <div className={`nexusai-quiz__feedback ${
+                        isOpen
+                            ? (evaluation?.correct ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong")
+                            : (selectedIdx === q.correct_index ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong")
+                    }`}>
                         <strong className="nexusai-quiz__feedback-title">
-                            {selectedIdx === q.correct_index ? <IconCheck size={14} /> : <IconX size={14} />}
-                            {selectedIdx === q.correct_index ? L.correct : L.wrong}
+                            {(isOpen ? evaluation?.correct : selectedIdx === q.correct_index)
+                                ? <><IconCheck size={14} /> {L.correct}</>
+                                : <><IconX size={14} /> {L.wrong}</>
+                            }
                         </strong>
-                        <p className="nexusai-quiz__explanation">{q.explanation}</p>
+                        <p className="nexusai-quiz__explanation">
+                            {isOpen ? evaluation?.feedback : q.explanation}
+                        </p>
                         {q.source_filename && (
                             <p className="nexusai-quiz__source">
                                 <IconFile size={12} />
@@ -303,16 +446,30 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                     </div>
                 )}
 
+                {/* ── Acciones ── */}
                 <div className="nexusai-quiz__actions">
                     {!reveal ? (
-                        <button
-                            type="button"
-                            className="nexusai-quiz__primary"
-                            onClick={verify}
-                            disabled={selectedIdx === null}
-                        >
-                            {L.verify}
-                        </button>
+                        isOpen ? (
+                            <button
+                                type="button"
+                                className="nexusai-quiz__primary"
+                                onClick={verifyOpen}
+                                disabled={!openAnswer.trim() || evaluating}
+                            >
+                                {evaluating
+                                    ? <><div className="nexusai-quiz__btn-spinner" />{L.evaluating}</>
+                                    : L.verify}
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                className="nexusai-quiz__primary"
+                                onClick={verify}
+                                disabled={selectedIdx === null}
+                            >
+                                {L.verify}
+                            </button>
+                        )
                     ) : (
                         <button
                             type="button"
