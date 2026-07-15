@@ -387,7 +387,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         lang={lang}
                     />
 
-                    {/* Pestañas: Chat / Quiz / Buscar (Buscar solo para alumnos) */}
+                    {/* Pestañas: Chat / Modo Estudio / Buscar / Repaso (Buscar solo para alumnos) */}
                     <div className="nexusai-tabs">
                         <button
                             type="button"
@@ -401,7 +401,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             className={`nexusai-tab ${activeTab === "quiz" ? "nexusai-tab--active" : ""}`}
                             onClick={() => setActiveTab("quiz")}
                         >
-                            {lang === "es" ? "Quiz" : "Quiz"}
+                            {lang === "es" ? "Modo Estudio" : "Study Mode"}
                         </button>
                         {!isTeacher && (
                             <button

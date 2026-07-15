@@ -1,8 +1,9 @@
 /**
- * QuizPanel — generador de quiz de práctica (Feature F / SP-03 / SP-05).
+ * QuizPanel — generador de quiz de práctica / modo estudio (Feature F /
+ * SP-03 / SP-05 / SP-06 / SP-08).
  *
  * Estados:
- *   - "setup":    selector de tema + tipo de pregunta + cantidad + botón Generar
+ *   - "setup":    selector de tema + tipo de pregunta + dificultad + cantidad + botón Generar
  *   - "loading":  spinner mientras el LLM genera
  *   - "playing":  una pregunta por vez con feedback inmediato
  *   - "finished": score final + opción de empezar otro
@@ -12,7 +13,11 @@
  *   - multiple_choice: 4 opciones A/B/C/D
  *   - true_false:      2 opciones Verdadero / Falso
  *   - open:            textarea libre evaluado por IA
- *   - mix:             combinación de los tres anteriores
+ *   - flashcard:       tarjeta pregunta/respuesta autoevaluada por el alumno (SP-06)
+ *   - mix:             combinación de multiple_choice/true_false/open
+ *
+ * Dificultad (SP-08): easy | medium | hard, se envía al backend y ajusta
+ * la complejidad de las preguntas generadas por el LLM.
  */
 
 import { useState, useRef } from "react";
@@ -57,6 +62,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
     const [topic, setTopic] = useState("");
     const [numQuestions, setNumQuestions] = useState(5);
     const [questionType, setQuestionType] = useState("multiple_choice");
+    const [difficulty, setDifficulty] = useState("medium");
     const [quiz, setQuiz] = useState(null);
     const [error, setError] = useState(null);
     const [topicError, setTopicError] = useState(null);
@@ -82,8 +88,13 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         typeMC:          "Opción múltiple",
         typeTF:          "V / F",
         typeOpen:        "Preguntas abiertas",
+        typeFlashcard:   "Flashcards",
         typeMix:         "Mix",
         nQuestions:      "Cantidad de preguntas",
+        difficultyLabel: "Dificultad",
+        diffEasy:        "Fácil",
+        diffMedium:      "Media",
+        diffHard:        "Difícil",
         generate:        "Generar quiz",
         generating:      "Generando preguntas...",
         verify:          "Verificar",
@@ -103,6 +114,9 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         errorGeneric:    "No se pudo generar el quiz",
         openPlaceholder: "Escribí tu respuesta aquí...",
         openHint:        "Esta pregunta será evaluada por IA.",
+        showAnswer:      "Ver respuesta",
+        flashcardKnew:      "Sabía",
+        flashcardDidntKnow: "No sabía",
     } : {
         introTitle:      "Practice Quiz",
         introText:       "Generate practice questions from the course material to review.",
@@ -112,8 +126,13 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         typeMC:          "Multiple choice",
         typeTF:          "True / False",
         typeOpen:        "Open questions",
+        typeFlashcard:   "Flashcards",
         typeMix:         "Mix",
         nQuestions:      "Number of questions",
+        difficultyLabel: "Difficulty",
+        diffEasy:        "Easy",
+        diffMedium:      "Medium",
+        diffHard:        "Hard",
         generate:        "Generate quiz",
         generating:      "Generating questions...",
         verify:          "Check",
@@ -133,6 +152,9 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         errorGeneric:    "Could not generate quiz",
         openPlaceholder: "Write your answer here...",
         openHint:        "This question will be evaluated by AI.",
+        showAnswer:      "Show answer",
+        flashcardKnew:      "I knew it",
+        flashcardDidntKnow: "I didn't know it",
     };
 
     const resetQuestionState = () => {
@@ -154,7 +176,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         resetQuestionState();
 
         try {
-            const data = await generateQuiz({ courseId, topic, numQuestions, questionType });
+            const data = await generateQuiz({ courseId, topic, numQuestions, questionType, difficulty });
             if (!data?.questions?.length) throw new Error(L.errorGeneric);
             setQuiz(data);
             setStage("playing");
@@ -190,6 +212,27 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                 user_selected_index: selectedIdx,
             });
         }
+    };
+
+    // ── Autoevaluación de flashcard (sin IA): el alumno juzga si la sabía ──
+    const markFlashcard = (knewIt) => {
+        const q = quiz.questions[currentIdx];
+        if (knewIt) {
+            setScore((s) => s + 1);
+        } else {
+            wrongAnswersRef.current.push({
+                id: `${Date.now()}-${Math.random()}`,
+                timestamp: new Date().toISOString(),
+                question_type:       "flashcard",
+                question:            q.question,
+                explanation:         q.explanation,
+                source_filename:     q.source_filename,
+                source_document_id:  q.source_document_id ?? null,
+                options:             [],
+                correct_index:       -1,
+            });
+        }
+        next();
     };
 
     // ── Verificar respuesta abierta (llama al LLM evaluador) ──
@@ -259,7 +302,13 @@ export default function QuizPanel({ courseId, lang = "es" }) {
             { key: "multiple_choice", label: L.typeMC },
             { key: "true_false",      label: L.typeTF },
             { key: "open",            label: L.typeOpen },
+            { key: "flashcard",       label: L.typeFlashcard },
             { key: "mix",             label: L.typeMix },
+        ];
+        const difficultyOptions = [
+            { key: "easy",   label: L.diffEasy },
+            { key: "medium", label: L.diffMedium },
+            { key: "hard",   label: L.diffHard },
         ];
         return (
             <div className="nexusai-quiz">
@@ -311,6 +360,21 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                         ))}
                     </div>
                 </div>
+                <div className="nexusai-quiz__field">
+                    <label className="nexusai-quiz__label">{L.difficultyLabel}</label>
+                    <div className="nexusai-quiz__diffbtns">
+                        {difficultyOptions.map(({ key, label }) => (
+                            <button
+                                key={key}
+                                type="button"
+                                className={`nexusai-quiz__diffbtn ${difficulty === key ? "nexusai-quiz__diffbtn--active" : ""}`}
+                                onClick={() => setDifficulty(key)}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <button
                     type="button"
                     className="nexusai-quiz__primary"
@@ -356,6 +420,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
         const qType = q.question_type || "multiple_choice";
         const isOpen = qType === "open";
         const isTF   = qType === "true_false";
+        const isFlashcard = qType === "flashcard";
 
         return (
             <div className="nexusai-quiz">
@@ -374,7 +439,7 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                 <p className="nexusai-quiz__question">{q.question}</p>
 
                 {/* ── Opciones: MC y T/F ── */}
-                {!isOpen && (
+                {!isOpen && !isFlashcard && (
                     <div className={`nexusai-quiz__options${isTF ? " nexusai-quiz__options--tf" : ""}`}>
                         {q.options.map((opt, i) => {
                             const isCorrect  = i === q.correct_index;
@@ -421,8 +486,21 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                     </div>
                 )}
 
+                {/* ── Dorso de la flashcard ── */}
+                {isFlashcard && reveal && (
+                    <div className="nexusai-quiz__feedback nexusai-quiz__feedback--flashcard">
+                        <p className="nexusai-quiz__explanation">{q.explanation}</p>
+                        {q.source_filename && (
+                            <p className="nexusai-quiz__source">
+                                <IconFile size={12} />
+                                {L.source}: {q.source_filename}
+                            </p>
+                        )}
+                    </div>
+                )}
+
                 {/* ── Feedback después de verificar ── */}
-                {reveal && (
+                {reveal && !isFlashcard && (
                     <div className={`nexusai-quiz__feedback ${
                         isOpen
                             ? (evaluation?.correct ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong")
@@ -448,7 +526,34 @@ export default function QuizPanel({ courseId, lang = "es" }) {
 
                 {/* ── Acciones ── */}
                 <div className="nexusai-quiz__actions">
-                    {!reveal ? (
+                    {isFlashcard ? (
+                        !reveal ? (
+                            <button
+                                type="button"
+                                className="nexusai-quiz__primary"
+                                onClick={() => setReveal(true)}
+                            >
+                                {L.showAnswer}
+                            </button>
+                        ) : (
+                            <div className="nexusai-quiz__flashcard-actions">
+                                <button
+                                    type="button"
+                                    className="nexusai-quiz__secondary"
+                                    onClick={() => markFlashcard(false)}
+                                >
+                                    <IconX size={14} /> {L.flashcardDidntKnow}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="nexusai-quiz__primary"
+                                    onClick={() => markFlashcard(true)}
+                                >
+                                    <IconCheck size={14} /> {L.flashcardKnew}
+                                </button>
+                            </div>
+                        )
+                    ) : !reveal ? (
                         isOpen ? (
                             <button
                                 type="button"
