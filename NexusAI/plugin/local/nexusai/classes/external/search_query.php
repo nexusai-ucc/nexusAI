@@ -29,6 +29,7 @@ class search_query extends \external_api {
             'courseid' => new \external_value(PARAM_INT, 'ID del curso actual', VALUE_REQUIRED),
             'topk'     => new \external_value(PARAM_INT, 'Cantidad de resultados (1..10)', VALUE_OPTIONAL, 5),
             'global'   => new \external_value(PARAM_BOOL, 'Buscar en todos los cursos del usuario', VALUE_OPTIONAL, false),
+            'materialtype' => new \external_value(PARAM_RAW, 'Filtrar por tipo de material (mime type)', VALUE_OPTIONAL, ''),
         ]);
     }
 
@@ -46,19 +47,21 @@ class search_query extends \external_api {
                     'content'           => new \external_value(PARAM_RAW, 'Texto del fragmento'),
                     'similarity'        => new \external_value(PARAM_FLOAT, 'Score de similitud 0-1'),
                     'has_file'          => new \external_value(PARAM_BOOL, 'El archivo original está disponible para descarga', VALUE_OPTIONAL, false),
+                    'mime_type'         => new \external_value(PARAM_RAW, 'MIME type del documento', VALUE_OPTIONAL, ''),
                 ])
             ),
         ]);
     }
 
-    public static function execute(string $query, int $courseid, int $topk = 5, bool $global = false): array {
+    public static function execute(string $query, int $courseid, int $topk = 5, bool $global = false, string $materialtype = ''): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
-            'query'    => $query,
-            'courseid' => $courseid,
-            'topk'     => $topk,
-            'global'   => $global,
+            'query'        => $query,
+            'courseid'     => $courseid,
+            'topk'         => $topk,
+            'global'       => $global,
+            'materialtype' => $materialtype,
         ]);
 
         $context = \context_course::instance($params['courseid']);
@@ -102,7 +105,8 @@ class search_query extends \external_api {
             (int) $USER->id,
             $cleanquery,
             $topk,
-            $courseids
+            $courseids,
+            (string) $params['materialtype']
         );
 
         if (!isset($response['results'], $response['total'])) {
@@ -124,6 +128,7 @@ class search_query extends \external_api {
                         'content'           => (string) ($r['content'] ?? ''),
                         'similarity'        => (float) ($r['similarity'] ?? 0.0),
                         'has_file'          => (bool) ($r['has_file'] ?? false),
+                        'mime_type'         => (string) ($r['mime_type'] ?? ''),
                     ];
                 },
                 $response['results']

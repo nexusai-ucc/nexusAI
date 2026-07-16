@@ -364,9 +364,10 @@ class backend_client {
      * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
      */
     /**
-     * @param int[]  $courseids  When non-empty, overrides course_id for multi-course search.
+     * @param int[]  $courseids    When non-empty, overrides course_id for multi-course search.
+     * @param string $materialtype Filtra por mime type del documento (BUS-02). Vacío = sin filtro.
      */
-    public function search(int $courseid, int $userid, string $query, int $topk = 5, array $courseids = []): array {
+    public function search(int $courseid, int $userid, string $query, int $topk = 5, array $courseids = [], string $materialtype = ''): array {
         $payload = [
             'query'     => $query,
             'course_id' => $courseid,
@@ -375,6 +376,9 @@ class backend_client {
         ];
         if (!empty($courseids)) {
             $payload['course_ids'] = array_map('intval', $courseids);
+        }
+        if ($materialtype !== '') {
+            $payload['material_type'] = $materialtype;
         }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
