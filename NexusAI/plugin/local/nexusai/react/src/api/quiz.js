@@ -213,6 +213,65 @@ export async function clearQuizErrors(courseId) {
 }
 
 /**
+ * Persiste el resultado de un quiz completado por el alumno (SP-09).
+ * Best-effort: el caller no debe bloquear el flujo si falla.
+ *
+ * @param {Object} params
+ * @param {number} params.courseId
+ * @param {string} params.questionType
+ * @param {string} [params.difficulty]
+ * @param {string|null} [params.topic]
+ * @param {number} params.totalQuestions
+ * @param {number} params.correctCount
+ * @returns {Promise<{id:string, created_at:string}>}
+ */
+export async function saveQuizAttempt({ courseId, questionType, difficulty = "medium", topic = null, totalQuestions, correctCount }) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { id: "mock", created_at: new Date().toISOString() };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_attempt_save",
+        args: {
+            courseid:       courseId,
+            questiontype:   questionType,
+            difficulty,
+            topic:          topic || "",
+            totalquestions: totalQuestions,
+            correctcount:   correctCount,
+        },
+    }]);
+    return response;
+}
+
+/**
+ * Lista el historial de quizzes completados por el alumno en el curso (SP-09).
+ *
+ * @param {number} courseId
+ * @param {number} [days=90]
+ * @param {number} [limit=20]
+ * @returns {Promise<{course_id:number, total:number, items:Array}>}
+ */
+export async function listQuizAttempts(courseId, days = 90, limit = 20) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        return {
+            course_id: courseId,
+            total: 2,
+            items: [
+                { id: "mock-1", question_type: "multiple_choice", difficulty: "medium", topic: null,         total_questions: 5, correct_count: 4, created_at: new Date(Date.now() - 86400000).toISOString() },
+                { id: "mock-2", question_type: "flashcard",       difficulty: "easy",   topic: "Fotosíntesis", total_questions: 3, correct_count: 2, created_at: new Date(Date.now() - 3600000).toISOString() },
+            ],
+        };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_attempt_list",
+        args: { courseid: courseId, days, limit },
+    }]);
+    return response;
+}
+
+/**
  * Sugerencias de repaso basadas en los errores más frecuentes del alumno (SP-10).
  *
  * @param {number} courseId
