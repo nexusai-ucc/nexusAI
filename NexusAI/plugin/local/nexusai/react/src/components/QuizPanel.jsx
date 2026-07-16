@@ -753,18 +753,33 @@ export default function QuizPanel({ courseId, lang = "es" }) {
                     <div className="nexusai-quiz__history-list">
                         {historyItems.map((item) => {
                             const pct = Math.round((item.correct_count / item.total_questions) * 100);
+                            const pctMod = pct >= 80 ? "good" : pct >= 50 ? "mid" : "low";
                             return (
-                                <div key={item.id} className="nexusai-quiz__history-item">
-                                    <div className="nexusai-quiz__history-meta">
-                                        <span className="nexusai-quiz__history-type">{typeLabel(item.question_type)}</span>
-                                        <span className="nexusai-quiz__history-diff">{diffLabel(item.difficulty)}</span>
-                                        {item.topic && <span className="nexusai-quiz__history-topic">{item.topic}</span>}
+                                <div key={item.id} className="nexusai-quiz__history-card">
+                                    <div className="nexusai-quiz__history-header">
+                                        <div className="nexusai-quiz__history-badges">
+                                            <span className="nexusai-quiz__history-type">{typeLabel(item.question_type)}</span>
+                                            <span className={`nexusai-quiz__history-diff nexusai-quiz__history-diff--${item.difficulty}`}>
+                                                {diffLabel(item.difficulty)}
+                                            </span>
+                                        </div>
+                                        <span className="nexusai-quiz__history-date">{fmtDate(item.created_at)}</span>
                                     </div>
-                                    <div className="nexusai-quiz__history-score">
-                                        <strong>{L.historyScore(item.correct_count, item.total_questions)}</strong>
-                                        <span className="nexusai-quiz__history-pct">{pct}%</span>
+                                    {item.topic && <p className="nexusai-quiz__history-topic">{item.topic}</p>}
+                                    <div className="nexusai-quiz__history-score-row">
+                                        <div className="nexusai-quiz__history-fraction">
+                                            <span className="nexusai-quiz__history-correct">{item.correct_count}</span>
+                                            <span className="nexusai-quiz__history-slash"> / </span>
+                                            <span className="nexusai-quiz__history-total">{item.total_questions}</span>
+                                        </div>
+                                        <span className={`nexusai-quiz__history-pct nexusai-quiz__history-pct--${pctMod}`}>{pct}%</span>
                                     </div>
-                                    <div className="nexusai-quiz__history-date">{fmtDate(item.created_at)}</div>
+                                    <div className="nexusai-quiz__history-bar">
+                                        <div
+                                            className={`nexusai-quiz__history-bar-fill nexusai-quiz__history-bar-fill--${pctMod}`}
+                                            style={{ width: `${pct}%` }}
+                                        />
+                                    </div>
                                 </div>
                             );
                         })}
