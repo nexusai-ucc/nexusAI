@@ -302,3 +302,55 @@ export async function listGaps(courseId, days = 30, limit = 30) {
 
     return response;
 }
+
+const MOCK_FAQ_TOPICS = {
+    course_id: 2,
+    days: 30,
+    total_questions: 14,
+    topics: [
+        {
+            topic: "Fechas y modalidad del parcial",
+            count: 6,
+            example_questions: [
+                "¿qué temas entran en el parcial?",
+                "¿el parcial es a libro abierto?",
+            ],
+        },
+        {
+            topic: "Determinantes y matrices",
+            count: 5,
+            example_questions: [
+                "¿cómo se calcula el determinante de una matriz 4x4?",
+            ],
+        },
+        {
+            topic: "Regla de la cadena",
+            count: 3,
+            example_questions: [
+                "¿qué es la regla de la cadena en derivadas parciales?",
+            ],
+        },
+    ],
+};
+
+/**
+ * Preguntas más frecuentes de los alumnos, agrupadas por tema (DOC-D02).
+ *
+ * @param {number} courseId
+ * @param {number} [days] Ventana temporal (default 30).
+ * @returns {Promise<{course_id:number, days:number, total_questions:number, topics:Array}>}
+ */
+export async function getFaqTopics(courseId, days = 30) {
+    const fetchMany = await getMoodleAjax();
+    if (!fetchMany) {
+        await new Promise((r) => setTimeout(r, 400));
+        return { ...MOCK_FAQ_TOPICS, course_id: courseId, days };
+    }
+
+    const [response] = await fetchMany([{
+        methodname: "local_nexusai_analytics_faq_topics",
+        args: { courseid: courseId, days },
+    }]);
+
+    return response;
+}

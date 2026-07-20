@@ -569,6 +569,51 @@
 }
 
 /* ============================================================
+   FAQ dashboard tab (DOC-D02)
+============================================================ */
+.nexusai-faq__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nexusai-faq-topic {
+    background: #fff;
+    border: 1px solid #e8edf5;
+    border-left: 3px solid var(--nexusai-primary, #6366f1);
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+.nexusai-faq-topic__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+.nexusai-faq-topic__label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nexusai-fg, #1e293b);
+    line-height: 1.45;
+    flex: 1;
+}
+.nexusai-faq-topic__count {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--nexusai-primary, #6366f1);
+    background: #e6edfb;
+    padding: 2px 8px;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+.nexusai-faq-topic__examples {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+/* ============================================================
    Search tab — scope toggle + new result elements
 ============================================================ */
 
