@@ -37,6 +37,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Resumen automático de un documento indexado usando el LLM (BUS-03).
+    'local_nexusai_document_summarize' => [
+        'classname'     => '\local_nexusai\external\document_summarize',
+        'methodname'    => 'execute',
+        'description'   => 'Generate an AI summary of an indexed course document (BUS-03).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Búsqueda semántica en el material del curso (retrieval sin LLM — Feature A).
     'local_nexusai_search_query' => [
         'classname'     => '\local_nexusai\external\search_query',

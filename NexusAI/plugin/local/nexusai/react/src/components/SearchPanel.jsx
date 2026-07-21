@@ -14,6 +14,7 @@
 
 import { useState } from "react";
 import { searchMaterial } from "../api/search.js";
+import { summarizeDocument } from "../api/summary.js";
 import { IconBookOpen, IconFile, IconFileText, IconGlobe } from "./icons.jsx";
 
 const MATERIAL_TYPE_LABELS = {
@@ -66,6 +67,7 @@ export default function SearchPanel({
     const [error, setError]           = useState(null);
     const [globalMode, setGlobalMode] = useState(false);
     const [materialType, setMaterialType] = useState("");
+    const [summaries, setSummaries] = useState({});
 
     const effectiveGlobal = scopeOverride !== undefined ? scopeOverride : globalMode;
 
@@ -77,7 +79,11 @@ export default function SearchPanel({
         typeAll:      "Todos",
         noResults:    (q) => `No se encontraron resultados para "${q}".`,
         error:        "No se pudo realizar la búsqueda. Intentá de nuevo.",
-        download:     "Descargar archivo original",
+        download:        "Descargar archivo original",
+        summarize:       "Resumir",
+        hideSummary:     "Ocultar resumen",
+        summaryLabel:    "Resumen generado por IA",
+        summaryError:    "No se pudo generar el resumen. Intentá de nuevo.",
     } : {
         placeholder:  "Search in course material...",
         button:       "Search",
@@ -86,7 +92,11 @@ export default function SearchPanel({
         typeAll:      "All",
         noResults:    (q) => `No results found for "${q}".`,
         error:        "Search failed. Please try again.",
-        download:     "Download original file",
+        download:        "Download original file",
+        summarize:       "Summarize",
+        hideSummary:     "Hide summary",
+        summaryLabel:    "AI-generated summary",
+        summaryError:    "Could not generate summary. Try again.",
     };
 
     const performSearch = async (q) => {
@@ -120,6 +130,21 @@ export default function SearchPanel({
         setMaterialType(mime);
         setResults(null);
         setError(null);
+    };
+
+    const handleSummarize = async (documentId) => {
+        const current = summaries[documentId];
+        if (current?.text) {
+            setSummaries(prev => ({ ...prev, [documentId]: { ...prev[documentId], visible: !prev[documentId].visible } }));
+            return;
+        }
+        setSummaries(prev => ({ ...prev, [documentId]: { loading: true, text: null, error: null, visible: true } }));
+        try {
+            const data = await summarizeDocument({ documentId, courseId });
+            setSummaries(prev => ({ ...prev, [documentId]: { loading: false, text: data.summary, error: null, visible: true } }));
+        } catch {
+            setSummaries(prev => ({ ...prev, [documentId]: { loading: false, text: null, error: L.summaryError, visible: true } }));
+        }
     };
 
     const openDownload = (documentId, resultCourseId) => {
@@ -214,6 +239,20 @@ export default function SearchPanel({
                         key={`${r.document_filename}-${r.chunk_index}-${i}`}
                         className="nexusai-search__result"
                     >
+                        {r.document_id && (
+                            <button
+                                type="button"
+                                className="nexusai-search__summarize-btn"
+                                onClick={() => handleSummarize(r.document_id)}
+                                disabled={summaries[r.document_id]?.loading}
+                            >
+                                {summaries[r.document_id]?.loading
+                                    ? "..."
+                                    : summaries[r.document_id]?.text && summaries[r.document_id]?.visible
+                                        ? L.hideSummary
+                                        : L.summarize}
+                            </button>
+                        )}
                         <div className="nexusai-search__result-header">
                             {canDownload ? (
                                 <button
@@ -241,6 +280,22 @@ export default function SearchPanel({
                             <p className="nexusai-search__course">{r.course_name}</p>
                         )}
                         <p className="nexusai-search__content">{highlightContent(r.content, lastQuery)}</p>
+                        {r.document_id && summaries[r.document_id]?.visible && (
+                            <div className="nexusai-search__summary">
+                                <p className="nexusai-search__summary-label">{L.summaryLabel}</p>
+                                {summaries[r.document_id].loading && (
+                                    <p className="nexusai-search__summary-text nexusai-search__summary-text--loading">...</p>
+                                )}
+                                {summaries[r.document_id].error && (
+                                    <p className="nexusai-search__summary-text nexusai-search__summary-text--error">
+                                        {summaries[r.document_id].error}
+                                    </p>
+                                )}
+                                {summaries[r.document_id].text && (
+                                    <p className="nexusai-search__summary-text">{summaries[r.document_id].text}</p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 );
             })}

@@ -569,6 +569,29 @@ class backend_client {
         return $this->post('/api/v1/forums/suggest-reply', $body);
     }
 
+    /**
+     * Genera un resumen del documento usando el LLM (BUS-03).
+     *
+     * @param string $documentid UUID del documento a resumir.
+     * @param int    $courseid   ID del curso (validación de aislamiento en el backend).
+     * @param int    $userid     $USER->id real del alumno.
+     * @return array{document_id:string, document_filename:string, summary:string, chunks_used:int, total_chunks:int}
+     *
+     * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
+     */
+    public function summarize_document(string $documentid, int $courseid, int $userid): array {
+        $payload = [
+            'document_id' => $documentid,
+            'course_id'   => $courseid,
+            'user_id'     => $userid,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/documents/summarize', $body);
+    }
+
     // =========================================================
     // Documentos
     // =========================================================
