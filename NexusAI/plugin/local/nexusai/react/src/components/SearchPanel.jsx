@@ -79,7 +79,7 @@ export default function SearchPanel({
         typeAll:      "Todos",
         noResults:    (q) => `No se encontraron resultados para "${q}".`,
         error:        "No se pudo realizar la búsqueda. Intentá de nuevo.",
-        download:        "Descargar archivo original",
+        openFile:        "Abrir ↗",
         summarize:       "Resumir",
         hideSummary:     "Ocultar resumen",
         summaryLabel:    "Resumen generado por IA",
@@ -92,7 +92,7 @@ export default function SearchPanel({
         typeAll:      "All",
         noResults:    (q) => `No results found for "${q}".`,
         error:        "Search failed. Please try again.",
-        download:        "Download original file",
+        openFile:        "Open ↗",
         summarize:       "Summarize",
         hideSummary:     "Hide summary",
         summaryLabel:    "AI-generated summary",
@@ -147,11 +147,11 @@ export default function SearchPanel({
         }
     };
 
-    const openDownload = (documentId, resultCourseId) => {
-        if (!documentId || !sesskey) return;
+    const openDownload = (filename, resultCourseId) => {
+        if (!filename || !sesskey) return;
         const params = new URLSearchParams({
-            document_id: documentId,
             courseid: String(resultCourseId || courseId || ""),
+            filename,
             sesskey,
         });
         window.open(
@@ -233,7 +233,7 @@ export default function SearchPanel({
             )}
 
             {results && results.results.map((r, i) => {
-                const canDownload = !!r.document_id && !!sesskey && !!r.has_file;
+                const canDownload = !!r.document_id && !!sesskey;
                 return (
                     <div
                         key={`${r.document_filename}-${r.chunk_index}-${i}`}
@@ -254,27 +254,26 @@ export default function SearchPanel({
                             </button>
                         )}
                         <div className="nexusai-search__result-header">
-                            {canDownload ? (
-                                <button
-                                    type="button"
-                                    className="nexusai-search__filename nexusai-search__filename--btn"
-                                    onClick={() => openDownload(r.document_id, r.course_id)}
-                                    title={L.download}
-                                >
-                                    <FileIcon filename={r.document_filename} />
-                                    {r.document_filename}
-                                </button>
-                            ) : (
-                                <span className="nexusai-search__filename">
-                                    <FileIcon filename={r.document_filename} />
-                                    {r.document_filename}
-                                </span>
-                            )}
-                            {r.mime_type && MATERIAL_TYPE_LABELS[r.mime_type] && (
-                                <span className="nexusai-search__type-badge">
-                                    {MATERIAL_TYPE_LABELS[r.mime_type][lang === "es" ? "es" : "en"]}
-                                </span>
-                            )}
+                            <span className="nexusai-search__filename">
+                                <FileIcon filename={r.document_filename} />
+                                {r.document_filename}
+                            </span>
+                            <div className="nexusai-search__result-actions">
+                                {r.mime_type && MATERIAL_TYPE_LABELS[r.mime_type] && (
+                                    <span className="nexusai-search__type-badge">
+                                        {MATERIAL_TYPE_LABELS[r.mime_type][lang === "es" ? "es" : "en"]}
+                                    </span>
+                                )}
+                                {canDownload && (
+                                    <button
+                                        type="button"
+                                        className="nexusai-search__open-btn"
+                                        onClick={() => openDownload(r.document_filename, r.course_id)}
+                                    >
+                                        {L.openFile}
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         {effectiveGlobal && r.course_name && (
                             <p className="nexusai-search__course">{r.course_name}</p>

@@ -79,6 +79,51 @@ function local_nexusai_before_footer(): string {
  * @param stdClass        $course     Objeto del curso actual.
  * @param context_course  $context    Contexto del curso.
  */
+/**
+ * Permite a Moodle servir archivos del area 'documents' del plugin.
+ *
+ * URL: /pluginfile.php/{contextid}/local_nexusai/documents/{courseid}/{filename}
+ * Acceso: requiere local/nexusai:use (alumnos y docentes del curso).
+ */
+function local_nexusai_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = []) {
+    if ($filearea !== 'documents') {
+        return false;
+    }
+
+    require_login($course);
+    if (!has_capability('local/nexusai:use', $context)) {
+        return false;
+    }
+
+    $itemid  = (int) array_shift($args);
+    $filename = array_shift($args);
+    if (empty($filename)) {
+        return false;
+    }
+
+    $fs   = get_file_storage();
+    $file = $fs->get_file($context->id, 'local_nexusai', 'documents', $itemid, '/', $filename);
+    if (!$file || $file->is_directory()) {
+        return false;
+    }
+
+    send_stored_file($file, 86400, 0, $forcedownload, $options);
+}
+
+/**
+ * Hook ejecutado por Moodle cuando arma el navbar de un curso.
+ *
+ * Agregamos un link "📚 NexusAI" que lleva a la página de gestión de documentos,
+ * SOLO visible para usuarios con capability local/nexusai:manage (docentes y admins).
+ * Los alumnos no ven este link — interactúan con el chat flotante únicamente.
+ *
+ * Este hook funciona en TODAS las versiones soportadas (Moodle 4.1 LTS hasta
+ * 4.5) — no fue migrado a Hook API nuevo.
+ *
+ * @param navigation_node $navigation Nodo del curso al que sumamos el item.
+ * @param stdClass        $course     Objeto del curso actual.
+ * @param context_course  $context    Contexto del curso.
+ */
 function local_nexusai_extend_navigation_course($navigation, $course, $context): void {
     if (!has_capability('local/nexusai:manage', $context)) {
         return;
