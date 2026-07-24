@@ -207,12 +207,14 @@ educativo universitario mediado por plataformas digitales.
 Las plataformas LMS como Moodle son fundamentales en la educación universitaria,
 pero en la práctica se utilizan como repositorios estáticos: los estudiantes
 descargan archivos y entregan trabajos, sin un acompañamiento real al proceso de
-aprendizaje. Un relevamiento realizado a estudiantes de la Universidad Católica de
-Córdoba (UCC) identificó tres problemáticas recurrentes:
+aprendizaje. A partir de la experiencia directa del equipo del proyecto como
+estudiantes de la Universidad Católica de Córdoba (UCC), junto con conversaciones
+informales con compañeros y docentes, se identificaron tres problemáticas
+recurrentes en el uso del campus virtual:
 
 - **Dispersión de la información** entre el campus virtual, aplicaciones de mensajería
-  y servicios de almacenamiento personales: más del 70% de los estudiantes
-  encuestados reportó dificultades para encontrar lo que necesita.
+  y servicios de almacenamiento personales, que dificulta encontrar el material
+  correcto en el momento de estudiar.
 - **Dificultad para organizar el estudio** y planificar repasos antes de las
   evaluaciones.
 - **Uso pasivo del campus virtual**, sin interacción significativa con el material
@@ -253,8 +255,9 @@ dentro del aula virtual de la UCC.
 
 ## Objetivos específicos
 
-- Identificar y documentar las problemáticas del uso actual del campus virtual
-  mediante un relevamiento a estudiantes y docentes de la UCC.
+- Identificar y documentar las problemáticas del uso actual del campus virtual a
+  partir de la experiencia directa del equipo como estudiantes de la UCC,
+  complementada con un relevamiento a docentes de la institución.
 - Diseñar e implementar un plugin de tipo `local` para Moodle que se integre al
   entorno existente sin modificar su núcleo.
 - Desarrollar un prototipo funcional (MVP) con un asistente conversacional basado en
@@ -274,7 +277,7 @@ vinculándolo con los requerimientos implementados y la prueba que lo valida.
 
 | Objetivo específico | Requerimiento(s) | Evidencia de cumplimiento |
 |---|---|---|
-| Relevamiento de problemáticas | — | Sección *Diagnóstico*; relevamiento a estudiantes UCC |
+| Relevamiento de problemáticas | — | Sección *Diagnóstico*; experiencia del equipo y relevamiento a docentes UCC |
 | Plugin `local` integrado a Moodle | RF-15 a RF-18 | Plugin instalable en Moodle 4.1–4.5; pruebas de instalación |
 | Asistente conversacional RAG | RF-01 a RF-07 | Chat en producción; `test_retriever`, `test_pipeline` |
 | Generación de cuestionarios | RF-10 a RF-14 | Funcionalidad de *quiz* en producción; validación de tema |

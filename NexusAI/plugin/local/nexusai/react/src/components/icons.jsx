@@ -89,6 +89,15 @@ export const IconCalendar = ({ size = 14 }) => (
     </svg>
 );
 
+// ── HelpCircle (preguntas frecuentes / dudas) ───────────────────────────────
+export const IconHelpCircle = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+);
+
 // ── Sparkles (intro / empty state positivo) ────────────────────────────────
 export const IconSparkles = ({ size = 16 }) => (
     <svg {...baseProps(size)}>

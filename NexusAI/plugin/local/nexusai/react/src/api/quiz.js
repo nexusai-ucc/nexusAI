@@ -33,6 +33,14 @@ const MOCK_QUIZ = {
             explanation: "El índice HNSW (Hierarchical Navigable Small World) permite búsquedas aproximadas de vecinos más cercanos en tiempo sub-lineal (O(log n)), lo que es esencial para mantener tiempos de respuesta bajos con grandes volúmenes de embeddings. Una búsqueda lineal requeriría comparar cada vector del corpus, resultando en O(n) operaciones.",
             source_filename: "architecture.md",
         },
+        {
+            question_type: "flashcard",
+            question: "HNSW",
+            options: [],
+            correct_index: -1,
+            explanation: "Hierarchical Navigable Small World — índice de pgvector para búsqueda aproximada de vecinos más cercanos en tiempo sub-lineal.",
+            source_filename: "architecture.md",
+        },
     ],
 };
 
@@ -56,10 +64,11 @@ async function getMoodleAjax() {
  * @param {number} params.courseId
  * @param {string} [params.topic]           Tema opcional (default: variedad).
  * @param {number} [params.numQuestions]    Cantidad de preguntas (default 5).
- * @param {string} [params.questionType]    Tipo: multiple_choice | true_false | open | mix
+ * @param {string} [params.questionType]    Tipo: multiple_choice | true_false | open | mix | flashcard
+ * @param {string} [params.difficulty]      Dificultad: easy | medium | hard (default medium)
  * @returns {Promise<{course_id:number, topic:?string, questions:Array}>}
  */
-export async function generateQuiz({ courseId, topic = "", numQuestions = 5, questionType = "multiple_choice" }) {
+export async function generateQuiz({ courseId, topic = "", numQuestions = 5, questionType = "multiple_choice", difficulty = "medium" }) {
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
@@ -78,6 +87,7 @@ export async function generateQuiz({ courseId, topic = "", numQuestions = 5, que
         topic:        topic || "",
         numquestions: numQuestions,
         questiontype: questionType,
+        difficulty,
     };
 
     const [response] = await ajax.call([{
