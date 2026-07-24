@@ -1168,6 +1168,33 @@
     color: #fff;
 }
 
+/* Selector de dificultad (SP-08) */
+.nexusai-quiz__diffbtns {
+    display: flex;
+    gap: 6px;
+}
+.nexusai-quiz__diffbtn {
+    flex: 1;
+    padding: 7px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f7f8fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .12s;
+}
+.nexusai-quiz__diffbtn:hover {
+    border-color: #c6d4f0;
+    color: var(--nexusai-primary);
+}
+.nexusai-quiz__diffbtn--active {
+    background: var(--nexusai-primary);
+    border-color: var(--nexusai-primary);
+    color: #fff;
+}
+
 /* Selector de tipo de pregunta */
 .nexusai-quiz__typebtns {
     display: grid;
@@ -1421,6 +1448,11 @@
     border: 1px solid #fecaca;
     color: #991b1b;
 }
+.nexusai-quiz__feedback--flashcard {
+    background: var(--nexusai-bg-muted);
+    border: 1px solid var(--nexusai-border);
+    color: var(--nexusai-fg);
+}
 .nexusai-quiz__feedback-title {
     display: inline-flex;
     align-items: center;
@@ -1445,6 +1477,11 @@
 }
 
 .nexusai-quiz__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.nexusai-quiz__flashcard-actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;

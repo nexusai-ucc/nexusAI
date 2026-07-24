@@ -25,7 +25,8 @@ class quiz_generate extends \external_api {
             'courseid'      => new \external_value(PARAM_INT,   'ID del curso', VALUE_REQUIRED),
             'topic'         => new \external_value(PARAM_RAW,   'Tema (opcional)', VALUE_OPTIONAL, ''),
             'numquestions'  => new \external_value(PARAM_INT,   'Cantidad de preguntas (1..10)', VALUE_OPTIONAL, 5),
-            'questiontype'  => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta (multiple_choice|true_false|open|mix)', VALUE_OPTIONAL, 'multiple_choice'),
+            'questiontype'  => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta (multiple_choice|true_false|open|mix|flashcard)', VALUE_OPTIONAL, 'multiple_choice'),
+            'difficulty'    => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_OPTIONAL, 'medium'),
         ]);
     }
 
@@ -49,7 +50,7 @@ class quiz_generate extends \external_api {
         ]);
     }
 
-    public static function execute(int $courseid, string $topic = '', int $numquestions = 5, string $questiontype = 'multiple_choice'): array {
+    public static function execute(int $courseid, string $topic = '', int $numquestions = 5, string $questiontype = 'multiple_choice', string $difficulty = 'medium'): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -57,6 +58,7 @@ class quiz_generate extends \external_api {
             'topic'        => $topic,
             'numquestions' => $numquestions,
             'questiontype' => $questiontype,
+            'difficulty'   => $difficulty,
         ]);
 
         $context = \context_course::instance($params['courseid']);
@@ -69,8 +71,11 @@ class quiz_generate extends \external_api {
         }
         $numq = max(1, min(10, (int) $params['numquestions']));
 
-        $allowed_types = ['multiple_choice', 'true_false', 'open', 'mix'];
+        $allowed_types = ['multiple_choice', 'true_false', 'open', 'mix', 'flashcard'];
         $qtype = in_array($params['questiontype'], $allowed_types, true) ? $params['questiontype'] : 'multiple_choice';
+
+        $allowed_difficulties = ['easy', 'medium', 'hard'];
+        $difficulty = in_array($params['difficulty'], $allowed_difficulties, true) ? $params['difficulty'] : 'medium';
 
         $client   = new backend_client();
         $response = $client->generate_quiz(
@@ -78,7 +83,8 @@ class quiz_generate extends \external_api {
             (int) $USER->id,
             $cleantopic !== '' ? $cleantopic : null,
             $numq,
-            $qtype
+            $qtype,
+            $difficulty
         );
 
         if (!isset($response['questions']) || !is_array($response['questions'])) {

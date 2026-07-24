@@ -224,14 +224,17 @@ class backend_client {
      * @param int         $userid       $USER->id real.
      * @param string|null $topic        Tema opcional. Si vacío, variedad aleatoria.
      * @param int         $numquestions Cantidad de preguntas (1..10).
+     * @param string      $questiontype Tipo (multiple_choice|true_false|open|mix|flashcard).
+     * @param string      $difficulty   Dificultad (easy|medium|hard).
      * @return array{course_id:int, topic:?string, questions:array}
      */
-    public function generate_quiz(int $courseid, int $userid, ?string $topic, int $numquestions, string $questiontype = 'multiple_choice'): array {
+    public function generate_quiz(int $courseid, int $userid, ?string $topic, int $numquestions, string $questiontype = 'multiple_choice', string $difficulty = 'medium'): array {
         $payload = [
             'course_id'     => $courseid,
             'user_id'       => $userid,
             'num_questions' => $numquestions,
             'question_type' => $questiontype,
+            'difficulty'    => $difficulty,
         ];
         if ($topic !== null && trim($topic) !== '') {
             $payload['topic'] = trim($topic);
