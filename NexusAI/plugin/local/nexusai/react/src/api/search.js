@@ -13,6 +13,7 @@ const MOCK_RESULTS = [
         chunk_index: 3,
         content: "Los árboles binarios de búsqueda (BST) son estructuras de datos donde cada nodo tiene como máximo dos hijos...",
         similarity: 0.87,
+        mime_type: "application/pdf",
     },
     {
         document_id: "mock-uuid-2",
@@ -22,6 +23,17 @@ const MOCK_RESULTS = [
         chunk_index: 1,
         content: "El trabajo práctico consiste en implementar una tabla hash con resolución de colisiones por encadenamiento...",
         similarity: 0.74,
+        mime_type: "application/pdf",
+    },
+    {
+        document_id: "mock-uuid-3",
+        document_filename: "diapositivas-unidad2.pptx",
+        course_id: 0,
+        course_name: "",
+        chunk_index: 0,
+        content: "Complejidad temporal: notación Big-O para el análisis de algoritmos de búsqueda y ordenamiento...",
+        similarity: 0.68,
+        mime_type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     },
 ];
 
@@ -42,13 +54,14 @@ async function getMoodleAjax() {
  * Busca fragmentos del material del curso.
  *
  * @param {Object}  params
- * @param {string}  params.query     Consulta de búsqueda.
- * @param {number}  params.courseId  ID del curso de Moodle.
- * @param {number}  [params.topK]    Cantidad de resultados (default 5).
- * @param {boolean} [params.global]  true para buscar en todos los cursos del usuario.
+ * @param {string}  params.query        Consulta de búsqueda.
+ * @param {number}  params.courseId     ID del curso de Moodle.
+ * @param {number}  [params.topK]       Cantidad de resultados (default 5).
+ * @param {boolean} [params.global]     true para buscar en todos los cursos del usuario.
+ * @param {string}  [params.materialType] Filtrar por mime type del documento (BUS-02).
  * @returns {Promise<{query:string, total:number, results:Array}>}
  */
-export async function searchMaterial({ query, courseId, topK = 5, global: isGlobal = false }) {
+export async function searchMaterial({ query, courseId, topK = 5, global: isGlobal = false, materialType = "" }) {
     if (!query?.trim()) {
         throw new Error("La búsqueda no puede estar vacía");
     }
@@ -57,12 +70,15 @@ export async function searchMaterial({ query, courseId, topK = 5, global: isGlob
 
     if (!ajax) {
         await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
-        return { query, total: MOCK_RESULTS.length, results: MOCK_RESULTS };
+        const filtered = materialType
+            ? MOCK_RESULTS.filter((r) => r.mime_type === materialType)
+            : MOCK_RESULTS;
+        return { query, total: filtered.length, results: filtered };
     }
 
     const [response] = await ajax.call([{
         methodname: "local_nexusai_search_query",
-        args: { query: query.trim(), courseid: courseId, topk: topK, global: isGlobal },
+        args: { query: query.trim(), courseid: courseId, topk: topK, global: isGlobal, materialtype: materialType },
     }]);
 
     return response;
