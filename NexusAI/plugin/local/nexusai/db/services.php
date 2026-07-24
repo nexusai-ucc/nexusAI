@@ -170,6 +170,18 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Dashboard de preguntas frecuentes agrupadas por tema (DOC-D02).
+    // Solo docentes/admins (capability :manage).
+    'local_nexusai_analytics_faq_topics' => [
+        'classname'     => '\local_nexusai\external\analytics_faq_topics',
+        'methodname'    => 'execute',
+        'description'   => 'Most frequent student questions grouped by topic via LLM (teacher view).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // ----- FOROS — Épica 06 -----
 
     // Detecta posts similares al texto que el alumno está escribiendo (F-07).

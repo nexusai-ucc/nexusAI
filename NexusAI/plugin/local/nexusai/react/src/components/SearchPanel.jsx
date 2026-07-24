@@ -1,20 +1,55 @@
 /**
- * SearchPanel — búsqueda híbrida en material del curso (Feature A).
+ * SearchPanel — búsqueda híbrida en material del curso (Feature A / BUS-02).
  *
  * Cuando isTeacher=true (documentos page) el toggle de modo global no aparece:
  * el docente siempre busca en su propio curso.
  * Cuando isTeacher=false (uso futuro desde vista alumno) el toggle permite
  * cambiar entre "este curso" y "todos mis cursos".
+ *
+ * Filtro por tipo de material (BUS-02): mime type capturado al subir el
+ * archivo, threadeado hasta el backend. El filtro por "unidad" queda fuera
+ * de alcance — no hay ningún dato que asocie un documento a una sección de
+ * Moodle (ver issue de seguimiento).
  */
 
 import { useState } from "react";
 import { searchMaterial } from "../api/search.js";
 import { IconBookOpen, IconFile, IconFileText, IconGlobe } from "./icons.jsx";
 
+const MATERIAL_TYPE_LABELS = {
+    "application/pdf": { es: "PDF", en: "PDF" },
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": { es: "Word", en: "Word" },
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": { es: "PowerPoint", en: "PowerPoint" },
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": { es: "Excel", en: "Excel" },
+    "text/plain": { es: "Texto", en: "Text" },
+    "text/csv": { es: "CSV", en: "CSV" },
+    "text/markdown": { es: "Markdown", en: "Markdown" },
+    "text/html": { es: "HTML", en: "HTML" },
+};
+const MATERIAL_TYPE_FILTERS = Object.keys(MATERIAL_TYPE_LABELS);
+
 function FileIcon({ filename }) {
     const ext = (filename || "").split(".").pop().toLowerCase();
     if (ext === "txt") return <IconFileText size={14} />;
     return <IconFile size={14} />;
+}
+
+function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Resalta los términos de `query` dentro de `text` envolviéndolos en <mark>.
+ * Puramente client-side (nodos React, no dangerouslySetInnerHTML) — sin
+ * riesgo de inyectar HTML crudo proveniente del contenido del documento. */
+function highlightContent(text, query) {
+    const terms = (query || "").split(/\s+/).map((t) => t.trim()).filter((t) => t.length > 1);
+    if (!text || !terms.length) return text;
+    const pattern = new RegExp(`(${terms.map(escapeRegExp).join("|")})`, "gi");
+    return text.split(pattern).map((part, i) =>
+        terms.some((t) => t.toLowerCase() === part.toLowerCase())
+            ? <mark key={i}>{part}</mark>
+            : part
+    );
 }
 
 export default function SearchPanel({
@@ -30,6 +65,7 @@ export default function SearchPanel({
     const [loading, setLoading]       = useState(false);
     const [error, setError]           = useState(null);
     const [globalMode, setGlobalMode] = useState(false);
+    const [materialType, setMaterialType] = useState("");
 
     const effectiveGlobal = scopeOverride !== undefined ? scopeOverride : globalMode;
 
@@ -38,6 +74,7 @@ export default function SearchPanel({
         button:       "Buscar",
         scopeCourse:  "Este curso",
         scopeGlobal:  "Todos mis cursos",
+        typeAll:      "Todos",
         noResults:    (q) => `No se encontraron resultados para "${q}".`,
         error:        "No se pudo realizar la búsqueda. Intentá de nuevo.",
         download:     "Descargar archivo original",
@@ -46,6 +83,7 @@ export default function SearchPanel({
         button:       "Search",
         scopeCourse:  "This course",
         scopeGlobal:  "All my courses",
+        typeAll:      "All",
         noResults:    (q) => `No results found for "${q}".`,
         error:        "Search failed. Please try again.",
         download:     "Download original file",
@@ -56,7 +94,7 @@ export default function SearchPanel({
         setError(null);
         setLastQuery(q);
         try {
-            const data = await searchMaterial({ query: q, courseId, global: effectiveGlobal });
+            const data = await searchMaterial({ query: q, courseId, global: effectiveGlobal, materialType });
             setResults(data);
         } catch {
             setError(L.error);
@@ -74,6 +112,12 @@ export default function SearchPanel({
 
     const switchScope = (toGlobal) => {
         setGlobalMode(toGlobal);
+        setResults(null);
+        setError(null);
+    };
+
+    const changeMaterialType = (mime) => {
+        setMaterialType(mime);
         setResults(null);
         setError(null);
     };
@@ -133,6 +177,26 @@ export default function SearchPanel({
                 </div>
             )}
 
+            <div className="nexusai-search__typebtns">
+                <button
+                    type="button"
+                    className={`nexusai-search__typebtn ${materialType === "" ? "nexusai-search__typebtn--active" : ""}`}
+                    onClick={() => changeMaterialType("")}
+                >
+                    {L.typeAll}
+                </button>
+                {MATERIAL_TYPE_FILTERS.map((mime) => (
+                    <button
+                        key={mime}
+                        type="button"
+                        className={`nexusai-search__typebtn ${materialType === mime ? "nexusai-search__typebtn--active" : ""}`}
+                        onClick={() => changeMaterialType(mime)}
+                    >
+                        {MATERIAL_TYPE_LABELS[mime][lang === "es" ? "es" : "en"]}
+                    </button>
+                ))}
+            </div>
+
             {error && (
                 <div className="nexusai-error" role="alert">
                     <p className="nexusai-error__text">{error}</p>
@@ -167,11 +231,16 @@ export default function SearchPanel({
                                     {r.document_filename}
                                 </span>
                             )}
+                            {r.mime_type && MATERIAL_TYPE_LABELS[r.mime_type] && (
+                                <span className="nexusai-search__type-badge">
+                                    {MATERIAL_TYPE_LABELS[r.mime_type][lang === "es" ? "es" : "en"]}
+                                </span>
+                            )}
                         </div>
                         {effectiveGlobal && r.course_name && (
                             <p className="nexusai-search__course">{r.course_name}</p>
                         )}
-                        <p className="nexusai-search__content">{r.content}</p>
+                        <p className="nexusai-search__content">{highlightContent(r.content, lastQuery)}</p>
                     </div>
                 );
             })}

@@ -218,6 +218,25 @@ class backend_client {
     }
 
     /**
+     * Preguntas más frecuentes de los alumnos, agrupadas por tema por un LLM (DOC-D02).
+     *
+     * @param int $courseid ID del curso.
+     * @param int $days     Ventana temporal (1..365).
+     * @return array{course_id:int, days:int, total_questions:int, topics:array}
+     */
+    public function faq_topics(int $courseid, int $days = 30): array {
+        $payload = [
+            'course_id' => $courseid,
+            'days'      => $days,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/analytics/faq-topics', $body);
+    }
+
+    /**
      * Genera un quiz de práctica desde el material indexado del curso (Feature F).
      *
      * @param int         $courseid     ID del curso.
@@ -421,9 +440,10 @@ class backend_client {
      * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
      */
     /**
-     * @param int[]  $courseids  When non-empty, overrides course_id for multi-course search.
+     * @param int[]  $courseids    When non-empty, overrides course_id for multi-course search.
+     * @param string $materialtype Filtra por mime type del documento (BUS-02). Vacío = sin filtro.
      */
-    public function search(int $courseid, int $userid, string $query, int $topk = 5, array $courseids = []): array {
+    public function search(int $courseid, int $userid, string $query, int $topk = 5, array $courseids = [], string $materialtype = ''): array {
         $payload = [
             'query'     => $query,
             'course_id' => $courseid,
@@ -432,6 +452,9 @@ class backend_client {
         ];
         if (!empty($courseids)) {
             $payload['course_ids'] = array_map('intval', $courseids);
+        }
+        if ($materialtype !== '') {
+            $payload['material_type'] = $materialtype;
         }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {

@@ -26,6 +26,7 @@ import TypingIndicator from "./components/TypingIndicator.jsx";
 import QuizPanel from "./components/QuizPanel.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
 import ReviewPanel from "./components/ReviewPanel.jsx";
+import CalendarPanel from "./components/CalendarPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import { IconBookOpen, IconGlobe } from "./components/icons.jsx";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
@@ -138,7 +139,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "quiz" | "search"
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "quiz" | "review" | "calendar" | "search"
     const [historyOpen, setHistoryOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
@@ -387,7 +388,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         lang={lang}
                     />
 
-                    {/* Pestañas: Chat / Modo Estudio / Buscar / Repaso (Buscar solo para alumnos) */}
+                    {/* Pestañas: Chat / Modo Estudio / Buscar / Repaso / Calendario (Buscar solo para alumnos) */}
                     <div className="nexusai-tabs">
                         <button
                             type="button"
@@ -418,6 +419,13 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             onClick={() => setActiveTab("review")}
                         >
                             {lang === "es" ? "Repaso" : "Review"}
+                        </button>
+                        <button
+                            type="button"
+                            className={`nexusai-tab ${activeTab === "calendar" ? "nexusai-tab--active" : ""}`}
+                            onClick={() => setActiveTab("calendar")}
+                        >
+                            {lang === "es" ? "Calendario" : "Calendar"}
                         </button>
                     </div>
 
@@ -499,6 +507,10 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     ) : activeTab === "review" ? (
                         <div className="nexusai-panel__body">
                             <ReviewPanel courseId={courseid} sesskey={sesskey} lang={lang} />
+                        </div>
+                    ) : activeTab === "calendar" ? (
+                        <div className="nexusai-panel__body">
+                            <CalendarPanel courseId={courseid} lang={lang} />
                         </div>
                     ) : (
                         <div className="nexusai-panel__body">
