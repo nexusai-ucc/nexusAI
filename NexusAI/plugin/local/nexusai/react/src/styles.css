@@ -1013,6 +1013,101 @@
     padding: 2px 8px;
 }
 
+/* ── Calendario del curso (CAL-01) ── */
+.nexusai-calendar { padding: 12px; }
+.nexusai-calendar__rangebtns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.nexusai-calendar__rangebtn {
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f7f8fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .12s;
+}
+.nexusai-calendar__rangebtn:hover {
+    border-color: #c6d4f0;
+    color: var(--nexusai-primary);
+}
+.nexusai-calendar__rangebtn--active {
+    background: var(--nexusai-primary);
+    border-color: var(--nexusai-primary);
+    color: #fff;
+}
+.nexusai-calendar__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 32px 12px;
+    color: #94a3b8;
+    text-align: center;
+    font-size: 13px;
+}
+.nexusai-calendar__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nexusai-calendar-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #f7f8fc;
+    border: 1px solid #e8edf5;
+    border-left: 3px solid var(--nexusai-primary);
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-decoration: none;
+    transition: background .12s, border-color .12s;
+}
+.nexusai-calendar-item:hover {
+    background: #eef1fb;
+}
+.nexusai-calendar-item__icon {
+    flex-shrink: 0;
+    color: var(--nexusai-primary);
+    margin-top: 2px;
+}
+.nexusai-calendar-item__body {
+    flex: 1;
+    min-width: 0;
+}
+.nexusai-calendar-item__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+.nexusai-calendar-item__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+    line-height: 1.4;
+}
+.nexusai-calendar-item__badge {
+    flex-shrink: 0;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--nexusai-primary);
+    background: var(--nexusai-primary-light);
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+.nexusai-calendar-item__date {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: #64748b;
+}
+
 /* ── Historial de conversaciones (Feature E) ── */
 .nexusai-history {
     position: absolute;
