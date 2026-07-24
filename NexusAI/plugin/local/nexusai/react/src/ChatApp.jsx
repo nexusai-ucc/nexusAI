@@ -23,14 +23,20 @@ import { useEffect, useRef, useState } from "react";
 import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
 import TypingIndicator from "./components/TypingIndicator.jsx";
-import QuizPanel from "./components/QuizPanel.jsx";
+import StudyPanel from "./components/StudyPanel.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
-import ReviewPanel from "./components/ReviewPanel.jsx";
 import CalendarPanel from "./components/CalendarPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
-import { IconBookOpen, IconGlobe } from "./components/icons.jsx";
+import NavMenu from "./components/NavMenu.jsx";
+import { IconBookOpen, IconGlobe, IconGrid } from "./components/icons.jsx";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
 import { getSessionMessages } from "./api/history.js";
+
+const SECTION_TITLES = {
+    study:    { es: "Modo Estudio", en: "Study Mode" },
+    search:   { es: "Buscar",       en: "Search" },
+    calendar: { es: "Calendario",   en: "Calendar" },
+};
 
 const STRINGS = {
     es: {
@@ -130,6 +136,12 @@ const IconHistory = () => (
     </svg>
 );
 
+const IconBack = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+    </svg>
+);
+
 export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es", isteacher = 0 }) {
     const isTeacher = !!isteacher;
     const [open, setOpen] = useState(false);
@@ -139,8 +151,9 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "quiz" | "review" | "calendar" | "search"
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "study" | "calendar" | "search"
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [navOpen, setNavOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
@@ -308,55 +321,85 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
                     {/* Header */}
                     <header className="nexusai-panel__header">
-                        <div className="nexusai-panel__title-wrap">
-                            <div className="nexusai-panel__avatar">
-                                <IconSparkle />
-                            </div>
-                            <div className="nexusai-panel__title-group">
-                                <h3 id="nexusai-title" className="nexusai-panel__title">
-                                    {t.title}
-                                </h3>
-                                <div className="nexusai-panel__status">
-                                    <span className="nexusai-panel__status-dot" />
-                                    {!isInsideMoodle()
-                                        ? <span className="nexusai-badge">{t.modeMock}</span>
-                                        : multiCourse
-                                            ? (lang === "es" ? "Activo · todos tus cursos" : "Active · all your courses")
-                                            : t.statusActive
-                                    }
+                        {activeTab === "chat" ? (
+                            <div className="nexusai-panel__title-wrap">
+                                <div className="nexusai-panel__avatar">
+                                    <IconSparkle />
+                                </div>
+                                <div className="nexusai-panel__title-group">
+                                    <h3 id="nexusai-title" className="nexusai-panel__title">
+                                        {t.title}
+                                    </h3>
+                                    <div className="nexusai-panel__status">
+                                        <span className="nexusai-panel__status-dot" />
+                                        {!isInsideMoodle()
+                                            ? <span className="nexusai-badge">{t.modeMock}</span>
+                                            : multiCourse
+                                                ? (lang === "es" ? "Activo · todos tus cursos" : "Active · all your courses")
+                                                : t.statusActive
+                                        }
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="nexusai-panel__title-wrap">
+                                <button
+                                    type="button"
+                                    className="nexusai-icon-btn nexusai-panel__back-btn"
+                                    onClick={() => setActiveTab("chat")}
+                                    aria-label={lang === "es" ? "Volver al chat" : "Back to chat"}
+                                    title={lang === "es" ? "Volver al chat" : "Back to chat"}
+                                >
+                                    <IconBack />
+                                </button>
+                                <h3 id="nexusai-title" className="nexusai-panel__title">
+                                    {SECTION_TITLES[activeTab]?.[lang === "es" ? "es" : "en"]}
+                                </h3>
+                            </div>
+                        )}
 
                         <div className="nexusai-panel__actions">
                             <button
                                 type="button"
-                                className={`nexusai-icon-btn nexusai-history-toggle ${historyOpen ? "nexusai-history-toggle--active" : ""}`}
-                                onClick={() => setHistoryOpen((v) => !v)}
-                                aria-label={lang === "es" ? "Historial" : "History"}
-                                title={lang === "es" ? "Conversaciones previas" : "Previous conversations"}
+                                className={`nexusai-icon-btn nexusai-nav-toggle ${navOpen ? "nexusai-nav-toggle--active" : ""}`}
+                                onClick={() => setNavOpen((v) => !v)}
+                                aria-label={lang === "es" ? "Navegación" : "Navigation"}
+                                title={lang === "es" ? "Ir a..." : "Go to..."}
                             >
-                                <IconHistory />
+                                <IconGrid />
                             </button>
-                            <button
-                                type="button"
-                                className={`nexusai-icon-btn nexusai-multicourse-toggle ${multiCourse ? "nexusai-multicourse-toggle--active" : ""}`}
-                                onClick={() => {
-                                    setMultiCourse((v) => !v);
-                                    clearChat();
-                                }}
-                                aria-label={multiCourse
-                                    ? (lang === "es" ? "Buscar solo en este curso" : "Limit to this course")
-                                    : (lang === "es" ? "Buscar en todos tus cursos" : "Search all your courses")
-                                }
-                                title={multiCourse
-                                    ? (lang === "es" ? "Buscando en todos tus cursos (click para solo este curso)" : "Searching all courses (click to limit to this course)")
-                                    : (lang === "es" ? "Solo este curso (click para buscar en todos tus cursos)" : "This course only (click to search all your courses)")
-                                }
-                            >
-                                {multiCourse ? <IconGlobe /> : <IconBookOpen />}
-                            </button>
-                            {messages.length > 0 && (
+                            {activeTab === "chat" && (
+                                <button
+                                    type="button"
+                                    className={`nexusai-icon-btn nexusai-history-toggle ${historyOpen ? "nexusai-history-toggle--active" : ""}`}
+                                    onClick={() => setHistoryOpen((v) => !v)}
+                                    aria-label={lang === "es" ? "Historial" : "History"}
+                                    title={lang === "es" ? "Conversaciones previas" : "Previous conversations"}
+                                >
+                                    <IconHistory />
+                                </button>
+                            )}
+                            {(activeTab === "chat" || activeTab === "search") && (
+                                <button
+                                    type="button"
+                                    className={`nexusai-icon-btn nexusai-multicourse-toggle ${multiCourse ? "nexusai-multicourse-toggle--active" : ""}`}
+                                    onClick={() => {
+                                        setMultiCourse((v) => !v);
+                                        clearChat();
+                                    }}
+                                    aria-label={multiCourse
+                                        ? (lang === "es" ? "Buscar solo en este curso" : "Limit to this course")
+                                        : (lang === "es" ? "Buscar en todos tus cursos" : "Search all your courses")
+                                    }
+                                    title={multiCourse
+                                        ? (lang === "es" ? "Buscando en todos tus cursos (click para solo este curso)" : "Searching all courses (click to limit to this course)")
+                                        : (lang === "es" ? "Solo este curso (click para buscar en todos tus cursos)" : "This course only (click to search all your courses)")
+                                    }
+                                >
+                                    {multiCourse ? <IconGlobe /> : <IconBookOpen />}
+                                </button>
+                            )}
+                            {activeTab === "chat" && messages.length > 0 && (
                                 <button
                                     type="button"
                                     className="nexusai-icon-btn"
@@ -388,46 +431,14 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         lang={lang}
                     />
 
-                    {/* Pestañas: Chat / Modo Estudio / Buscar / Repaso / Calendario (Buscar solo para alumnos) */}
-                    <div className="nexusai-tabs">
-                        <button
-                            type="button"
-                            className={`nexusai-tab ${activeTab === "chat" ? "nexusai-tab--active" : ""}`}
-                            onClick={() => setActiveTab("chat")}
-                        >
-                            {lang === "es" ? "Chat" : "Chat"}
-                        </button>
-                        <button
-                            type="button"
-                            className={`nexusai-tab ${activeTab === "quiz" ? "nexusai-tab--active" : ""}`}
-                            onClick={() => setActiveTab("quiz")}
-                        >
-                            {lang === "es" ? "Modo Estudio" : "Study Mode"}
-                        </button>
-                        {!isTeacher && (
-                            <button
-                                type="button"
-                                className={`nexusai-tab ${activeTab === "search" ? "nexusai-tab--active" : ""}`}
-                                onClick={() => setActiveTab("search")}
-                            >
-                                {lang === "es" ? "Buscar" : "Search"}
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            className={`nexusai-tab ${activeTab === "review" ? "nexusai-tab--active" : ""}`}
-                            onClick={() => setActiveTab("review")}
-                        >
-                            {lang === "es" ? "Repaso" : "Review"}
-                        </button>
-                        <button
-                            type="button"
-                            className={`nexusai-tab ${activeTab === "calendar" ? "nexusai-tab--active" : ""}`}
-                            onClick={() => setActiveTab("calendar")}
-                        >
-                            {lang === "es" ? "Calendario" : "Calendar"}
-                        </button>
-                    </div>
+                    <NavMenu
+                        open={navOpen}
+                        onClose={() => setNavOpen(false)}
+                        activeTab={activeTab}
+                        onSelect={setActiveTab}
+                        isTeacher={isTeacher}
+                        lang={lang}
+                    />
 
                     {activeTab === "chat" ? (
                     <>
@@ -500,13 +511,9 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         <span>{t.poweredBy}</span>
                     </footer>
                     </>
-                    ) : activeTab === "quiz" ? (
+                    ) : activeTab === "study" ? (
                         <div className="nexusai-panel__body">
-                            <QuizPanel courseId={courseid} lang={lang} allCourses={multiCourse} />
-                        </div>
-                    ) : activeTab === "review" ? (
-                        <div className="nexusai-panel__body">
-                            <ReviewPanel courseId={courseid} sesskey={sesskey} lang={lang} />
+                            <StudyPanel courseId={courseid} sesskey={sesskey} lang={lang} />
                         </div>
                     ) : activeTab === "calendar" ? (
                         <div className="nexusai-panel__body">
