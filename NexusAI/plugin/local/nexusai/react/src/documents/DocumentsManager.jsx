@@ -8,7 +8,7 @@
  *  - Upload: agrega el doc nuevo a la lista solo si el backend confirma éxito
  *    y el id no existe ya (evita sobreescribir un doc existente con fecha nula).
  *  - Errores de upload (incl. 409 y duplicados): muestra ErrorModal, no toca lista.
- *  - Tabs Material / Gaps detectados (Feature G).
+ *  - Tabs Material / Gaps detectados (Feature G) / Preguntas frecuentes (DOC-D02).
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -17,8 +17,9 @@ import { listDocuments, uploadDocument } from "./api.js";
 import DocumentsTable, { ErrorModal } from "./DocumentsTable.jsx";
 import UploadZone from "./UploadZone.jsx";
 import GapsPanel from "./GapsPanel.jsx";
+import FaqDashboardPanel from "./FaqDashboardPanel.jsx";
 import SearchPanel from "../components/SearchPanel.jsx";
-import { IconBookOpen, IconSearch, IconTarget } from "../components/icons.jsx";
+import { IconBookOpen, IconHelpCircle, IconSearch, IconTarget } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
@@ -47,7 +48,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
     const [uploading, setUploading]       = useState(false);
     const [error, setError]               = useState(null);
     const [warningToast, setWarningToast] = useState(null);
-    const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps" | "search"
+    const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps" | "faq" | "search"
     const warningTimerRef = useRef(null);
 
     // Ref para acceder al estado actual desde el closure del setInterval
@@ -154,6 +155,14 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 </button>
                 <button
                     type="button"
+                    className={`nexusai-doc-tab ${activeTab === "faq" ? "nexusai-doc-tab--active" : ""}`}
+                    onClick={() => setActiveTab("faq")}
+                >
+                    <IconHelpCircle size={15} />
+                    Preguntas frecuentes
+                </button>
+                <button
+                    type="button"
                     className={`nexusai-doc-tab ${activeTab === "search" ? "nexusai-doc-tab--active" : ""}`}
                     onClick={() => setActiveTab("search")}
                 >
@@ -169,6 +178,8 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                     isTeacher={true}
                     lang={lang}
                 />
+            ) : activeTab === "faq" ? (
+                <FaqDashboardPanel courseId={courseid} />
             ) : activeTab === "material" ? (
                 loading ? (
                     <div className="nexusai-loading">Cargando documentos...</div>
