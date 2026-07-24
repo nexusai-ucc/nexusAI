@@ -63,5 +63,10 @@ $string['upload_prompt_no']      = 'No por ahora';
 $string['upload_prompt_success'] = '"{$a}" fue agregado a NexusAI correctamente.';
 $string['upload_prompt_error']   = 'No se pudo indexar el archivo en NexusAI. Podés intentarlo desde la sección de materiales.';
 
+// CAL-02 — Alertas de calendario.
+$string['messageprovider:cal_alert'] = 'Alertas de calendario NexusAI';
+$string['cal_alert_subject']         = 'Recordatorio: {$a}';
+$string['cal_alert_body']            = 'Tu evento "{$a}" vence pronto. Revisá el calendario del curso en NexusAI.';
+
 // Privacy API.
 $string['privacy:metadata'] = 'El plugin NexusAI no almacena datos personales en Moodle. El historial de chat vive en el servicio backend externo de NexusAI.';
