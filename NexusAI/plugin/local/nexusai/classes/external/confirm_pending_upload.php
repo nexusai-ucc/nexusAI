@@ -84,8 +84,22 @@ class confirm_pending_upload extends \external_api {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'File content is empty');
         }
 
+        // BUS-05: el archivo ya vive en una sección real del curso (fue subido
+        // vía Moodle nativo, no por el drag-and-drop de React) — se deriva del
+        // cmid, sin pedirle nada al docente. Degrada a null si el cmid quedó
+        // huérfano/inválido; no debe bloquear la confirmación.
+        $section = null;
+        try {
+            $cm = get_fast_modinfo($params['courseid'])->get_cm($params['cmid']);
+            $section = $cm->sectionnum;
+        } catch (\Throwable $e) {
+            $section = null;
+        }
+
         $client = new backend_client();
-        $client->upload_document($params['courseid'], (int) $USER->id, $filename, $mimetype, $filebytes);
+        $client->upload_document(
+            $params['courseid'], (int) $USER->id, $filename, $mimetype, $filebytes, $section
+        );
 
         return ['success' => true];
     }

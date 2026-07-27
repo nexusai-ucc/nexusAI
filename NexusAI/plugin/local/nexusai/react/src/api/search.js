@@ -14,6 +14,7 @@ const MOCK_RESULTS = [
         content: "Los árboles binarios de búsqueda (BST) son estructuras de datos donde cada nodo tiene como máximo dos hijos...",
         similarity: 0.87,
         mime_type: "application/pdf",
+        section: 1,
     },
     {
         document_id: "mock-uuid-2",
@@ -24,6 +25,7 @@ const MOCK_RESULTS = [
         content: "El trabajo práctico consiste en implementar una tabla hash con resolución de colisiones por encadenamiento...",
         similarity: 0.74,
         mime_type: "application/pdf",
+        section: 2,
     },
     {
         document_id: "mock-uuid-3",
@@ -34,6 +36,7 @@ const MOCK_RESULTS = [
         content: "Complejidad temporal: notación Big-O para el análisis de algoritmos de búsqueda y ordenamiento...",
         similarity: 0.68,
         mime_type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        section: null,
     },
 ];
 
@@ -59,9 +62,14 @@ async function getMoodleAjax() {
  * @param {number}  [params.topK]       Cantidad de resultados (default 5).
  * @param {boolean} [params.global]     true para buscar en todos los cursos del usuario.
  * @param {string}  [params.materialType] Filtrar por mime type del documento (BUS-02).
+ * @param {number}  [params.section]    Filtrar por sección/unidad del curso (BUS-05).
+ * @param {boolean} [params.sectionUnassigned] Filtrar solo material sin sección asignada (BUS-05).
  * @returns {Promise<{query:string, total:number, results:Array}>}
  */
-export async function searchMaterial({ query, courseId, topK = 5, global: isGlobal = false, materialType = "" }) {
+export async function searchMaterial({
+    query, courseId, topK = 5, global: isGlobal = false, materialType = "",
+    section = null, sectionUnassigned = false,
+}) {
     if (!query?.trim()) {
         throw new Error("La búsqueda no puede estar vacía");
     }
@@ -70,15 +78,28 @@ export async function searchMaterial({ query, courseId, topK = 5, global: isGlob
 
     if (!ajax) {
         await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
-        const filtered = materialType
+        let filtered = materialType
             ? MOCK_RESULTS.filter((r) => r.mime_type === materialType)
             : MOCK_RESULTS;
+        if (sectionUnassigned) {
+            filtered = filtered.filter((r) => r.section === null || r.section === undefined);
+        } else if (section !== null && section !== undefined) {
+            filtered = filtered.filter((r) => r.section === section);
+        }
         return { query, total: filtered.length, results: filtered };
     }
 
     const [response] = await ajax.call([{
         methodname: "local_nexusai_search_query",
-        args: { query: query.trim(), courseid: courseId, topk: topK, global: isGlobal, materialtype: materialType },
+        args: {
+            query: query.trim(),
+            courseid: courseId,
+            topk: topK,
+            global: isGlobal,
+            materialtype: materialType,
+            section: section === null || section === undefined ? -1 : section,
+            sectionunassigned: sectionUnassigned,
+        },
     }]);
 
     return response;

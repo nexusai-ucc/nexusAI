@@ -48,6 +48,16 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    'local_nexusai_course_sections_list' => [
+        'classname'     => '\local_nexusai\external\course_sections_list',
+        'methodname'    => 'execute',
+        'description'   => 'List a course\'s sections (number + display name) — used by the upload section picker and the search section filter (BUS-05).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Historial de conversaciones — lista de sesiones previas del alumno (Feature E).
     'local_nexusai_chat_sessions_list' => [
         'classname'     => '\local_nexusai\external\chat_sessions_list',

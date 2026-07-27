@@ -14,6 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { listDocuments, uploadDocument } from "./api.js";
+import { listCourseSections } from "../api/courseSections.js";
 import DocumentsTable, { ErrorModal } from "./DocumentsTable.jsx";
 import UploadZone from "./UploadZone.jsx";
 import GapsPanel from "./GapsPanel.jsx";
@@ -49,6 +50,8 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
     const [error, setError]               = useState(null);
     const [warningToast, setWarningToast] = useState(null);
     const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps" | "faq" | "search"
+    const [sections, setSections]         = useState([]); // BUS-05: secciones del curso para el selector de upload
+    const [selectedSection, setSelectedSection] = useState("");
     const warningTimerRef = useRef(null);
 
     // Ref para acceder al estado actual desde el closure del setInterval
@@ -82,6 +85,17 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
         return () => { cancelled = true; };
     }, [courseid]);
 
+    // ── Secciones del curso (BUS-05) ────────────────────────────────────────
+    useEffect(() => {
+        let cancelled = false;
+        listCourseSections(courseid).then((list) => {
+            if (!cancelled) setSections(list || []);
+        }).catch(() => {
+            if (!cancelled) setSections([]);
+        });
+        return () => { cancelled = true; };
+    }, [courseid]);
+
     // ── Polling automático ─────────────────────────────────────────────────
     // setInterval fijo: cada POLL_INTERVAL_MS consulta listDocuments si hay
     // algún doc en estado inestable. No depende de `documents` en el dep array,
@@ -110,7 +124,8 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
         setUploading(true);
         setError(null);
         try {
-            const newDoc = await uploadDocument(courseid, file);
+            const section = selectedSection === "" ? null : Number(selectedSection);
+            const newDoc = await uploadDocument(courseid, file, section);
             // El backend devuelve 200 con el doc existente cuando el contenido
             // es idéntico (CONT-04). Si el id ya está en la lista, el doc está
             // indexado — no sobreescribir con la respuesta que puede traer fecha nula.
@@ -190,6 +205,24 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                             de este curso le hacen preguntas. Se aceptan PDF, DOCX, PPTX, XLSX, CSV, MD, HTML y TXT.
                             La indexación tarda aproximadamente 30-60 segundos por archivo.
                         </p>
+
+                        {sections.length > 0 && (
+                            <div className="nexusai-documents__section-picker">
+                                <label htmlFor="nexusai-upload-section">Unidad/sección (opcional)</label>
+                                <select
+                                    id="nexusai-upload-section"
+                                    className="nexusai-documents__section-select"
+                                    value={selectedSection}
+                                    onChange={(e) => setSelectedSection(e.target.value)}
+                                    disabled={uploading}
+                                >
+                                    <option value="">Sin asignar</option>
+                                    {sections.map((s) => (
+                                        <option key={s.section} value={s.section}>{s.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         <UploadZone onUpload={handleUpload} disabled={uploading} />
 
