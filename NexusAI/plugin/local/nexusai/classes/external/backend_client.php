@@ -266,6 +266,48 @@ class backend_client {
     }
 
     /**
+     * Genera un banco de preguntas de examen para el docente (EVAL-01 / issue #235).
+     *
+     * A diferencia de generate_quiz (alumno, topic libre o material aleatorio),
+     * acá el docente elige explícitamente los archivos fuente.
+     *
+     * @param int         $courseid     ID del curso.
+     * @param int         $userid       $USER->id real del docente.
+     * @param string[]    $documentids  UUIDs de los documentos elegidos (al menos 1).
+     * @param string|null $topic        Tema opcional para enfocar las preguntas.
+     * @param int         $numquestions Cantidad de preguntas (1..20).
+     * @param string      $questiontype Tipo (multiple_choice|true_false|open|mix).
+     * @param string      $difficulty   Dificultad (easy|medium|hard).
+     * @return array{course_id:int, topic:?string, questions:array}
+     */
+    public function generate_exam(
+        int $courseid,
+        int $userid,
+        array $documentids,
+        ?string $topic,
+        int $numquestions,
+        string $questiontype = 'multiple_choice',
+        string $difficulty = 'medium'
+    ): array {
+        $payload = [
+            'course_id'     => $courseid,
+            'user_id'       => $userid,
+            'document_ids'  => array_values($documentids),
+            'num_questions' => $numquestions,
+            'question_type' => $questiontype,
+            'difficulty'    => $difficulty,
+        ];
+        if ($topic !== null && trim($topic) !== '') {
+            $payload['topic'] = trim($topic);
+        }
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/generate-exam', $body);
+    }
+
+    /**
      * Evalúa la respuesta libre de un alumno a una pregunta abierta (SP-05).
      *
      * @param int    $courseid    ID del curso.

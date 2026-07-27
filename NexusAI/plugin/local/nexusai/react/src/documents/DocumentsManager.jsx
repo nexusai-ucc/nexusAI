@@ -18,8 +18,9 @@ import DocumentsTable, { ErrorModal } from "./DocumentsTable.jsx";
 import UploadZone from "./UploadZone.jsx";
 import GapsPanel from "./GapsPanel.jsx";
 import FaqDashboardPanel from "./FaqDashboardPanel.jsx";
+import ExamGeneratorPanel from "./ExamGeneratorPanel.jsx";
 import SearchPanel from "../components/SearchPanel.jsx";
-import { IconBookOpen, IconHelpCircle, IconSearch, IconTarget } from "../components/icons.jsx";
+import { IconBookOpen, IconClipboardList, IconHelpCircle, IconSearch, IconTarget } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
@@ -48,7 +49,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
     const [uploading, setUploading]       = useState(false);
     const [error, setError]               = useState(null);
     const [warningToast, setWarningToast] = useState(null);
-    const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps" | "faq" | "search"
+    const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps" | "faq" | "exam" | "search"
     const warningTimerRef = useRef(null);
 
     // Ref para acceder al estado actual desde el closure del setInterval
@@ -163,6 +164,14 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 </button>
                 <button
                     type="button"
+                    className={`nexusai-doc-tab ${activeTab === "exam" ? "nexusai-doc-tab--active" : ""}`}
+                    onClick={() => setActiveTab("exam")}
+                >
+                    <IconClipboardList size={15} />
+                    Generar examen
+                </button>
+                <button
+                    type="button"
                     className={`nexusai-doc-tab ${activeTab === "search" ? "nexusai-doc-tab--active" : ""}`}
                     onClick={() => setActiveTab("search")}
                 >
@@ -180,6 +189,8 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 />
             ) : activeTab === "faq" ? (
                 <FaqDashboardPanel courseId={courseid} />
+            ) : activeTab === "exam" ? (
+                <ExamGeneratorPanel courseId={courseid} />
             ) : activeTab === "material" ? (
                 loading ? (
                     <div className="nexusai-loading">Cargando documentos...</div>

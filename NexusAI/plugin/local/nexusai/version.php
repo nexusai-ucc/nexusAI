@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026072700;        // YYYYMMDDXX — UX-02: disparador del widget movido de FAB flotante a ícono en la navbar primaria.
-$plugin->release   = '0.9.7';            // UX-02: ícono en navbar primaria + panel dropdown anclado (reemplaza el FAB).
+$plugin->version   = 2026072701;        // DOC-D04 (issue #235): generador de exámenes para docentes.
+$plugin->release   = '0.9.8';            // DOC-D04: nueva tab docente "Generar examen" + export GIFT.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

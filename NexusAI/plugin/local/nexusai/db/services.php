@@ -92,6 +92,18 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Generador de exámenes — banco de preguntas desde archivos elegidos por el
+    // docente (EVAL-01 / issue #235, DOC-D04). Solo docentes (capability :manage).
+    'local_nexusai_exam_generate' => [
+        'classname'     => '\local_nexusai\external\exam_generate',
+        'methodname'    => 'execute',
+        'description'   => 'Generate an exam question bank from teacher-selected course files.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // Repaso de errores — persiste preguntas mal respondidas en un quiz (SP-10).
     'local_nexusai_quiz_errors_record' => [
         'classname'     => '\local_nexusai\external\quiz_errors_record',

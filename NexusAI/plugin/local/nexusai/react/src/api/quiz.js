@@ -99,6 +99,50 @@ export async function generateQuiz({ courseId, topic = "", numQuestions = 5, que
 }
 
 /**
+ * Genera un banco de preguntas de EXAMEN para el docente (EVAL-01, issue #235).
+ *
+ * A diferencia de generateQuiz, el docente elige explícitamente de qué
+ * archivos del curso salen las preguntas (documentIds), en vez de un topic
+ * libre o material aleatorio de todo el curso.
+ *
+ * @param {Object} params
+ * @param {number} params.courseId
+ * @param {string[]} params.documentIds     UUIDs de los documentos elegidos (al menos 1).
+ * @param {string} [params.topic]           Tema opcional para enfocar las preguntas.
+ * @param {number} [params.numQuestions]    Cantidad de preguntas (default 10).
+ * @param {string} [params.questionType]    Tipo: multiple_choice | true_false | open | mix
+ * @param {string} [params.difficulty]      Dificultad: easy | medium | hard (default medium)
+ * @returns {Promise<{course_id:number, topic:?string, questions:Array}>}
+ */
+export async function generateExam({ courseId, documentIds, topic = "", numQuestions = 10, questionType = "multiple_choice", difficulty = "medium" }) {
+    const ajax = await getMoodleAjax();
+
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 800 + Math.random() * 800));
+        let mockQuestions = MOCK_QUIZ.questions.filter((q) => q.question_type !== "flashcard");
+        if (questionType !== "mix") {
+            const filtered = mockQuestions.filter((q) => q.question_type === questionType);
+            mockQuestions = filtered.length ? filtered : mockQuestions.slice(0, 1);
+        }
+        return { course_id: courseId, topic: topic || null, questions: mockQuestions };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_exam_generate",
+        args: {
+            courseid:     courseId,
+            documentids:  documentIds,
+            topic:        topic || "",
+            numquestions: numQuestions,
+            questiontype: questionType,
+            difficulty,
+        },
+    }]);
+
+    return response;
+}
+
+/**
  * Evalúa la respuesta libre de un alumno a una pregunta abierta (SP-05).
  *
  * @param {Object} params
