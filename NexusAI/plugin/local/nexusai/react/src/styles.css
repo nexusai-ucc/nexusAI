@@ -2111,6 +2111,117 @@
     margin: 0;
 }
 
+/* ── Plan de estudio personalizado ── */
+.nexusai-studyplan {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.nexusai-studyplan--loading {
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+}
+.nexusai-studyplan__banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--nexusai-primary-light);
+    border: 1px solid var(--nexusai-primary-ring);
+    border-radius: var(--nexusai-radius);
+    color: var(--nexusai-primary);
+    font-size: 12.5px;
+    font-weight: 500;
+}
+.nexusai-studyplan__empty {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+    gap: 10px;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-studyplan__empty-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--nexusai-bg-subtle);
+    border-radius: var(--nexusai-radius-full);
+    color: var(--nexusai-fg-subtle);
+}
+.nexusai-studyplan__empty-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+    margin: 0;
+}
+.nexusai-studyplan__empty-hint {
+    font-size: 12px;
+    color: var(--nexusai-fg-muted);
+    margin: 0;
+    max-width: 240px;
+    line-height: 1.5;
+}
+.nexusai-studyplan__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nexusai-studyplan__card {
+    background: #fff;
+    border: 1px solid #e0e7ff;
+    border-radius: var(--nexusai-radius);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.nexusai-studyplan__card-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--nexusai-primary);
+}
+.nexusai-studyplan__card-topic {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+}
+.nexusai-studyplan__card-reason {
+    font-size: 12px;
+    color: var(--nexusai-fg-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+.nexusai-studyplan__card-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--nexusai-fg-subtle);
+}
+.nexusai-studyplan__card-btn {
+    align-self: flex-start;
+    margin-top: 2px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--nexusai-primary);
+    background: var(--nexusai-primary-light);
+    border: 1px solid var(--nexusai-primary-ring);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .12s;
+}
+.nexusai-studyplan__card-btn:hover {
+    background: var(--nexusai-primary-ring);
+}
+
 /* ── Caret de streaming ── */
 .nexusai-msg__markdown--streaming::after {
     content: "▍";

@@ -375,6 +375,27 @@ class backend_client {
     }
 
     /**
+     * Plan de estudio personalizado: combina errores de quiz + gaps del chat.
+     *
+     * @param int $courseid ID del curso.
+     * @param int $userid   $USER->id real del alumno.
+     * @param int $days     Ventana de días hacia atrás (1..365).
+     * @return array{course_id:int, topics:array}
+     */
+    public function quiz_study_plan(int $courseid, int $userid, int $days = 30): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'days'      => $days,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/study-plan', $body);
+    }
+
+    /**
      * Búsqueda semántica en el material del curso (Feature A — sin LLM).
      *
      * @param int    $courseid ID del curso de Moodle.
