@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026072702;        // DOC-D04 (issue #235): generador de exámenes para docentes.
-$plugin->release   = '0.9.9';            // BUS-05 (sección/unidad) + DOC-D04 (generador de exámenes docente + export GIFT).
+$plugin->version   = 2026072703;        // YYYYMMDDXX — Plan de estudio personalizado (combina errores de quiz + gaps del chat + calendario).
+$plugin->release   = '0.9.10';           // DOC-D04 (generador de exámenes docente + export GIFT) + Plan de estudio personalizado.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

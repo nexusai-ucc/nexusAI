@@ -158,6 +158,16 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    'local_nexusai_quiz_study_plan' => [
+        'classname'     => '\local_nexusai\external\quiz_study_plan',
+        'methodname'    => 'execute',
+        'description'   => 'Get a personalized study plan combining quiz-error history and unanswered chat questions.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Detección de gaps — preguntas que el material no respondió (Feature G).
     // Solo docentes ven sus gaps (capability :manage).
     'local_nexusai_gaps_list' => [
