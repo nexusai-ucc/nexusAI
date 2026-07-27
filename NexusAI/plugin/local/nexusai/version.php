@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026072700;        // YYYYMMDDXX — UX-02: disparador del widget movido de FAB flotante a ícono en la navbar primaria.
-$plugin->release   = '0.9.7';            // UX-02: ícono en navbar primaria + panel dropdown anclado (reemplaza el FAB).
+$plugin->version   = 2026072701;        // YYYYMMDDXX — BUS-05: filtro de búsqueda por unidad/sección del curso.
+$plugin->release   = '0.9.8';            // BUS-05: sección opcional al subir material + filtro de búsqueda por unidad.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

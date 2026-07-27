@@ -470,6 +470,32 @@
     color: #64748b;
     margin-right: 4px;
 }
+
+/* ── Selector de sección al subir material (BUS-05) ── */
+.nexusai-documents__section-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+    max-width: 280px;
+}
+.nexusai-documents__section-picker label {
+    font-size: 13px;
+    color: #64748b;
+}
+.nexusai-documents__section-select {
+    padding: 6px 10px;
+    font-size: 13px;
+    color: #1e293b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.nexusai-documents__section-select:focus-visible {
+    outline: 2px solid var(--nexusai-primary, #6366f1);
+    outline-offset: 1px;
+}
 .nexusai-gaps__filter-btn {
     padding: 5px 10px;
     font-size: 12.5px;
