@@ -61,51 +61,16 @@
 }
 
 /* ============================================================
-   Floating Action Button (FAB)
-============================================================ */
-.nexusai-fab {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 52px;
-    height: 52px;
-    border-radius: var(--nexusai-radius-full);
-    border: none;
-    background: var(--nexusai-primary);
-    color: white;
-    cursor: pointer;
-    box-shadow: var(--nexusai-shadow-fab);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s;
-    z-index: 9998;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.nexusai-fab:hover {
-    background: var(--nexusai-primary-hover);
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
-}
-.nexusai-fab:focus-visible {
-    outline: 2px solid var(--nexusai-primary);
-    outline-offset: 3px;
-}
-.nexusai-fab__icon {
-    width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease;
-}
-
-/* ============================================================
-   Panel desplegable
+   Panel desplegable — UX-02: dropdown anclado bajo el ícono de la
+   navbar primaria de Moodle, no una tarjeta flotante bottom-right.
+   --nexusai-anchor-left lo escribe ChatApp.jsx al abrir (JS), leyendo
+   la posición real del ícono — el ancho de Home/Dashboard/My courses
+   varía según idioma/rol/tema, un valor fijo no sería preciso.
 ============================================================ */
 .nexusai-panel {
     position: fixed;
-    bottom: 88px;
-    right: 24px;
+    top: 64px;
+    left: var(--nexusai-anchor-left, 16px);
     width: 400px;
     max-width: calc(100vw - 48px);
     height: 600px;
@@ -122,7 +87,7 @@
 }
 
 @keyframes nexusai-slide-up {
-    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    from { opacity: 0; transform: translateY(-8px) scale(0.98); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
@@ -241,6 +206,15 @@
     border-radius: var(--nexusai-radius-full);
 }
 .nexusai-panel__body::-webkit-scrollbar-thumb:hover { background: var(--nexusai-fg-subtle); }
+
+/* ----- Estado vacío fuera de curso (UX-02) ----- */
+.nexusai-panel__body--empty {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 28px 16px;
+}
 
 /* ----- Welcome ----- */
 .nexusai-welcome {
@@ -822,6 +796,9 @@
 ============================================================ */
 @media (max-width: 767px) {
     .nexusai-panel {
+        /* top:auto anula el anclaje bajo el ícono de la navbar (UX-02) —
+           en mobile se mantiene el bottom-sheet full-screen de siempre. */
+        top: auto;
         bottom: 0;
         right: 0;
         left: 0;
@@ -831,10 +808,6 @@
         height: calc(100vh - 72px);
         border-radius: var(--nexusai-radius-xl) var(--nexusai-radius-xl) 0 0;
         border-bottom: none;
-    }
-    .nexusai-fab {
-        bottom: 16px;
-        right: 16px;
     }
     .nexusai-input__textarea {
         font-size: 16px; /* evita zoom en iOS */
@@ -871,30 +844,25 @@
     color: var(--nexusai-primary);
 }
 
-/* ── Pestañas Chat / Buscador / Quiz ── */
-.nexusai-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--nexusai-border);
-    padding: 0 12px;
-    background: var(--nexusai-bg);
-    flex-shrink: 0;
+/* ── Toggle menú de navegación (UX-01) ── */
+.nexusai-nav-toggle {
+    opacity: 0.55;
+    transition: opacity .15s, color .15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
-.nexusai-tab {
-    flex: 1;
-    padding: 9px 0;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--nexusai-fg-subtle);
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    transition: color .15s, border-color .15s;
-}
-.nexusai-tab:hover { color: var(--nexusai-fg-muted); }
-.nexusai-tab--active {
+.nexusai-nav-toggle:hover { opacity: 0.85; }
+.nexusai-nav-toggle--active,
+.nexusai-nav-toggle--active:hover {
+    opacity: 1;
     color: var(--nexusai-primary);
-    border-bottom-color: var(--nexusai-primary);
+}
+
+/* ── Botón "volver al chat" en el header contextual (UX-01) ── */
+.nexusai-panel__back-btn {
+    margin-right: 2px;
+    flex-shrink: 0;
 }
 
 /* ── Buscador (Feature A) ── */
@@ -1225,6 +1193,101 @@
     font-size: 10.5px;
     color: #94a3b8;
     margin-top: 2px;
+}
+
+/* ── Menú de navegación (UX-01) — calcado de .nexusai-history ── */
+.nexusai-navmenu {
+    position: absolute;
+    top: 56px;
+    right: 10px;
+    width: 220px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    animation: nexusai-source-panel-in .15s ease-out;
+}
+.nexusai-navmenu__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px 6px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.nexusai-navmenu__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+}
+.nexusai-navmenu__close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #94a3b8;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+}
+.nexusai-navmenu__close:hover { color: var(--nexusai-fg); }
+.nexusai-navmenu__list {
+    padding: 6px;
+}
+.nexusai-navmenu__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    padding: 9px 10px;
+    margin: 2px 0;
+    font-size: 13px;
+    color: var(--nexusai-fg);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .1s, border-color .1s, color .1s;
+}
+.nexusai-navmenu__item:hover {
+    background: #f7f8fc;
+}
+.nexusai-navmenu__item--active {
+    background: #e6edfb;
+    border-color: #c6d4f0;
+    color: var(--nexusai-primary);
+}
+.nexusai-navmenu__item-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+/* ── Selector Practicar/Repaso de Modo Estudio (UX-01) ── */
+.nexusai-study__modebtns {
+    display: flex;
+    padding: 10px 12px 0;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.nexusai-study__modebtn {
+    flex: 1;
+    padding: 7px 8px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f7f8fc;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+}
+.nexusai-study__modebtn:hover { color: var(--nexusai-fg); }
+.nexusai-study__modebtn--active {
+    color: var(--nexusai-primary);
+    background: #e6edfb;
+    border-color: #c6d4f0;
 }
 
 /* ── Quiz Generator (Feature F) ── */

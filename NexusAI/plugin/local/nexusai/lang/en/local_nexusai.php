@@ -47,6 +47,7 @@ $string['chatwidget_placeholder']  = 'Ask anything about this course...';
 $string['chatwidget_send']         = 'Send';
 $string['chatwidget_loading']      = 'Loading...';
 $string['chatwidget_error']        = 'Something went wrong. Try again in a moment.';
+$string['chatwidget_navtrigger']   = 'NexusAI Assistant';
 
 // Admin page with health check.
 $string['admin_page_title']        = 'NexusAI · Admin panel';
