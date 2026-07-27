@@ -152,7 +152,7 @@ function resolveMimeType(file) {
     return byExtension || file.type;
 }
 
-export async function uploadDocument(courseId, file) {
+export async function uploadDocument(courseId, file, section = null) {
     if (!file) throw new Error("No file provided");
 
     const mimeType = resolveMimeType(file);
@@ -181,6 +181,7 @@ export async function uploadDocument(courseId, file) {
             uploader_id: 2,
             filename: file.name,
             mime_type: mimeType,
+            section: section === null || section === undefined ? null : section,
             status: "pending",
             error_message: null,
         };
@@ -196,6 +197,7 @@ export async function uploadDocument(courseId, file) {
         filename:    file.name,
         mimetype:    mimeType,
         content_b64: contentB64,
+        section:     section === null || section === undefined ? -1 : section,
     });
 }
 

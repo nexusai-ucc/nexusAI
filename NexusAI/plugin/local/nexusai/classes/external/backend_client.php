@@ -431,7 +431,10 @@ class backend_client {
      * @param int[]  $courseids    When non-empty, overrides course_id for multi-course search.
      * @param string $materialtype Filtra por mime type del documento (BUS-02). Vacío = sin filtro.
      */
-    public function search(int $courseid, int $userid, string $query, int $topk = 5, array $courseids = [], string $materialtype = ''): array {
+    public function search(
+        int $courseid, int $userid, string $query, int $topk = 5, array $courseids = [],
+        string $materialtype = '', ?int $section = null, bool $sectionunassigned = false
+    ): array {
         $payload = [
             'query'     => $query,
             'course_id' => $courseid,
@@ -443,6 +446,12 @@ class backend_client {
         }
         if ($materialtype !== '') {
             $payload['material_type'] = $materialtype;
+        }
+        if ($section !== null) {
+            $payload['section'] = $section;
+        }
+        if ($sectionunassigned) {
+            $payload['section_unassigned'] = true;
         }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
@@ -467,7 +476,10 @@ class backend_client {
      *
      * @throws \moodle_exception Si el backend rechaza o la red falla.
      */
-    public function upload_document(int $courseid, int $uploaderid, string $filename, string $mimetype, string $filebytes): array {
+    public function upload_document(
+        int $courseid, int $uploaderid, string $filename, string $mimetype, string $filebytes,
+        ?int $section = null
+    ): array {
         $payload = [
             'course_id'   => $courseid,
             'uploader_id' => $uploaderid,
@@ -475,6 +487,9 @@ class backend_client {
             'mime_type'   => $mimetype,
             'content_b64' => base64_encode($filebytes),
         ];
+        if ($section !== null) {
+            $payload['section'] = $section;
+        }
 
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
