@@ -61,51 +61,16 @@
 }
 
 /* ============================================================
-   Floating Action Button (FAB)
-============================================================ */
-.nexusai-fab {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    width: 52px;
-    height: 52px;
-    border-radius: var(--nexusai-radius-full);
-    border: none;
-    background: var(--nexusai-primary);
-    color: white;
-    cursor: pointer;
-    box-shadow: var(--nexusai-shadow-fab);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.15s;
-    z-index: 9998;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.nexusai-fab:hover {
-    background: var(--nexusai-primary-hover);
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
-}
-.nexusai-fab:focus-visible {
-    outline: 2px solid var(--nexusai-primary);
-    outline-offset: 3px;
-}
-.nexusai-fab__icon {
-    width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease;
-}
-
-/* ============================================================
-   Panel desplegable
+   Panel desplegable — UX-02: dropdown anclado bajo el ícono de la
+   navbar primaria de Moodle, no una tarjeta flotante bottom-right.
+   --nexusai-anchor-left lo escribe ChatApp.jsx al abrir (JS), leyendo
+   la posición real del ícono — el ancho de Home/Dashboard/My courses
+   varía según idioma/rol/tema, un valor fijo no sería preciso.
 ============================================================ */
 .nexusai-panel {
     position: fixed;
-    bottom: 88px;
-    right: 24px;
+    top: 64px;
+    left: var(--nexusai-anchor-left, 16px);
     width: 400px;
     max-width: calc(100vw - 48px);
     height: 600px;
@@ -122,7 +87,7 @@
 }
 
 @keyframes nexusai-slide-up {
-    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    from { opacity: 0; transform: translateY(-8px) scale(0.98); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
@@ -241,6 +206,15 @@
     border-radius: var(--nexusai-radius-full);
 }
 .nexusai-panel__body::-webkit-scrollbar-thumb:hover { background: var(--nexusai-fg-subtle); }
+
+/* ----- Estado vacío fuera de curso (UX-02) ----- */
+.nexusai-panel__body--empty {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 28px 16px;
+}
 
 /* ----- Welcome ----- */
 .nexusai-welcome {
@@ -822,6 +796,9 @@
 ============================================================ */
 @media (max-width: 767px) {
     .nexusai-panel {
+        /* top:auto anula el anclaje bajo el ícono de la navbar (UX-02) —
+           en mobile se mantiene el bottom-sheet full-screen de siempre. */
+        top: auto;
         bottom: 0;
         right: 0;
         left: 0;
@@ -831,10 +808,6 @@
         height: calc(100vh - 72px);
         border-radius: var(--nexusai-radius-xl) var(--nexusai-radius-xl) 0 0;
         border-bottom: none;
-    }
-    .nexusai-fab {
-        bottom: 16px;
-        right: 16px;
     }
     .nexusai-input__textarea {
         font-size: 16px; /* evita zoom en iOS */

@@ -18,44 +18,39 @@ namespace local_nexusai\hook\output;
 defined('MOODLE_INTERNAL') || die();
 
 use core\hook\output\before_footer_html_generation;
+use local_nexusai\visibility_helper;
 
 class before_footer_listener {
 
     /**
      * Callback ejecutado por Moodle antes de generar el footer HTML.
      *
-     * Reglas (idénticas al callback viejo en lib.php):
-     *   - Solo usuarios logueados (no guests).
-     *   - Solo dentro de un curso real ($COURSE->id > 1, porque 1 es el sitio).
-     *   - Solo si el usuario tiene la capability `local/nexusai:use` en el curso.
+     * La regla de visibilidad (logueado, no invitado, capability en curso
+     * real) vive en visibility_helper::resolve() — compartida con el ícono
+     * de la navbar primaria (primary_extend_listener.php, UX-02) para que
+     * nunca haya un ícono clickeable sin panel detrás. Fuera de un curso
+     * real, courseid llega en 0 y el panel entra a un estado vacío.
      *
-     * Si pasa, inyecta el div contenedor y le pide a Moodle que cargue el bundle
-     * AMD `local_nexusai/chatwidget-lazy`, pasándole el contexto del curso/usuario.
+     * Si corresponde mostrar el widget, inyecta el div contenedor y le pide
+     * a Moodle que cargue el bundle AMD `local_nexusai/chatwidget-lazy`.
      *
      * @param before_footer_html_generation $hook El hook con métodos add_html() etc.
      */
     public static function callback(before_footer_html_generation $hook): void {
-        global $PAGE, $USER, $COURSE;
+        global $PAGE, $USER;
 
-        // 1. Filtros de seguridad y contexto.
-        if (!isloggedin() || isguestuser()) {
-            return;
-        }
-        if (empty($COURSE->id) || $COURSE->id <= 1) {
+        $context = visibility_helper::resolve();
+        if ($context === null) {
             return;
         }
 
-        $context = \context_course::instance($COURSE->id);
-        if (!has_capability('local/nexusai:use', $context)) {
-            return;
-        }
-
-        $isteacher = has_capability('local/nexusai:manage', $context);
+        $courseid  = $context['courseid'];
+        $isteacher = $context['isteacher'];
 
         // 2. Cargar el bundle React vía AMD/RequireJS.
         $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
             [
-                'courseid'   => (int) $COURSE->id,
+                'courseid'   => $courseid,
                 'userid'     => (int) $USER->id,
                 'sesskey'    => sesskey(),
                 'wwwroot'    => (string) (new \moodle_url('/'))->out(false),
@@ -66,9 +61,9 @@ class before_footer_listener {
 
         // Para docentes: cargar el módulo que muestra el prompt de confirmación
         // cuando suben un archivo a una sección del curso.
-        if ($isteacher) {
+        if ($isteacher && $courseid > 0) {
             $PAGE->requires->js_call_amd('local_nexusai/upload-prompt', 'init', [
-                ['courseid' => (int) $COURSE->id],
+                ['courseid' => $courseid],
             ]);
         }
 
@@ -76,10 +71,12 @@ class before_footer_listener {
         // Se carga en cualquier página de foro (mod-forum-*): en Moodle 5.x el
         // formulario de nueva discusión puede mostrarse inline en mod-forum-view,
         // no solo en mod-forum-post. El JS se auto-limita si no hay input[name="subject"].
-        if (strpos($PAGE->pagetype, 'mod-forum') === 0) {
+        // $courseid > 0 preserva el comportamiento pre-UX-02 (un foro de sitio en
+        // el frontpage, courseid=1, nunca disparaba esto).
+        if ($courseid > 0 && strpos($PAGE->pagetype, 'mod-forum') === 0) {
             $PAGE->requires->js_call_amd('local_nexusai/forum-duplicate-checker', 'init', [
                 [
-                    'courseid' => (int) $COURSE->id,
+                    'courseid' => $courseid,
                     'wwwroot'  => (string) (new \moodle_url('/'))->out(false),
                 ],
             ]);
@@ -87,12 +84,12 @@ class before_footer_listener {
 
         // F-10/F-11: resumen de hilo + sugerencia de respuesta con IA.
         // Solo en mod-forum-discuss (discuss.php?d=X) — páginas de discusión abierta.
-        if ($PAGE->pagetype === 'mod-forum-discuss') {
+        if ($courseid > 0 && $PAGE->pagetype === 'mod-forum-discuss') {
             $discussionid = (int) optional_param('d', 0, PARAM_INT);
             if ($discussionid > 0) {
                 $amdparams = [
                     'discussionid' => $discussionid,
-                    'courseid'     => (int) $COURSE->id,
+                    'courseid'     => $courseid,
                 ];
                 $PAGE->requires->js_call_amd('local_nexusai/forum-thread-summarizer', 'init', [$amdparams]);
                 $PAGE->requires->js_call_amd('local_nexusai/forum-reply-suggester',   'init', [$amdparams]);

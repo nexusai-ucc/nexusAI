@@ -53,6 +53,7 @@ const STRINGS = {
         clearChat:    "Nueva conversación",
         modeMock:     "demo",
         poweredBy:    "Respuestas basadas en el contenido de tu curso",
+        noCourseMessage: "Abrí esto desde dentro de un curso para usarlo.",
         chips: [
             "¿Qué temas entran en el parcial?",
             "Resumí los conceptos clave del último tema",
@@ -73,6 +74,7 @@ const STRINGS = {
         clearChat:    "New conversation",
         modeMock:     "demo",
         poweredBy:    "Answers based on your course content",
+        noCourseMessage: "Open this from inside a course to use it.",
         chips: [
             "What topics are on the exam?",
             "Summarize the key concepts from the last topic",
@@ -84,6 +86,11 @@ const STRINGS = {
 function isInsideMoodle() {
     return typeof window !== "undefined" && window.M && window.M.cfg;
 }
+
+// Disparador ahora vive en la navbar primaria de Moodle (fuera de este árbol
+// de React) — ver amd/src/nav-trigger.js y classes/hook/navigation/
+// primary_extend_listener.php (UX-02). Mismo selector en ambos lados.
+const NAV_TRIGGER_SELECTOR = 'li[data-key="local_nexusai_trigger"]';
 
 /* ---- Iconos SVG inline ---- */
 const IconSparkle = () => (
@@ -110,18 +117,6 @@ const IconArrow = () => (
     </svg>
 );
 
-const IconFABOpen = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-    </svg>
-);
-
-const IconFABClose = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-    </svg>
-);
-
 const IconLightning = () => (
     <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none">
         <path d="M13 2L3 14h9l-1 8 10-12h-9z"/>
@@ -144,7 +139,13 @@ const IconBack = () => (
 
 export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es", isteacher = 0 }) {
     const isTeacher = !!isteacher;
-    const [open, setOpen] = useState(false);
+    const hasCourse = Number(courseid) > 0;
+    // El click en el ícono de la navbar (fuera de este árbol de React) puede
+    // llegar antes de que el bundle termine de hidratar — window.__nexusaiPanelOpenState
+    // lo deja "pegado" para que el estado inicial ya lo refleje al montar.
+    const [open, setOpen] = useState(
+        () => typeof window !== "undefined" && !!window.__nexusaiPanelOpenState
+    );
     const [messages, setMessages] = useState([]);
     const [sessionId, setSessionId] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -157,12 +158,48 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
+    const widgetRef = useRef(null);
+    const panelRef = useRef(null);
 
     useEffect(() => {
         if (!open) return;
         const el = messagesEndRef.current;
         if (el) el.scrollIntoView({ behavior: "smooth", block: "end" });
     }, [messages, loading, open]);
+
+    // Sincronización con el ícono de la navbar (fuera de React) — ver
+    // amd/src/nav-trigger.js, que dispara este evento en cada click.
+    useEffect(() => {
+        const handleToggle = () => setOpen((v) => !v);
+        window.addEventListener("nexusai:toggle-panel", handleToggle);
+        return () => window.removeEventListener("nexusai:toggle-panel", handleToggle);
+    }, []);
+
+    // Cierre por click afuera (nuevo con UX-02: el panel ahora se comporta
+    // como un dropdown de navbar, no como una tarjeta flotante). No cierra si
+    // el click fue dentro del panel o sobre el propio ícono disparador.
+    useEffect(() => {
+        if (!open) return;
+        const handleOutsideClick = (e) => {
+            if (panelRef.current && panelRef.current.contains(e.target)) return;
+            const trigger = document.querySelector(NAV_TRIGGER_SELECTOR);
+            if (trigger && trigger.contains(e.target)) return;
+            setOpen(false);
+        };
+        document.addEventListener("mousedown", handleOutsideClick);
+        return () => document.removeEventListener("mousedown", handleOutsideClick);
+    }, [open]);
+
+    // Ancla el panel horizontalmente debajo del ícono real de la navbar — su
+    // posición varía según idioma/rol/tema, así que no alcanza un valor fijo.
+    useEffect(() => {
+        if (!open || !widgetRef.current) return;
+        const trigger = document.querySelector(NAV_TRIGGER_SELECTOR);
+        if (trigger) {
+            const rect = trigger.getBoundingClientRect();
+            widgetRef.current.style.setProperty("--nexusai-anchor-left", `${Math.max(rect.left, 8)}px`);
+        }
+    }, [open]);
 
     const send = async (question) => {
         setError(null);
@@ -302,22 +339,9 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const showWelcome = messages.length === 0 && !loading && !error;
 
     return (
-        <div className="nexusai-widget">
-            {/* Floating Action Button */}
-            <button
-                type="button"
-                className="nexusai-fab"
-                onClick={() => setOpen((v) => !v)}
-                aria-label={open ? t.close : t.open}
-                title={open ? t.close : t.open}
-            >
-                <span className="nexusai-fab__icon">
-                    {open ? <IconFABClose /> : <IconFABOpen />}
-                </span>
-            </button>
-
+        <div className="nexusai-widget" ref={widgetRef}>
             {open && (
-                <div className="nexusai-panel" role="dialog" aria-labelledby="nexusai-title">
+                <div className="nexusai-panel" ref={panelRef} role="dialog" aria-labelledby="nexusai-title">
 
                     {/* Header */}
                     <header className="nexusai-panel__header">
@@ -334,9 +358,11 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                         <span className="nexusai-panel__status-dot" />
                                         {!isInsideMoodle()
                                             ? <span className="nexusai-badge">{t.modeMock}</span>
-                                            : multiCourse
-                                                ? (lang === "es" ? "Activo · todos tus cursos" : "Active · all your courses")
-                                                : t.statusActive
+                                            : !hasCourse
+                                                ? (lang === "es" ? "Fuera de un curso" : "Outside a course")
+                                                : multiCourse
+                                                    ? (lang === "es" ? "Activo · todos tus cursos" : "Active · all your courses")
+                                                    : t.statusActive
                                         }
                                     </div>
                                 </div>
@@ -359,16 +385,18 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         )}
 
                         <div className="nexusai-panel__actions">
-                            <button
-                                type="button"
-                                className={`nexusai-icon-btn nexusai-nav-toggle ${navOpen ? "nexusai-nav-toggle--active" : ""}`}
-                                onClick={() => setNavOpen((v) => !v)}
-                                aria-label={lang === "es" ? "Navegación" : "Navigation"}
-                                title={lang === "es" ? "Ir a..." : "Go to..."}
-                            >
-                                <IconGrid />
-                            </button>
-                            {activeTab === "chat" && (
+                            {hasCourse && (
+                                <button
+                                    type="button"
+                                    className={`nexusai-icon-btn nexusai-nav-toggle ${navOpen ? "nexusai-nav-toggle--active" : ""}`}
+                                    onClick={() => setNavOpen((v) => !v)}
+                                    aria-label={lang === "es" ? "Navegación" : "Navigation"}
+                                    title={lang === "es" ? "Ir a..." : "Go to..."}
+                                >
+                                    <IconGrid />
+                                </button>
+                            )}
+                            {hasCourse && activeTab === "chat" && (
                                 <button
                                     type="button"
                                     className={`nexusai-icon-btn nexusai-history-toggle ${historyOpen ? "nexusai-history-toggle--active" : ""}`}
@@ -379,7 +407,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                     <IconHistory />
                                 </button>
                             )}
-                            {(activeTab === "chat" || activeTab === "search") && (
+                            {hasCourse && (activeTab === "chat" || activeTab === "search") && (
                                 <button
                                     type="button"
                                     className={`nexusai-icon-btn nexusai-multicourse-toggle ${multiCourse ? "nexusai-multicourse-toggle--active" : ""}`}
@@ -422,6 +450,15 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         </div>
                     </header>
 
+                    {!hasCourse ? (
+                        <div className="nexusai-panel__body nexusai-panel__body--empty">
+                            <div className="nexusai-welcome__icon-wrap">
+                                <IconSparkle />
+                            </div>
+                            <p className="nexusai-welcome__text">{t.noCourseMessage}</p>
+                        </div>
+                    ) : (
+                    <>
                     <HistoryDropdown
                         open={historyOpen}
                         onClose={() => setHistoryOpen(false)}
@@ -529,6 +566,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                 scopeOverride={multiCourse}
                             />
                         </div>
+                    )}
+                    </>
                     )}
                 </div>
             )}
