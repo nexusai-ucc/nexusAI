@@ -351,6 +351,63 @@ sistematizado sus variantes y su aplicación a tareas intensivas en conocimiento
 estrategia de fragmentación (*chunking*), el modelo de *embeddings* y la métrica de
 similitud empleada.
 
+## Tecnologías investigadas
+
+Además de la técnica general (RAG), se investigó y comparó la pila tecnológica
+concreta necesaria para implementarla, evaluando alternativas reales antes de
+decidir cada componente.
+
+### Base de datos vectorial
+
+| Alternativa | Decisión | Motivo |
+|---|---|---|
+| **pgvector** (extensión de PostgreSQL) | Elegida | Un solo sistema para datos relacionales y vectoriales; permite combinar filtros SQL y búsqueda vectorial en una sola consulta. |
+| ChromaDB (ChromaDB, s.f.) | Descartada | Sistema separado de PostgreSQL: las consultas relacionales y vectoriales requieren dos llamadas y lógica de coordinación adicional. |
+| Pinecone / Weaviate / Qdrant | Descartadas | Se justifican a partir de decenas de millones de vectores con alta concurrencia; la escala proyectada de NexusAI (~240.000 vectores para toda la UCC, hasta ~4,8 millones en una expansión multi-institución) queda muy por debajo de ese umbral. |
+
+### Modelos de lenguaje y *embeddings*
+
+Se comparó el costo y las prestaciones de los modelos de lenguaje candidatos:
+Gemini 2.5 Flash ofrece una capa gratuita suficiente para un MVP sin costo
+operativo, pero sin garantías de nivel de servicio para producción (Google,
+s.f.-a); GPT-4o-mini resulta significativamente más económico que GPT-4o y es
+la referencia de facto del mercado para este tipo de tareas, por lo que se lo
+eligió como modelo de producción, reservando GPT-4o para casos de razonamiento
+más complejo (OpenAI, s.f.-b). Dado que prácticamente todos los proveedores
+relevantes exponen una interfaz compatible con el SDK de OpenAI —incluido
+Gemini (Google, s.f.-a)— se diseñó una abstracción propia (`LLMProvider` /
+`EmbeddingProvider`) que permite cambiar de proveedor modificando únicamente
+una variable de entorno, en lugar de adoptar un *framework* de orquestación
+como LangChain, descartado por su peso y la inestabilidad de su API entre
+versiones.
+
+### Arquitectura de plugin Moodle
+
+Moodle admite varios tipos de plugin (`local`, `block`, `mod`, `filter`,
+`auth`, entre otros). Se descartó `block` porque, con el tema Boost de Moodle
+4.x, los bloques quedan ocultos en un panel lateral y cada docente debería
+agregarlo curso por curso manualmente. Se evaluó también el **subsistema de IA
+nativo de Moodle 4.5+**, y se descartó por carecer de un estado de memoria
+conversacional persistente a lo largo del cuatrimestre —limitación funcional
+del núcleo que motiva, en gran medida, el desarrollo de un plugin propio en
+lugar de adoptar la funcionalidad ya incorporada a la plataforma. Se eligió
+finalmente un plugin de tipo `local`, que permite definir *web services*,
+tareas programadas y *hooks* propios sin depender de que el docente lo agregue
+manualmente a cada curso.
+
+### Extracción y fragmentación de documentos
+
+Para la extracción de texto de los materiales subidos por el docente se evaluó
+pdfplumber frente a PyPDF2/pypdf (extracción deficiente en PDFs con diseño
+complejo), pdfminer.six (interfaz más compleja de integrar) y PyMuPDF
+(descartado por su licencia AGPL, incompatible con la distribución del
+plugin); pdfplumber (pdfplumber, s.f.) se eligió por su manejo nativo de
+tablas y diseño de página. Para la fragmentación (*chunking*) se adoptaron
+fragmentos de aproximadamente 500 tokens con 10% de superposición entre
+fragmentos consecutivos: los fragmentos pequeños mejoran la precisión de la
+recuperación semántica, mientras que la superposición mitiga la pérdida de
+contexto cuando un fragmento corta una oración o una idea a la mitad.
+
 ## Opciones similares en el mercado
 
 Se relevaron asistentes académicos basados en IA existentes, con el fin de comprender
@@ -360,10 +417,10 @@ el panorama actual y las carencias que el proyecto podría atender:
   el contenido de Khan Academy y no se integra con Moodle (Khan Academy, s.f.).
 - **Coursera Coach:** asistente cerrado, limitado al ecosistema Coursera (Coursera, 2023).
 - **NotebookLM (Google):** ofrece buen RAG con citas, pero requiere que el usuario suba
-  los documentos manualmente y almacena los datos en servidores de un tercero (Google, s.f.).
+  los documentos manualmente y almacena los datos en servidores de un tercero (Google, s.f.-b).
 - **Microsoft Copilot for Education y ChatGPT Edu:** potentes, pero centrados en sus
   propios ecosistemas, sin integración nativa con Moodle ni *analytics* para el
-  docente (Microsoft, s.f.; OpenAI, s.f.).
+  docente (Microsoft, s.f.; OpenAI, s.f.-a).
 
 Del análisis surge que ninguna de las soluciones relevadas combina simultáneamente:
 integración nativa con Moodle, RAG automático sobre el material del docente,
@@ -789,16 +846,20 @@ en lugar de sustituirlo.
 Las referencias siguen la norma APA v7. Toda fuente citada en el texto figura en esta
 sección, y toda referencia listada fue utilizada en el informe.
 
-- Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, H., &
-  Wang, H. (2023). *Retrieval-augmented generation for large language models: A survey.*
-  arXiv. https://arxiv.org/abs/2312.10997
-- Google. (s.f.). *NotebookLM*. Recuperado 2026, de https://notebooklm.google/
-- Ji, Z., Lee, N., Frieske, R., Yu, T., Su, D., Xu, Y., Ishii, E., Bang, Y. J., Madotto,
-  A., & Fung, P. (2023). Survey of hallucination in natural language generation. *ACM
-  Computing Surveys, 55*(12), 1–38. https://doi.org/10.1145/3571730
+- ChromaDB. (s.f.). *Chroma documentation*. Recuperado 2026, de
+  https://docs.trychroma.com/
 - Coursera. (2023). *Coursera launches Coach, a personalized AI-powered coaching
   experience, and new applications of GenAI in the enterprise*. Coursera Blog.
   https://blog.coursera.org/coursera-launches-coach/
+- Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, H., &
+  Wang, H. (2023). *Retrieval-augmented generation for large language models: A survey.*
+  arXiv. https://arxiv.org/abs/2312.10997
+- Google. (s.f.-a). *Gemini API — OpenAI compatibility*. Recuperado 2026, de
+  https://ai.google.dev/gemini-api/docs/openai
+- Google. (s.f.-b). *NotebookLM*. Recuperado 2026, de https://notebooklm.google/
+- Ji, Z., Lee, N., Frieske, R., Yu, T., Su, D., Xu, Y., Ishii, E., Bang, Y. J., Madotto,
+  A., & Fung, P. (2023). Survey of hallucination in natural language generation. *ACM
+  Computing Surveys, 55*(12), 1–38. https://doi.org/10.1145/3571730
 - Khan Academy. (s.f.). *Khan Labs — Khanmigo*. Recuperado 2026, de
   https://www.khanacademy.org/khan-labs
 - Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H.,
@@ -809,7 +870,10 @@ sección, y toda referencia listada fue utilizada en el informe.
   https://www.microsoft.com/en-us/education/products/copilot
 - Moodle HQ. (2024). *Moodle Developer Documentation — Plugin types: local*.
   https://moodledev.io/docs/apis/plugintypes/local
-- OpenAI. (s.f.). *ChatGPT Edu*. Recuperado 2026, de https://openai.com/chatgpt/education/
+- OpenAI. (s.f.-a). *ChatGPT Edu*. Recuperado 2026, de https://openai.com/chatgpt/education/
+- OpenAI. (s.f.-b). *GPT-4o pricing*. Recuperado 2026, de https://openai.com/api/pricing/
+- pdfplumber. (s.f.). *pdfplumber* [Software]. GitHub.
+  https://github.com/jsvine/pdfplumber
 - pgvector. (s.f.). *pgvector: Open-source vector similarity search for Postgres*
   [Software]. GitHub. https://github.com/pgvector/pgvector
 
