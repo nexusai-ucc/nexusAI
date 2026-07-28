@@ -16,7 +16,15 @@
 defined('MOODLE_INTERNAL') || die();
 
 $messageproviders = [
+    // CAL-02 — alerta configurable por el alumno antes del vencimiento de un evento.
     'cal_alert' => [
         'capability' => 'local/nexusai:use',
+    ],
+    // CAL-03 — notificación a alumnos cuando un docente sube material nuevo.
+    'newmaterial' => [
+        'defaults' => [
+            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF,
+            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDOFF,
+        ],
     ],
 ];

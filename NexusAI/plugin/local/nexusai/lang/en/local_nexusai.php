@@ -69,5 +69,12 @@ $string['messageprovider:cal_alert'] = 'NexusAI calendar alerts';
 $string['cal_alert_subject']         = 'Reminder: {$a}';
 $string['cal_alert_body']            = 'Your event "{$a}" is coming up soon. Check the course calendar in NexusAI.';
 
+// CAL-03 — New material uploaded to course notification (issue #239).
+$string['messageprovider:newmaterial'] = 'New material uploaded to a course';
+$string['newmaterial_subject']         = 'New material in {$a}';
+$string['newmaterial_body']            = 'A new file "{$a->filename}" was uploaded to {$a->course}. You can already ask the NexusAI assistant about it.';
+$string['newmaterial_body_html']       = 'A new file <strong>{$a->filename}</strong> was uploaded to <strong>{$a->course}</strong>. You can already ask the NexusAI assistant about it.';
+$string['newmaterial_small']           = 'New material: {$a}';
+
 // Privacy API.
 $string['privacy:metadata'] = 'The NexusAI plugin does not store personal data in Moodle. All chat history lives in the external NexusAI backend service.';
