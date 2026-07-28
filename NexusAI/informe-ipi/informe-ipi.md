@@ -208,17 +208,23 @@ Las plataformas LMS como Moodle son fundamentales en la educación universitaria
 pero en la práctica se utilizan como repositorios estáticos: los estudiantes
 descargan archivos y entregan trabajos, sin un acompañamiento real al proceso de
 aprendizaje. A partir de la experiencia directa del equipo del proyecto como
-estudiantes de la Universidad Católica de Córdoba (UCC), junto con conversaciones
-informales con compañeros y docentes, se identificaron tres problemáticas
-recurrentes en el uso del campus virtual:
+estudiantes de la Universidad Católica de Córdoba (UCC), se identificaron de manera
+preliminar tres problemáticas recurrentes en el uso del campus virtual, que luego se
+validaron mediante un relevamiento formal a 166 estudiantes y 17 docentes de la
+institución:
 
 - **Dispersión de la información** entre el campus virtual, aplicaciones de mensajería
   y servicios de almacenamiento personales, que dificulta encontrar el material
-  correcto en el momento de estudiar.
+  correcto en el momento de estudiar. El 80,7% de los estudiantes encuestados percibe
+  esta dispersión al menos "a veces", y un 43,4% la califica como alta o frecuente.
 - **Dificultad para organizar el estudio** y planificar repasos antes de las
-  evaluaciones.
-- **Uso pasivo del campus virtual**, sin interacción significativa con el material
-  académico cargado por los docentes.
+  evaluaciones, en un contexto donde solo el 34% de los estudiantes describe la
+  mayoría de sus materias como bien organizadas dentro del campus.
+- **Uso pasivo del campus virtual** frente al material académico: aunque el 72,3% de
+  los estudiantes ingresa al campus a diario o varias veces por semana, el 100% de
+  quienes fueron consultados al respecto ya recurre a herramientas de IA generalistas
+  —ajenas al material de la materia— para estudiar o resolver trabajos, lo que
+  evidencia una necesidad no cubierta por la plataforma institucional.
 
 ## Impacto sobre los interesados
 
@@ -241,6 +247,12 @@ proyecto busca aprovechar:
 - Generar datos accionables para el docente sobre las consultas y los vacíos de
   contenido detectados.
 
+> Los datos citados en esta sección provienen del relevamiento propio del equipo:
+> encuesta a 166 estudiantes y encuesta a 17 docentes de la UCC, realizadas entre
+> marzo y junio de 2026. El detalle de preguntas, metodología y resultados completos
+> se encuentra en `investigacion/09-relevamiento/encuesta-estudiantes.md` y
+> `investigacion/09-relevamiento/encuesta-docentes.md`.
+
 \newpage
 
 # Objetivos
@@ -257,7 +269,8 @@ dentro del aula virtual de la UCC.
 
 - Identificar y documentar las problemáticas del uso actual del campus virtual a
   partir de la experiencia directa del equipo como estudiantes de la UCC,
-  complementada con un relevamiento a docentes de la institución.
+  validada mediante un relevamiento formal a 166 estudiantes y 17 docentes de la
+  institución.
 - Diseñar e implementar un plugin de tipo `local` para Moodle que se integre al
   entorno existente sin modificar su núcleo.
 - Desarrollar un prototipo funcional (MVP) con un asistente conversacional basado en
@@ -277,15 +290,16 @@ vinculándolo con los requerimientos implementados y la prueba que lo valida.
 
 | Objetivo específico | Requerimiento(s) | Evidencia de cumplimiento |
 |---|---|---|
-| Relevamiento de problemáticas | — | Sección *Diagnóstico*; experiencia del equipo y relevamiento a docentes UCC |
+| Relevamiento de problemáticas | — | Encuesta a 166 estudiantes y 17 docentes UCC (`investigacion/09-relevamiento/`): 80,7% de estudiantes percibe dispersión de información; 100% de quienes respondieron ya usa IA generalista para estudiar; 88,2% de docentes delegaría tareas a una IA integrada al campus. |
 | Plugin `local` integrado a Moodle | RF-15 a RF-18 | Plugin instalable en Moodle 4.1–4.5; pruebas de instalación |
 | Asistente conversacional RAG | RF-01 a RF-07 | Chat en producción; `test_retriever`, `test_pipeline` |
 | Generación de cuestionarios | RF-10 a RF-14 | Funcionalidad de *quiz* en producción; validación de tema |
-| Analytics y detección de vacíos | RF-20 a RF-22 | Reporte de *gaps* por curso; `test` de *gaps recorder* |
+| Analytics y detección de vacíos | RF-20 a RF-22 | Reporte de *gaps* por curso; `test` de *gaps recorder*; validado además por el 88,2% de docentes dispuestos a delegar tareas de analytics/evaluación relevado en la encuesta a docentes |
 | Evaluación con usuarios reales | RNF-06 a RNF-09 | Métricas de latencia; *golden set* de calidad de respuesta |
 
-> **PENDIENTE —** ajustar la columna de evidencia con los resultados reales del
-> relevamiento y de las pruebas con usuarios cuando estén consolidados.
+> **PENDIENTE —** ajustar la columna de "Evaluación con usuarios reales" con los
+> resultados de las pruebas de usabilidad cuando estén consolidados (TEST-01/TEST-02,
+> fuera del alcance de este relevamiento).
 
 \newpage
 
@@ -538,8 +552,15 @@ la equidad educativa, más allá de los aspectos técnicos o económicos.
   reemplazarla, y le brinda información para mejorar su material en beneficio del conjunto
   del estudiantado.
 
-> **PENDIENTE —** reforzar con datos del relevamiento (proporción de estudiantes que
-> estudian/trabajan, acceso a consultas) si se dispone de ellos.
+El relevamiento propio del equipo (166 estudiantes, 17 docentes UCC; ver
+`investigacion/09-relevamiento/`) refuerza estos puntos con datos concretos: el 100%
+de los estudiantes que respondieron ya recurre a herramientas de IA generalistas para
+estudiar, evidenciando una necesidad de acompañamiento académico ya instalada que hoy
+queda fuera del ámbito institucional y sin trazabilidad hacia el material real de la
+materia. Del lado docente, el 88,2% delegaría tareas a una IA integrada al campus
+—la mayoría con la condición de revisar el resultado antes de publicarlo—, lo que
+indica una disposición amplia a que la tecnología amplifique su rol sin
+reemplazarlo, consistente con el diseño "asistir, no sustituir" adoptado por NexusAI.
 
 \newpage
 
