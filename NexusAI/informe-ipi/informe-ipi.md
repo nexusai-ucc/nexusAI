@@ -347,22 +347,18 @@ Se relevaron asistentes académicos basados en IA existentes, con el fin de comp
 el panorama actual y las carencias que el proyecto podría atender:
 
 - **Khanmigo (Khan Academy):** tutor de IA pedagógicamente pulido, pero responde sobre
-  el contenido de Khan Academy y no se integra con Moodle.
-- **Coursera Coach:** asistente cerrado, limitado al ecosistema Coursera.
+  el contenido de Khan Academy y no se integra con Moodle (Khan Academy, s.f.).
+- **Coursera Coach:** asistente cerrado, limitado al ecosistema Coursera (Coursera, 2023).
 - **NotebookLM (Google):** ofrece buen RAG con citas, pero requiere que el usuario suba
-  los documentos manualmente y almacena los datos en servidores de un tercero.
+  los documentos manualmente y almacena los datos en servidores de un tercero (Google, s.f.).
 - **Microsoft Copilot for Education y ChatGPT Edu:** potentes, pero centrados en sus
   propios ecosistemas, sin integración nativa con Moodle ni *analytics* para el
-  docente.
+  docente (Microsoft, s.f.; OpenAI, s.f.).
 
 Del análisis surge que ninguna de las soluciones relevadas combina simultáneamente:
 integración nativa con Moodle, RAG automático sobre el material del docente,
 despliegue autohospedado y panel de *analytics* docente. Esa intersección constituye
 el espacio de oportunidad que el proyecto aborda.
-
-> **PENDIENTE —** trasladar a *Bibliografía* las referencias citadas y verificar el
-> formato APA v7. Ampliar con fuentes adicionales del relevamiento (investigacion/02-rag
-> y investigacion/08-estado-del-arte).
 
 \newpage
 
@@ -372,7 +368,7 @@ La propuesta de solución describe cómo se aborda el problema planteado, a part
 analizado en el marco teórico. Esta es la sección más técnica del trabajo.
 
 NexusAI es un plugin de Moodle con asistente de IA que combina tres capas: un plugin
-de tipo `local` dentro de Moodle, una interfaz de chat embebida y un backend que
+de tipo `local` (Moodle HQ, 2024) dentro de Moodle, una interfaz de chat embebida y un backend que
 orquesta el pipeline RAG. La pieza diferencial es el **RAG auténtico**: el material que
 el docente sube a Moodle se indexa automáticamente y el asistente responde citando la
 fuente; si la pregunta no puede responderse con el material disponible, el sistema lo
@@ -413,11 +409,52 @@ manera simultánea: la clave de la API del LLM nunca llega al navegador, la prot
 ante CSRF queda cubierta por el mecanismo nativo de Moodle, y se evitan los problemas
 de CORS al existir una única comunicación servidor-a-servidor.
 
-> **PENDIENTE —** insertar Figura 1 (diagrama de componentes). Fuente disponible como
-> diagrama Mermaid en `entrega-final/13_arquitectura.md`.
->
+```mermaid
+flowchart TB
+    subgraph BROWSER["Navegador del alumno"]
+        REACT["React 18<br/>(bundle AMD<br/>chatwidget-lazy.min.js)"]
+    end
+
+    subgraph MOODLE["Moodle 4.x — servidor universidad UCC"]
+        PHP["Plugin local_nexusai<br/>(PHP)"]
+        MFILES[("mdl_files<br/>(material curso)")]
+        MTABLES[("local_nexusai_messages<br/>local_nexusai_usage<br/>local_nexusai_feedback")]
+        MAUTH["require_login()<br/>has_capability()<br/>sesskey"]
+    end
+
+    subgraph BACKEND["Backend NexusAI"]
+        FASTAPI["FastAPI — monolito modular<br/>app.chat / app.documents<br/>app.infrastructure / app.shared"]
+        PG[("PostgreSQL + pgvector<br/>nexusai_documents<br/>nexusai_chunks<br/>(índice HNSW coseno)")]
+        REDIS[(Redis<br/>cache + rate limit)]
+    end
+
+    subgraph EXTERNAL["Externo (configurable vía env vars)"]
+        LLM["LLMProvider<br/>Gemini Flash (MVP)<br/>GPT-4o-mini (prod)"]
+        EMB["EmbeddingProvider<br/>Gemini Embedding (MVP)<br/>text-embedding-3-small (prod)"]
+    end
+
+    REACT -->|"core/ajax + sesskey<br/>(mismo origen)"| PHP
+    PHP <-->|HMAC SHA-256<br/>+ Bearer + timestamp + nonce| FASTAPI
+    PHP <--> MFILES
+    PHP <--> MTABLES
+    PHP <--> MAUTH
+    FASTAPI <-->|SQL + vector<br/>una sola query| PG
+    FASTAPI <-->|cache| REDIS
+    FASTAPI -->|"Bearer key<br/>(server-side only)"| LLM
+    FASTAPI -->|"Bearer key<br/>(server-side only)"| EMB
+
+    style REACT fill:#e3f2fd,color:#000,stroke:#1976d2
+    style PHP fill:#fff3e0,color:#000,stroke:#f57c00
+    style FASTAPI fill:#e8f5e9,color:#000,stroke:#388e3c
+    style LLM fill:#f3e5f5,color:#000,stroke:#7b1fa2
+    style EMB fill:#f3e5f5,color:#000,stroke:#7b1fa2
+    style PG fill:#e1f5fe,color:#000,stroke:#0277bd
+    style REDIS fill:#ffebee,color:#000,stroke:#c62828
+```
+
 > **Figura 1.** Diagrama de componentes de NexusAI (navegador, plugin Moodle, backend
-> y servicios externos). *Fuente:* elaboración propia. *Texto alternativo:* esquema de
+> y servicios externos). *Fuente:* elaboración propia (`docs/diagrams/architecture.md`).
+> *Texto alternativo:* esquema de
 > tres capas que conecta el navegador con el plugin PHP, este con el backend FastAPI, y
 > el backend con la base de datos vectorial y los proveedores de LLM y *embeddings*.
 
@@ -429,12 +466,27 @@ mediante variables de entorno, sin modificar el código de aplicación.
 
 ### Interfaz de usuario
 
-La interfaz de chat se embebe en las páginas del curso mediante un botón flotante.
-Presenta la respuesta en *streaming*, citas clickeables que expanden el fragmento
-utilizado con su porcentaje de similitud, e historial de conversaciones por sesión.
+La interfaz de chat se embebe en las páginas del curso mediante un ícono en la barra
+de navegación de Moodle. Presenta la respuesta en *streaming*, citas clickeables que
+expanden el fragmento utilizado con su porcentaje de similitud, e historial de
+conversaciones por sesión.
 
-> **PENDIENTE —** insertar Figura 2 (capturas de pantalla del widget de chat, buscador y
-> panel de docente). *Fuente:* elaboración propia. Capturar del MVP desplegado.
+![Figura 2a](img/chat-widget.png){width=48%} ![Figura 2b](img/search-widget.png){width=48%}
+
+> **Figura 2a/2b.** Widget de chat (izquierda) respondiendo con cita a la fuente, y
+> buscador semántico (derecha) mostrando resultados resaltados. *Fuente:* elaboración
+> propia, capturas del MVP desplegado localmente. *Texto alternativo:* a la izquierda,
+> una conversación donde el asistente responde qué es el *clustering* citando el PDF
+> de origen; a la derecha, el buscador semántico devolviendo un resultado con el
+> término de búsqueda resaltado.
+
+![Figura 2c](img/docente-panel.png){width=48%} ![Figura 2d](img/docente-gaps.png){width=48%}
+
+> **Figura 2c/2d.** Panel del docente: gestión de material indexado (izquierda) y
+> reporte de vacíos de contenido (derecha). *Fuente:* elaboración propia, capturas del
+> MVP desplegado localmente. *Texto alternativo:* a la izquierda, la tabla de
+> materiales subidos con su estado de indexación; a la derecha, una pregunta de un
+> alumno que el material no pudo responder bien, con su similitud promedio.
 
 ## Implementación
 
@@ -453,12 +505,95 @@ La solución se construyó de manera incremental, dividida en módulos lógicos:
 
 El pipeline de indexación procesa los documentos de forma asíncrona: extrae el texto,
 lo divide en fragmentos de aproximadamente 512 tokens con solapamiento, genera los
-*embeddings* y los almacena en la base de datos vectorial, actualizando el estado del
+*embeddings* y los almacena en una base de datos PostgreSQL con la extensión
+**pgvector** (pgvector, s.f.), actualizando el estado del
 documento (`pending → indexing → indexed | error`).
 
-> **PENDIENTE —** insertar Figura 3 (diagrama de secuencia de una consulta del estudiante)
-> y Figura 4 (pipeline de indexación). *Fuente:* elaboración propia
-> (`entrega-final/13_arquitectura.md`).
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Alumno
+    participant R as React (browser)
+    participant P as Plugin PHP (Moodle)
+    participant F as FastAPI (backend)
+    participant PG as PostgreSQL/pgvector
+    participant Re as Redis
+    participant E as EmbeddingProvider
+    participant L as LLMProvider
+
+    A->>R: Escribe pregunta y envía
+    R->>R: validate input
+    R->>P: core/ajax → local_nexusai_send_message<br/>{courseid, message, sesskey}
+
+    P->>P: require_login()
+    P->>P: has_capability('local/nexusai:use')
+    P->>Re: GET rate_limit:user:date
+    Re-->>P: count actual
+    alt count > 50
+        P-->>R: error "rate limit"
+        R-->>A: muestra mensaje
+    else count <= 50
+        P->>P: increment usage in mdl
+        P->>P: build payload + HMAC SHA-256
+
+        P->>F: POST /api/chat<br/>headers: HMAC + Bearer + timestamp + nonce<br/>body: {question, course_id, user_id}
+
+        F->>F: HMACSecurityMiddleware<br/>verify HMAC + timestamp window + nonce
+        F->>F: verify Bearer
+
+        F->>E: embed(question)
+        E-->>F: vector (768 o 1536 dim)
+
+        F->>PG: SELECT ... ORDER BY embedding ⟨=⟩ $1<br/>WHERE course_id = $2 AND status = 'indexed'<br/>LIMIT 5
+        PG-->>F: chunks + metadata + distances
+
+        alt min distance > 0.7
+            F-->>P: respuesta fallback honesto
+            P-->>R: respuesta
+            R-->>A: muestra mensaje
+        else min distance <= 0.7
+            F->>F: build prompt<br/>(system + historial + contexto + pregunta)
+            F->>L: chat.completions.create<br/>(stream=True)
+            loop por cada token
+                L-->>F: token chunk
+                F-->>P: SSE data: {token}
+                P-->>R: SSE proxy
+                R-->>A: token aparece en UI
+            end
+            F->>F: persistir mensaje + tokens en mdl
+        end
+    end
+```
+
+> **Figura 3.** Diagrama de secuencia de una consulta del estudiante. *Fuente:*
+> elaboración propia (`docs/diagrams/sequence-chat.md`). *Texto alternativo:*
+> secuencia desde que el alumno escribe una pregunta hasta que recibe la respuesta
+> en streaming, pasando por autenticación, rate limiting, embedding de la pregunta,
+> búsqueda vectorial y generación con el LLM.
+
+```mermaid
+flowchart TB
+    A[PDFs/DOCX/TXT<br/>en mdl_files] -->|cron o trigger docente| B[Plugin PHP<br/>extrae binario]
+    B -->|HMAC + multipart| C[FastAPI<br/>POST /api/documents/index]
+    C --> D[pdfplumber<br/>extract_text por página]
+    D --> E[Limpieza<br/>headers, footers, wraps,<br/>espacios múltiples]
+    E --> F[Chunking<br/>500 tokens / 10% overlap<br/>respetando párrafos]
+    F --> G[+ metadata:<br/>document_id, page, chunk_index]
+    G --> H[EmbeddingProvider.embed_batch<br/>Gemini MVP / OpenAI prod]
+    H --> I[("PostgreSQL/pgvector<br/>INSERT INTO nexusai_chunks<br/>vector(768) MVP / vector(1536) prod")]
+    I --> J[Update<br/>nexusai_documents<br/>status=indexed]
+
+    style C fill:#e8f5e9,color:#000
+    style I fill:#e1f5fe,color:#000
+    style J fill:#e1f5fe,color:#000
+    style H fill:#f3e5f5,color:#000
+```
+
+> **Figura 4.** Pipeline de indexación de material (offline). *Fuente:* elaboración
+> propia (`docs/diagrams/rag-flow.md`). *Texto alternativo:* flujo desde que el
+> docente sube un documento hasta que queda indexado como chunks vectoriales,
+> pasando por extracción de texto, limpieza, fragmentación y generación de
+> *embeddings*.
 
 ## Pruebas
 
@@ -622,17 +757,26 @@ sección, y toda referencia listada fue utilizada en el informe.
 - Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, H., &
   Wang, H. (2023). *Retrieval-augmented generation for large language models: A survey.*
   arXiv. https://arxiv.org/abs/2312.10997
+- Google. (s.f.). *NotebookLM*. Recuperado 2026, de https://notebooklm.google/
 - Ji, Z., Lee, N., Frieske, R., Yu, T., Su, D., Xu, Y., Ishii, E., Bang, Y. J., Madotto,
   A., & Fung, P. (2023). Survey of hallucination in natural language generation. *ACM
   Computing Surveys, 55*(12), 1–38. https://doi.org/10.1145/3571730
+- Coursera. (2023). *Coursera launches Coach, a personalized AI-powered coaching
+  experience, and new applications of GenAI in the enterprise*. Coursera Blog.
+  https://blog.coursera.org/coursera-launches-coach/
+- Khan Academy. (s.f.). *Khan Labs — Khanmigo*. Recuperado 2026, de
+  https://www.khanacademy.org/khan-labs
 - Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H.,
   Lewis, M., Yih, W., Rocktäschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-augmented
   generation for knowledge-intensive NLP tasks. *Advances in Neural Information Processing
   Systems, 33*, 9459–9474.
-
-> **PENDIENTE —** agregar las referencias de Moodle (documentación oficial), pgvector,
-> y los productos comparados (Khanmigo, NotebookLM, etc.) en formato APA v7. Verificar
-> que cada cita del texto tenga su referencia y viceversa.
+- Microsoft. (s.f.). *Microsoft Copilot for Education*. Recuperado 2026, de
+  https://www.microsoft.com/en-us/education/products/copilot
+- Moodle HQ. (2024). *Moodle Developer Documentation — Plugin types: local*.
+  https://moodledev.io/docs/apis/plugintypes/local
+- OpenAI. (s.f.). *ChatGPT Edu*. Recuperado 2026, de https://openai.com/chatgpt/education/
+- pgvector. (s.f.). *pgvector: Open-source vector similarity search for Postgres*
+  [Software]. GitHub. https://github.com/pgvector/pgvector
 
 \newpage
 
@@ -643,24 +787,204 @@ lectura principal.
 
 ## Anexo A — Requerimientos detallados
 
-Listado completo de requerimientos funcionales (RF-01 a RF-22) y no funcionales (RNF-01
-a RNF-21), con prioridad y sprint de implementación. Fuente:
-`entrega-final/04_requerimientos.md`.
+Cada requerimiento tiene un ID único (RF-NN funcionales, RNF-NN no funcionales), una
+prioridad en el contexto del MVP y el sprint donde se implementó.
+
+### Requerimientos funcionales
+
+**Asistente conversacional RAG**
+
+| ID | Requerimiento | Prioridad | Sprint |
+|---|---|---|---|
+| RF-01 | Consulta en lenguaje natural sobre el material del curso desde un widget flotante. | Alta | 1 |
+| RF-02 | El asistente responde usando exclusivamente el material indexado, citando los archivos fuente. | Alta | 2 |
+| RF-03 | Si la pregunta no se puede responder con el material disponible, el sistema lo admite explícitamente. | Alta | 2 |
+| RF-04 | El alumno ve el fragmento exacto usado para responder, con su porcentaje de similitud. | Alta | 4 |
+| RF-05 | La respuesta aparece token por token (*streaming*) para reducir la latencia percibida. | Media | 4 |
+| RF-06 | El alumno puede retomar conversaciones anteriores desde un historial. | Media | 4 |
+| RF-07 | Modo multi-curso opcional: el asistente consulta material de todos los cursos inscriptos. | Media | 4 |
+
+**Buscador semántico**
+
+| ID | Requerimiento | Prioridad | Sprint |
+|---|---|---|---|
+| RF-08 | Búsqueda de fragmentos por similitud semántica, sin pasar por el LLM. | Media | 4 |
+| RF-09 | Cada resultado muestra archivo, fragmento y porcentaje de similitud. | Media | 4 |
+
+**Generador de cuestionarios**
+
+| ID | Requerimiento | Prioridad | Sprint |
+|---|---|---|---|
+| RF-10 | Generación de un *quiz* de opción múltiple desde el material del curso. | Media | 4 |
+| RF-11 | El alumno elige un tema específico o deja el campo vacío para variedad de temas. | Media | 4 |
+| RF-12 | Si el tema pedido no está en el material, el sistema avisa (no genera un *quiz* engañoso). | Media | 4 |
+| RF-13 | Cada pregunta tiene 4 opciones: una correcta y tres distractores plausibles. | Media | 4 |
+| RF-14 | Feedback inmediato tras cada respuesta, con explicación y archivo fuente. | Media | 4 |
+
+**Gestión de material (rol docente)**
+
+| ID | Requerimiento | Prioridad | Sprint |
+|---|---|---|---|
+| RF-15 | El docente sube archivos PDF al curso para que el asistente los indexe. | Alta | 2 |
+| RF-16 | Extracción de texto, *chunking* y *embeddings* de cada archivo de forma asíncrona. | Alta | 2 |
+| RF-17 | El docente ve el estado de cada documento (`pending` / `indexing` / `indexed` / `error`). | Alta | 2 |
+| RF-18 | El docente puede borrar un documento; el borrado se propaga en cascada a sus *chunks*. | Alta | 2 |
+| RF-19 | Detección de *uploads* duplicados por hash SHA-256, evita reindexar el mismo archivo. | Media | 4 |
+
+**Feedback al docente (detección de vacíos)**
+
+| ID | Requerimiento | Prioridad | Sprint |
+|---|---|---|---|
+| RF-20 | Registro automático de las preguntas que el material no pudo responder. | Media | 4 |
+| RF-21 | Reporte agregado de vacíos por curso, ordenado por frecuencia. | Media | 4 |
+| RF-22 | El reporte de vacíos se filtra por ventana temporal (7/30/90/365 días). | Baja | 4 |
+
+### Requerimientos no funcionales
+
+| ID | Requerimiento | Categoría |
+|---|---|---|
+| RNF-01 | La API key del LLM nunca llega al navegador del alumno. | Seguridad |
+| RNF-02 | Toda comunicación entre el plugin y el backend se firma con HMAC SHA-256 en 3 capas (Bearer + firma + *nonce*). | Seguridad |
+| RNF-03 | El backend rechaza firmas inválidas, timestamps vencidos (>5 min) o *nonces* reusados. | Seguridad |
+| RNF-04 | El plugin valida la *capability* `local/nexusai:use` antes de llamar al backend. | Seguridad |
+| RNF-05 | El backend valida que un usuario no pueda leer sesiones de chat ajenas. | Seguridad |
+| RNF-06 | Latencia al primer token de respuesta (streaming) < 2 s. | Performance |
+| RNF-07 | Latencia de respuesta completa del chat (sin streaming) < 8 s. | Performance |
+| RNF-08 | Latencia del buscador semántico (retrieval puro) < 1 s. | Performance |
+| RNF-09 | Tiempo de indexación de un PDF de 50 páginas < 60 s. | Performance |
+| RNF-10 | Instalable en Moodle 4.1 LTS a 4.5 sin `composer install` ni dependencias externas. | Compatibilidad |
+| RNF-11 | El widget funciona en Chrome, Firefox, Safari y Edge en versiones actuales. | Compatibilidad |
+| RNF-12 | El backend corre sobre Python 3.11+, PostgreSQL 16+ y pgvector 0.3.5+. | Compatibilidad |
+| RNF-13 | Los datos académicos viven en una base de datos controlada por la institución. | Privacidad |
+| RNF-14 | El plugin declara su Privacy API según la versión de Moodle (`null_provider` en MVP). | Privacidad |
+| RNF-15 | El proveedor del LLM se cambia sin modificar código (variable de entorno). | Privacidad |
+| RNF-16 | Cobertura de tests automatizados del backend de al menos 70%. | Mantenibilidad |
+| RNF-17 | CI/CD en GitHub Actions para backend, frontend y plugin PHP. | Mantenibilidad |
+| RNF-18 | Decisiones arquitectónicas documentadas como ADRs en `docs/adr/`. | Mantenibilidad |
+| RNF-19 | Cada *feature* documentada con ADR (si aplica), comentarios en código e issue con criterios de aceptación. | Mantenibilidad |
+| RNF-20 | El plugin se distribuye como ZIP instalable vía *Site administration → Plugins → Install plugins*. | Distribución |
+| RNF-21 | Cada *release* etiquetada en GitHub con *changelog* y `version.php` actualizado. | Distribución |
 
 ## Anexo B — Modelo de datos
 
-Diagrama entidad-relación y descripción de las tablas (`documents`, `chunks`,
-`chat_sessions`, `messages`, `unanswered_questions`). Fuente:
-`entrega-final/15_modelo_datos.md`.
+NexusAI usa una sola base de datos PostgreSQL con la extensión pgvector activada; los
+embeddings vectoriales y los datos relacionales viven en la misma instancia.
+
+```mermaid
+erDiagram
+    DOCUMENTS ||--o{ CHUNKS : "compone"
+    CHAT_SESSIONS ||--o{ MESSAGES : "contiene"
+
+    DOCUMENTS {
+        uuid id PK
+        int course_id "ID del curso Moodle"
+        int uploader_id "ID del docente Moodle"
+        string filename
+        string mime_type
+        string status "pending, indexing, indexed, error"
+        string file_hash "SHA-256 para dedup"
+    }
+
+    CHUNKS {
+        uuid id PK
+        uuid document_id FK
+        text content
+        int chunk_index
+        int token_count
+        vector embedding "Vector 768 MVP, 1536 prod"
+    }
+
+    CHAT_SESSIONS {
+        uuid id PK
+        int user_id "ID del alumno Moodle"
+        int course_id "0 = multi-curso"
+    }
+
+    MESSAGES {
+        uuid id PK
+        uuid session_id FK
+        string role "user, assistant, system"
+        text content
+        int token_count_prompt
+        int token_count_completion
+    }
+
+    UNANSWERED_QUESTIONS {
+        uuid id PK
+        int course_id
+        int user_id
+        text question
+        float max_similarity
+        int chunks_retrieved
+    }
+```
+
+> **Figura 5.** Diagrama entidad-relación de NexusAI. *Fuente:* elaboración propia
+> (`entrega-final/15_modelo_datos.md`). *Texto alternativo:* cinco tablas — documents,
+> chunks, chat_sessions, messages y unanswered_questions — con `documents` componiendo
+> `chunks` y `chat_sessions` conteniendo `messages`.
+
+**Notas de implementación:** `chunks.embedding` usa un índice **HNSW** con distancia
+coseno (`m=16`, `ef_construction=200`) para búsqueda aproximada en tiempo casi
+constante. `documents` tiene un índice único parcial sobre
+`(course_id, filename, file_hash)` que evita reindexar el mismo archivo dos veces. El
+esquema evolucionó en 5 migraciones Alembic (001 a 004, con dos migraciones `004_*`
+desarrolladas en paralelo por integrantes distintos y luego encadenadas). Del lado del
+plugin Moodle, hoy solo existe `local_nexusai_placeholder` (vacía); las tablas
+`local_nexusai_usage`, `local_nexusai_cache` y `local_nexusai_course_settings` quedan
+planificadas para post-MVP.
 
 ## Anexo C — Métricas del proyecto
 
-Velocidad por sprint, métricas de desarrollo (commits, issues, pruebas) y métricas de
-rendimiento en tiempo de ejecución. Fuente: `entrega-final/11_metricas.md`.
+**Velocidad por sprint**
+
+| Sprint | SP comprometidos | SP completados | Velocity |
+|---|---|---|---|
+| Sprint 0 — Setup | 60 | 60 | 100% |
+| Sprint 1 — Core chat | 50 | 45 | 90% |
+| Sprint 2 — RAG | 60 | 55 | 92% |
+| Sprint 3 — Calidad | 25 | 25 | 100% |
+| Sprint 4 — MVP | 70 | 70 | 100% |
+| **Promedio** | | | **96%** |
+
+**Métricas de desarrollo**
+
+| Métrica | Valor |
+|---|---|
+| Commits al repositorio | ~250 |
+| Issues cerradas | 70+ |
+| Pull requests mergeados | ~50 |
+| Líneas de código backend Python | ~3.500 |
+| Líneas de código plugin PHP | ~2.500 |
+| Líneas de código React | ~3.200 |
+| Migraciones de base de datos | 5 |
+| ADRs documentadas | 6 |
+| Tests automatizados del backend | 37 |
+| Cobertura de tests del backend | ~80% |
+
+**Calidad del LLM (*golden set*)**
+
+| Métrica | Resultado en el MVP |
+|---|---|
+| Preguntas con respuesta correcta y citación adecuada | 8/10 |
+| Preguntas donde el LLM admitió no poder responder (correcto) | 2/2 |
+| Falsos positivos (respuesta segura pero incorrecta) | 0 |
+| Falsos negativos (no responde teniendo material disponible) | 0 |
 
 ## Anexo D — Repositorio y evidencias
 
-Enlaces al repositorio público del proyecto, issues de GitHub y *releases* del plugin.
+- **Repositorio:** [github.com/nexusai-ucc/nexusAI](https://github.com/nexusai-ucc/nexusAI)
+- **Issues:** [github.com/nexusai-ucc/nexusAI/issues](https://github.com/nexusai-ucc/nexusAI/issues)
+- **Integración continua (GitHub Actions):**
+  [github.com/nexusai-ucc/nexusAI/actions](https://github.com/nexusai-ucc/nexusAI/actions)
+- **Release del MVP:** `v0.8.0-mvp`
+  ([github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp](https://github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp)).
+  El plugin siguió evolucionando después del MVP (versión actual `0.9.10` según
+  `plugin/local/nexusai/version.php`) sin un *tag* formal más reciente en el
+  repositorio — pendiente etiquetar el próximo *release* (RNF-21).
 
-> **PENDIENTE —** insertar enlaces al repositorio, capturas y diagramas finales; numerar
-> las figuras de los anexos de forma consecutiva con el resto del informe.
+> **Nota:** este anexo no incluye un enlace a un despliegue en vivo. El repositorio
+> tuvo instancias de demo temporales durante el desarrollo (Railway, Fly.io) que no
+> se mantienen activas de forma permanente — el acceso reproducible al sistema es el
+> repositorio y sus instrucciones de instalación (`entrega-final/18_manual_instalacion.md`),
+> no una URL pública.
