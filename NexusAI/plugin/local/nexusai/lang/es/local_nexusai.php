@@ -64,5 +64,12 @@ $string['upload_prompt_no']      = 'No por ahora';
 $string['upload_prompt_success'] = '"{$a}" fue agregado a NexusAI correctamente.';
 $string['upload_prompt_error']   = 'No se pudo indexar el archivo en NexusAI. Podés intentarlo desde la sección de materiales.';
 
+// Notificaciones — material nuevo subido (CAL-03, issue #239).
+$string['messageprovider:newmaterial'] = 'Material nuevo subido a un curso';
+$string['newmaterial_subject']         = 'Nuevo material en {$a}';
+$string['newmaterial_body']            = 'Se subió un nuevo archivo "{$a->filename}" al curso {$a->course}. Ya podés consultarlo con el asistente NexusAI.';
+$string['newmaterial_body_html']       = 'Se subió un nuevo archivo <strong>{$a->filename}</strong> al curso <strong>{$a->course}</strong>. Ya podés consultarlo con el asistente NexusAI.';
+$string['newmaterial_small']           = 'Nuevo material: {$a}';
+
 // Privacy API.
 $string['privacy:metadata'] = 'El plugin NexusAI no almacena datos personales en Moodle. El historial de chat vive en el servicio backend externo de NexusAI.';
