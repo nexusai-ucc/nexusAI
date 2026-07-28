@@ -89,11 +89,16 @@ de datos vectorial. La solución recupera los fragmentos más relevantes del
 material y los provee como contexto a un modelo de lenguaje de gran escala, que
 responde citando explícitamente la fuente. **(Metodología)**
 
-El producto mínimo viable (MVP) alcanzó siete funcionalidades en producción
-—buscador semántico, chat conversacional multi-curso, respuesta en *streaming*,
-citas trazables, historial, generador de cuestionarios y detección de vacíos de
-contenido— con una cobertura de pruebas automatizadas cercana al 80% en el
-backend. **(Resultado)**
+El producto mínimo viable (MVP), entregado en junio de 2026, alcanzó siete
+funcionalidades en producción —buscador semántico, chat conversacional
+multi-curso, respuesta en *streaming*, citas trazables, historial, generador de
+cuestionarios y detección de vacíos de contenido— con una cobertura de pruebas
+automatizadas cercana al 80% en el backend. En los meses posteriores el
+desarrollo continuó de forma sostenida, incorporando foros con detección de
+posts similares y asistencia de IA, un panel de analítica para el docente,
+generación de exámenes exportables al formato nativo de Moodle, un plan de
+estudio personalizado que combina errores de práctica y vacíos detectados, y
+soporte para formatos de material adicionales al PDF. **(Resultado)**
 
 Los resultados muestran que es posible ofrecer asistencia académica contextualizada
 y auditable dentro del LMS institucional, preservando la soberanía de los datos y
@@ -120,10 +125,14 @@ indexed material, stored in a vector database. The solution retrieves the most
 relevant fragments and provides them as context to a large language model, which
 answers by explicitly citing its source. **(Methodology)**
 
-The minimum viable product (MVP) reached seven production features —semantic search,
-multi-course conversational chat, response streaming, traceable citations, history,
-quiz generation, and content-gap detection— with automated test coverage close to
-80% in the backend. **(Result)**
+The minimum viable product (MVP), delivered in June 2026, reached seven production
+features —semantic search, multi-course conversational chat, response streaming,
+traceable citations, history, quiz generation, and content-gap detection— with
+automated test coverage close to 80% in the backend. Development continued
+steadily in the following months, adding forums with similar-post detection and
+AI assistance, a teacher analytics panel, exam generation exportable to Moodle's
+native format, a personalized study plan combining practice errors and detected
+gaps, and support for additional material formats beyond PDF. **(Result)**
 
 Results show that contextualized and auditable academic assistance can be delivered
 within the institutional LMS while preserving data sovereignty and mitigating large
@@ -377,9 +386,11 @@ admite explícitamente en lugar de inventar.
 
 ## Alcance funcional
 
-El sistema delimita claramente lo que entra y lo que queda fuera del MVP.
+El sistema delimita claramente lo que entra y lo que queda fuera de su alcance
+actual. El MVP (junio de 2026) fue el primer hito funcional; el desarrollo
+continuó después de esa entrega, ampliando el alcance original.
 
-**Funcionalidades incluidas (MVP):**
+**Funcionalidades del MVP (junio 2026):**
 
 - Asistente conversacional RAG con respuesta en *streaming* y citas trazables al
   fragmento de origen.
@@ -391,12 +402,31 @@ El sistema delimita claramente lo que entra y lo que queda fuera del MVP.
   inmediato.
 - Panel de detección de vacíos de contenido (*gaps*) para el docente.
 
-**Fuera de alcance (excluido conscientemente del MVP):** soporte multi-institución
-nativo, integración con mensajería externa, contenido multimedia, y planificadores de
-estudio avanzados, entre otros (ver detalle en *Anexos*).
+**Funcionalidades incorporadas después del MVP:**
+
+- Foros con detección automática de posts similares o duplicados mientras el
+  alumno escribe, resumen de hilos largos y sugerencia de respuesta con RAG para
+  el docente.
+- Panel de analítica docente con preguntas frecuentes agrupadas por tema, a
+  partir de un registro anonimizado de las interacciones del chat.
+- Generador de exámenes a partir del material del curso, exportable al formato
+  GIFT nativo de Moodle.
+- Modo Estudio ampliado: más tipos de pregunta (verdadero/falso, abiertas,
+  flashcards), historial de errores persistido en el backend, y un plan de
+  estudio personalizado que combina errores de práctica, vacíos de contenido
+  detectados en el chat y el próximo examen del calendario del curso.
+- Filtros de búsqueda por tipo de material y por unidad/sección del curso.
+- Vista de calendario con próximos exámenes y entregas.
+- Soporte de material en PPTX, XLSX, CSV, Markdown y HTML además de PDF, con
+  reconocimiento óptico de caracteres (OCR) de respaldo para documentos
+  escaneados.
+
+**Fuera de alcance (excluido conscientemente):** soporte multi-institución
+nativo, integración con mensajería externa, y contenido multimedia, entre otros
+(ver detalle en *Anexos*).
 
 Los requerimientos funcionales (RF-01 a RF-22) y no funcionales (RNF-01 a RNF-21) que
-detallan este alcance se encuentran documentados en los Anexos.
+detallan el alcance del MVP se encuentran documentados en los Anexos.
 
 ## Diseño
 
@@ -722,9 +752,12 @@ de recursos de cómputo:
 
 El proyecto cumplió con los objetivos planteados al inicio. Se desarrolló un plugin de
 Moodle funcional con un asistente de IA que aplica RAG auténtico sobre el material del
-curso, con citas trazables, despliegue autohospedado y respuesta en *streaming*. El
-producto alcanzó siete funcionalidades en producción y una cobertura de pruebas
-automatizadas en el backend cercana al 80%, superando el objetivo planteado.
+curso, con citas trazables, despliegue autohospedado y respuesta en *streaming*. El MVP
+entregado en junio de 2026 alcanzó siete funcionalidades en producción con una
+cobertura de pruebas automatizadas en el backend cercana al 80%, superando el objetivo
+planteado, y el desarrollo continuó después de esa entrega incorporando foros con
+asistencia de IA, analítica docente, generación de exámenes, un plan de estudio
+personalizado y soporte de más formatos de material.
 
 Desde el punto de vista académico, el trabajo aporta respuestas concretas a tres
 cuestiones vigentes en la aplicación de IA a la educación: la mitigación de la
@@ -733,14 +766,15 @@ retroalimentación entre estudiante y docente mediante la detección automática
 de contenido; y la preservación de la privacidad y la soberanía de los datos académicos
 mediante una arquitectura autohospedada.
 
-Entre las **limitaciones** del MVP se reconocen el soporte exclusivo de archivos PDF, la
-ausencia de un esquema multi-institución nativo, la dependencia de la calidad del modelo
-de lenguaje en el generador de cuestionarios, y la cobertura manual de pruebas en el
-frontend y el plugin.
+Entre las **limitaciones** actuales se reconocen la ausencia de un esquema
+multi-institución nativo, la dependencia de la calidad del modelo de lenguaje en el
+generador de cuestionarios, y la cobertura manual de pruebas en el frontend y el
+plugin.
 
 Como **trabajo futuro** se plantean la publicación del plugin en el directorio oficial de
-Moodle, la incorporación de pruebas automatizadas de frontend, el agrupamiento semántico
-de vacíos de contenido, y la generación de planes de estudio adaptativos.
+Moodle, la incorporación de pruebas automatizadas de frontend, y el agrupamiento
+semántico (por embeddings, no solo por texto normalizado) de los vacíos de contenido
+detectados.
 
 En síntesis, el proyecto demuestra que es posible integrar asistencia académica
 contextualizada y auditable dentro del LMS institucional, amplificando el rol del docente
