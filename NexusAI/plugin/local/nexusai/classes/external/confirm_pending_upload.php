@@ -101,6 +101,12 @@ class confirm_pending_upload extends \external_api {
             $params['courseid'], (int) $USER->id, $filename, $mimetype, $filebytes, $section
         );
 
+        // CAL-03 (issue #239): notificar a los usuarios del curso que hay
+        // material nuevo. Best-effort — nunca puede romper la confirmación.
+        \local_nexusai\notifier::notify_new_material(
+            $params['courseid'], $filename, (int) $USER->id
+        );
+
         return ['success' => true];
     }
 }

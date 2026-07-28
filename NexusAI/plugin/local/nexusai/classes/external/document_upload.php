@@ -147,6 +147,12 @@ class document_upload extends \external_api {
             );
         }
 
+        // CAL-03 (issue #239): notificar a los usuarios del curso que hay
+        // material nuevo. Best-effort — nunca puede romper la respuesta del upload.
+        \local_nexusai\notifier::notify_new_material(
+            (int) $params['courseid'], $params['filename'], (int) $USER->id
+        );
+
         return [
             'id'            => (string) $response['id'],
             'course_id'     => (int) $response['course_id'],
