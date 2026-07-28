@@ -5,7 +5,7 @@
 **Plugin para Moodle con asistente académico basado en inteligencia artificial.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status: MVP en desarrollo](https://img.shields.io/badge/status-MVP%20en%20desarrollo-orange)]()
+[![Status: Post-MVP Sprint C](https://img.shields.io/badge/status-Post--MVP%20Sprint%20C-blue)]()
 [![Moodle: 4.1–4.5](https://img.shields.io/badge/Moodle-4.1--4.5-blue)]()
 [![Python: 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)]()
 [![React: 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)]()
@@ -36,10 +36,10 @@ A diferencia de otros plugins de IA para Moodle, **NexusAI implementa RAG autén
 
 | | |
 |---|---|
-| **Fase actual** | Sprint 1 (23 Abr – 6 May 2026) |
-| **Próximo hito** | MVP — 1 Jun 2026 |
-| **Roadmap completo** | Hasta defensa final 27 Feb 2027 |
-| **Backlog** | 334 SP MVP \| 538 SP Full |
+| **Fase actual** | Post-MVP Sprint C (Jul – Ago 2026) |
+| **Próximo hito** | Defensa final — 27 Feb 2027 |
+| **MVP entregado** | 1 Jun 2026 — [v0.8.0-mvp](CHANGELOG.md) |
+| **Último release** | v0.11.0 — Post-MVP Sprint C |
 
 Ver [`investigacion/`](investigacion/) para el detalle técnico y de gestión, y [`docs/architecture.md`](docs/architecture.md) para la síntesis de arquitectura.
 
