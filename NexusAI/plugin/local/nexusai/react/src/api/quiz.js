@@ -274,3 +274,35 @@ export async function getReviewSuggestions(courseId, days = 90) {
 
     return response;
 }
+
+/**
+ * Plan de estudio personalizado: combina errores de quiz + gaps del chat.
+ *
+ * @param {number} courseId
+ * @param {number} [days=30]
+ * @returns {Promise<{course_id:number, topics:Array}>}
+ */
+export async function getStudyPlan(courseId, days = 30) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        return {
+            course_id: courseId,
+            topics: [
+                {
+                    topic: "Derivadas de funciones trigonométricas",
+                    quiz_error_count: 3,
+                    gap_count: 1,
+                    reason: "Fallaste 3 preguntas de práctica y preguntaste esto una vez en el chat sin buena respuesta.",
+                    suggested_quiz_topic: "derivadas trigonométricas",
+                },
+            ],
+        };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_study_plan",
+        args: { courseid: courseId, days },
+    }]);
+
+    return response;
+}

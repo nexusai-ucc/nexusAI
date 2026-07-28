@@ -1,30 +1,48 @@
 /**
- * StudyPanel — "Modo Estudio" (UX-01).
+ * StudyPanel — "Modo Estudio" (UX-01 + Plan de Estudio Personalizado).
  *
- * Wrapper liviano que unifica Quiz (práctica) y Repaso (historial de
- * errores) bajo un solo destino de navegación, con un selector interno.
- * No modifica la lógica de QuizPanel ni ReviewPanel — solo decide cuál
- * de los dos montar.
+ * Wrapper liviano que unifica Plan (recomendaciones), Quiz (práctica) y
+ * Repaso (historial de errores) bajo un solo destino de navegación, con
+ * un selector interno. "Plan" es el modo por default: es lo primero que
+ * ve el alumno al entrar a Modo Estudio, para que el producto sea
+ * proactivo (le dice qué hacer) en vez de reactivo (esperar a que
+ * se le ocurra qué pedir). No modifica la lógica de QuizPanel ni
+ * ReviewPanel — solo decide cuál de los tres montar, y le pasa a
+ * QuizPanel el tema elegido desde el Plan cuando corresponde.
  */
 
 import { useState } from "react";
 import QuizPanel from "./QuizPanel.jsx";
 import ReviewPanel from "./ReviewPanel.jsx";
+import StudyPlanPanel from "./StudyPlanPanel.jsx";
 
 export default function StudyPanel({ courseId, sesskey, lang = "es" }) {
-    const [mode, setMode] = useState("practice"); // "practice" | "review"
+    const [mode, setMode] = useState("plan"); // "plan" | "practice" | "review"
+    const [plannedTopic, setPlannedTopic] = useState("");
 
     const L = lang === "es"
-        ? { practice: "Practicar", review: "Repaso" }
-        : { practice: "Practice", review: "Review" };
+        ? { plan: "Plan", practice: "Practicar", review: "Repaso" }
+        : { plan: "Plan", practice: "Practice", review: "Review" };
+
+    const practiceTopic = (topic) => {
+        setPlannedTopic(topic);
+        setMode("practice");
+    };
 
     return (
         <div className="nexusai-study">
             <div className="nexusai-study__modebtns">
                 <button
                     type="button"
+                    className={`nexusai-study__modebtn ${mode === "plan" ? "nexusai-study__modebtn--active" : ""}`}
+                    onClick={() => setMode("plan")}
+                >
+                    {L.plan}
+                </button>
+                <button
+                    type="button"
                     className={`nexusai-study__modebtn ${mode === "practice" ? "nexusai-study__modebtn--active" : ""}`}
-                    onClick={() => setMode("practice")}
+                    onClick={() => { setPlannedTopic(""); setMode("practice"); }}
                 >
                     {L.practice}
                 </button>
@@ -37,8 +55,10 @@ export default function StudyPanel({ courseId, sesskey, lang = "es" }) {
                 </button>
             </div>
 
-            {mode === "practice" ? (
-                <QuizPanel courseId={courseId} lang={lang} />
+            {mode === "plan" ? (
+                <StudyPlanPanel courseId={courseId} lang={lang} onPracticeTopic={practiceTopic} />
+            ) : mode === "practice" ? (
+                <QuizPanel courseId={courseId} lang={lang} initialTopic={plannedTopic} />
             ) : (
                 <ReviewPanel courseId={courseId} sesskey={sesskey} lang={lang} />
             )}
