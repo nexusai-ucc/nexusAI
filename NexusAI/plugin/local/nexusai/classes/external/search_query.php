@@ -30,6 +30,12 @@ class search_query extends \external_api {
             'topk'     => new \external_value(PARAM_INT, 'Cantidad de resultados (1..10)', VALUE_OPTIONAL, 5),
             'global'   => new \external_value(PARAM_BOOL, 'Buscar en todos los cursos del usuario', VALUE_OPTIONAL, false),
             'materialtype' => new \external_value(PARAM_RAW, 'Filtrar por tipo de material (mime type)', VALUE_OPTIONAL, ''),
+            'section'      => new \external_value(
+                PARAM_INT, 'Filtrar por sección/unidad del curso (-1 = sin filtro, BUS-05)', VALUE_OPTIONAL, -1
+            ),
+            'sectionunassigned' => new \external_value(
+                PARAM_BOOL, 'Filtrar solo material sin unidad asignada (BUS-05)', VALUE_OPTIONAL, false
+            ),
         ]);
     }
 
@@ -48,20 +54,28 @@ class search_query extends \external_api {
                     'similarity'        => new \external_value(PARAM_FLOAT, 'Score de similitud 0-1'),
                     'has_file'          => new \external_value(PARAM_BOOL, 'El archivo original está disponible para descarga', VALUE_OPTIONAL, false),
                     'mime_type'         => new \external_value(PARAM_RAW, 'MIME type del documento', VALUE_OPTIONAL, ''),
+                    'section'           => new \external_value(
+                        PARAM_INT, 'Sección del documento', VALUE_OPTIONAL, null, NULL_ALLOWED
+                    ),
                 ])
             ),
         ]);
     }
 
-    public static function execute(string $query, int $courseid, int $topk = 5, bool $global = false, string $materialtype = ''): array {
+    public static function execute(
+        string $query, int $courseid, int $topk = 5, bool $global = false, string $materialtype = '',
+        int $section = -1, bool $sectionunassigned = false
+    ): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
-            'query'        => $query,
-            'courseid'     => $courseid,
-            'topk'         => $topk,
-            'global'       => $global,
-            'materialtype' => $materialtype,
+            'query'             => $query,
+            'courseid'          => $courseid,
+            'topk'              => $topk,
+            'global'            => $global,
+            'materialtype'      => $materialtype,
+            'section'           => $section,
+            'sectionunassigned' => $sectionunassigned,
         ]);
 
         $context = \context_course::instance($params['courseid']);
@@ -99,6 +113,9 @@ class search_query extends \external_api {
             }
         }
 
+        // -1 = sin filtro de sección (BUS-05).
+        $section = ((int) $params['section']) >= 0 ? (int) $params['section'] : null;
+
         $client   = new backend_client();
         $response = $client->search(
             (int) $params['courseid'],
@@ -106,7 +123,9 @@ class search_query extends \external_api {
             $cleanquery,
             $topk,
             $courseids,
-            (string) $params['materialtype']
+            (string) $params['materialtype'],
+            $section,
+            (bool) $params['sectionunassigned']
         );
 
         if (!isset($response['results'], $response['total'])) {
@@ -129,6 +148,7 @@ class search_query extends \external_api {
                         'similarity'        => (float) ($r['similarity'] ?? 0.0),
                         'has_file'          => (bool) ($r['has_file'] ?? false),
                         'mime_type'         => (string) ($r['mime_type'] ?? ''),
+                        'section'           => isset($r['section']) ? (int) $r['section'] : null,
                     ];
                 },
                 $response['results']

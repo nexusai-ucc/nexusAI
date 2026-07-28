@@ -47,6 +47,7 @@ $string['chatwidget_placeholder']  = 'Preguntá lo que quieras sobre esta materi
 $string['chatwidget_send']         = 'Enviar';
 $string['chatwidget_loading']      = 'Cargando...';
 $string['chatwidget_error']        = 'Algo salió mal. Intentá de nuevo en un momento.';
+$string['chatwidget_navtrigger']   = 'Asistente NexusAI';
 
 // Página de administración con health check.
 $string['admin_page_title']        = 'NexusAI · Panel de administración';

@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026072401;        // YYYYMMDDXX — CAL-02: alertas de calendario configurables por el alumno.
-$plugin->release   = '0.9.7';            // Quiz + foros IA + alertas de calendario.
+$plugin->version   = 2026072801;        // YYYYMMDDXX — CAL-02 (alertas de calendario) merge en development.
+$plugin->release   = '0.9.11';           // DOC-D04 + Plan de estudio + CAL-02 alertas configurables.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
