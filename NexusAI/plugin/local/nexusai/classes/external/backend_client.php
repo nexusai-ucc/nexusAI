@@ -733,7 +733,10 @@ class backend_client {
         // automáticamente la config de proxy / blocked hosts del sitio.
         // ignoresecurity=true es necesario para que el backend interno (localhost /
         // host.docker.internal) no sea rechazado por la protección anti-SSRF de Moodle.
-        require_once($GLOBALS['CFG']->libdir . '/filelib.php');
+        // global $CFG es necesario para que filelib.php lo encuentre en scope al ser
+        // incluido dentro de este método.
+        global $CFG;
+        require_once($CFG->libdir . '/filelib.php');
         $curl = new \curl(['ignoresecurity' => true]);
         $curl->setHeader([
             'Content-Type: application/json',
