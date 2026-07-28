@@ -48,6 +48,7 @@ Compilar con ./build.sh
 \textbf{Alumnos:}
 \begin{itemize}
   \item Santiago Tricherri
+  \item Marcos Bugliotti
   \item Delfina Salinas
 \end{itemize}
 
