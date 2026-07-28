@@ -18,9 +18,5 @@ defined('MOODLE_INTERNAL') || die();
 $messageproviders = [
     'cal_alert' => [
         'capability' => 'local/nexusai:use',
-        'defaults'   => [
-            MESSAGE_OUTPUT_EMAIL => MESSAGE_PERMITTED,
-            MESSAGE_OUTPUT_POPUP => MESSAGE_PERMITTED,
-        ],
     ],
 ];
