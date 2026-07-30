@@ -147,6 +147,26 @@ class document_upload extends \external_api {
             );
         }
 
+        // Guardar una copia en el file storage de Moodle para poder servirla via
+        // pluginfile.php sin depender del disco del backend Python.
+        // itemid = course_id para agrupar por curso. Filename único por curso
+        // (ya validado por el backend con chequeo de colisión).
+        $fs = get_file_storage();
+        $existing = $fs->get_file($context->id, 'local_nexusai', 'documents',
+                                  $params['courseid'], '/', $params['filename']);
+        if ($existing) {
+            $existing->delete();  // reemplazar si ya existía (re-upload)
+        }
+        $file_record = [
+            'contextid' => $context->id,
+            'component' => 'local_nexusai',
+            'filearea'  => 'documents',
+            'itemid'    => (int) $params['courseid'],
+            'filepath'  => '/',
+            'filename'  => $params['filename'],
+        ];
+        $fs->create_file_from_string($file_record, $filebytes);
+
         // CAL-03 (issue #239): notificar a los usuarios del curso que hay
         // material nuevo. Best-effort — nunca puede romper la respuesta del upload.
         \local_nexusai\notifier::notify_new_material(

@@ -15,6 +15,7 @@
 
 import { useEffect, useState } from "react";
 import { searchMaterial } from "../api/search.js";
+import { summarizeDocument } from "../api/summary.js";
 import { listCourseSections } from "../api/courseSections.js";
 import { IconBookOpen, IconFile, IconFileText, IconGlobe } from "./icons.jsx";
 
@@ -68,6 +69,7 @@ export default function SearchPanel({
     const [error, setError]           = useState(null);
     const [globalMode, setGlobalMode] = useState(false);
     const [materialType, setMaterialType] = useState("");
+    const [summaries, setSummaries] = useState({});
     const [section, setSection] = useState(""); // "" = todas | "-1" = sin asignar | número = sección real
     const [sections, setSections] = useState([]);
 
@@ -93,7 +95,11 @@ export default function SearchPanel({
         sectionUnassigned: "Sin unidad asignada",
         noResults:    (q) => `No se encontraron resultados para "${q}".`,
         error:        "No se pudo realizar la búsqueda. Intentá de nuevo.",
-        download:     "Descargar archivo original",
+        openFile:        "Abrir ↗",
+        summarize:       "Resumir",
+        hideSummary:     "Ocultar resumen",
+        summaryLabel:    "Resumen generado por IA",
+        summaryError:    "No se pudo generar el resumen. Intentá de nuevo.",
     } : {
         placeholder:  "Search in course material...",
         button:       "Search",
@@ -104,7 +110,11 @@ export default function SearchPanel({
         sectionUnassigned: "Unassigned",
         noResults:    (q) => `No results found for "${q}".`,
         error:        "Search failed. Please try again.",
-        download:     "Download original file",
+        openFile:        "Open ↗",
+        summarize:       "Summarize",
+        hideSummary:     "Hide summary",
+        summaryLabel:    "AI-generated summary",
+        summaryError:    "Could not generate summary. Try again.",
     };
 
     const performSearch = async (q) => {
@@ -147,17 +157,32 @@ export default function SearchPanel({
         setError(null);
     };
 
+    const handleSummarize = async (documentId) => {
+        const current = summaries[documentId];
+        if (current?.text) {
+            setSummaries(prev => ({ ...prev, [documentId]: { ...prev[documentId], visible: !prev[documentId].visible } }));
+            return;
+        }
+        setSummaries(prev => ({ ...prev, [documentId]: { loading: true, text: null, error: null, visible: true } }));
+        try {
+            const data = await summarizeDocument({ documentId, courseId });
+            setSummaries(prev => ({ ...prev, [documentId]: { loading: false, text: data.summary, error: null, visible: true } }));
+        } catch {
+            setSummaries(prev => ({ ...prev, [documentId]: { loading: false, text: null, error: L.summaryError, visible: true } }));
+        }
+    };
+
     const changeSection = (value) => {
         setSection(value);
         setResults(null);
         setError(null);
     };
 
-    const openDownload = (documentId, resultCourseId) => {
-        if (!documentId || !sesskey) return;
+    const openDownload = (filename, resultCourseId) => {
+        if (!filename || !sesskey) return;
         const params = new URLSearchParams({
-            document_id: documentId,
             courseid: String(resultCourseId || courseId || ""),
+            filename,
             sesskey,
         });
         window.open(
@@ -254,39 +279,68 @@ export default function SearchPanel({
             )}
 
             {results && results.results.map((r, i) => {
-                const canDownload = !!r.document_id && !!sesskey && !!r.has_file;
+                const canDownload = !!r.document_id && !!sesskey;
                 return (
                     <div
                         key={`${r.document_filename}-${r.chunk_index}-${i}`}
                         className="nexusai-search__result"
                     >
+                        {r.document_id && (
+                            <button
+                                type="button"
+                                className="nexusai-search__summarize-btn"
+                                onClick={() => handleSummarize(r.document_id)}
+                                disabled={summaries[r.document_id]?.loading}
+                            >
+                                {summaries[r.document_id]?.loading
+                                    ? "..."
+                                    : summaries[r.document_id]?.text && summaries[r.document_id]?.visible
+                                        ? L.hideSummary
+                                        : L.summarize}
+                            </button>
+                        )}
                         <div className="nexusai-search__result-header">
-                            {canDownload ? (
-                                <button
-                                    type="button"
-                                    className="nexusai-search__filename nexusai-search__filename--btn"
-                                    onClick={() => openDownload(r.document_id, r.course_id)}
-                                    title={L.download}
-                                >
-                                    <FileIcon filename={r.document_filename} />
-                                    {r.document_filename}
-                                </button>
-                            ) : (
-                                <span className="nexusai-search__filename">
-                                    <FileIcon filename={r.document_filename} />
-                                    {r.document_filename}
-                                </span>
-                            )}
-                            {r.mime_type && MATERIAL_TYPE_LABELS[r.mime_type] && (
-                                <span className="nexusai-search__type-badge">
-                                    {MATERIAL_TYPE_LABELS[r.mime_type][lang === "es" ? "es" : "en"]}
-                                </span>
-                            )}
+                            <span className="nexusai-search__filename">
+                                <FileIcon filename={r.document_filename} />
+                                {r.document_filename}
+                            </span>
+                            <div className="nexusai-search__result-actions">
+                                {r.mime_type && MATERIAL_TYPE_LABELS[r.mime_type] && (
+                                    <span className="nexusai-search__type-badge">
+                                        {MATERIAL_TYPE_LABELS[r.mime_type][lang === "es" ? "es" : "en"]}
+                                    </span>
+                                )}
+                                {canDownload && (
+                                    <button
+                                        type="button"
+                                        className="nexusai-search__open-btn"
+                                        onClick={() => openDownload(r.document_filename, r.course_id)}
+                                    >
+                                        {L.openFile}
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         {effectiveGlobal && r.course_name && (
                             <p className="nexusai-search__course">{r.course_name}</p>
                         )}
                         <p className="nexusai-search__content">{highlightContent(r.content, lastQuery)}</p>
+                        {r.document_id && summaries[r.document_id]?.visible && (
+                            <div className="nexusai-search__summary">
+                                <p className="nexusai-search__summary-label">{L.summaryLabel}</p>
+                                {summaries[r.document_id].loading && (
+                                    <p className="nexusai-search__summary-text nexusai-search__summary-text--loading">...</p>
+                                )}
+                                {summaries[r.document_id].error && (
+                                    <p className="nexusai-search__summary-text nexusai-search__summary-text--error">
+                                        {summaries[r.document_id].error}
+                                    </p>
+                                )}
+                                {summaries[r.document_id].text && (
+                                    <p className="nexusai-search__summary-text">{summaries[r.document_id].text}</p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 );
             })}

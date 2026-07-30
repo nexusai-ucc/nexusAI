@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026073001;        // SP-04 (fill_blank) + SP-09 (historial de quizzes) sobre base post-CAL-03.
-$plugin->release   = '0.10.2';           // Fill-in-the-blank + historial de quizzes por alumno.
+$plugin->version   = 2026073002;        // BUS-03 (resumen automático de PDF) + SP-04/SP-09 (fill_blank + historial de quizzes).
+$plugin->release   = '0.10.2';           // Resumen automático de PDF + fill-in-the-blank + historial de quizzes.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
