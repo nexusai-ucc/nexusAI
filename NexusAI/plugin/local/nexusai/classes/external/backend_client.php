@@ -396,6 +396,60 @@ class backend_client {
     }
 
     /**
+     * Persiste el resultado de un quiz completado por el alumno (SP-09).
+     *
+     * @param int         $courseid       ID del curso.
+     * @param int         $userid         $USER->id real.
+     * @param string      $questiontype   Tipo de quiz (multiple_choice|flashcard|fill_blank|…).
+     * @param string      $difficulty     Dificultad (easy|medium|hard).
+     * @param string|null $topic          Tema opcional.
+     * @param int         $totalquestions Cantidad total de preguntas.
+     * @param int         $correctcount   Cantidad de respuestas correctas.
+     * @return array{id:string, created_at:string}
+     */
+    public function save_quiz_attempt(int $courseid, int $userid, string $questiontype, string $difficulty, ?string $topic, int $totalquestions, int $correctcount): array {
+        $payload = [
+            'course_id'       => $courseid,
+            'user_id'         => $userid,
+            'question_type'   => $questiontype,
+            'difficulty'      => $difficulty,
+            'total_questions' => $totalquestions,
+            'correct_count'   => $correctcount,
+        ];
+        if ($topic !== null && trim($topic) !== '') {
+            $payload['topic'] = trim($topic);
+        }
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/attempts', $body);
+    }
+
+    /**
+     * Lista el historial de quizzes completados por el alumno en un curso (SP-09).
+     *
+     * @param int $courseid ID del curso.
+     * @param int $userid   $USER->id real.
+     * @param int $days     Días hacia atrás (1..365).
+     * @param int $limit    Máximo de items (1..100).
+     * @return array{course_id:int, total:int, items:array}
+     */
+    public function list_quiz_attempts(int $courseid, int $userid, int $days = 90, int $limit = 20): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'days'      => $days,
+            'limit'     => $limit,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/attempts/list', $body);
+    }
+
+    /**
      * Sugerencias de repaso basadas en los errores más frecuentes del alumno (SP-10).
      *
      * @param int $courseid ID del curso.
