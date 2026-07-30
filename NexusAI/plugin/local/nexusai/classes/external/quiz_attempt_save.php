@@ -34,9 +34,8 @@ class quiz_attempt_save extends \external_api {
 
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'id'         => new \external_value(PARAM_RAW,   'UUID del intento guardado'),
-            'score'      => new \external_value(PARAM_FLOAT, 'Score 0.0-1.0 calculado server-side'),
-            'created_at' => new \external_value(PARAM_RAW,   'ISO timestamp del intento'),
+            'id'    => new \external_value(PARAM_RAW,   'UUID del intento guardado'),
+            'score' => new \external_value(PARAM_FLOAT, 'Score 0.0-1.0 calculado server-side'),
         ]);
     }
 
@@ -82,8 +81,8 @@ class quiz_attempt_save extends \external_api {
         );
 
         return [
-            'id'         => (string) ($response['id'] ?? ''),
-            'created_at' => (string) ($response['created_at'] ?? ''),
+            'id'    => (string) ($response['id'] ?? ''),
+            'score' => (float)  ($response['score'] ?? 0.0),
         ];
     }
 }
