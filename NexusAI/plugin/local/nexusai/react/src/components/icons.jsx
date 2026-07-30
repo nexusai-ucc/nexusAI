@@ -158,6 +158,16 @@ export const IconSearch = ({ size = 14 }) => (
     </svg>
 );
 
+// ── Grid (menú de navegación — UX-01) ───────────────────────────────────────
+export const IconGrid = ({ size = 16 }) => (
+    <svg {...baseProps(size)}>
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+);
+
 // ── Chevron right (chips, next) ────────────────────────────────────────────
 export const IconChevronRight = ({ size = 12 }) => (
     <svg {...baseProps(size)}>
@@ -170,5 +180,25 @@ export const IconArrowUpRight = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <line x1="7" y1="17" x2="17" y2="7" />
         <polyline points="7 7 17 7 17 17" />
+    </svg>
+);
+
+// ── ClipboardList (generador de exámenes — DOC-D04) ─────────────────────────
+export const IconClipboardList = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <rect x="8" y="2" width="8" height="4" rx="1" />
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+        <line x1="9" y1="12" x2="15" y2="12" />
+        <line x1="9" y1="16" x2="15" y2="16" />
+        <line x1="9" y1="8" x2="10" y2="8" />
+    </svg>
+);
+
+// ── Download (export GIFT) ───────────────────────────────────────────────────
+export const IconDownload = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
     </svg>
 );

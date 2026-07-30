@@ -266,6 +266,48 @@ class backend_client {
     }
 
     /**
+     * Genera un banco de preguntas de examen para el docente (EVAL-01 / issue #235).
+     *
+     * A diferencia de generate_quiz (alumno, topic libre o material aleatorio),
+     * acá el docente elige explícitamente los archivos fuente.
+     *
+     * @param int         $courseid     ID del curso.
+     * @param int         $userid       $USER->id real del docente.
+     * @param string[]    $documentids  UUIDs de los documentos elegidos (al menos 1).
+     * @param string|null $topic        Tema opcional para enfocar las preguntas.
+     * @param int         $numquestions Cantidad de preguntas (1..20).
+     * @param string      $questiontype Tipo (multiple_choice|true_false|open|mix).
+     * @param string      $difficulty   Dificultad (easy|medium|hard).
+     * @return array{course_id:int, topic:?string, questions:array}
+     */
+    public function generate_exam(
+        int $courseid,
+        int $userid,
+        array $documentids,
+        ?string $topic,
+        int $numquestions,
+        string $questiontype = 'multiple_choice',
+        string $difficulty = 'medium'
+    ): array {
+        $payload = [
+            'course_id'     => $courseid,
+            'user_id'       => $userid,
+            'document_ids'  => array_values($documentids),
+            'num_questions' => $numquestions,
+            'question_type' => $questiontype,
+            'difficulty'    => $difficulty,
+        ];
+        if ($topic !== null && trim($topic) !== '') {
+            $payload['topic'] = trim($topic);
+        }
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/generate-exam', $body);
+    }
+
+    /**
      * Evalúa la respuesta libre de un alumno a una pregunta abierta (SP-05).
      *
      * @param int    $courseid    ID del curso.
@@ -375,6 +417,27 @@ class backend_client {
     }
 
     /**
+     * Plan de estudio personalizado: combina errores de quiz + gaps del chat.
+     *
+     * @param int $courseid ID del curso.
+     * @param int $userid   $USER->id real del alumno.
+     * @param int $days     Ventana de días hacia atrás (1..365).
+     * @return array{course_id:int, topics:array}
+     */
+    public function quiz_study_plan(int $courseid, int $userid, int $days = 30): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'days'      => $days,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/study-plan', $body);
+    }
+
+    /**
      * Búsqueda semántica en el material del curso (Feature A — sin LLM).
      *
      * @param int    $courseid ID del curso de Moodle.
@@ -389,7 +452,10 @@ class backend_client {
      * @param int[]  $courseids    When non-empty, overrides course_id for multi-course search.
      * @param string $materialtype Filtra por mime type del documento (BUS-02). Vacío = sin filtro.
      */
-    public function search(int $courseid, int $userid, string $query, int $topk = 5, array $courseids = [], string $materialtype = ''): array {
+    public function search(
+        int $courseid, int $userid, string $query, int $topk = 5, array $courseids = [],
+        string $materialtype = '', ?int $section = null, bool $sectionunassigned = false
+    ): array {
         $payload = [
             'query'     => $query,
             'course_id' => $courseid,
@@ -401,6 +467,12 @@ class backend_client {
         }
         if ($materialtype !== '') {
             $payload['material_type'] = $materialtype;
+        }
+        if ($section !== null) {
+            $payload['section'] = $section;
+        }
+        if ($sectionunassigned) {
+            $payload['section_unassigned'] = true;
         }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
@@ -425,7 +497,10 @@ class backend_client {
      *
      * @throws \moodle_exception Si el backend rechaza o la red falla.
      */
-    public function upload_document(int $courseid, int $uploaderid, string $filename, string $mimetype, string $filebytes): array {
+    public function upload_document(
+        int $courseid, int $uploaderid, string $filename, string $mimetype, string $filebytes,
+        ?int $section = null
+    ): array {
         $payload = [
             'course_id'   => $courseid,
             'uploader_id' => $uploaderid,
@@ -433,6 +508,9 @@ class backend_client {
             'mime_type'   => $mimetype,
             'content_b64' => base64_encode($filebytes),
         ];
+        if ($section !== null) {
+            $payload['section'] = $section;
+        }
 
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {

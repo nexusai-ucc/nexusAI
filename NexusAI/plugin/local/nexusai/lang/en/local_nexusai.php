@@ -47,6 +47,7 @@ $string['chatwidget_placeholder']  = 'Ask anything about this course...';
 $string['chatwidget_send']         = 'Send';
 $string['chatwidget_loading']      = 'Loading...';
 $string['chatwidget_error']        = 'Something went wrong. Try again in a moment.';
+$string['chatwidget_navtrigger']   = 'NexusAI Assistant';
 
 // Admin page with health check.
 $string['admin_page_title']        = 'NexusAI · Admin panel';
@@ -62,6 +63,13 @@ $string['upload_prompt_yes']     = 'Yes, add it';
 $string['upload_prompt_no']      = 'Not now';
 $string['upload_prompt_success'] = '"{$a}" was successfully added to NexusAI.';
 $string['upload_prompt_error']   = 'Could not index the file in NexusAI. You can try again from the materials section.';
+
+// Notifications — new material uploaded (CAL-03, issue #239).
+$string['messageprovider:newmaterial'] = 'New material uploaded to a course';
+$string['newmaterial_subject']         = 'New material in {$a}';
+$string['newmaterial_body']            = 'A new file "{$a->filename}" was uploaded to {$a->course}. You can already ask the NexusAI assistant about it.';
+$string['newmaterial_body_html']       = 'A new file <strong>{$a->filename}</strong> was uploaded to <strong>{$a->course}</strong>. You can already ask the NexusAI assistant about it.';
+$string['newmaterial_small']           = 'New material: {$a}';
 
 // Privacy API.
 $string['privacy:metadata'] = 'The NexusAI plugin does not store personal data in Moodle. All chat history lives in the external NexusAI backend service.';

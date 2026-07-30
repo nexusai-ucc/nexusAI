@@ -59,6 +59,16 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    'local_nexusai_course_sections_list' => [
+        'classname'     => '\local_nexusai\external\course_sections_list',
+        'methodname'    => 'execute',
+        'description'   => 'List a course\'s sections (number + display name) — used by the upload section picker and the search section filter (BUS-05).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Historial de conversaciones — lista de sesiones previas del alumno (Feature E).
     'local_nexusai_chat_sessions_list' => [
         'classname'     => '\local_nexusai\external\chat_sessions_list',
@@ -103,6 +113,18 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Generador de exámenes — banco de preguntas desde archivos elegidos por el
+    // docente (EVAL-01 / issue #235, DOC-D04). Solo docentes (capability :manage).
+    'local_nexusai_exam_generate' => [
+        'classname'     => '\local_nexusai\external\exam_generate',
+        'methodname'    => 'execute',
+        'description'   => 'Generate an exam question bank from teacher-selected course files.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // Repaso de errores — persiste preguntas mal respondidas en un quiz (SP-10).
     'local_nexusai_quiz_errors_record' => [
         'classname'     => '\local_nexusai\external\quiz_errors_record',
@@ -141,6 +163,16 @@ $functions = [
         'classname'     => '\local_nexusai\external\quiz_review_suggestions',
         'methodname'    => 'execute',
         'description'   => 'Get AI-generated review suggestions based on the student quiz-error history.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    'local_nexusai_quiz_study_plan' => [
+        'classname'     => '\local_nexusai\external\quiz_study_plan',
+        'methodname'    => 'execute',
+        'description'   => 'Get a personalized study plan combining quiz-error history and unanswered chat questions.',
         'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:use',

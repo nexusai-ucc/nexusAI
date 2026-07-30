@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026072102;        // YYYYMMDDXX — BUS-03: mejorar resumen, panel redimensionable, botón Abrir.
-$plugin->release   = '0.9.8';            // BUS-03+: mejoras de UX post-testing.
+$plugin->version   = 2026073002;        // BUS-03 (resumen automático de PDF con LLM) sobre base post-CAL-03.
+$plugin->release   = '0.10.2';           // Resumen automático de PDF + descarga desde Moodle file API.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

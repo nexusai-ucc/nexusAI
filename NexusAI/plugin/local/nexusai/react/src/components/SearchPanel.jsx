@@ -7,14 +7,16 @@
  * cambiar entre "este curso" y "todos mis cursos".
  *
  * Filtro por tipo de material (BUS-02): mime type capturado al subir el
- * archivo, threadeado hasta el backend. El filtro por "unidad" queda fuera
- * de alcance — no hay ningún dato que asocie un documento a una sección de
- * Moodle (ver issue de seguimiento).
+ * archivo, threadeado hasta el backend.
+ * Filtro por unidad/sección (BUS-05): sección de Moodle asignada (opcional)
+ * al subir el archivo. Se oculta en modo búsqueda global — los números de
+ * sección no tienen sentido cruzando cursos.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { searchMaterial } from "../api/search.js";
 import { summarizeDocument } from "../api/summary.js";
+import { listCourseSections } from "../api/courseSections.js";
 import { IconBookOpen, IconFile, IconFileText, IconGlobe } from "./icons.jsx";
 
 const MATERIAL_TYPE_LABELS = {
@@ -68,8 +70,20 @@ export default function SearchPanel({
     const [globalMode, setGlobalMode] = useState(false);
     const [materialType, setMaterialType] = useState("");
     const [summaries, setSummaries] = useState({});
+    const [section, setSection] = useState(""); // "" = todas | "-1" = sin asignar | número = sección real
+    const [sections, setSections] = useState([]);
 
     const effectiveGlobal = scopeOverride !== undefined ? scopeOverride : globalMode;
+
+    useEffect(() => {
+        let cancelled = false;
+        listCourseSections(courseId).then((list) => {
+            if (!cancelled) setSections(list || []);
+        }).catch(() => {
+            if (!cancelled) setSections([]);
+        });
+        return () => { cancelled = true; };
+    }, [courseId]);
 
     const L = lang === "es" ? {
         placeholder:  "Buscá en el material del curso...",
@@ -77,6 +91,8 @@ export default function SearchPanel({
         scopeCourse:  "Este curso",
         scopeGlobal:  "Todos mis cursos",
         typeAll:      "Todos",
+        sectionAll:   "Todas las unidades",
+        sectionUnassigned: "Sin unidad asignada",
         noResults:    (q) => `No se encontraron resultados para "${q}".`,
         error:        "No se pudo realizar la búsqueda. Intentá de nuevo.",
         openFile:        "Abrir ↗",
@@ -90,6 +106,8 @@ export default function SearchPanel({
         scopeCourse:  "This course",
         scopeGlobal:  "All my courses",
         typeAll:      "All",
+        sectionAll:   "All sections",
+        sectionUnassigned: "Unassigned",
         noResults:    (q) => `No results found for "${q}".`,
         error:        "Search failed. Please try again.",
         openFile:        "Open ↗",
@@ -104,7 +122,14 @@ export default function SearchPanel({
         setError(null);
         setLastQuery(q);
         try {
-            const data = await searchMaterial({ query: q, courseId, global: effectiveGlobal, materialType });
+            const data = await searchMaterial({
+                query: q,
+                courseId,
+                global: effectiveGlobal,
+                materialType,
+                section: section === "" || section === "-1" ? null : Number(section),
+                sectionUnassigned: section === "-1",
+            });
             setResults(data);
         } catch {
             setError(L.error);
@@ -145,6 +170,12 @@ export default function SearchPanel({
         } catch {
             setSummaries(prev => ({ ...prev, [documentId]: { loading: false, text: null, error: L.summaryError, visible: true } }));
         }
+    };
+
+    const changeSection = (value) => {
+        setSection(value);
+        setResults(null);
+        setError(null);
     };
 
     const openDownload = (filename, resultCourseId) => {
@@ -221,6 +252,21 @@ export default function SearchPanel({
                     </button>
                 ))}
             </div>
+
+            {!effectiveGlobal && sections.length > 0 && (
+                <select
+                    className="nexusai-search__sectionselect"
+                    value={section}
+                    onChange={(e) => changeSection(e.target.value)}
+                    aria-label={L.sectionAll}
+                >
+                    <option value="">{L.sectionAll}</option>
+                    <option value="-1">{L.sectionUnassigned}</option>
+                    {sections.map((s) => (
+                        <option key={s.section} value={s.section}>{s.name}</option>
+                    ))}
+                </select>
+            )}
 
             {error && (
                 <div className="nexusai-error" role="alert">

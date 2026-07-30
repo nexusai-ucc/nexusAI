@@ -28,4 +28,9 @@ $callbacks = [
         'callback' => [\local_nexusai\hook\output\before_footer_listener::class, 'callback'],
         'priority' => 0,
     ],
+    [
+        'hook'     => \core\hook\navigation\primary_extend::class,
+        'callback' => [\local_nexusai\hook\navigation\primary_extend_listener::class, 'callback'],
+        'priority' => 0,
+    ],
 ];
