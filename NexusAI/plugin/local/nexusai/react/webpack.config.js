@@ -41,8 +41,15 @@ module.exports = (env, argv) => {
             filename: '[name].min.js',
             // 'amd' = AMDjs / RequireJS. Moodle lo carga con `js_call_amd()`.
             libraryTarget: 'amd',
-            // Limpiar el directorio antes de cada build, así no quedan archivos viejos.
-            clean: true,
+            // Limpiar SOLO los bundles que arma este webpack, no todo amd/build/:
+            // ese directorio también contiene módulos AMD planos compilados aparte
+            // con `grunt amd` (nav-trigger.js, upload-prompt.js, forum-*.js) — con
+            // `clean: true` a secas, cada `npm run build` los borraba sin avisar
+            // (bug real, encontrado en UX-02: el ícono de la navbar dejaba de
+            // andar después de cualquier rebuild del bundle de React).
+            clean: {
+                keep: /^(?!chatwidget-lazy\.min\.js|documents-manager-lazy\.min\.js).*$/,
+            },
             // publicPath para chunks lazy. Sin esto, Webpack los carga relativo
             // a la URL del último script ejecutado — que en Moodle puede ser MathJax
             // u otro CDN, rompiendo todo. Forzamos que cualquier chunk se busque

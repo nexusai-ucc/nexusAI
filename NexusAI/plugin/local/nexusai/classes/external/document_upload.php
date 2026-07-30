@@ -35,6 +35,9 @@ class document_upload extends \external_api {
             'filename'    => new \external_value(PARAM_FILE, 'Nombre del archivo (con extensión)', VALUE_REQUIRED),
             'mimetype'    => new \external_value(PARAM_RAW, 'MIME type detectado por el browser', VALUE_REQUIRED),
             'content_b64' => new \external_value(PARAM_RAW, 'Contenido binario en base64', VALUE_REQUIRED),
+            'section'     => new \external_value(
+                PARAM_INT, 'Sección/unidad del curso (-1 = no asignada, BUS-05)', VALUE_OPTIONAL, -1
+            ),
         ]);
     }
 
@@ -45,6 +48,7 @@ class document_upload extends \external_api {
             'uploader_id'   => new \external_value(PARAM_INT, 'ID del docente que subió'),
             'filename'      => new \external_value(PARAM_RAW, 'Nombre del archivo'),
             'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
+            'section'       => new \external_value(PARAM_INT, 'Sección asignada', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
             'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si status=error', VALUE_OPTIONAL),
         ]);
@@ -67,9 +71,12 @@ class document_upload extends \external_api {
      * @param string $filename    Nombre del archivo subido.
      * @param string $mimetype    MIME type: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML o TXT.
      * @param string $contentb64  Contenido binario del archivo en base64.
+     * @param int    $section     Sección/unidad del curso (-1 = no asignada, BUS-05).
      * @return array Document state después del upload.
      */
-    public static function execute(int $courseid, string $filename, string $mimetype, string $contentb64): array {
+    public static function execute(
+        int $courseid, string $filename, string $mimetype, string $contentb64, int $section = -1
+    ): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -77,6 +84,7 @@ class document_upload extends \external_api {
             'filename'    => $filename,
             'mimetype'    => $mimetype,
             'content_b64' => $contentb64,
+            'section'     => $section,
         ]);
 
         // Validar contexto del curso + capability manage.
@@ -115,6 +123,9 @@ class document_upload extends \external_api {
         // Validar magic bytes según tipo MIME declarado.
         self::validate_magic_bytes($filebytes, $params['mimetype']);
 
+        // -1 = el docente no eligió sección (BUS-05) → se envía null al backend.
+        $section = $params['section'] >= 0 ? (int) $params['section'] : null;
+
         // POST al backend con HMAC. El cliente backend re-encodea a base64
         // (sí, doble encode/decode, pero el contrato del backend está en
         // services/api/app/documents/router.py y queda más limpio así).
@@ -124,7 +135,8 @@ class document_upload extends \external_api {
             (int) $USER->id,  // SIEMPRE del server, no del cliente
             $params['filename'],
             $params['mimetype'],
-            $filebytes
+            $filebytes,
+            $section
         );
 
         // Validar shape de la respuesta.
@@ -135,12 +147,19 @@ class document_upload extends \external_api {
             );
         }
 
+        // CAL-03 (issue #239): notificar a los usuarios del curso que hay
+        // material nuevo. Best-effort — nunca puede romper la respuesta del upload.
+        \local_nexusai\notifier::notify_new_material(
+            (int) $params['courseid'], $params['filename'], (int) $USER->id
+        );
+
         return [
             'id'            => (string) $response['id'],
             'course_id'     => (int) $response['course_id'],
             'uploader_id'   => (int) $response['uploader_id'],
             'filename'      => (string) $response['filename'],
             'mime_type'     => (string) $response['mime_type'],
+            'section'       => isset($response['section']) ? (int) $response['section'] : null,
             'status'        => (string) $response['status'],
             'error_message' => $response['error_message'] ?? null,
         ];

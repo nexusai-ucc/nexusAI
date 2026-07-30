@@ -57,9 +57,9 @@ function is422(err) {
     return msg.includes("422");
 }
 
-export default function QuizPanel({ courseId, lang = "es" }) {
+export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) {
     const [stage, setStage] = useState("setup"); // setup | loading | playing | finished | error
-    const [topic, setTopic] = useState("");
+    const [topic, setTopic] = useState(initialTopic);
     const [numQuestions, setNumQuestions] = useState(5);
     const [questionType, setQuestionType] = useState("multiple_choice");
     const [difficulty, setDifficulty] = useState("medium");

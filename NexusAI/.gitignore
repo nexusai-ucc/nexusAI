@@ -63,7 +63,10 @@ yarn-error.log*
 *.tsbuildinfo
 
 # Bundle de React: se commitea por convención Moodle, NO ignorar
-# !plugin/local/nexusai/amd/build/
+# (la regla `build/` de la sección Python de arriba lo tapaba sin que nadie
+# lo notara — ningún archivo de amd/build/ estuvo trackeado en git hasta ahora)
+!plugin/local/nexusai/amd/build/
+!plugin/local/nexusai/amd/build/**
 
 # Source maps (excepto en bundle de prod si los queremos)
 *.map
