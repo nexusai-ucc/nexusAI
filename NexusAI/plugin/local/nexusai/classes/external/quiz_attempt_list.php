@@ -35,11 +35,12 @@ class quiz_attempt_list extends \external_api {
             'items'     => new \external_multiple_structure(
                 new \external_single_structure([
                     'id'              => new \external_value(PARAM_RAW,          'UUID del intento'),
-                    'question_type'   => new \external_value(PARAM_ALPHANUMEXT,  'Tipo de quiz'),
+                    'question_type'   => new \external_value(PARAM_ALPHANUMEXT,  'Tipo de quiz (opcional)', VALUE_OPTIONAL, null, NULL_ALLOWED),
                     'difficulty'      => new \external_value(PARAM_ALPHA,        'Dificultad'),
                     'topic'           => new \external_value(PARAM_RAW,          'Tema (opcional)', VALUE_OPTIONAL, null, NULL_ALLOWED),
                     'total_questions' => new \external_value(PARAM_INT,          'Total de preguntas'),
-                    'correct_count'   => new \external_value(PARAM_INT,          'Respuestas correctas'),
+                    'correct_answers' => new \external_value(PARAM_INT,          'Respuestas correctas'),
+                    'score'           => new \external_value(PARAM_FLOAT,        'Score 0.0-1.0 calculado server-side'),
                     'created_at'      => new \external_value(PARAM_RAW,          'ISO timestamp'),
                 ])
             ),
@@ -72,11 +73,12 @@ class quiz_attempt_list extends \external_api {
                 static function (array $i): array {
                     return [
                         'id'              => (string) ($i['id'] ?? ''),
-                        'question_type'   => (string) ($i['question_type'] ?? 'multiple_choice'),
+                        'question_type'   => isset($i['question_type']) ? (string) $i['question_type'] : null,
                         'difficulty'      => (string) ($i['difficulty'] ?? 'medium'),
                         'topic'           => isset($i['topic']) ? (string) $i['topic'] : null,
                         'total_questions' => (int) ($i['total_questions'] ?? 0),
-                        'correct_count'   => (int) ($i['correct_count'] ?? 0),
+                        'correct_answers' => (int) ($i['correct_answers'] ?? 0),
+                        'score'           => (float) ($i['score'] ?? 0.0),
                         'created_at'      => (string) ($i['created_at'] ?? ''),
                     ];
                 },
