@@ -64,7 +64,12 @@ $string['upload_prompt_no']      = 'Not now';
 $string['upload_prompt_success'] = '"{$a}" was successfully added to NexusAI.';
 $string['upload_prompt_error']   = 'Could not index the file in NexusAI. You can try again from the materials section.';
 
-// Notifications — new material uploaded (CAL-03, issue #239).
+// CAL-02 — Calendar alerts.
+$string['messageprovider:cal_alert'] = 'NexusAI calendar alerts';
+$string['cal_alert_subject']         = 'Reminder: {$a}';
+$string['cal_alert_body']            = 'Your event "{$a}" is coming up soon. Check the course calendar in NexusAI.';
+
+// CAL-03 — New material uploaded to course notification (issue #239).
 $string['messageprovider:newmaterial'] = 'New material uploaded to a course';
 $string['newmaterial_subject']         = 'New material in {$a}';
 $string['newmaterial_body']            = 'A new file "{$a->filename}" was uploaded to {$a->course}. You can already ask the NexusAI assistant about it.';
