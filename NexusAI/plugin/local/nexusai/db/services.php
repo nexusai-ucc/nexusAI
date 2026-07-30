@@ -169,6 +169,29 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Historial de quizzes — guarda el resultado de un quiz completado (SP-09).
+    'local_nexusai_quiz_attempt_save' => [
+        'classname'     => '\local_nexusai\external\quiz_attempt_save',
+        'methodname'    => 'execute',
+        'description'   => 'Persist the result of a completed quiz attempt for the current student.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Historial de quizzes — lista el historial del alumno en un curso (SP-09).
+    'local_nexusai_quiz_attempt_list' => [
+        'classname'     => '\local_nexusai\external\quiz_attempt_list',
+        'methodname'    => 'execute',
+        'description'   => 'List the quiz history of the current student in a course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Plan de estudio personalizado — combina errores de quiz y gaps del chat (STUDY-01).
     'local_nexusai_quiz_study_plan' => [
         'classname'     => '\local_nexusai\external\quiz_study_plan',
         'methodname'    => 'execute',
