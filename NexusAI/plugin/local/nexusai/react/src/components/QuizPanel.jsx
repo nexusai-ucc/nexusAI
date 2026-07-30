@@ -752,7 +752,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 {!historyLoading && !historyError && historyItems.length > 0 && (
                     <div className="nexusai-quiz__history-list">
                         {historyItems.map((item) => {
-                            const pct = Math.round((item.correct_count / item.total_questions) * 100);
+                            const pct = Math.round((item.correct_answers / item.total_questions) * 100);
                             const pctMod = pct >= 80 ? "good" : pct >= 50 ? "mid" : "low";
                             return (
                                 <div key={item.id} className="nexusai-quiz__history-card">
@@ -768,7 +768,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                                     {item.topic && <p className="nexusai-quiz__history-topic">{item.topic}</p>}
                                     <div className="nexusai-quiz__history-score-row">
                                         <div className="nexusai-quiz__history-fraction">
-                                            <span className="nexusai-quiz__history-correct">{item.correct_count}</span>
+                                            <span className="nexusai-quiz__history-correct">{item.correct_answers}</span>
                                             <span className="nexusai-quiz__history-slash"> / </span>
                                             <span className="nexusai-quiz__history-total">{item.total_questions}</span>
                                         </div>

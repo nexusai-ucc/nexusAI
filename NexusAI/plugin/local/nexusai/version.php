@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026073003;        // CAL-02 (alertas de calendario) + SP-04/SP-09 + BUS-03 + base post-CAL-03.
-$plugin->release   = '0.10.3';           // Alertas configurables de calendario por el alumno (CAL-02).
+$plugin->version   = 2026073004;        // ANALYTICS-01 (dashboard docente) + CAL-02 + SP-04/SP-09 + BUS-03.
+$plugin->release   = '0.10.4';           // Alertas configurables de calendario por el alumno (CAL-02).
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

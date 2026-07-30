@@ -215,15 +215,16 @@ class UnansweredQuestion(Base):
 
 
 class QuizAttempt(Base):
-    """Intento completado de quiz (SP-09 — historial por alumno).
+    """Intento completado de quiz (SP-09 + ANALYTICS-01).
 
-    Registra cada sesión de quiz que el alumno finaliza: tipo de pregunta,
-    dificultad, puntaje y fecha. Permite mostrar el historial de práctica
-    y detectar tendencias de estudio a lo largo del tiempo.
+    Registra cada sesión de quiz que el alumno finaliza. Sirve para:
+    - SP-09: historial de práctica del alumno (question_type, difficulty, topic).
+    - ANALYTICS-01: histograma de puntajes por curso para el dashboard docente (score).
     """
     __tablename__ = "quiz_attempts"
     __table_args__ = (
         Index("ix_quiz_attempts_user_id_course_id_created_at", "user_id", "course_id", "created_at"),
+        Index("ix_quiz_attempts_course_id_created_at", "course_id", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -231,11 +232,12 @@ class QuizAttempt(Base):
     )
     course_id: Mapped[int] = mapped_column(Integer, nullable=False)
     user_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    question_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    question_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     difficulty: Mapped[str] = mapped_column(String(10), nullable=False, default="medium")
     topic: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     total_questions: Mapped[int] = mapped_column(Integer, nullable=False)
-    correct_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    correct_answers: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

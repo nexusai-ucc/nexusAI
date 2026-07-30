@@ -238,19 +238,27 @@ class ReviewSuggestionsResponse(BaseModel):
 
 
 class RecordAttemptRequest(BaseModel):
-    """Intento de quiz completado por el alumno (SP-09)."""
+    """Intento de quiz completado por el alumno (SP-09 + ANALYTICS-01)."""
     course_id: int = Field(gt=0)
     user_id: int = Field(gt=0)
-    question_type: str = Field(max_length=20)
+    question_type: Optional[str] = Field(default=None, max_length=20)
     difficulty: str = Field(default="medium", max_length=10)
     topic: Optional[str] = Field(default=None, max_length=200)
-    total_questions: int = Field(ge=1, le=10)
-    correct_count: int = Field(ge=0)
+    total_questions: int = Field(ge=1, le=50)
+    correct_answers: int = Field(ge=0, le=50)
+
+    @field_validator("correct_answers")
+    @classmethod
+    def check_correct_not_greater_than_total(cls, v: int, info) -> int:
+        total = info.data.get("total_questions")
+        if total is not None and v > total:
+            raise ValueError("correct_answers no puede ser mayor que total_questions")
+        return v
 
 
 class RecordAttemptResponse(BaseModel):
     id: str
-    created_at: datetime
+    score: float
 
 
 class AttemptsListRequest(BaseModel):
@@ -262,11 +270,12 @@ class AttemptsListRequest(BaseModel):
 
 class AttemptItem(BaseModel):
     id: str
-    question_type: str
+    question_type: Optional[str]
     difficulty: str
     topic: Optional[str]
     total_questions: int
-    correct_count: int
+    correct_answers: int
+    score: float
     created_at: datetime
 
 
@@ -1155,12 +1164,14 @@ async def record_quiz_attempt(
     _body: Annotated[bytes, Depends(verify_hmac)],
     db: AsyncSession = Depends(get_db),
 ) -> RecordAttemptResponse:
-    """Persiste el resultado de un quiz completado por el alumno (SP-09).
+    """Persiste el resultado de un quiz completado por el alumno (SP-09 + ANALYTICS-01).
 
-    Llamado best-effort desde el frontend al llegar a la pantalla de
-    resultado final. Registra tipo, dificultad, tema y puntaje para
-    mostrar el historial de práctica del alumno.
+    SP-09: registra tipo, dificultad y tema para el historial del alumno.
+    ANALYTICS-01: score calculado server-side (correct_answers/total_questions)
+    para el histograma del dashboard docente — nunca se confía en un score
+    enviado por el cliente.
     """
+    score = round(payload.correct_answers / payload.total_questions, 4)
     row = QuizAttempt(
         course_id=payload.course_id,
         user_id=payload.user_id,
@@ -1168,12 +1179,12 @@ async def record_quiz_attempt(
         difficulty=payload.difficulty,
         topic=payload.topic,
         total_questions=payload.total_questions,
-        correct_count=min(payload.correct_count, payload.total_questions),
+        correct_answers=payload.correct_answers,
+        score=score,
     )
     db.add(row)
     await db.commit()
-    await db.refresh(row)
-    return RecordAttemptResponse(id=str(row.id), created_at=row.created_at)
+    return RecordAttemptResponse(id=str(row.id), score=score)
 
 
 @router.post("/attempts/list", response_model=AttemptsListResponse)
@@ -1203,7 +1214,8 @@ async def list_quiz_attempts(
             difficulty=r.difficulty,
             topic=r.topic,
             total_questions=r.total_questions,
-            correct_count=r.correct_count,
+            correct_answers=r.correct_answers,
+            score=r.score,
             created_at=r.created_at,
         )
         for r in rows

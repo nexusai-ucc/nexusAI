@@ -302,8 +302,8 @@ export async function listQuizAttempts(courseId, days = 90, limit = 20) {
             course_id: courseId,
             total: 2,
             items: [
-                { id: "mock-1", question_type: "multiple_choice", difficulty: "medium", topic: null,         total_questions: 5, correct_count: 4, created_at: new Date(Date.now() - 86400000).toISOString() },
-                { id: "mock-2", question_type: "flashcard",       difficulty: "easy",   topic: "Fotosíntesis", total_questions: 3, correct_count: 2, created_at: new Date(Date.now() - 3600000).toISOString() },
+                { id: "mock-1", question_type: "multiple_choice", difficulty: "medium", topic: null,            total_questions: 5, correct_answers: 4, score: 0.8,    created_at: new Date(Date.now() - 86400000).toISOString() },
+                { id: "mock-2", question_type: "flashcard",       difficulty: "easy",   topic: "Fotosíntesis", total_questions: 3, correct_answers: 2, score: 0.6667, created_at: new Date(Date.now() - 3600000).toISOString() },
             ],
         };
     }

@@ -414,7 +414,7 @@ class backend_client {
             'question_type'   => $questiontype,
             'difficulty'      => $difficulty,
             'total_questions' => $totalquestions,
-            'correct_count'   => $correctcount,
+            'correct_answers'   => $correctcount,
         ];
         if ($topic !== null && trim($topic) !== '') {
             $payload['topic'] = trim($topic);
