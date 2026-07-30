@@ -21,7 +21,7 @@
  */
 
 import { useState, useRef } from "react";
-import { generateQuiz, evaluateOpenAnswer, recordQuizErrors } from "../api/quiz.js";
+import { generateQuiz, evaluateOpenAnswer, recordQuizErrors, saveQuizAttempt, listQuizAttempts } from "../api/quiz.js";
 import { IconBook, IconCheck, IconChevronRight, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 
 // ── Persistencia de errores del quiz en el backend (SP-10) ──
@@ -79,6 +79,11 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     // Acumula respuestas incorrectas durante la partida (no causa re-render)
     const wrongAnswersRef = useRef([]);
 
+    // Historial de quizzes (SP-09)
+    const [historyItems, setHistoryItems] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyError, setHistoryError] = useState(null);
+
     const L = lang === "es" ? {
         introTitle:      "Quiz de práctica",
         introText:       "Generá preguntas de práctica sobre el material del curso para repasar.",
@@ -117,6 +122,24 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         showAnswer:      "Ver respuesta",
         flashcardKnew:      "Sabía",
         flashcardDidntKnow: "No sabía",
+        typeFillBlank:      "Completar espacios",
+        fillBlankHint:      "Escribí la palabra que completa el espacio en blanco.",
+        fillBlankPlaceholder: "Escribí la palabra aquí...",
+        historyTitle:       "Historial de quizzes",
+        historyEmpty:       "Todavía no realizaste ningún quiz en este curso.",
+        historyView:        "Ver historial",
+        historyBack:        "Volver al quiz",
+        historyLoading:     "Cargando historial...",
+        historyScore:       (a, b) => `${a}/${b}`,
+        historyTypeMC:      "Opción múltiple",
+        historyTypeTF:      "V/F",
+        historyTypeOpen:    "Preguntas abiertas",
+        historyTypeFlash:   "Flashcards",
+        historyTypeFill:    "Completar espacios",
+        historyTypeMix:     "Mix",
+        historyDiffEasy:    "Fácil",
+        historyDiffMedium:  "Media",
+        historyDiffHard:    "Difícil",
     } : {
         introTitle:      "Practice Quiz",
         introText:       "Generate practice questions from the course material to review.",
@@ -155,6 +178,24 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         showAnswer:      "Show answer",
         flashcardKnew:      "I knew it",
         flashcardDidntKnow: "I didn't know it",
+        typeFillBlank:      "Fill in the blank",
+        fillBlankHint:      "Write the word that completes the blank.",
+        fillBlankPlaceholder: "Write the word here...",
+        historyTitle:       "Quiz history",
+        historyEmpty:       "You haven't completed any quizzes in this course yet.",
+        historyView:        "View history",
+        historyBack:        "Back to quiz",
+        historyLoading:     "Loading history...",
+        historyScore:       (a, b) => `${a}/${b}`,
+        historyTypeMC:      "Multiple choice",
+        historyTypeTF:      "True/False",
+        historyTypeOpen:    "Open questions",
+        historyTypeFlash:   "Flashcards",
+        historyTypeFill:    "Fill in blank",
+        historyTypeMix:     "Mix",
+        historyDiffEasy:    "Easy",
+        historyDiffMedium:  "Medium",
+        historyDiffHard:    "Hard",
     };
 
     const resetQuestionState = () => {
@@ -254,7 +295,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 wrongAnswersRef.current.push({
                     id: `${Date.now()}-${Math.random()}`,
                     timestamp: new Date().toISOString(),
-                    question_type:      "open",
+                    question_type:      q.question_type,
                     question:           q.question,
                     explanation:        q.explanation,
                     source_filename:    q.source_filename,
@@ -277,8 +318,16 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     const next = () => {
         const isLast = currentIdx >= quiz.questions.length - 1;
         if (isLast) {
-            // Persistir errores antes de mostrar el resultado final
+            const correctCount = quiz.questions.length - wrongAnswersRef.current.length;
             persistErrors(courseId, wrongAnswersRef.current);
+            saveQuizAttempt({
+                courseId,
+                questionType: questionType,
+                difficulty,
+                topic: topic || null,
+                totalQuestions: quiz.questions.length,
+                correctCount,
+            }).catch(() => {});
             setStage("finished");
         } else {
             setCurrentIdx((i) => i + 1);
@@ -296,6 +345,20 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         resetQuestionState();
     };
 
+    const openHistory = async () => {
+        setStage("history");
+        setHistoryLoading(true);
+        setHistoryError(null);
+        try {
+            const data = await listQuizAttempts(courseId);
+            setHistoryItems(data.items || []);
+        } catch {
+            setHistoryError("No se pudo cargar el historial. Intentá de nuevo.");
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
+
     // ─── SETUP ───
     if (stage === "setup") {
         const typeOptions = [
@@ -303,6 +366,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
             { key: "true_false",      label: L.typeTF },
             { key: "open",            label: L.typeOpen },
             { key: "flashcard",       label: L.typeFlashcard },
+            { key: "fill_blank",      label: L.typeFillBlank },
             { key: "mix",             label: L.typeMix },
         ];
         const difficultyOptions = [
@@ -375,13 +439,22 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                         ))}
                     </div>
                 </div>
-                <button
-                    type="button"
-                    className="nexusai-quiz__primary"
-                    onClick={start}
-                >
-                    {L.generate}
-                </button>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <button
+                        type="button"
+                        className="nexusai-quiz__primary"
+                        onClick={start}
+                    >
+                        {L.generate}
+                    </button>
+                    <button
+                        type="button"
+                        className="nexusai-quiz__secondary"
+                        onClick={openHistory}
+                    >
+                        {L.historyView}
+                    </button>
+                </div>
             </div>
         );
     }
@@ -418,8 +491,9 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         const q = quiz.questions[currentIdx];
         const total = quiz.questions.length;
         const qType = q.question_type || "multiple_choice";
-        const isOpen = qType === "open";
-        const isTF   = qType === "true_false";
+        const isOpen      = qType === "open";
+        const isFillBlank = qType === "fill_blank";
+        const isTF        = qType === "true_false";
         const isFlashcard = qType === "flashcard";
 
         return (
@@ -439,7 +513,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 <p className="nexusai-quiz__question">{q.question}</p>
 
                 {/* ── Opciones: MC y T/F ── */}
-                {!isOpen && !isFlashcard && (
+                {!isOpen && !isFillBlank && !isFlashcard && (
                     <div className={`nexusai-quiz__options${isTF ? " nexusai-quiz__options--tf" : ""}`}>
                         {q.options.map((opt, i) => {
                             const isCorrect  = i === q.correct_index;
@@ -486,6 +560,22 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     </div>
                 )}
 
+                {/* ── Input: completar espacios en blanco (SP-04) ── */}
+                {isFillBlank && (
+                    <div className="nexusai-quiz__open-area">
+                        <p className="nexusai-quiz__open-hint">{L.fillBlankHint}</p>
+                        <input
+                            type="text"
+                            className="nexusai-quiz__input"
+                            placeholder={L.fillBlankPlaceholder}
+                            value={openAnswer}
+                            onChange={(e) => setOpenAnswer(e.target.value)}
+                            disabled={reveal || evaluating}
+                            onKeyDown={(e) => { if (e.key === "Enter" && openAnswer.trim() && !reveal && !evaluating) verifyOpen(); }}
+                        />
+                    </div>
+                )}
+
                 {/* ── Dorso de la flashcard ── */}
                 {isFlashcard && reveal && (
                     <div className="nexusai-quiz__feedback nexusai-quiz__feedback--flashcard">
@@ -502,18 +592,18 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 {/* ── Feedback después de verificar ── */}
                 {reveal && !isFlashcard && (
                     <div className={`nexusai-quiz__feedback ${
-                        isOpen
+                        (isOpen || isFillBlank)
                             ? (evaluation?.correct ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong")
                             : (selectedIdx === q.correct_index ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong")
                     }`}>
                         <strong className="nexusai-quiz__feedback-title">
-                            {(isOpen ? evaluation?.correct : selectedIdx === q.correct_index)
+                            {((isOpen || isFillBlank) ? evaluation?.correct : selectedIdx === q.correct_index)
                                 ? <><IconCheck size={14} /> {L.correct}</>
                                 : <><IconX size={14} /> {L.wrong}</>
                             }
                         </strong>
                         <p className="nexusai-quiz__explanation">
-                            {isOpen ? evaluation?.feedback : q.explanation}
+                            {(isOpen || isFillBlank) ? evaluation?.feedback : q.explanation}
                         </p>
                         {q.source_filename && (
                             <p className="nexusai-quiz__source">
@@ -554,7 +644,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                             </div>
                         )
                     ) : !reveal ? (
-                        isOpen ? (
+                        (isOpen || isFillBlank) ? (
                             <button
                                 type="button"
                                 className="nexusai-quiz__primary"
@@ -608,6 +698,96 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 </div>
                 <button type="button" className="nexusai-quiz__primary" onClick={resetAll}>
                     {L.again}
+                </button>
+            </div>
+        );
+    }
+
+    // ─── HISTORY (SP-09) ───
+    if (stage === "history") {
+        const typeLabel = (qt) => ({
+            multiple_choice: L.historyTypeMC,
+            true_false:      L.historyTypeTF,
+            open:            L.historyTypeOpen,
+            flashcard:       L.historyTypeFlash,
+            fill_blank:      L.historyTypeFill,
+            mix:             L.historyTypeMix,
+        }[qt] || qt);
+
+        const diffLabel = (d) => ({
+            easy:   L.historyDiffEasy,
+            medium: L.historyDiffMedium,
+            hard:   L.historyDiffHard,
+        }[d] || d);
+
+        const fmtDate = (iso) => {
+            try {
+                return new Date(iso).toLocaleDateString(lang === "es" ? "es-AR" : "en-US", {
+                    day: "numeric", month: "short", year: "numeric",
+                });
+            } catch { return iso; }
+        };
+
+        return (
+            <div className="nexusai-quiz">
+                <div className="nexusai-quiz__intro">
+                    <h4 className="nexusai-quiz__intro-title">{L.historyTitle}</h4>
+                </div>
+
+                {historyLoading && (
+                    <div className="nexusai-quiz nexusai-quiz--center">
+                        <div className="nexusai-quiz__spinner" />
+                        <p className="nexusai-quiz__loading-text">{L.historyLoading}</p>
+                    </div>
+                )}
+
+                {historyError && (
+                    <p className="nexusai-error__text">{historyError}</p>
+                )}
+
+                {!historyLoading && !historyError && historyItems.length === 0 && (
+                    <p className="nexusai-quiz__intro-text">{L.historyEmpty}</p>
+                )}
+
+                {!historyLoading && !historyError && historyItems.length > 0 && (
+                    <div className="nexusai-quiz__history-list">
+                        {historyItems.map((item) => {
+                            const pct = Math.round((item.correct_count / item.total_questions) * 100);
+                            const pctMod = pct >= 80 ? "good" : pct >= 50 ? "mid" : "low";
+                            return (
+                                <div key={item.id} className="nexusai-quiz__history-card">
+                                    <div className="nexusai-quiz__history-header">
+                                        <div className="nexusai-quiz__history-badges">
+                                            <span className="nexusai-quiz__history-type">{typeLabel(item.question_type)}</span>
+                                            <span className={`nexusai-quiz__history-diff nexusai-quiz__history-diff--${item.difficulty}`}>
+                                                {diffLabel(item.difficulty)}
+                                            </span>
+                                        </div>
+                                        <span className="nexusai-quiz__history-date">{fmtDate(item.created_at)}</span>
+                                    </div>
+                                    {item.topic && <p className="nexusai-quiz__history-topic">{item.topic}</p>}
+                                    <div className="nexusai-quiz__history-score-row">
+                                        <div className="nexusai-quiz__history-fraction">
+                                            <span className="nexusai-quiz__history-correct">{item.correct_count}</span>
+                                            <span className="nexusai-quiz__history-slash"> / </span>
+                                            <span className="nexusai-quiz__history-total">{item.total_questions}</span>
+                                        </div>
+                                        <span className={`nexusai-quiz__history-pct nexusai-quiz__history-pct--${pctMod}`}>{pct}%</span>
+                                    </div>
+                                    <div className="nexusai-quiz__history-bar">
+                                        <div
+                                            className={`nexusai-quiz__history-bar-fill nexusai-quiz__history-bar-fill--${pctMod}`}
+                                            style={{ width: `${pct}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                <button type="button" className="nexusai-quiz__secondary" onClick={resetAll} style={{ marginTop: "12px" }}>
+                    {L.historyBack}
                 </button>
             </div>
         );
