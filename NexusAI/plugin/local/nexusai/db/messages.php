@@ -2,11 +2,11 @@
 // This file is part of the NexusAI plugin for Moodle.
 
 /**
- * Message providers for local_nexusai.
+ * Message providers (tipos de notificación) de local_nexusai.
  *
- * Registra los proveedores de mensajes nativos de Moodle para que los alumnos
- * puedan configurar sus preferencias de notificación (email, popup, etc.)
- * en Preferencias → Notificaciones de Moodle.
+ * Registra los tipos de notificación nativos de Moodle: CAL-02 (alertas de
+ * calendario configuradas por el alumno) y CAL-03 (material nuevo subido al
+ * curso). Aparecen en Preferencias del usuario → Notificaciones.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -20,7 +20,8 @@ $messageproviders = [
     'cal_alert' => [
         'capability' => 'local/nexusai:use',
     ],
-    // CAL-03 — notificación a alumnos cuando un docente sube material nuevo.
+
+    // CAL-03 — se dispara cuando un docente sube material nuevo al curso.
     'newmaterial' => [
         'defaults' => [
             'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF,
