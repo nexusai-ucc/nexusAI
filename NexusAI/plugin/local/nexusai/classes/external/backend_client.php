@@ -757,6 +757,81 @@ class backend_client {
         $this->delete('/api/v1/documents/' . $documentid);
     }
 
+    // ----------------------------------------------------------------
+    // CAL-02 — Alertas de calendario configurables por el alumno
+    // ----------------------------------------------------------------
+
+    /**
+     * Upsert de alerta de calendario. days_before=0 elimina la alerta.
+     *
+     * @param int    $userid         $USER->id real.
+     * @param int    $courseid       ID del curso.
+     * @param int    $eventid        ID del evento en Moodle.
+     * @param string $eventname      Nombre del evento (guardado para el cron).
+     * @param int    $eventtimestamp Unix timestamp del evento.
+     * @param int    $daysbefore     0 = sin alerta, 1, 3 o 7 días antes.
+     * @return array{id:string|null, days_before:int}
+     */
+    public function save_calendar_alert(int $userid, int $courseid, int $eventid, string $eventname, int $eventtimestamp, int $daysbefore): array {
+        $payload = [
+            'user_id'         => $userid,
+            'course_id'       => $courseid,
+            'event_id'        => $eventid,
+            'event_name'      => $eventname,
+            'event_timestamp' => $eventtimestamp,
+            'days_before'     => $daysbefore,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/calendar/alerts/save', $body);
+    }
+
+    /**
+     * Lista las alertas activas del alumno en el curso.
+     *
+     * @param int $userid   $USER->id real.
+     * @param int $courseid ID del curso.
+     * @return array{alerts:array}
+     */
+    public function list_calendar_alerts(int $userid, int $courseid): array {
+        $payload = [
+            'user_id'   => $userid,
+            'course_id' => $courseid,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/calendar/alerts/list', $body);
+    }
+
+    /**
+     * Obtiene todas las alertas vencidas globalmente (llamado por el cron).
+     *
+     * @return array{alerts:array}
+     */
+    public function get_due_calendar_alerts(): array {
+        $body = '{}';
+        return $this->post('/api/v1/calendar/alerts/due', $body);
+    }
+
+    /**
+     * Marca una alerta como ya notificada para que el cron no la reenvíe.
+     *
+     * @param string $alertid UUID de la alerta.
+     * @return array{ok:bool}
+     */
+    public function mark_calendar_alert_notified(string $alertid): array {
+        $payload = ['alert_id' => $alertid];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/calendar/alerts/mark-notified', $body);
+    }
+
     /**
      * GET autenticado con HMAC. Body firmado = string vacío.
      *
@@ -813,7 +888,10 @@ class backend_client {
         // automáticamente la config de proxy / blocked hosts del sitio.
         // ignoresecurity=true es necesario para que el backend interno (localhost /
         // host.docker.internal) no sea rechazado por la protección anti-SSRF de Moodle.
-        require_once($GLOBALS['CFG']->libdir . '/filelib.php');
+        // global $CFG es necesario para que filelib.php lo encuentre en scope al ser
+        // incluido dentro de este método.
+        global $CFG;
+        require_once($CFG->libdir . '/filelib.php');
         $curl = new \curl(['ignoresecurity' => true]);
         $curl->setHeader([
             'Content-Type: application/json',

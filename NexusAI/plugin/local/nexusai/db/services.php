@@ -226,6 +226,30 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // ----- CALENDARIO — CAL-02 -----
+
+    // Guarda / actualiza la alerta de un evento de calendario para el alumno.
+    'local_nexusai_calendar_alert_save' => [
+        'classname'     => '\local_nexusai\external\calendar_alert_save',
+        'methodname'    => 'execute',
+        'description'   => 'Save or update a calendar event alert for the current student.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Lista las alertas activas del alumno en el curso.
+    'local_nexusai_calendar_alerts_list' => [
+        'classname'     => '\local_nexusai\external\calendar_alerts_list',
+        'methodname'    => 'execute',
+        'description'   => 'List active calendar event alerts for the current student in a course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- FOROS — Épica 06 -----
 
     // Detecta posts similares al texto que el alumno está escribiendo (F-07).
