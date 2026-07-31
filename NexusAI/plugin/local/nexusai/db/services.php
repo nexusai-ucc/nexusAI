@@ -37,6 +37,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Resumen automático de un documento indexado usando el LLM (BUS-03).
+    'local_nexusai_document_summarize' => [
+        'classname'     => '\local_nexusai\external\document_summarize',
+        'methodname'    => 'execute',
+        'description'   => 'Generate an AI summary of an indexed course document (BUS-03).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Búsqueda semántica en el material del curso (retrieval sin LLM — Feature A).
     'local_nexusai_search_query' => [
         'classname'     => '\local_nexusai\external\search_query',
@@ -158,6 +169,29 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Historial de quizzes — guarda el resultado de un quiz completado (SP-09).
+    'local_nexusai_quiz_attempt_save' => [
+        'classname'     => '\local_nexusai\external\quiz_attempt_save',
+        'methodname'    => 'execute',
+        'description'   => 'Persist the result of a completed quiz attempt for the current student.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Historial de quizzes — lista el historial del alumno en un curso (SP-09).
+    'local_nexusai_quiz_attempt_list' => [
+        'classname'     => '\local_nexusai\external\quiz_attempt_list',
+        'methodname'    => 'execute',
+        'description'   => 'List the quiz history of the current student in a course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Plan de estudio personalizado — combina errores de quiz y gaps del chat (STUDY-01).
     'local_nexusai_quiz_study_plan' => [
         'classname'     => '\local_nexusai\external\quiz_study_plan',
         'methodname'    => 'execute',
@@ -189,6 +223,42 @@ $functions = [
         'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    // Dashboard agregado: top queries, uso diario, distribución de puntajes
+    // de quiz y ratio de gaps (ANALYTICS-01/02). Solo docentes/admins.
+    'local_nexusai_analytics_dashboard' => [
+        'classname'     => '\local_nexusai\external\analytics_dashboard',
+        'methodname'    => 'execute',
+        'description'   => 'Aggregated course analytics dashboard (teacher view).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    // ----- CALENDARIO — CAL-02 -----
+
+    // Guarda / actualiza la alerta de un evento de calendario para el alumno.
+    'local_nexusai_calendar_alert_save' => [
+        'classname'     => '\local_nexusai\external\calendar_alert_save',
+        'methodname'    => 'execute',
+        'description'   => 'Save or update a calendar event alert for the current student.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Lista las alertas activas del alumno en el curso.
+    'local_nexusai_calendar_alerts_list' => [
+        'classname'     => '\local_nexusai\external\calendar_alerts_list',
+        'methodname'    => 'execute',
+        'description'   => 'List active calendar event alerts for the current student in a course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
         'loginrequired' => true,
     ],
 

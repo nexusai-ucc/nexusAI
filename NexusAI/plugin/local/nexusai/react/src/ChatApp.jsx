@@ -18,7 +18,7 @@
  *   - lang:      'es' | 'en'
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
@@ -154,12 +154,44 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [multiCourse, setMultiCourse] = useState(false);
     const [activeTab, setActiveTab] = useState("chat"); // "chat" | "study" | "calendar" | "search"
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [panelSize, setPanelSize] = useState({ width: 400, height: 600 });
     const [navOpen, setNavOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
     const widgetRef = useRef(null);
     const panelRef = useRef(null);
+
+    const startResize = useCallback((e, corner) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startW = panelSize.width;
+        const startH = panelSize.height;
+        const minW = 320, maxW = window.innerWidth - 48;
+        const minH = 400, maxH = window.innerHeight - 120;
+
+        const onMove = (ev) => {
+            const dx = ev.clientX - startX;
+            const dy = ev.clientY - startY;
+            let w = startW, h = startH;
+            if (corner === "n") h = startH - dy;
+            if (corner === "s") h = startH + dy;
+            if (corner === "w") w = startW - dx;
+            if (corner === "e") w = startW + dx;
+            setPanelSize({
+                width:  Math.max(minW, Math.min(maxW, w)),
+                height: Math.max(minH, Math.min(maxH, h)),
+            });
+        };
+        const onUp = () => {
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseup", onUp);
+        };
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+    }, [panelSize]);
 
     useEffect(() => {
         if (!open) return;
@@ -341,7 +373,18 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     return (
         <div className="nexusai-widget" ref={widgetRef}>
             {open && (
-                <div className="nexusai-panel" ref={panelRef} role="dialog" aria-labelledby="nexusai-title">
+                <div
+                    className="nexusai-panel"
+                    ref={panelRef}
+                    role="dialog"
+                    aria-labelledby="nexusai-title"
+                    style={{ width: panelSize.width, height: panelSize.height }}
+                >
+                    {/* Handles de resize en los 4 bordes */}
+                    <div className="nexusai-resize-handle nexusai-resize-handle--n" onMouseDown={(e) => startResize(e, "n")} />
+                    <div className="nexusai-resize-handle nexusai-resize-handle--s" onMouseDown={(e) => startResize(e, "s")} />
+                    <div className="nexusai-resize-handle nexusai-resize-handle--w" onMouseDown={(e) => startResize(e, "w")} />
+                    <div className="nexusai-resize-handle nexusai-resize-handle--e" onMouseDown={(e) => startResize(e, "e")} />
 
                     {/* Header */}
                     <header className="nexusai-panel__header">

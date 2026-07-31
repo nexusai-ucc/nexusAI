@@ -237,6 +237,20 @@ class backend_client {
     }
 
     /**
+     * Dashboard agregado de métricas de un curso para el docente (ANALYTICS-01/02):
+     * top queries, uso diario, distribución de puntajes de quiz y ratio de gaps.
+     *
+     * @param int $courseid ID del curso.
+     * @param int $days     Ventana temporal (1..365).
+     * @return array{course_id:int, period_days:int, top_queries:array,
+     *               daily_message_counts:array, quiz_score_distribution:array,
+     *               gaps_ratio:array}
+     */
+    public function analytics_dashboard(int $courseid, int $days = 30): array {
+        return $this->get('/api/v1/admin/analytics?course_id=' . $courseid . '&days=' . $days);
+    }
+
+    /**
      * Genera un quiz de práctica desde el material indexado del curso (Feature F).
      *
      * @param int         $courseid     ID del curso.
@@ -393,6 +407,60 @@ class backend_client {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
         return $this->post('/api/v1/quiz/errors/clear', $body);
+    }
+
+    /**
+     * Persiste el resultado de un quiz completado por el alumno (SP-09).
+     *
+     * @param int         $courseid       ID del curso.
+     * @param int         $userid         $USER->id real.
+     * @param string      $questiontype   Tipo de quiz (multiple_choice|flashcard|fill_blank|…).
+     * @param string      $difficulty     Dificultad (easy|medium|hard).
+     * @param string|null $topic          Tema opcional.
+     * @param int         $totalquestions Cantidad total de preguntas.
+     * @param int         $correctcount   Cantidad de respuestas correctas.
+     * @return array{id:string, created_at:string}
+     */
+    public function save_quiz_attempt(int $courseid, int $userid, string $questiontype, string $difficulty, ?string $topic, int $totalquestions, int $correctcount): array {
+        $payload = [
+            'course_id'       => $courseid,
+            'user_id'         => $userid,
+            'question_type'   => $questiontype,
+            'difficulty'      => $difficulty,
+            'total_questions' => $totalquestions,
+            'correct_answers'   => $correctcount,
+        ];
+        if ($topic !== null && trim($topic) !== '') {
+            $payload['topic'] = trim($topic);
+        }
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/attempts', $body);
+    }
+
+    /**
+     * Lista el historial de quizzes completados por el alumno en un curso (SP-09).
+     *
+     * @param int $courseid ID del curso.
+     * @param int $userid   $USER->id real.
+     * @param int $days     Días hacia atrás (1..365).
+     * @param int $limit    Máximo de items (1..100).
+     * @return array{course_id:int, total:int, items:array}
+     */
+    public function list_quiz_attempts(int $courseid, int $userid, int $days = 90, int $limit = 20): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'days'      => $days,
+            'limit'     => $limit,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/attempts/list', $body);
     }
 
     /**
@@ -647,6 +715,29 @@ class backend_client {
         return $this->post('/api/v1/forums/suggest-reply', $body);
     }
 
+    /**
+     * Genera un resumen del documento usando el LLM (BUS-03).
+     *
+     * @param string $documentid UUID del documento a resumir.
+     * @param int    $courseid   ID del curso (validación de aislamiento en el backend).
+     * @param int    $userid     $USER->id real del alumno.
+     * @return array{document_id:string, document_filename:string, summary:string, chunks_used:int, total_chunks:int}
+     *
+     * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
+     */
+    public function summarize_document(string $documentid, int $courseid, int $userid): array {
+        $payload = [
+            'document_id' => $documentid,
+            'course_id'   => $courseid,
+            'user_id'     => $userid,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/documents/summarize', $body);
+    }
+
     // =========================================================
     // Documentos
     // =========================================================
@@ -678,6 +769,81 @@ class backend_client {
      */
     public function delete_document(string $documentid): void {
         $this->delete('/api/v1/documents/' . $documentid);
+    }
+
+    // ----------------------------------------------------------------
+    // CAL-02 — Alertas de calendario configurables por el alumno
+    // ----------------------------------------------------------------
+
+    /**
+     * Upsert de alerta de calendario. days_before=0 elimina la alerta.
+     *
+     * @param int    $userid         $USER->id real.
+     * @param int    $courseid       ID del curso.
+     * @param int    $eventid        ID del evento en Moodle.
+     * @param string $eventname      Nombre del evento (guardado para el cron).
+     * @param int    $eventtimestamp Unix timestamp del evento.
+     * @param int    $daysbefore     0 = sin alerta, 1, 3 o 7 días antes.
+     * @return array{id:string|null, days_before:int}
+     */
+    public function save_calendar_alert(int $userid, int $courseid, int $eventid, string $eventname, int $eventtimestamp, int $daysbefore): array {
+        $payload = [
+            'user_id'         => $userid,
+            'course_id'       => $courseid,
+            'event_id'        => $eventid,
+            'event_name'      => $eventname,
+            'event_timestamp' => $eventtimestamp,
+            'days_before'     => $daysbefore,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/calendar/alerts/save', $body);
+    }
+
+    /**
+     * Lista las alertas activas del alumno en el curso.
+     *
+     * @param int $userid   $USER->id real.
+     * @param int $courseid ID del curso.
+     * @return array{alerts:array}
+     */
+    public function list_calendar_alerts(int $userid, int $courseid): array {
+        $payload = [
+            'user_id'   => $userid,
+            'course_id' => $courseid,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/calendar/alerts/list', $body);
+    }
+
+    /**
+     * Obtiene todas las alertas vencidas globalmente (llamado por el cron).
+     *
+     * @return array{alerts:array}
+     */
+    public function get_due_calendar_alerts(): array {
+        $body = '{}';
+        return $this->post('/api/v1/calendar/alerts/due', $body);
+    }
+
+    /**
+     * Marca una alerta como ya notificada para que el cron no la reenvíe.
+     *
+     * @param string $alertid UUID de la alerta.
+     * @return array{ok:bool}
+     */
+    public function mark_calendar_alert_notified(string $alertid): array {
+        $payload = ['alert_id' => $alertid];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/calendar/alerts/mark-notified', $body);
     }
 
     /**
@@ -736,7 +902,10 @@ class backend_client {
         // automáticamente la config de proxy / blocked hosts del sitio.
         // ignoresecurity=true es necesario para que el backend interno (localhost /
         // host.docker.internal) no sea rechazado por la protección anti-SSRF de Moodle.
-        require_once($GLOBALS['CFG']->libdir . '/filelib.php');
+        // global $CFG es necesario para que filelib.php lo encuentre en scope al ser
+        // incluido dentro de este método.
+        global $CFG;
+        require_once($CFG->libdir . '/filelib.php');
         $curl = new \curl(['ignoresecurity' => true]);
         $curl->setHeader([
             'Content-Type: application/json',

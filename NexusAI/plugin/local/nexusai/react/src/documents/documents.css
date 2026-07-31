@@ -748,3 +748,132 @@
 .nexusai-search__btn:hover:not(:disabled) {
     background: var(--nexusai-primary-dark, #3b5bdb);
 }
+
+/* ============================================================
+   Analytics dashboard tab (ANALYTICS-01/02)
+============================================================ */
+.nexusai-analytics__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 12px;
+}
+@media (max-width: 900px) {
+    .nexusai-analytics__grid {
+        grid-template-columns: 1fr;
+    }
+}
+.nexusai-analytics__section {
+    background: #fff;
+    border: 1px solid #e8edf5;
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+.nexusai-analytics__section-empty {
+    font-size: 13px;
+    color: #64748b;
+    margin: 4px 0 0;
+}
+.nexusai-analytics__query-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Barras genéricas (uso diario / distribución de puntajes) */
+.nexusai-analytics__bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 100px;
+    margin-top: 10px;
+}
+.nexusai-analytics__bars--buckets {
+    gap: 10px;
+}
+.nexusai-analytics__bar-col {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    height: 100%;
+}
+.nexusai-analytics__bucket-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+}
+.nexusai-analytics__bar {
+    width: 100%;
+    min-height: 3px;
+    background: var(--nexusai-primary, #6366f1);
+    border-radius: 3px 3px 0 0;
+    opacity: 0.85;
+}
+.nexusai-analytics__bar--bucket {
+    opacity: 1;
+}
+.nexusai-analytics__bucket-label {
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 6px;
+    white-space: nowrap;
+}
+
+/* Resumen de puntaje promedio */
+.nexusai-analytics__score-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 6px;
+}
+.nexusai-analytics__score-avg {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--nexusai-fg, #1e293b);
+}
+.nexusai-analytics__score-sub {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Ratio de gaps */
+.nexusai-analytics__gaps-ratio {
+    margin-top: 8px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.nexusai-analytics__gaps-ratio-pct {
+    font-size: 26px;
+    font-weight: 700;
+}
+.nexusai-analytics__gaps-ratio-sub {
+    font-size: 12px;
+    color: #64748b;
+}
+.nexusai-analytics__gaps-ratio--low {
+    background: #f0fdf4;
+}
+.nexusai-analytics__gaps-ratio--low .nexusai-analytics__gaps-ratio-pct {
+    color: #166534;
+}
+.nexusai-analytics__gaps-ratio--mid {
+    background: #fef3c7;
+}
+.nexusai-analytics__gaps-ratio--mid .nexusai-analytics__gaps-ratio-pct {
+    color: #92400e;
+}
+.nexusai-analytics__gaps-ratio--high {
+    background: #fef2f2;
+}
+.nexusai-analytics__gaps-ratio--high .nexusai-analytics__gaps-ratio-pct {
+    color: #991b1b;
+}
