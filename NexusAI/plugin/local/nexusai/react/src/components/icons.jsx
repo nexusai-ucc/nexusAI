@@ -202,3 +202,12 @@ export const IconDownload = ({ size = 14 }) => (
         <line x1="12" y1="15" x2="12" y2="3" />
     </svg>
 );
+
+// ── BarChart (dashboard de analytics — ANALYTICS-02) ────────────────────────
+export const IconBarChart = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <line x1="12" y1="20" x2="12" y2="10" />
+        <line x1="18" y1="20" x2="18" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="16" />
+    </svg>
+);

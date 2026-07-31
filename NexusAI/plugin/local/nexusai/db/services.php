@@ -226,6 +226,18 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Dashboard agregado: top queries, uso diario, distribución de puntajes
+    // de quiz y ratio de gaps (ANALYTICS-01/02). Solo docentes/admins.
+    'local_nexusai_analytics_dashboard' => [
+        'classname'     => '\local_nexusai\external\analytics_dashboard',
+        'methodname'    => 'execute',
+        'description'   => 'Aggregated course analytics dashboard (teacher view).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // ----- CALENDARIO — CAL-02 -----
 
     // Guarda / actualiza la alerta de un evento de calendario para el alumno.

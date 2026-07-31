@@ -237,6 +237,20 @@ class backend_client {
     }
 
     /**
+     * Dashboard agregado de métricas de un curso para el docente (ANALYTICS-01/02):
+     * top queries, uso diario, distribución de puntajes de quiz y ratio de gaps.
+     *
+     * @param int $courseid ID del curso.
+     * @param int $days     Ventana temporal (1..365).
+     * @return array{course_id:int, period_days:int, top_queries:array,
+     *               daily_message_counts:array, quiz_score_distribution:array,
+     *               gaps_ratio:array}
+     */
+    public function analytics_dashboard(int $courseid, int $days = 30): array {
+        return $this->get('/api/v1/admin/analytics?course_id=' . $courseid . '&days=' . $days);
+    }
+
+    /**
      * Genera un quiz de práctica desde el material indexado del curso (Feature F).
      *
      * @param int         $courseid     ID del curso.

@@ -8,7 +8,8 @@
  *  - Upload: agrega el doc nuevo a la lista solo si el backend confirma éxito
  *    y el id no existe ya (evita sobreescribir un doc existente con fecha nula).
  *  - Errores de upload (incl. 409 y duplicados): muestra ErrorModal, no toca lista.
- *  - Tabs Material / Gaps detectados (Feature G) / Preguntas frecuentes (DOC-D02).
+ *  - Tabs Material / Gaps detectados (Feature G) / Analytics (ANALYTICS-01/02) /
+ *    Preguntas frecuentes (DOC-D02).
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -19,9 +20,10 @@ import DocumentsTable, { ErrorModal } from "./DocumentsTable.jsx";
 import UploadZone from "./UploadZone.jsx";
 import GapsPanel from "./GapsPanel.jsx";
 import FaqDashboardPanel from "./FaqDashboardPanel.jsx";
+import AnalyticsDashboardPanel from "./AnalyticsDashboardPanel.jsx";
 import ExamGeneratorPanel from "./ExamGeneratorPanel.jsx";
 import SearchPanel from "../components/SearchPanel.jsx";
-import { IconBookOpen, IconClipboardList, IconHelpCircle, IconSearch, IconTarget } from "../components/icons.jsx";
+import { IconBarChart, IconBookOpen, IconClipboardList, IconHelpCircle, IconSearch, IconTarget } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
@@ -171,6 +173,14 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 </button>
                 <button
                     type="button"
+                    className={`nexusai-doc-tab ${activeTab === "analytics" ? "nexusai-doc-tab--active" : ""}`}
+                    onClick={() => setActiveTab("analytics")}
+                >
+                    <IconBarChart size={15} />
+                    Analytics
+                </button>
+                <button
+                    type="button"
                     className={`nexusai-doc-tab ${activeTab === "faq" ? "nexusai-doc-tab--active" : ""}`}
                     onClick={() => setActiveTab("faq")}
                 >
@@ -202,6 +212,8 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                     isTeacher={true}
                     lang={lang}
                 />
+            ) : activeTab === "analytics" ? (
+                <AnalyticsDashboardPanel courseId={courseid} />
             ) : activeTab === "faq" ? (
                 <FaqDashboardPanel courseId={courseid} />
             ) : activeTab === "exam" ? (
