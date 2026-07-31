@@ -356,3 +356,62 @@ export async function getFaqTopics(courseId, days = 30) {
 
     return response;
 }
+
+const MOCK_ANALYTICS_DASHBOARD = {
+    course_id: 2,
+    period_days: 30,
+    top_queries: [
+        { question: "¿qué temas entran en el parcial?", count: 6 },
+        { question: "¿cómo se calcula el determinante de una matriz 4x4?", count: 5 },
+        { question: "¿qué es la regla de la cadena en derivadas parciales?", count: 3 },
+        { question: "¿el parcial es a libro abierto?", count: 2 },
+    ],
+    daily_message_counts: Array.from({ length: 14 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (13 - i));
+        return {
+            date: d.toISOString().slice(0, 10),
+            message_count: Math.round(3 + Math.random() * 12),
+        };
+    }),
+    quiz_score_distribution: {
+        total_attempts: 27,
+        average_score: 68.4,
+        buckets: [
+            { range: "0-20", count: 1 },
+            { range: "20-40", count: 3 },
+            { range: "40-60", count: 6 },
+            { range: "60-80", count: 11 },
+            { range: "80-100", count: 6 },
+        ],
+    },
+    gaps_ratio: {
+        gaps_detected: 12,
+        questions_answered: 78,
+        ratio: 0.133,
+    },
+};
+
+/**
+ * Dashboard agregado de métricas de un curso para el docente (ANALYTICS-01/02):
+ * top queries, uso diario, distribución de puntajes de quiz y ratio de gaps.
+ *
+ * @param {number} courseId
+ * @param {number} [days] Ventana temporal (default 30).
+ * @returns {Promise<{course_id:number, period_days:number, top_queries:Array,
+ *   daily_message_counts:Array, quiz_score_distribution:Object, gaps_ratio:Object}>}
+ */
+export async function getAnalyticsDashboard(courseId, days = 30) {
+    const fetchMany = await getMoodleAjax();
+    if (!fetchMany) {
+        await new Promise((r) => setTimeout(r, 400));
+        return { ...MOCK_ANALYTICS_DASHBOARD, course_id: courseId, period_days: days };
+    }
+
+    const [response] = await fetchMany([{
+        methodname: "local_nexusai_analytics_dashboard",
+        args: { courseid: courseId, days },
+    }]);
+
+    return response;
+}
