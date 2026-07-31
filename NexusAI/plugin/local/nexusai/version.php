@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026073101;        // ANALYTICS-02 (dashboard UI docente: visualizaciones agregadas).
-$plugin->release   = '0.10.5';           // Dashboard de analytics para el docente (ANALYTICS-02).
+$plugin->version   = 2026073102;        // BUS-04 (resumen pre-parcial multi-documento).
+$plugin->release   = '0.10.6';           // Resumen de repaso pre-parcial por fecha de examen (BUS-04).
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

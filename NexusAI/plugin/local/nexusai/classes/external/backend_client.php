@@ -738,6 +738,28 @@ class backend_client {
         return $this->post('/api/v1/documents/summarize', $body);
     }
 
+    /**
+     * Resumen de repaso combinando todo el material indexado relevante para
+     * un próximo examen, opcionalmente acotado a una unidad/sección (BUS-04).
+     *
+     * @param int      $courseid ID del curso.
+     * @param int      $userid   $USER->id real.
+     * @param int|null $section  Unidad/sección opcional (BUS-05).
+     * @return array{summary:string, documents_used:array, total_documents:int}
+     */
+    public function pre_exam_summary(int $courseid, int $userid, ?int $section = null): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'section'   => $section,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/documents/pre-exam-summary', $body);
+    }
+
     // =========================================================
     // Documentos
     // =========================================================

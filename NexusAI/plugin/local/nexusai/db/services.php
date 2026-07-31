@@ -48,6 +48,18 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Resumen de repaso pre-parcial combinando todo el material indexado
+    // relevante, opcionalmente acotado a una unidad/sección (BUS-04).
+    'local_nexusai_document_pre_exam_summary' => [
+        'classname'     => '\local_nexusai\external\document_pre_exam_summary',
+        'methodname'    => 'execute',
+        'description'   => 'Generate a combined pre-exam review summary across indexed documents (BUS-04).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Búsqueda semántica en el material del curso (retrieval sin LLM — Feature A).
     'local_nexusai_search_query' => [
         'classname'     => '\local_nexusai\external\search_query',

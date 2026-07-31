@@ -8,11 +8,19 @@
  * pedirlo. El banner de examen y la lista de temas son dos señales en
  * paralelo — no se correlaciona un examen puntual con un tema específico
  * (ver plan de esta feature para el porqué).
+ *
+ * También ofrece el resumen de repaso pre-parcial (BUS-04): el alumno elige
+ * opcionalmente una unidad y genera un resumen combinado de todo el material
+ * indexado relevante — reusa `getPreExamSummary`, sin vincular automáticamente
+ * el examen del banner con una unidad (mismo motivo que arriba: no hay ese
+ * dato hoy, lo elige el alumno).
  */
 
 import { useEffect, useState } from "react";
 import { getStudyPlan } from "../api/quiz.js";
 import { getUpcomingEvents } from "../api/calendar.js";
+import { getPreExamSummary } from "../api/summary.js";
+import { listCourseSections } from "../api/courseSections.js";
 import { IconBook, IconCalendar, IconTarget } from "./icons.jsx";
 
 function daysUntil(timesort) {
@@ -26,6 +34,12 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const [sections, setSections] = useState([]);
+    const [selectedSection, setSelectedSection] = useState("");
+    const [summaryLoading, setSummaryLoading] = useState(false);
+    const [summaryError, setSummaryError] = useState(null);
+    const [summary, setSummary] = useState(null);
+
     const L = lang === "es" ? {
         empty:      "¡Vas bien!",
         emptyHint:  "No detectamos temas pendientes por ahora. Seguí practicando para mantenerlo así.",
@@ -34,6 +48,14 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
         quizErrors: (n) => `${n} error${n === 1 ? "" : "es"} de quiz`,
         gaps:       (n) => `${n} pregunta${n === 1 ? "" : "s"} sin responder`,
         eventIn:    (name, d) => (d === 0 ? `${name} es hoy` : `${name} es en ${d} día${d === 1 ? "" : "s"}`),
+        reviewTitle:    "Resumen de repaso",
+        reviewHint:     "Combina todo el material indexado en un solo resumen para estudiar antes del examen.",
+        allSections:    "Todo el curso",
+        generate:       "Generar resumen",
+        generating:     "Generando resumen...",
+        reviewError:    "No se pudo generar el resumen. Intentá de nuevo.",
+        reviewEmpty:    "No hay material indexado para generar un resumen (probá con otra unidad).",
+        sourcesLabel:   (n) => `Basado en ${n} documento${n === 1 ? "" : "s"}`,
     } : {
         empty:      "You're doing great!",
         emptyHint:  "No pending topics detected right now. Keep practicing to stay on track.",
@@ -42,6 +64,33 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
         quizErrors: (n) => `${n} quiz error${n === 1 ? "" : "s"}`,
         gaps:       (n) => `${n} unanswered question${n === 1 ? "" : "s"}`,
         eventIn:    (name, d) => (d === 0 ? `${name} is today` : `${name} is in ${d} day${d === 1 ? "" : "s"}`),
+        reviewTitle:    "Review summary",
+        reviewHint:     "Combines all indexed material into a single summary to study before the exam.",
+        allSections:    "Whole course",
+        generate:       "Generate summary",
+        generating:     "Generating summary...",
+        reviewError:    "Could not generate the summary. Try again.",
+        reviewEmpty:    "No indexed material to summarize (try a different section).",
+        sourcesLabel:   (n) => `Based on ${n} document${n === 1 ? "" : "s"}`,
+    };
+
+    const handleGenerateSummary = async () => {
+        setSummaryLoading(true);
+        setSummaryError(null);
+        setSummary(null);
+        try {
+            const section = selectedSection === "" ? null : Number(selectedSection);
+            const data = await getPreExamSummary(courseId, section);
+            if (!data?.summary) {
+                setSummaryError(L.reviewEmpty);
+            } else {
+                setSummary(data);
+            }
+        } catch {
+            setSummaryError(L.reviewError);
+        } finally {
+            setSummaryLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -64,6 +113,16 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
 
         return () => { cancelled = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseId]);
+
+    useEffect(() => {
+        let cancelled = false;
+        listCourseSections(courseId).then((list) => {
+            if (!cancelled) setSections(list || []);
+        }).catch(() => {
+            if (!cancelled) setSections([]);
+        });
+        return () => { cancelled = true; };
     }, [courseId]);
 
     if (loading) {
@@ -90,6 +149,57 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
                     <span>{L.eventIn(nextEvent.name, daysUntil(nextEvent.timesort))}</span>
                 </div>
             )}
+
+            <div className="nexusai-studyplan__review">
+                <h3 className="nexusai-studyplan__review-title">{L.reviewTitle}</h3>
+                <p className="nexusai-studyplan__review-hint">{L.reviewHint}</p>
+
+                <div className="nexusai-studyplan__review-controls">
+                    {sections.length > 0 && (
+                        <select
+                            className="nexusai-studyplan__review-select"
+                            value={selectedSection}
+                            onChange={(e) => setSelectedSection(e.target.value)}
+                            disabled={summaryLoading}
+                        >
+                            <option value="">{L.allSections}</option>
+                            {sections.map((s) => (
+                                <option key={s.section} value={s.section}>{s.name}</option>
+                            ))}
+                        </select>
+                    )}
+                    <button
+                        type="button"
+                        className="nexusai-studyplan__review-btn"
+                        onClick={handleGenerateSummary}
+                        disabled={summaryLoading}
+                    >
+                        {summaryLoading ? L.generating : L.generate}
+                    </button>
+                </div>
+
+                {summaryLoading && (
+                    <div className="nexusai-studyplan__review-loading">
+                        <div className="nexusai-quiz__spinner" />
+                    </div>
+                )}
+
+                {summaryError && (
+                    <div className="nexusai-alert nexusai-alert--error" role="alert">
+                        <span>{summaryError}</span>
+                    </div>
+                )}
+
+                {summary && !summaryLoading && (
+                    <div className="nexusai-studyplan__review-result">
+                        <p className="nexusai-studyplan__review-text">{summary.summary}</p>
+                        <p className="nexusai-studyplan__review-sources">
+                            {L.sourcesLabel(summary.total_documents)}:{" "}
+                            {summary.documents_used.map((d) => d.filename).join(", ")}
+                        </p>
+                    </div>
+                )}
+            </div>
 
             {!topics || topics.length === 0 ? (
                 <div className="nexusai-studyplan__empty">
