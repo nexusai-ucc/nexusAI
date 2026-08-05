@@ -166,7 +166,7 @@
 }
 .nexusai-panel__actions {
     display: flex;
-    gap: 2px;
+    gap: 4px;
     flex-shrink: 0;
 }
 .nexusai-icon-btn {
@@ -175,6 +175,8 @@
     color: var(--nexusai-fg-muted);
     cursor: pointer;
     padding: 6px;
+    min-width: 44px;
+    min-height: 44px;
     border-radius: var(--nexusai-radius-sm);
     display: flex;
     align-items: center;
