@@ -229,7 +229,7 @@ Más detalle por componente:
 | Documentación MVP | hasta 14 Jun 2026 | ✅ Completo |
 | Post-MVP Sprint A | hasta 29 Jun 2026 | ✅ Completo |
 | Post-MVP Sprint B | hasta 30 Jul 2026 | 🚧 En cierre (informe/PI) |
-| Post-MVP Sprint C | hasta 30 Ago 2026 | 🚧 En curso |
+| Post-MVP Sprint C | hasta 30 Ago 2026 | ✅ Completo (9/9) |
 | Post-MVP Sprint D | hasta 14 Dic 2026 | 🚧 En curso — confiabilidad, privacidad, testing, deploy propio |
 | Entrega Final | hasta 29 Nov 2026 | Check 2 PI antes del 3 Nov 2026 |
 | Defensa Final | hasta 26 Feb 2027 | Ajustes + PPT + defensa |
