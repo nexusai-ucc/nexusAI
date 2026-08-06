@@ -868,6 +868,43 @@ class backend_client {
         return $this->post('/api/v1/calendar/alerts/mark-notified', $body);
     }
 
+    // ----------------------------------------------------------------
+    // PRIV-01 — Exportación y eliminación de datos personales (issue #310)
+    // ----------------------------------------------------------------
+
+    /**
+     * Exporta todo el historial personal del alumno en un curso (mensajes
+     * de chat, intentos de quiz activos, errores de quiz).
+     *
+     * @param int $userid   $USER->id real — nunca un parámetro editable por el alumno.
+     * @param int $courseid ID del curso.
+     * @return array{user_id:int, course_id:int, messages:array, quiz_attempts:array, quiz_errors:array}
+     */
+    public function privacy_export(int $userid, int $courseid): array {
+        return $this->get('/api/v1/privacy/export?user_id=' . $userid . '&course_id=' . $courseid);
+    }
+
+    /**
+     * Borra el historial personal del alumno en un curso. Los intentos de
+     * quiz se anonimizan (no se borran) para no romper el dashboard de
+     * Analytics del docente — ver docstring de app/privacy/router.py.
+     *
+     * @param int $userid   $USER->id real — nunca un parámetro editable por el alumno.
+     * @param int $courseid ID del curso.
+     * @return array{messages_deleted:int, quiz_errors_deleted:int, quiz_attempts_anonymized:int}
+     */
+    public function privacy_delete(int $userid, int $courseid): array {
+        // No usamos el helper delete() de abajo: ese asume 204 No Content
+        // (expectjson: false). Este endpoint SÍ devuelve JSON con los
+        // conteos de lo borrado/anonimizado, así que llamamos request()
+        // directo con expectjson en su default (true).
+        return $this->request(
+            'DELETE',
+            '/api/v1/privacy/data?user_id=' . $userid . '&course_id=' . $courseid,
+            ''
+        );
+    }
+
     /**
      * GET autenticado con HMAC. Body firmado = string vacío.
      *
