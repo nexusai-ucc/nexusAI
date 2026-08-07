@@ -394,6 +394,27 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // PRIV-01 — Exportación y eliminación de datos personales (issue #310).
+    'local_nexusai_privacy_export' => [
+        'classname'     => '\local_nexusai\external\privacy_export',
+        'methodname'    => 'execute',
+        'description'   => "Export the current student's personal history (chat messages, quiz attempts, quiz errors) in a course.",
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    'local_nexusai_privacy_delete' => [
+        'classname'     => '\local_nexusai\external\privacy_delete',
+        'methodname'    => 'execute',
+        'description'   => "Delete the current student's personal history in a course (quiz attempts are anonymized, not deleted).",
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
 ];
 
 // $services queda vacío: no exponemos un service preconfigurado todavía. La

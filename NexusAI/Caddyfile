@@ -1,0 +1,7 @@
+# NexusAI — reverse proxy de producción
+# Dominio vía nip.io (resuelve solo, sin registro): api.<IP-con-puntos>.nip.io
+# Si más adelante se consigue un dominio propio o DuckDNS, reemplazar acá.
+
+api.159.112.139.166.nip.io {
+    reverse_proxy api:8000
+}
