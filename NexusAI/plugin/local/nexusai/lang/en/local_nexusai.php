@@ -76,5 +76,9 @@ $string['newmaterial_body']            = 'A new file "{$a->filename}" was upload
 $string['newmaterial_body_html']       = 'A new file <strong>{$a->filename}</strong> was uploaded to <strong>{$a->course}</strong>. You can already ask the NexusAI assistant about it.';
 $string['newmaterial_small']           = 'New material: {$a}';
 
-// Privacy API.
-$string['privacy:metadata'] = 'The NexusAI plugin does not store personal data in Moodle. All chat history lives in the external NexusAI backend service.';
+// Privacy API (PRIV-01, issue #310).
+$string['privacy:metadata:nexusai_backend'] = 'To provide the academic assistant, NexusAI sends and stores personal data in its external backend service (outside Moodle).';
+$string['privacy:metadata:nexusai_backend:user_id'] = 'The Moodle user ID, to identify who each message/attempt belongs to.';
+$string['privacy:metadata:nexusai_backend:course_id'] = 'The ID of the course the data was generated in.';
+$string['privacy:metadata:nexusai_backend:content'] = 'The content sent: chat message text, quiz answers.';
+$string['privacy:metadata:nexusai_backend:created_at'] = 'The date and time the data was generated.';
