@@ -12,6 +12,10 @@
 #   - api: sin hot-reload (sin --reload, sin montar código fuente encima de la imagen)
 #   - postgres/redis: sin exponer puertos al host (solo alcanzables dentro de nexusai-net)
 #   - se agrega el servicio caddy (reverse proxy + TLS automático vía Let's Encrypt)
+#
+# Requiere NEXUSAI_DOMAIN en el .env de la VM (ej. api.1.2.3.4.nip.io) — lo
+# usa el Caddyfile para saber a qué dominio servir TLS. Distinto por ambiente
+# (prod/staging), nunca se commitea.
 
 services:
   postgres:
@@ -36,6 +40,11 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+    environment:
+      # El Caddyfile usa {$NEXUSAI_DOMAIN} — sin esto en el .env de la VM,
+      # Caddy arranca pero no sirve nada. Distinto por ambiente (prod/staging),
+      # nunca se commitea.
+      NEXUSAI_DOMAIN: ${NEXUSAI_DOMAIN:?NEXUSAI_DOMAIN no está en .env}
     ports:
       - "80:80"
       - "443:443"
