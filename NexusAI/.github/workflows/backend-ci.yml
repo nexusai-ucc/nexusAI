@@ -18,6 +18,56 @@ concurrency:
 
 jobs:
   # ----------------------------------------------------------------
+  # Dependency scanning (SEC-01 / issue #317)
+  #
+  # Los --ignore-vuln son los 3 paquetes que quedan después de la limpieza
+  # de #317 (43 vulnerabilidades en 11 paquetes → 12 en 3): pytest,
+  # pdfminer-six y starlette. Los tres son transitivos de un pin directo
+  # (pytest en sí, pdfplumber, fastapi respectivamente) — arreglarlos
+  # implica bumpear esa dependencia directa, con riesgo real de romper
+  # comportamiento (fastapi/pdfplumber tocan rutas críticas). Decisión
+  # documentada en docs/security/owasp-audit-2026-08.md — no silenciar
+  # todo, solo estos IDs puntuales, así cualquier vulnerabilidad NUEVA
+  # sigue rompiendo el build.
+  # ----------------------------------------------------------------
+  dependency-scan:
+    name: pip-audit
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip si services/api/ está vacío
+        id: check
+        run: |
+          if [ ! -f services/api/requirements.txt ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Python 3.11
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: pip-audit
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          pip install pip-audit
+          pip-audit -r services/api/requirements.txt \
+            --ignore-vuln PYSEC-2026-1845 \
+            --ignore-vuln PYSEC-2026-1762 \
+            --ignore-vuln PYSEC-2026-1761 \
+            --ignore-vuln PYSEC-2026-161 \
+            --ignore-vuln PYSEC-2026-248 \
+            --ignore-vuln PYSEC-2026-249 \
+            --ignore-vuln PYSEC-2026-1943 \
+            --ignore-vuln PYSEC-2026-1941 \
+            --ignore-vuln PYSEC-2026-2281 \
+            --ignore-vuln PYSEC-2026-2280
+
+  # ----------------------------------------------------------------
   # Lint + type check (rápido, no necesita servicios)
   # ----------------------------------------------------------------
   lint:
