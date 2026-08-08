@@ -1,7 +1,15 @@
-# NexusAI — reverse proxy de producción
-# Dominio vía nip.io (resuelve solo, sin registro): api.<IP-con-puntos>.nip.io
-# Si más adelante se consigue un dominio propio o DuckDNS, reemplazar acá.
+# NexusAI — reverse proxy de producción/staging
+#
+# El dominio NO está hardcodeado a propósito: cada ambiente (producción,
+# staging) tiene su propia IP/dominio, y este archivo es el mismo commiteado
+# en git para los dos. Se resuelve desde NEXUSAI_DOMAIN en el .env de cada
+# VM (nunca en git) — ver docker-compose.prod.yml, servicio `caddy`.
+#
+# Antes de esto, el dominio venía hardcodeado acá mismo, y activar un
+# segundo ambiente obligaba a editar este archivo a mano SOLO en esa VM,
+# sin commitear el cambio (porque hubiera roto al otro ambiente) — un
+# `git pull` sin darse cuenta lo pisaba y rompía el HTTPS de esa VM.
 
-api.159.112.139.166.nip.io {
+{$NEXUSAI_DOMAIN} {
     reverse_proxy api:8000
 }
