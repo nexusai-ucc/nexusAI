@@ -205,11 +205,12 @@ class backend_client {
      * @param bool $includearchived Incluir gaps ya archivados (DOC-D08, #383).
      * @return array{course_id:int, days:int, total:int, items:array}
      */
-    public function list_gaps(int $courseid, int $days = 30, int $limit = 20, bool $includearchived = false): array {
+    public function list_gaps(int $courseid, int $days = 30, int $limit = 20, bool $includearchived = false, int $offset = 0): array {
         $payload = [
             'course_id'        => $courseid,
             'days'             => $days,
             'limit'            => $limit,
+            'offset'           => $offset,
             'include_archived' => $includearchived,
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

@@ -293,11 +293,12 @@ const MOCK_GAPS = {
  *
  * @param {number} courseId
  * @param {number} [days]   Ventana temporal (default 30).
- * @param {number} [limit]  Máximo items (default 30).
+ * @param {number} [limit]  Máximo items por página (default 30).
  * @param {boolean} [includeArchived] Incluir gaps ya archivados (DOC-D08).
+ * @param {number} [offset] Desde qué posición paginar (UX-15, default 0).
  * @returns {Promise<{course_id:number, days:number, total:number, items:Array}>}
  */
-export async function listGaps(courseId, days = 30, limit = 30, includeArchived = false) {
+export async function listGaps(courseId, days = 30, limit = 30, includeArchived = false, offset = 0) {
     const fetchMany = await getMoodleAjax();
     if (!fetchMany) {
         await new Promise((r) => setTimeout(r, 400));
@@ -306,7 +307,7 @@ export async function listGaps(courseId, days = 30, limit = 30, includeArchived 
 
     const [response] = await fetchMany([{
         methodname: "local_nexusai_gaps_list",
-        args: { courseid: courseId, days, limit, includearchived: includeArchived },
+        args: { courseid: courseId, days, limit, includearchived: includeArchived, offset },
     }]);
 
     return response;

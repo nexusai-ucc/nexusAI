@@ -38,9 +38,15 @@ function similarityLabel(sim) {
     return { text: "match parcial", color: "#65a30d" };
 }
 
+// UX-15 (#385): cantidad de gaps que se piden por página, tanto en la
+// carga inicial como en cada "Cargar más".
+const PAGE_SIZE = 30;
+
 export default function GapsPanel({ courseId }) {
     const [items, setItems] = useState([]);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(null);
     const [days, setDays] = useState(30);
     const [showArchived, setShowArchived] = useState(false);
@@ -50,10 +56,11 @@ export default function GapsPanel({ courseId }) {
         let cancelled = false;
         setLoading(true);
         setError(null);
-        listGaps(courseId, days, 30, showArchived)
+        listGaps(courseId, days, PAGE_SIZE, showArchived, 0)
             .then((data) => {
                 if (!cancelled) {
                     setItems(data?.items || []);
+                    setTotal(data?.total || 0);
                     setLoading(false);
                 }
             })
@@ -66,6 +73,21 @@ export default function GapsPanel({ courseId }) {
         return () => { cancelled = true; };
     }, [courseId, days, showArchived]);
 
+    const hasMore = items.length < total;
+
+    const handleLoadMore = async () => {
+        setLoadingMore(true);
+        try {
+            const data = await listGaps(courseId, days, PAGE_SIZE, showArchived, items.length);
+            setItems((prev) => [...prev, ...(data?.items || [])]);
+            setTotal(data?.total ?? total);
+        } catch (err) {
+            setError(err.message || "Error cargando más gaps");
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
     const handleToggleArchive = async (item, idx) => {
         const nextArchived = !item.is_archived;
         setArchivingIdx(idx);
@@ -75,6 +97,7 @@ export default function GapsPanel({ courseId }) {
                 // Vista default: un gap recién archivado deja de matchear el
                 // filtro (archived_at IS NULL), así que sale de la lista.
                 setItems((prev) => prev.filter((_, i) => i !== idx));
+                setTotal((prev) => Math.max(0, prev - 1));
             } else {
                 setItems((prev) =>
                     prev.map((g, i) => (i === idx ? { ...g, is_archived: nextArchived } : g))
@@ -142,7 +165,7 @@ export default function GapsPanel({ courseId }) {
             {!loading && !error && items.length > 0 && (
                 <div className="nexusai-gaps__list">
                     <h3 className="nexusai-documents__heading">
-                        Preguntas sin respuesta ({items.length})
+                        Preguntas sin respuesta ({total})
                     </h3>
                     {items.map((g, i) => {
                         const sim = similarityLabel(g.avg_similarity);
@@ -190,6 +213,17 @@ export default function GapsPanel({ courseId }) {
                             </div>
                         );
                     })}
+
+                    {hasMore && (
+                        <button
+                            type="button"
+                            className="nexusai-gaps__load-more"
+                            onClick={handleLoadMore}
+                            disabled={loadingMore}
+                        >
+                            {loadingMore ? "Cargando..." : `Cargar más (${items.length} de ${total})`}
+                        </button>
+                    )}
                 </div>
             )}
         </div>
