@@ -7,8 +7,8 @@
  */
 
 import { useEffect, useState } from "react";
-import { listGaps } from "./api.js";
-import { IconCheck } from "../components/icons.jsx";
+import { listGaps, archiveGap } from "./api.js";
+import { IconCheck, IconArchive } from "../components/icons.jsx";
 
 function relativeTime(iso) {
     if (!iso) return "";
@@ -43,12 +43,14 @@ export default function GapsPanel({ courseId }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [days, setDays] = useState(30);
+    const [showArchived, setShowArchived] = useState(false);
+    const [archivingIdx, setArchivingIdx] = useState(null);
 
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
         setError(null);
-        listGaps(courseId, days, 30)
+        listGaps(courseId, days, 30, showArchived)
             .then((data) => {
                 if (!cancelled) {
                     setItems(data?.items || []);
@@ -62,7 +64,28 @@ export default function GapsPanel({ courseId }) {
                 }
             });
         return () => { cancelled = true; };
-    }, [courseId, days]);
+    }, [courseId, days, showArchived]);
+
+    const handleToggleArchive = async (item, idx) => {
+        const nextArchived = !item.is_archived;
+        setArchivingIdx(idx);
+        try {
+            await archiveGap(courseId, item.question_ids, nextArchived);
+            if (!showArchived) {
+                // Vista default: un gap recién archivado deja de matchear el
+                // filtro (archived_at IS NULL), así que sale de la lista.
+                setItems((prev) => prev.filter((_, i) => i !== idx));
+            } else {
+                setItems((prev) =>
+                    prev.map((g, i) => (i === idx ? { ...g, is_archived: nextArchived } : g))
+                );
+            }
+        } catch (err) {
+            setError(err.message || "No se pudo archivar el gap");
+        } finally {
+            setArchivingIdx(null);
+        }
+    };
 
     return (
         <div className="nexusai-gaps">
@@ -86,6 +109,14 @@ export default function GapsPanel({ courseId }) {
                         {d === 365 && "Último año"}
                     </button>
                 ))}
+                <label className="nexusai-gaps__archived-toggle">
+                    <input
+                        type="checkbox"
+                        checked={showArchived}
+                        onChange={(e) => setShowArchived(e.target.checked)}
+                    />
+                    Ver archivadas
+                </label>
             </div>
 
             {loading && <div className="nexusai-loading">Cargando gaps...</div>}
@@ -116,10 +147,16 @@ export default function GapsPanel({ courseId }) {
                     {items.map((g, i) => {
                         const sim = similarityLabel(g.avg_similarity);
                         return (
-                            <div key={i} className="nexusai-gap-item">
+                            <div
+                                key={i}
+                                className={`nexusai-gap-item ${g.is_archived ? "nexusai-gap-item--archived" : ""}`}
+                            >
                                 <div className="nexusai-gap-item__row">
                                     <span className="nexusai-gap-item__question">
                                         “{g.question}”
+                                        {g.is_archived && (
+                                            <span className="nexusai-gap-item__archived-badge">Archivada</span>
+                                        )}
                                     </span>
                                     <span className="nexusai-gap-item__count">
                                         ×{g.count}
@@ -137,6 +174,18 @@ export default function GapsPanel({ courseId }) {
                                             <span>similaridad promedio {Math.round(g.avg_similarity * 100)}%</span>
                                         </>
                                     )}
+                                    <span className="nexusai-gap-item__sep">·</span>
+                                    <button
+                                        type="button"
+                                        className="nexusai-gap-item__archive-btn"
+                                        onClick={() => handleToggleArchive(g, i)}
+                                        disabled={archivingIdx === i}
+                                    >
+                                        <IconArchive size={12} />
+                                        {archivingIdx === i
+                                            ? "..."
+                                            : g.is_archived ? "Desarchivar" : "Archivar"}
+                                    </button>
                                 </div>
                             </div>
                         );

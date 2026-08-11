@@ -116,6 +116,14 @@ export const IconCheck = ({ size = 14 }) => (
     </svg>
 );
 
+export const IconArchive = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <rect x="3" y="4" width="18" height="4" rx="1" />
+        <path d="M4 8v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+        <line x1="10" y1="13" x2="14" y2="13" />
+    </svg>
+);
+
 export const IconX = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <line x1="18" y1="6"  x2="6"  y2="18" />

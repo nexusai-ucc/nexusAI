@@ -266,18 +266,24 @@ const MOCK_GAPS = {
             count: 5,
             last_asked_at: new Date(Date.now() - 86400000).toISOString(),
             avg_similarity: 0.18,
+            question_ids: ["mock-1a", "mock-1b"],
+            is_archived: false,
         },
         {
             question: "¿qué es la regla de la cadena en derivadas parciales?",
             count: 3,
             last_asked_at: new Date(Date.now() - 3 * 86400000).toISOString(),
             avg_similarity: 0.32,
+            question_ids: ["mock-2a"],
+            is_archived: false,
         },
         {
             question: "ejercicios resueltos de integrales por partes",
             count: 2,
             last_asked_at: new Date(Date.now() - 10 * 86400000).toISOString(),
             avg_similarity: null,
+            question_ids: ["mock-3a"],
+            is_archived: false,
         },
     ],
 };
@@ -288,9 +294,10 @@ const MOCK_GAPS = {
  * @param {number} courseId
  * @param {number} [days]   Ventana temporal (default 30).
  * @param {number} [limit]  Máximo items (default 30).
+ * @param {boolean} [includeArchived] Incluir gaps ya archivados (DOC-D08).
  * @returns {Promise<{course_id:number, days:number, total:number, items:Array}>}
  */
-export async function listGaps(courseId, days = 30, limit = 30) {
+export async function listGaps(courseId, days = 30, limit = 30, includeArchived = false) {
     const fetchMany = await getMoodleAjax();
     if (!fetchMany) {
         await new Promise((r) => setTimeout(r, 400));
@@ -299,7 +306,30 @@ export async function listGaps(courseId, days = 30, limit = 30) {
 
     const [response] = await fetchMany([{
         methodname: "local_nexusai_gaps_list",
-        args: { courseid: courseId, days, limit },
+        args: { courseid: courseId, days, limit, includearchived: includeArchived },
+    }]);
+
+    return response;
+}
+
+/**
+ * Archiva o desarchiva un gap detectado (DOC-D08, issue #383).
+ *
+ * @param {number} courseId
+ * @param {string[]} questionIds IDs de fila devueltos por listGaps (no el texto).
+ * @param {boolean} archived true para archivar, false para desarchivar.
+ * @returns {Promise<{course_id:number, archived:boolean, affected:number}>}
+ */
+export async function archiveGap(courseId, questionIds, archived) {
+    const fetchMany = await getMoodleAjax();
+    if (!fetchMany) {
+        await new Promise((r) => setTimeout(r, 300));
+        return { course_id: courseId, archived, affected: questionIds.length };
+    }
+
+    const [response] = await fetchMany([{
+        methodname: "local_nexusai_gaps_archive",
+        args: { courseid: courseId, questionids: questionIds, archived },
     }]);
 
     return response;

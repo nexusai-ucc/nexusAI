@@ -22,9 +22,11 @@ class gaps_list extends \external_api {
 
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_OPTIONAL, 30),
-            'limit'    => new \external_value(PARAM_INT, 'Máximo de items (1..100)', VALUE_OPTIONAL, 20),
+            'courseid'        => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'days'            => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_OPTIONAL, 30),
+            'limit'           => new \external_value(PARAM_INT, 'Máximo de items (1..100)', VALUE_OPTIONAL, 20),
+            // DOC-D08 (#383): por default solo gaps activos.
+            'includearchived' => new \external_value(PARAM_BOOL, 'Incluir gaps ya archivados', VALUE_OPTIONAL, false),
         ]);
     }
 
@@ -39,16 +41,23 @@ class gaps_list extends \external_api {
                     'count'          => new \external_value(PARAM_INT, 'Veces preguntada'),
                     'last_asked_at'  => new \external_value(PARAM_RAW, 'ISO timestamp de la última'),
                     'avg_similarity' => new \external_value(PARAM_FLOAT, 'Similaridad promedio (0..1)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    // IDs reales de unanswered_questions detrás de este gap — es lo
+                    // que hay que mandar de vuelta a gaps_archive, no el texto.
+                    'question_ids'   => new \external_multiple_structure(
+                        new \external_value(PARAM_ALPHANUMEXT, 'UUID de una fila de unanswered_questions')
+                    ),
+                    'is_archived'    => new \external_value(PARAM_BOOL, 'True si todas las filas del grupo están archivadas'),
                 ])
             ),
         ]);
     }
 
-    public static function execute(int $courseid, int $days = 30, int $limit = 20): array {
+    public static function execute(int $courseid, int $days = 30, int $limit = 20, bool $includearchived = false): array {
         $params = self::validate_parameters(self::execute_parameters(), [
-            'courseid' => $courseid,
-            'days'     => $days,
-            'limit'    => $limit,
+            'courseid'        => $courseid,
+            'days'            => $days,
+            'limit'           => $limit,
+            'includearchived' => $includearchived,
         ]);
 
         $context = \context_course::instance($params['courseid']);
@@ -60,7 +69,7 @@ class gaps_list extends \external_api {
         $limit = max(1, min(100, (int) $params['limit']));
 
         $client   = new backend_client();
-        $response = $client->list_gaps((int) $params['courseid'], $days, $limit);
+        $response = $client->list_gaps((int) $params['courseid'], $days, $limit, (bool) $params['includearchived']);
 
         return [
             'course_id' => (int) ($response['course_id'] ?? $params['courseid']),
@@ -72,6 +81,8 @@ class gaps_list extends \external_api {
                     'count'          => (int)    ($i['count'] ?? 0),
                     'last_asked_at'  => (string) ($i['last_asked_at'] ?? ''),
                     'avg_similarity' => isset($i['avg_similarity']) ? (float) $i['avg_similarity'] : null,
+                    'question_ids'   => array_map('strval', $i['question_ids'] ?? []),
+                    'is_archived'    => (bool) ($i['is_archived'] ?? false),
                 ],
                 $response['items'] ?? []
             ),
