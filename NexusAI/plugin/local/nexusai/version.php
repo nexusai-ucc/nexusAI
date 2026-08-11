@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026081004;        // UX-18 (historial de sesiones: cargar más).
-$plugin->release   = '0.10.12';          // UX-18: "Cargar más sesiones" en el dropdown de historial (issue #388).
+$plugin->version   = 2026081005;        // RDS-01 (chat: sidebar acoplado).
+$plugin->release   = '0.11.0';          // RDS-01: panel del chat pasa de dropdown flotante a sidebar acoplado que empuja el contenido del curso (issue #400).
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
