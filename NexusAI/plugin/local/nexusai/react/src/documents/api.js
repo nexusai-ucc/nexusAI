@@ -79,17 +79,25 @@ async function callMoodle(methodname, args) {
 // ============================================================
 
 /**
- * Lista todos los documentos del curso.
+ * Lista documentos del curso.
+ *
+ * UX-17 (#387): `limit`/`offset` son opcionales — sin `limit`, el backend
+ * devuelve todo hasta su tope interno (lo usa ExamGeneratorPanel.jsx, que
+ * necesita elegir entre todos los documentos indexados, no una página).
  *
  * @param {number} courseId
- * @returns {Promise<Array>}
+ * @param {number} [limit]  Máximo de items por página. Sin valor: sin paginar.
+ * @param {number} [offset] Desde qué posición paginar (default 0).
+ * @returns {Promise<{total:number, items:Array}>}
  */
-export async function listDocuments(courseId) {
+export async function listDocuments(courseId, limit = null, offset = 0) {
     if (typeof window === "undefined" || !window.M?.cfg) {
         await new Promise((r) => setTimeout(r, 300));
-        return MOCK_DOCS.filter((d) => d.course_id === courseId);
+        const all = MOCK_DOCS.filter((d) => d.course_id === courseId);
+        const items = limit != null ? all.slice(offset, offset + limit) : all;
+        return { total: all.length, items };
     }
-    return callMoodle("local_nexusai_document_list", { courseid: courseId });
+    return callMoodle("local_nexusai_document_list", { courseid: courseId, limit, offset });
 }
 
 /**
