@@ -281,14 +281,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
     const retry = () => { if (lastQuestion) send(lastQuestion); };
 
-    // RDS-03 (#402): "Generar quiz" / "Practicar este tema" en Modo Estudio
-    // mandan un pedido en lenguaje natural acá — mismo send() que ya usa el
-    // chip de bienvenida "Haceme un quiz de práctica", sin backend nuevo.
-    const sendFromStudyMode = (text) => {
-        setActiveTab("chat");
-        send(text);
-    };
-
     const clearChat = () => {
         setMessages([]);
         setSessionId(null);
@@ -543,7 +535,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         />
                     ) : activeTab === "study" ? (
                         <div className="nexusai-panel__body">
-                            <StudyPanel courseId={courseid} sesskey={sesskey} lang={lang} onSendToChat={sendFromStudyMode} />
+                            <StudyPanel courseId={courseid} sesskey={sesskey} lang={lang} />
                         </div>
                     ) : activeTab === "calendar" ? (
                         <div className="nexusai-panel__body">
