@@ -994,11 +994,6 @@
     justify-content: center;
 }
 .nexusai-history-toggle:hover { opacity: 0.85; }
-.nexusai-history-toggle--active,
-.nexusai-history-toggle--active:hover {
-    opacity: 1;
-    color: var(--nexusai-primary);
-}
 
 /* ── Toggle menú de navegación (UX-01) ── */
 .nexusai-nav-toggle {
@@ -1313,44 +1308,16 @@
     color: #78350f;
 }
 
-/* ── Historial de conversaciones (Feature E) ── */
+/* ── Historial de conversaciones (Feature E) ──
+   RDS-02 (#401): vista más del panel (como study/calendar/search), no un
+   overlay flotante — el header con el título y la flecha "atrás" ya los
+   pone ChatApp.jsx, acá solo queda ocupar el espacio disponible. */
 .nexusai-history {
-    position: absolute;
-    top: 56px;
-    right: 10px;
-    width: 280px;
-    max-height: 340px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    z-index: 1100;
+    flex: 1;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: nexusai-source-panel-in .15s ease-out;
 }
-.nexusai-history__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 12px 6px;
-    border-bottom: 1px solid #f1f5f9;
-}
-.nexusai-history__title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--nexusai-fg);
-}
-.nexusai-history__close {
-    background: none;
-    border: none;
-    font-size: 18px;
-    color: #94a3b8;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0 4px;
-}
-.nexusai-history__close:hover { color: var(--nexusai-fg); }
 
 .nexusai-history__scope {
     display: flex;

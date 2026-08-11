@@ -36,6 +36,7 @@ const SECTION_TITLES = {
     study:    { es: "Modo Estudio", en: "Study Mode" },
     search:   { es: "Buscar",       en: "Search" },
     calendar: { es: "Calendario",   en: "Calendar" },
+    history:  { es: "Historial",    en: "History" },
 };
 
 const STRINGS = {
@@ -147,8 +148,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "study" | "calendar" | "search"
-    const [historyOpen, setHistoryOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "history" | "study" | "calendar" | "search"
     const [navOpen, setNavOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
@@ -290,7 +290,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
     const loadSession = async (id) => {
         if (!id) return;
-        setHistoryOpen(false);
+        setActiveTab("chat");
         setError(null);
         setLoading(true);
         try {
@@ -384,8 +384,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             {hasCourse && activeTab === "chat" && (
                                 <button
                                     type="button"
-                                    className={`nexusai-icon-btn nexusai-history-toggle ${historyOpen ? "nexusai-history-toggle--active" : ""}`}
-                                    onClick={() => setHistoryOpen((v) => !v)}
+                                    className="nexusai-icon-btn nexusai-history-toggle"
+                                    onClick={() => setActiveTab("history")}
                                     aria-label={lang === "es" ? "Historial" : "History"}
                                     title={lang === "es" ? "Conversaciones previas" : "Previous conversations"}
                                 >
@@ -444,15 +444,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         </div>
                     ) : (
                     <>
-                    <HistoryDropdown
-                        open={historyOpen}
-                        onClose={() => setHistoryOpen(false)}
-                        courseId={courseid}
-                        currentSessionId={sessionId}
-                        onSelectSession={loadSession}
-                        lang={lang}
-                    />
-
                     <NavMenu
                         open={navOpen}
                         onClose={() => setNavOpen(false)}
@@ -533,6 +524,15 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         <span>{t.poweredBy}</span>
                     </footer>
                     </>
+                    ) : activeTab === "history" ? (
+                        <HistoryDropdown
+                            open={true}
+                            onClose={() => setActiveTab("chat")}
+                            courseId={courseid}
+                            currentSessionId={sessionId}
+                            onSelectSession={loadSession}
+                            lang={lang}
+                        />
                     ) : activeTab === "study" ? (
                         <div className="nexusai-panel__body">
                             <StudyPanel courseId={courseid} sesskey={sesskey} lang={lang} />

@@ -83,7 +83,6 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
 
     const labels = lang === "es"
         ? {
-            title:       "Historial",
             empty:       "Todavía no tenés conversaciones previas.",
             loading:     "Cargando...",
             scopeCourse: "Este curso",
@@ -93,7 +92,6 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             loadMore:    "Cargar más sesiones",
         }
         : {
-            title:       "History",
             empty:       "No previous conversations yet.",
             loading:     "Loading...",
             scopeCourse: "This course",
@@ -105,16 +103,6 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
 
     return (
         <div className="nexusai-history">
-            <div className="nexusai-history__header">
-                <span className="nexusai-history__title">{labels.title}</span>
-                <button
-                    type="button"
-                    className="nexusai-history__close"
-                    onClick={onClose}
-                    aria-label="Cerrar"
-                >×</button>
-            </div>
-
             <div className="nexusai-history__scope">
                 <button
                     type="button"
