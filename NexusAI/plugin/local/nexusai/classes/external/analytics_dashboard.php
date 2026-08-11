@@ -59,6 +59,7 @@ class analytics_dashboard extends \external_api {
                 'questions_answered' => new \external_value(PARAM_INT, 'Preguntas respondidas'),
                 'ratio'              => new \external_value(PARAM_FLOAT, 'gaps / (gaps + respondidas)'),
             ]),
+            'topics_consulted' => new \external_value(PARAM_INT, 'Preguntas distintas (agrupadas) consultadas en el período'),
         ]);
     }
 
@@ -114,6 +115,7 @@ class analytics_dashboard extends \external_api {
                 'questions_answered' => (int) ($gr['questions_answered'] ?? 0),
                 'ratio'              => (float) ($gr['ratio'] ?? 0.0),
             ],
+            'topics_consulted' => (int) ($response['topics_consulted'] ?? 0),
         ];
     }
 }

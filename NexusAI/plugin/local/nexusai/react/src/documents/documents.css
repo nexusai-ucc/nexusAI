@@ -1060,3 +1060,101 @@
 .nexusai-analytics__gaps-ratio--high .nexusai-analytics__gaps-ratio-pct {
     color: #991b1b;
 }
+
+/* Stat-cards row (RDS-06) */
+.nexusai-analytics__stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+@media (max-width: 900px) {
+    .nexusai-analytics__stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 480px) {
+    .nexusai-analytics__stats {
+        grid-template-columns: 1fr;
+    }
+}
+.nexusai-analytics__stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--nexusai-bg-muted, #f8fafc);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius, 8px);
+    padding: 12px 14px;
+    color: var(--nexusai-primary, #6366f1);
+    /* UX-16: evita que el valor fuerce el ancho mínimo de la columna del grid */
+    min-width: 0;
+}
+.nexusai-analytics__stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--nexusai-fg, #0f172a);
+}
+.nexusai-analytics__stat-label {
+    font-size: 12px;
+    color: var(--nexusai-fg-muted, #64748b);
+}
+
+/* Salud del contenido (RDS-06) */
+.nexusai-analytics__health {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border: 1px solid #e8edf5;
+    border-radius: 8px;
+    background: #fff;
+}
+.nexusai-analytics__health-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+}
+.nexusai-analytics__health-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nexusai-fg, #0f172a);
+}
+.nexusai-analytics__health-pct {
+    font-size: 20px;
+    font-weight: 700;
+}
+.nexusai-analytics__health-bar {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+.nexusai-analytics__health-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width .25s ease-out;
+}
+.nexusai-analytics__health-sub {
+    display: block;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 6px;
+}
+.nexusai-analytics__health--low .nexusai-analytics__health-pct {
+    color: #166534;
+}
+.nexusai-analytics__health--low .nexusai-analytics__health-fill {
+    background: #22c55e;
+}
+.nexusai-analytics__health--mid .nexusai-analytics__health-pct {
+    color: #92400e;
+}
+.nexusai-analytics__health--mid .nexusai-analytics__health-fill {
+    background: #f59e0b;
+}
+.nexusai-analytics__health--high .nexusai-analytics__health-pct {
+    color: #991b1b;
+}
+.nexusai-analytics__health--high .nexusai-analytics__health-fill {
+    background: #ef4444;
+}
