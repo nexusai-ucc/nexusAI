@@ -226,6 +226,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Archivar/desarchivar un gap detectado (DOC-D08, issue #383).
+    'local_nexusai_gaps_archive' => [
+        'classname'     => '\local_nexusai\external\gaps_archive',
+        'methodname'    => 'execute',
+        'description'   => 'Archive or unarchive a detected content gap (teacher view).',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // Dashboard de preguntas frecuentes agrupadas por tema (DOC-D02).
     // Solo docentes/admins (capability :manage).
     'local_nexusai_analytics_faq_topics' => [

@@ -1,24 +1,26 @@
 name: Frontend CI
+#
+# Hallazgo de SEC-01 (issue #317): este workflow apuntaba a
+# `plugin/local/nexusai/package.json`, pero el package.json real vive en
+# `plugin/local/nexusai/react/`. El check de "skip si no existe" siempre
+# daba true, así que este job nunca corrió de verdad — solo hacía skip en
+# silencio en cada push/PR. Se corrigieron los paths.
+#
+# De paso se sacaron los steps de "ESLint"/"Jest": no hay config de ESLint
+# ni de Jest en el proyecto (ni las deps instaladas) — el workflow los
+# referenciaba pero nunca existieron. Corregir el path bug los hubiera
+# hecho fallar de verdad por primera vez (`Missing script: "lint"`).
+# Configurar lint/tests del frontend es trabajo aparte, no de esta issue.
 
 on:
   push:
     branches: [main]
     paths:
       - 'plugin/local/nexusai/react/**'
-      - 'plugin/local/nexusai/package.json'
-      - 'plugin/local/nexusai/package-lock.json'
-      - 'plugin/local/nexusai/webpack.config.js'
-      - 'plugin/local/nexusai/babel.config.json'
-      - 'plugin/local/nexusai/.eslintrc.json'
       - '.github/workflows/frontend-ci.yml'
   pull_request:
     paths:
       - 'plugin/local/nexusai/react/**'
-      - 'plugin/local/nexusai/package.json'
-      - 'plugin/local/nexusai/package-lock.json'
-      - 'plugin/local/nexusai/webpack.config.js'
-      - 'plugin/local/nexusai/babel.config.json'
-      - 'plugin/local/nexusai/.eslintrc.json'
       - '.github/workflows/frontend-ci.yml'
 
 concurrency:
@@ -26,8 +28,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    name: Lint + Test + Build
+  build-and-scan:
+    name: Dependency scan + Build
     runs-on: ubuntu-22.04
 
     steps:
@@ -36,9 +38,9 @@ jobs:
       - name: Skip si no hay package.json todavía
         id: check
         run: |
-          if [ ! -f plugin/local/nexusai/package.json ]; then
+          if [ ! -f plugin/local/nexusai/react/package.json ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "::warning::plugin/local/nexusai/package.json no existe todavía. Saltando frontend CI."
+            echo "::warning::plugin/local/nexusai/react/package.json no existe todavía. Saltando frontend CI."
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
@@ -49,26 +51,21 @@ jobs:
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: plugin/local/nexusai/package-lock.json
+          cache-dependency-path: plugin/local/nexusai/react/package-lock.json
 
       - name: Install deps
         if: steps.check.outputs.skip == 'false'
-        working-directory: plugin/local/nexusai
+        working-directory: plugin/local/nexusai/react
         run: npm ci
 
-      - name: ESLint
+      - name: npm audit (SEC-01 / issue #317) — falla en severidad alta o crítica
         if: steps.check.outputs.skip == 'false'
-        working-directory: plugin/local/nexusai
-        run: npm run lint
-
-      - name: Jest
-        if: steps.check.outputs.skip == 'false'
-        working-directory: plugin/local/nexusai
-        run: npm test -- --ci --coverage
+        working-directory: plugin/local/nexusai/react
+        run: npm audit --audit-level=high
 
       - name: Webpack build (production)
         if: steps.check.outputs.skip == 'false'
-        working-directory: plugin/local/nexusai
+        working-directory: plugin/local/nexusai/react
         run: npm run build
 
       - name: Verificar tamaño del bundle (warn si > 512 KB)
@@ -98,11 +95,3 @@ jobs:
             echo "::error::Corré 'npm run build' localmente y commiteá el resultado."
             exit 1
           fi
-
-      - name: Upload coverage
-        if: steps.check.outputs.skip == 'false'
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage
-          path: plugin/local/nexusai/coverage/
-          retention-days: 7

@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026080601;        // PRIV-01 (exportación/eliminación de datos personales).
-$plugin->release   = '0.10.8';           // PRIV-01: privacy\provider real + export/delete de autoservicio (issue #310).
+$plugin->version   = 2026081001;        // DOC-D08 (archivar preguntas sin respuesta en Gaps).
+$plugin->release   = '0.10.9';           // DOC-D08: archivar/desarchivar gaps detectados (issue #383).
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
