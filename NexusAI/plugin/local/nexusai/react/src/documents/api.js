@@ -429,6 +429,7 @@ const MOCK_ANALYTICS_DASHBOARD = {
         questions_answered: 78,
         ratio: 0.133,
     },
+    topics_consulted: 9,
 };
 
 /**
@@ -438,7 +439,8 @@ const MOCK_ANALYTICS_DASHBOARD = {
  * @param {number} courseId
  * @param {number} [days] Ventana temporal (default 30).
  * @returns {Promise<{course_id:number, period_days:number, top_queries:Array,
- *   daily_message_counts:Array, quiz_score_distribution:Object, gaps_ratio:Object}>}
+ *   daily_message_counts:Array, quiz_score_distribution:Object, gaps_ratio:Object,
+ *   topics_consulted:number}>}
  */
 export async function getAnalyticsDashboard(courseId, days = 30) {
     const fetchMany = await getMoodleAjax();
