@@ -353,6 +353,39 @@
 
 /* Markdown en burbuja del asistente */
 .nexusai-msg__markdown { white-space: normal; }
+
+/* ── Respuesta larga colapsada (ASIST-06, #384) ── */
+.nexusai-msg__markdown-clamp {
+    position: relative;
+}
+.nexusai-msg__markdown--collapsed {
+    max-height: 320px;
+    overflow: hidden;
+}
+.nexusai-msg__markdown-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 44px;
+    background: linear-gradient(to bottom, transparent, var(--nexusai-bg));
+    pointer-events: none;
+}
+.nexusai-msg__show-more-btn {
+    display: inline-block;
+    margin-top: 6px;
+    background: none;
+    border: none;
+    color: var(--nexusai-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+}
+.nexusai-msg__show-more-btn:hover {
+    text-decoration: underline;
+}
+
 .nexusai-msg__markdown p { margin: 0 0 8px; }
 .nexusai-msg__markdown p:last-child { margin-bottom: 0; }
 .nexusai-msg__markdown ul,
@@ -715,6 +748,11 @@
 /* ============================================================
    Input area
 ============================================================ */
+.nexusai-input-wrap {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
 .nexusai-input {
     display: flex;
     align-items: flex-end;
@@ -723,6 +761,82 @@
     border-top: 1px solid var(--nexusai-border);
     background: var(--nexusai-bg);
     flex-shrink: 0;
+}
+
+/* ── Pegado largo colapsado (ASIST-06, #384) ── */
+.nexusai-input__pastes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px 0;
+    background: var(--nexusai-bg);
+}
+.nexusai-input__paste-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    color: var(--nexusai-primary);
+    background: var(--nexusai-primary-light);
+    border: 1px solid var(--nexusai-primary-ring);
+    border-radius: var(--nexusai-radius-full);
+    padding: 3px 8px 3px 9px;
+    cursor: pointer;
+}
+.nexusai-input__paste-chip:hover {
+    background: #e6edfb;
+    border-color: var(--nexusai-primary);
+}
+.nexusai-input__paste-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--nexusai-fg-muted);
+    margin-left: 2px;
+    border-radius: 50%;
+    padding: 1px;
+}
+.nexusai-input__paste-chip-remove:hover {
+    color: var(--nexusai-fg);
+    background: rgba(0, 0, 0, 0.06);
+}
+.nexusai-input__paste-preview {
+    margin: 8px 12px 0;
+    background: #f7f8fc;
+    border: 1px solid var(--nexusai-primary-ring);
+    border-radius: 8px;
+    padding: 8px 10px;
+    max-height: 160px;
+    display: flex;
+    flex-direction: column;
+}
+.nexusai-input__paste-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--nexusai-fg-muted);
+    font-weight: 600;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+}
+.nexusai-input__paste-preview-close {
+    background: none;
+    border: none;
+    color: var(--nexusai-fg-muted);
+    cursor: pointer;
+    display: flex;
+    padding: 2px;
+}
+.nexusai-input__paste-preview-close:hover { color: var(--nexusai-fg); }
+.nexusai-input__paste-preview-content {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--nexusai-fg);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-y: auto;
+    margin: 0;
 }
 .nexusai-input__textarea {
     flex: 1;

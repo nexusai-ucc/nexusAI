@@ -184,6 +184,21 @@ export default function MessageBubble({ message, sesskey }) {
 
     useCopyButtons(markdownRef, htmlContent);
 
+    // ASIST-06 (#384): respuestas largas se cortan con fade + "Mostrar más".
+    // No se evalúa mientras el mensaje sigue en streaming (el alto todavía
+    // está cambiando, cortarlo en el medio se vería roto).
+    const [longExpanded, setLongExpanded] = useState(false);
+    const [needsCollapse, setNeedsCollapse] = useState(false);
+    useEffect(() => {
+        if (isUser || message.streaming) return;
+        const el = markdownRef.current;
+        if (!el) return;
+        // Truco sin doble render: con el clamp de max-height ya aplicado por
+        // CSS, scrollHeight sigue reportando el alto real del contenido —
+        // si es mayor al alto visible clampeado, hace falta el botón.
+        setNeedsCollapse(el.scrollHeight > el.clientHeight + 4);
+    }, [isUser, message.streaming, htmlContent]);
+
     if (isUser) {
         return (
             <div className="nexusai-msg nexusai-msg--user">
@@ -205,11 +220,37 @@ export default function MessageBubble({ message, sesskey }) {
                     <IconAssistant />
                 </div>
                 <div className="nexusai-msg__bubble">
-                    <div
-                        ref={markdownRef}
-                        className={`nexusai-msg__markdown ${message.streaming ? "nexusai-msg__markdown--streaming" : ""}`}
-                        dangerouslySetInnerHTML={{ __html: htmlContent }}
-                    />
+                    <div className="nexusai-msg__markdown-clamp">
+                        <div
+                            ref={markdownRef}
+                            className={[
+                                "nexusai-msg__markdown",
+                                message.streaming ? "nexusai-msg__markdown--streaming" : "",
+                                // El clamp se aplica siempre que no esté expandido y no esté
+                                // streameando — si el contenido ya entra en el alto máximo, no
+                                // tiene ningún efecto visual (scrollHeight === clientHeight,
+                                // needsCollapse da false solo). Es lo que permite medir "¿hizo
+                                // falta cortar?" después de renderizar, sin un segundo render
+                                // sin clamp. Mientras streamea NO se clampea — si no, el texto
+                                // que sigue llegando se recortaría en silencio, sin fade ni
+                                // botón todavía (needsCollapse recién se calcula al terminar).
+                                !message.streaming && !longExpanded ? "nexusai-msg__markdown--collapsed" : "",
+                            ].filter(Boolean).join(" ")}
+                            dangerouslySetInnerHTML={{ __html: htmlContent }}
+                        />
+                        {needsCollapse && !longExpanded && (
+                            <div className="nexusai-msg__markdown-fade" aria-hidden="true" />
+                        )}
+                    </div>
+                    {needsCollapse && (
+                        <button
+                            type="button"
+                            className="nexusai-msg__show-more-btn"
+                            onClick={() => setLongExpanded((v) => !v)}
+                        >
+                            {longExpanded ? "Mostrar menos" : "Mostrar más"}
+                        </button>
+                    )}
                 </div>
             </div>
 
