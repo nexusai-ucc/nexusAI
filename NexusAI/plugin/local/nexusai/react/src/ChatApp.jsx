@@ -18,7 +18,7 @@
  *   - lang:      'es' | 'en'
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
@@ -87,10 +87,13 @@ function isInsideMoodle() {
     return typeof window !== "undefined" && window.M && window.M.cfg;
 }
 
-// Disparador ahora vive en la navbar primaria de Moodle (fuera de este árbol
-// de React) — ver amd/src/nav-trigger.js y classes/hook/navigation/
-// primary_extend_listener.php (UX-02). Mismo selector en ambos lados.
-const NAV_TRIGGER_SELECTOR = 'li[data-key="local_nexusai_trigger"]';
+// RDS-01: sidebar acoplado — angosta el contenido real del curso al abrir.
+// #page-content es el wrapper de Boost que ya trae `transition: all` propio,
+// así que el margin-right anima solo sin CSS de transición nuestro. Si el
+// theme no tiene ese selector (no es Boost), el push simplemente no aplica.
+const PAGE_CONTENT_SELECTOR = "#page-content";
+const SIDEBAR_WIDTH = 400;
+const PUSH_MIN_VIEWPORT = 768;
 
 /* ---- Iconos SVG inline ---- */
 const IconSparkle = () => (
@@ -154,44 +157,12 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [multiCourse, setMultiCourse] = useState(false);
     const [activeTab, setActiveTab] = useState("chat"); // "chat" | "study" | "calendar" | "search"
     const [historyOpen, setHistoryOpen] = useState(false);
-    const [panelSize, setPanelSize] = useState({ width: 400, height: 600 });
     const [navOpen, setNavOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
     const widgetRef = useRef(null);
     const panelRef = useRef(null);
-
-    const startResize = useCallback((e, corner) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const startW = panelSize.width;
-        const startH = panelSize.height;
-        const minW = 320, maxW = window.innerWidth - 48;
-        const minH = 400, maxH = window.innerHeight - 120;
-
-        const onMove = (ev) => {
-            const dx = ev.clientX - startX;
-            const dy = ev.clientY - startY;
-            let w = startW, h = startH;
-            if (corner === "n") h = startH - dy;
-            if (corner === "s") h = startH + dy;
-            if (corner === "w") w = startW - dx;
-            if (corner === "e") w = startW + dx;
-            setPanelSize({
-                width:  Math.max(minW, Math.min(maxW, w)),
-                height: Math.max(minH, Math.min(maxH, h)),
-            });
-        };
-        const onUp = () => {
-            window.removeEventListener("mousemove", onMove);
-            window.removeEventListener("mouseup", onUp);
-        };
-        window.addEventListener("mousemove", onMove);
-        window.addEventListener("mouseup", onUp);
-    }, [panelSize]);
 
     useEffect(() => {
         if (!open) return;
@@ -207,30 +178,19 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         return () => window.removeEventListener("nexusai:toggle-panel", handleToggle);
     }, []);
 
-    // Cierre por click afuera (nuevo con UX-02: el panel ahora se comporta
-    // como un dropdown de navbar, no como una tarjeta flotante). No cierra si
-    // el click fue dentro del panel o sobre el propio ícono disparador.
+    // RDS-01: sidebar acoplado — angosta #page-content al abrir, en vez de
+    // cerrarse solo con un click afuera (ese comportamiento tenía sentido
+    // para un dropdown flotante, pero rompería la razón de ser de un panel
+    // docked: se cierra con su propio botón o el riel colapsado).
     useEffect(() => {
-        if (!open) return;
-        const handleOutsideClick = (e) => {
-            if (panelRef.current && panelRef.current.contains(e.target)) return;
-            const trigger = document.querySelector(NAV_TRIGGER_SELECTOR);
-            if (trigger && trigger.contains(e.target)) return;
-            setOpen(false);
-        };
-        document.addEventListener("mousedown", handleOutsideClick);
-        return () => document.removeEventListener("mousedown", handleOutsideClick);
-    }, [open]);
-
-    // Ancla el panel horizontalmente debajo del ícono real de la navbar — su
-    // posición varía según idioma/rol/tema, así que no alcanza un valor fijo.
-    useEffect(() => {
-        if (!open || !widgetRef.current) return;
-        const trigger = document.querySelector(NAV_TRIGGER_SELECTOR);
-        if (trigger) {
-            const rect = trigger.getBoundingClientRect();
-            widgetRef.current.style.setProperty("--nexusai-anchor-left", `${Math.max(rect.left, 8)}px`);
+        const el = document.querySelector(PAGE_CONTENT_SELECTOR);
+        if (!el) return; // theme sin ese selector — fallback silencioso, no rompe nada
+        if (open && window.innerWidth >= PUSH_MIN_VIEWPORT) {
+            el.style.marginRight = `${SIDEBAR_WIDTH}px`;
+        } else {
+            el.style.marginRight = "";
         }
+        return () => { el.style.marginRight = ""; };
     }, [open]);
 
     const send = async (question) => {
@@ -372,20 +332,25 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
     return (
         <div className="nexusai-widget" ref={widgetRef}>
+            {!open && (
+                <button
+                    type="button"
+                    className="nexusai-rail"
+                    onClick={() => setOpen(true)}
+                    aria-label={t.open}
+                    title={t.open}
+                >
+                    <span className="nexusai-rail__icon"><IconSparkle /></span>
+                    <span className="nexusai-rail__label">{t.title}</span>
+                </button>
+            )}
             {open && (
                 <div
                     className="nexusai-panel"
                     ref={panelRef}
                     role="dialog"
                     aria-labelledby="nexusai-title"
-                    style={{ width: panelSize.width, height: panelSize.height }}
                 >
-                    {/* Handles de resize en los 4 bordes */}
-                    <div className="nexusai-resize-handle nexusai-resize-handle--n" onMouseDown={(e) => startResize(e, "n")} />
-                    <div className="nexusai-resize-handle nexusai-resize-handle--s" onMouseDown={(e) => startResize(e, "s")} />
-                    <div className="nexusai-resize-handle nexusai-resize-handle--w" onMouseDown={(e) => startResize(e, "w")} />
-                    <div className="nexusai-resize-handle nexusai-resize-handle--e" onMouseDown={(e) => startResize(e, "e")} />
-
                     {/* Header */}
                     <header className="nexusai-panel__header">
                         {activeTab === "chat" ? (
