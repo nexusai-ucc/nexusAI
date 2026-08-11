@@ -57,7 +57,34 @@ function is422(err) {
     return msg.includes("422");
 }
 
-export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) {
+// RDS-03 (#402): "Generar quiz" arma un pedido en lenguaje natural con la
+// configuración elegida y lo manda al chat real, en vez de generar el quiz
+// estructurado acá — frases cortas para insertar en el pedido.
+const QUESTION_TYPE_PHRASES = {
+    es: {
+        multiple_choice: "de opción múltiple",
+        true_false:      "de verdadero o falso",
+        open:             "de preguntas abiertas",
+        flashcard:        "tipo flashcards",
+        fill_blank:       "para completar espacios",
+        mix:              "variadas",
+    },
+    en: {
+        multiple_choice: "multiple-choice",
+        true_false:      "true/false",
+        open:             "open-ended",
+        flashcard:        "flashcard-style",
+        fill_blank:       "fill-in-the-blank",
+        mix:              "mixed",
+    },
+};
+
+const DIFFICULTY_PHRASES = {
+    es: { easy: "fácil", medium: "media", hard: "difícil" },
+    en: { easy: "easy",  medium: "medium", hard: "hard" },
+};
+
+export default function QuizPanel({ courseId, lang = "es", initialTopic = "", onSendToChat }) {
     const [stage, setStage] = useState("setup"); // setup | loading | playing | finished | error
     const [topic, setTopic] = useState(initialTopic);
     const [numQuestions, setNumQuestions] = useState(5);
@@ -230,6 +257,23 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 setStage("error");
             }
         }
+    };
+
+    // RDS-03 (#402): botón principal de "setup" — en vez de generar el quiz
+    // estructurado acá (start(), abajo, sin uso ahora pero intacto), arma
+    // un pedido en lenguaje natural con la configuración elegida y lo manda
+    // al chat real.
+    const startInChat = () => {
+        const typePhrase = QUESTION_TYPE_PHRASES[lang]?.[questionType] || QUESTION_TYPE_PHRASES.es[questionType];
+        const diffPhrase = DIFFICULTY_PHRASES[lang]?.[difficulty] || DIFFICULTY_PHRASES.es[difficulty];
+        const trimmedTopic = topic.trim();
+        const topicPhrase = trimmedTopic
+            ? (lang === "es" ? ` sobre ${trimmedTopic}` : ` about ${trimmedTopic}`)
+            : "";
+        const text = lang === "es"
+            ? `Generame un quiz de práctica de ${numQuestions} preguntas ${typePhrase}, dificultad ${diffPhrase}${topicPhrase}.`
+            : `Give me a practice quiz with ${numQuestions} ${typePhrase} questions, ${diffPhrase} difficulty${topicPhrase}.`;
+        onSendToChat?.(text);
     };
 
     // ── Verificar respuesta de opción múltiple o V/F ──
@@ -443,7 +487,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     <button
                         type="button"
                         className="nexusai-quiz__primary"
-                        onClick={start}
+                        onClick={startInChat}
                     >
                         {L.generate}
                     </button>

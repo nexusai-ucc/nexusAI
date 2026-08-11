@@ -28,7 +28,15 @@ function daysUntil(timesort) {
     return Math.max(0, Math.ceil(diffMs / 86400000));
 }
 
-export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic }) {
+// RDS-03 (#402): "Practicar este tema" manda un pedido en lenguaje natural
+// al chat real en vez de abrir la pantalla de setup de Práctica.
+function buildPracticeRequest(topic, lang) {
+    return lang === "es"
+        ? `Generame un quiz de práctica sobre ${topic}`
+        : `Give me a practice quiz about ${topic}`;
+}
+
+export default function StudyPlanPanel({ courseId, lang = "es", onSendToChat }) {
     const [topics, setTopics] = useState(null);
     const [nextEvent, setNextEvent] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -226,7 +234,7 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
                             <button
                                 type="button"
                                 className="nexusai-studyplan__card-btn"
-                                onClick={() => onPracticeTopic?.(t.suggested_quiz_topic || t.topic)}
+                                onClick={() => onSendToChat?.(buildPracticeRequest(t.suggested_quiz_topic || t.topic, lang))}
                             >
                                 {L.practice}
                             </button>
