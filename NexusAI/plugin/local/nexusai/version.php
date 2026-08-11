@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026081003;        // UX-16 (analytics con volumen alto de datos).
-$plugin->release   = '0.10.11';          // UX-16: barras diarias con scroll + agregación en SQL (issue #386).
+$plugin->version   = 2026081004;        // UX-18 (historial de sesiones: cargar más).
+$plugin->release   = '0.10.12';          // UX-18: "Cargar más sesiones" en el dropdown de historial (issue #388).
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
