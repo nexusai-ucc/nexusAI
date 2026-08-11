@@ -25,6 +25,8 @@ class gaps_list extends \external_api {
             'courseid'        => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
             'days'            => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_OPTIONAL, 30),
             'limit'           => new \external_value(PARAM_INT, 'Máximo de items (1..100)', VALUE_OPTIONAL, 20),
+            // UX-15 (#385): offset sobre los grupos ya clusterizados, para pedir la próxima página.
+            'offset'          => new \external_value(PARAM_INT, 'Desde qué posición paginar', VALUE_OPTIONAL, 0),
             // DOC-D08 (#383): por default solo gaps activos.
             'includearchived' => new \external_value(PARAM_BOOL, 'Incluir gaps ya archivados', VALUE_OPTIONAL, false),
         ]);
@@ -34,7 +36,7 @@ class gaps_list extends \external_api {
         return new \external_single_structure([
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
             'days'      => new \external_value(PARAM_INT, 'Ventana temporal'),
-            'total'     => new \external_value(PARAM_INT, 'Cantidad de items'),
+            'total'     => new \external_value(PARAM_INT, 'Cantidad total de gaps agrupados (para paginar, no la cantidad ya recortada por limit)'),
             'items'     => new \external_multiple_structure(
                 new \external_single_structure([
                     'question'       => new \external_value(PARAM_RAW, 'Pregunta agrupada'),
@@ -52,11 +54,12 @@ class gaps_list extends \external_api {
         ]);
     }
 
-    public static function execute(int $courseid, int $days = 30, int $limit = 20, bool $includearchived = false): array {
+    public static function execute(int $courseid, int $days = 30, int $limit = 20, int $offset = 0, bool $includearchived = false): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'        => $courseid,
             'days'            => $days,
             'limit'           => $limit,
+            'offset'          => $offset,
             'includearchived' => $includearchived,
         ]);
 
@@ -65,11 +68,12 @@ class gaps_list extends \external_api {
         // Solo docentes / admins ven los gaps. Los alumnos no.
         require_capability('local/nexusai:manage', $context);
 
-        $days  = max(1, min(365, (int) $params['days']));
-        $limit = max(1, min(100, (int) $params['limit']));
+        $days   = max(1, min(365, (int) $params['days']));
+        $limit  = max(1, min(100, (int) $params['limit']));
+        $offset = max(0, (int) $params['offset']);
 
         $client   = new backend_client();
-        $response = $client->list_gaps((int) $params['courseid'], $days, $limit, (bool) $params['includearchived']);
+        $response = $client->list_gaps((int) $params['courseid'], $days, $limit, (bool) $params['includearchived'], $offset);
 
         return [
             'course_id' => (int) ($response['course_id'] ?? $params['courseid']),
