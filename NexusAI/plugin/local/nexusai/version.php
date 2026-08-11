@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026081009;        // RDS-03 (chat: modo estudio -> quiz en vivo).
-$plugin->release   = '0.11.4';          // RDS-03: "Generar quiz"/"Practicar este tema" mandan el pedido al chat real (issue #402).
+$plugin->version   = 2026081010;        // Revert RDS-03: vuelve el quiz interactivo estructurado.
+$plugin->release   = '0.11.5';          // Revert: "Generar quiz"/"Practicar este tema" vuelven al motor de QuizPanel (scoring/historial) — el flujo por chat no guardaba resultados (issue #402).
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

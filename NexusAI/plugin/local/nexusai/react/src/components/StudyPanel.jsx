@@ -7,11 +7,8 @@
  * ve el alumno al entrar a Modo Estudio, para que el producto sea
  * proactivo (le dice qué hacer) en vez de reactivo (esperar a que
  * se le ocurra qué pedir). No modifica la lógica de QuizPanel ni
- * ReviewPanel — solo decide cuál de los tres montar.
- *
- * RDS-03 (#402): `onSendToChat` viene de ChatApp y baja a StudyPlanPanel/
- * QuizPanel — "Practicar este tema" y "Generar quiz" lo usan para mandar
- * el pedido como un mensaje de chat real en vez de quedarse acá.
+ * ReviewPanel — solo decide cuál de los tres montar, y le pasa a
+ * QuizPanel el tema elegido desde el Plan cuando corresponde.
  */
 
 import { useState } from "react";
@@ -19,12 +16,18 @@ import QuizPanel from "./QuizPanel.jsx";
 import ReviewPanel from "./ReviewPanel.jsx";
 import StudyPlanPanel from "./StudyPlanPanel.jsx";
 
-export default function StudyPanel({ courseId, sesskey, lang = "es", onSendToChat }) {
+export default function StudyPanel({ courseId, sesskey, lang = "es" }) {
     const [mode, setMode] = useState("plan"); // "plan" | "practice" | "review"
+    const [plannedTopic, setPlannedTopic] = useState("");
 
     const L = lang === "es"
         ? { plan: "Plan", practice: "Practicar", review: "Repaso" }
         : { plan: "Plan", practice: "Practice", review: "Review" };
+
+    const practiceTopic = (topic) => {
+        setPlannedTopic(topic);
+        setMode("practice");
+    };
 
     return (
         <div className="nexusai-study">
@@ -39,7 +42,7 @@ export default function StudyPanel({ courseId, sesskey, lang = "es", onSendToCha
                 <button
                     type="button"
                     className={`nexusai-study__modebtn ${mode === "practice" ? "nexusai-study__modebtn--active" : ""}`}
-                    onClick={() => setMode("practice")}
+                    onClick={() => { setPlannedTopic(""); setMode("practice"); }}
                 >
                     {L.practice}
                 </button>
@@ -53,9 +56,9 @@ export default function StudyPanel({ courseId, sesskey, lang = "es", onSendToCha
             </div>
 
             {mode === "plan" ? (
-                <StudyPlanPanel courseId={courseId} lang={lang} onSendToChat={onSendToChat} />
+                <StudyPlanPanel courseId={courseId} lang={lang} onPracticeTopic={practiceTopic} />
             ) : mode === "practice" ? (
-                <QuizPanel courseId={courseId} lang={lang} onSendToChat={onSendToChat} />
+                <QuizPanel courseId={courseId} lang={lang} initialTopic={plannedTopic} />
             ) : (
                 <ReviewPanel courseId={courseId} sesskey={sesskey} lang={lang} />
             )}
