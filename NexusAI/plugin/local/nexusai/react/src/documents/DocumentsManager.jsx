@@ -27,6 +27,9 @@ import { IconBarChart, IconBookOpen, IconClipboardList, IconHelpCircle, IconSear
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
+// UX-17 (#387): cantidad de documentos que se piden por página, tanto en
+// la carga inicial como en cada "Cargar más".
+const PAGE_SIZE = 30;
 
 /**
  * Extrae el mensaje legible de un error de Moodle/FastAPI.
@@ -48,7 +51,9 @@ function extractErrorMessage(err) {
 
 export default function DocumentsManager({ courseid, userid, sesskey, lang = "es" }) {
     const [documents, setDocuments]       = useState([]);
+    const [total, setTotal]               = useState(0);
     const [loading, setLoading]           = useState(true);
+    const [loadingMore, setLoadingMore]   = useState(false);
     const [uploading, setUploading]       = useState(false);
     const [error, setError]               = useState(null);
     const [warningToast, setWarningToast] = useState(null);
@@ -73,9 +78,10 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
         let cancelled = false;
         (async () => {
             try {
-                const docs = await listDocuments(courseid);
+                const data = await listDocuments(courseid, PAGE_SIZE, 0);
                 if (!cancelled) {
-                    setDocuments(docs);
+                    setDocuments(data?.items || []);
+                    setTotal(data?.total || 0);
                     setLoading(false);
                 }
             } catch (err) {
@@ -104,14 +110,20 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
     // algún doc en estado inestable. No depende de `documents` en el dep array,
     // así el interval no se recrea en cada actualización — usa documentsRef
     // para leer el estado fresco sin crear una dependencia.
+    //
+    // UX-17 (#387): pide `limit = documentsRef.current.length` en vez de
+    // paginar desde cero — así el refresco automático respeta cuánto ya
+    // cargó el docente con "Cargar más" en vez de devolverlo a la página 1.
     useEffect(() => {
         const intervalId = setInterval(async () => {
             if (!documentsRef.current.some((d) => !STABLE_STATUSES.has(d.status))) {
                 return; // nada pendiente, saltar este tick
             }
             try {
-                const fresh = await listDocuments(courseid);
-                setDocuments(fresh);
+                const loadedCount = Math.max(documentsRef.current.length, PAGE_SIZE);
+                const fresh = await listDocuments(courseid, loadedCount, 0);
+                setDocuments(fresh?.items || []);
+                setTotal(fresh?.total || 0);
             } catch (pollErr) {
                 // Loguear pero no parar el polling — se reintenta en el próximo tick.
                 // eslint-disable-next-line no-console
@@ -121,6 +133,33 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
 
         return () => clearInterval(intervalId);
     }, [courseid]); // solo se recrea si cambia el curso
+
+    const hasMore = documents.length < total;
+
+    // UX-17 (#387): wrapper de setDocuments para DocumentsTable — hoy solo
+    // lo usa el borrado, que achica la lista. Mantiene `total` en sincro
+    // con la cantidad real de documentos del curso (si no, quedaría
+    // desactualizado y "Cargar más" ofrecería una página que ya no existe).
+    const handleDocumentsChange = (updater) => {
+        setDocuments((prev) => {
+            const next = updater(prev);
+            setTotal((t) => t - (prev.length - next.length));
+            return next;
+        });
+    };
+
+    const handleLoadMore = async () => {
+        setLoadingMore(true);
+        try {
+            const data = await listDocuments(courseid, PAGE_SIZE, documents.length);
+            setDocuments((prev) => [...prev, ...(data?.items || [])]);
+            setTotal(data?.total ?? total);
+        } catch (err) {
+            setError(extractErrorMessage(err));
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     // ── Upload ─────────────────────────────────────────────────────────────
     const handleUpload = async (file) => {
@@ -137,6 +176,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 return;
             }
             setDocuments((prev) => [newDoc, ...prev]);
+            setTotal((prev) => prev + 1);
         } catch (err) {
             const raw = err?.message || String(err);
             if (/HTTP\s+409\b/.test(raw)) {
@@ -250,14 +290,25 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                         <UploadZone onUpload={handleUpload} disabled={uploading} />
 
                         <h3 className="nexusai-documents__heading">
-                            Material indexado ({documents.length})
+                            Material indexado ({total})
                         </h3>
 
                         <DocumentsTable
                             courseId={courseid}
                             documents={documents}
-                            onChange={setDocuments}
+                            onChange={handleDocumentsChange}
                         />
+
+                        {hasMore && (
+                            <button
+                                type="button"
+                                className="nexusai-documents__load-more"
+                                onClick={handleLoadMore}
+                                disabled={loadingMore}
+                            >
+                                {loadingMore ? "Cargando..." : `Cargar más (${documents.length} de ${total})`}
+                            </button>
+                        )}
 
                         {error && (
                             <ErrorModal
