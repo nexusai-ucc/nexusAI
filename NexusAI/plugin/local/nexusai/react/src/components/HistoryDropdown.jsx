@@ -10,6 +10,10 @@
 import { useEffect, useState } from "react";
 import { listSessions } from "../api/history.js";
 
+const INITIAL_LIMIT = 20;
+const LOAD_MORE_STEP = 20;
+const MAX_LIMIT = 100; // mismo tope que ya clampea el backend (UX-18, #388)
+
 function relativeTime(iso, lang = "es") {
     if (!iso) return "";
     try {
@@ -36,15 +40,18 @@ function relativeTime(iso, lang = "es") {
 export default function HistoryDropdown({ open, onClose, courseId, currentSessionId, onSelectSession, lang = "es" }) {
     const [sessions, setSessions] = useState(null);
     const [loading, setLoading]   = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError]       = useState(null);
     const [scopeCourse, setScopeCourse] = useState(true);
+    const [limit, setLimit] = useState(INITIAL_LIMIT);
 
     useEffect(() => {
         if (!open) return;
         let cancelled = false;
         setLoading(true);
         setError(null);
-        listSessions({ courseId, scopeCourse, limit: 20 })
+        setLimit(INITIAL_LIMIT);
+        listSessions({ courseId, scopeCourse, limit: INITIAL_LIMIT })
             .then((data) => { if (!cancelled) setSessions(data?.sessions || []); })
             .catch((err) => { if (!cancelled) setError(err.message || "Error"); })
             .finally(() => { if (!cancelled) setLoading(false); });
@@ -52,6 +59,27 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
     }, [open, courseId, scopeCourse]);
 
     if (!open) return null;
+
+    // Sin `offset`/`total` en el backend (a diferencia de Gaps/Documentos):
+    // "cargar más" pide un límite mayor y reemplaza la lista entera, en vez
+    // de appendear una página nueva. Si la última respuesta trajo menos de
+    // lo pedido, ya no hay más sesiones.
+    const hasMore = sessions && sessions.length >= limit && limit < MAX_LIMIT;
+
+    const handleLoadMore = async () => {
+        const nextLimit = Math.min(limit + LOAD_MORE_STEP, MAX_LIMIT);
+        setLoadingMore(true);
+        setError(null);
+        try {
+            const data = await listSessions({ courseId, scopeCourse, limit: nextLimit });
+            setSessions(data?.sessions || []);
+            setLimit(nextLimit);
+        } catch (err) {
+            setError(err.message || "Error cargando más sesiones");
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     const labels = lang === "es"
         ? {
@@ -62,6 +90,7 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             scopeAll:    "Todos mis cursos",
             messagesPl:  "mensajes",
             messageSg:   "mensaje",
+            loadMore:    "Cargar más sesiones",
         }
         : {
             title:       "History",
@@ -71,6 +100,7 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             scopeAll:    "All my courses",
             messagesPl:  "messages",
             messageSg:   "message",
+            loadMore:    "Load more sessions",
         };
 
     return (
@@ -128,6 +158,16 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
                         </div>
                     </button>
                 ))}
+                {hasMore && (
+                    <button
+                        type="button"
+                        className="nexusai-history__load-more"
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                    >
+                        {loadingMore ? labels.loading : labels.loadMore}
+                    </button>
+                )}
             </div>
         </div>
     );
