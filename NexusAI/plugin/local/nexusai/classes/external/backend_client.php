@@ -202,19 +202,42 @@ class backend_client {
      * @param int $courseid ID del curso.
      * @param int $days     Días hacia atrás (1..365).
      * @param int $limit    Máximo de items (1..100).
+     * @param bool $includearchived Incluir gaps ya archivados (DOC-D08, #383).
      * @return array{course_id:int, days:int, total:int, items:array}
      */
-    public function list_gaps(int $courseid, int $days = 30, int $limit = 20): array {
+    public function list_gaps(int $courseid, int $days = 30, int $limit = 20, bool $includearchived = false): array {
         $payload = [
-            'course_id' => $courseid,
-            'days'      => $days,
-            'limit'     => $limit,
+            'course_id'        => $courseid,
+            'days'             => $days,
+            'limit'            => $limit,
+            'include_archived' => $includearchived,
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
         return $this->post('/api/v1/gaps/list', $body);
+    }
+
+    /**
+     * Archiva o desarchiva un gap detectado (DOC-D08, issue #383).
+     *
+     * @param int $courseid    ID del curso.
+     * @param array $questionids IDs (UUID string) de las filas a marcar.
+     * @param bool $archived   true para archivar, false para desarchivar.
+     * @return array{course_id:int, archived:bool, affected:int}
+     */
+    public function archive_gap(int $courseid, array $questionids, bool $archived): array {
+        $payload = [
+            'course_id'    => $courseid,
+            'question_ids' => $questionids,
+            'archived'     => $archived,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/gaps/archive', $body);
     }
 
     /**
