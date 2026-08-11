@@ -98,18 +98,19 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
         setLoading(true);
         setError(null);
 
-        Promise.all([
-            getStudyPlan(courseId),
-            getUpcomingEvents(courseId, 7),
-        ]).then(([planData, events]) => {
-            if (cancelled) return;
-            setTopics(planData?.topics || []);
-            setNextEvent(events?.[0] || null);
-        }).catch(() => {
-            if (!cancelled) setError(L.error);
-        }).finally(() => {
-            if (!cancelled) setLoading(false);
-        });
+        // Fetches independientes: el calendario es una señal secundaria (el
+        // banner de deadline) y no debe tumbar el plan de estudio si falla
+        // — ej. core_calendar_get_action_events_by_course tira excepción en
+        // Moodle para usuarios no matriculados en el curso (admin sin rol de
+        // alumno), un caso real que no debería romper el plan en sí.
+        getStudyPlan(courseId)
+            .then((planData) => { if (!cancelled) setTopics(planData?.topics || []); })
+            .catch(() => { if (!cancelled) setError(L.error); })
+            .finally(() => { if (!cancelled) setLoading(false); });
+
+        getUpcomingEvents(courseId, 7)
+            .then((events) => { if (!cancelled) setNextEvent(events?.[0] || null); })
+            .catch(() => { /* banner de deadline es secundario — falla en silencio */ });
 
         return () => { cancelled = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
