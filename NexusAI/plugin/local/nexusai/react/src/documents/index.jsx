@@ -32,6 +32,7 @@ export const init = (params = {}) => {
                 userid={params.userid}
                 sesskey={params.sesskey}
                 lang={params.lang || "es"}
+                courseFullname={params.fullname}
             />
         );
         // eslint-disable-next-line no-console

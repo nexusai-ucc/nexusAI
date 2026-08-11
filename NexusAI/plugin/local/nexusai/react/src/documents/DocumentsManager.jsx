@@ -23,13 +23,24 @@ import FaqDashboardPanel from "./FaqDashboardPanel.jsx";
 import AnalyticsDashboardPanel from "./AnalyticsDashboardPanel.jsx";
 import ExamGeneratorPanel from "./ExamGeneratorPanel.jsx";
 import SearchPanel from "../components/SearchPanel.jsx";
-import { IconBarChart, IconBookOpen, IconClipboardList, IconHelpCircle, IconSearch, IconTarget } from "../components/icons.jsx";
+import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconSearch, IconTarget } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
 // UX-17 (#387): cantidad de documentos que se piden por página, tanto en
 // la carga inicial como en cada "Cargar más".
 const PAGE_SIZE = 30;
+
+// RDS-05 (#404): nav lateral data-driven — reemplaza las 6 tabs
+// hardcodeadas de antes.
+const NAV_ITEMS = [
+    { key: "material",  label: "Material",             Icon: IconBookOpen },
+    { key: "gaps",      label: "Gaps detectados",       Icon: IconTarget },
+    { key: "analytics", label: "Analytics",             Icon: IconBarChart },
+    { key: "faq",       label: "Preguntas frecuentes",  Icon: IconHelpCircle },
+    { key: "exam",      label: "Generar examen",        Icon: IconClipboardList },
+    { key: "search",    label: "Buscar",                Icon: IconSearch },
+];
 
 /**
  * Extrae el mensaje legible de un error de Moodle/FastAPI.
@@ -49,7 +60,7 @@ function extractErrorMessage(err) {
     return raw;
 }
 
-export default function DocumentsManager({ courseid, userid, sesskey, lang = "es" }) {
+export default function DocumentsManager({ courseid, userid, sesskey, lang = "es", courseFullname }) {
     const [documents, setDocuments]       = useState([]);
     const [total, setTotal]               = useState(0);
     const [loading, setLoading]           = useState(true);
@@ -193,58 +204,36 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
 
     return (
         <div className="nexusai-documents">
-            {/* Tabs Material / Gaps / Buscar */}
-            <div className="nexusai-doc-tabs">
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "material" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("material")}
-                >
-                    <IconBookOpen size={15} />
-                    Material
-                </button>
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "gaps" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("gaps")}
-                >
-                    <IconTarget size={15} />
-                    Gaps detectados
-                </button>
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "analytics" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("analytics")}
-                >
-                    <IconBarChart size={15} />
-                    Analytics
-                </button>
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "faq" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("faq")}
-                >
-                    <IconHelpCircle size={15} />
-                    Preguntas frecuentes
-                </button>
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "exam" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("exam")}
-                >
-                    <IconClipboardList size={15} />
-                    Generar examen
-                </button>
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "search" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("search")}
-                >
-                    <IconSearch size={15} />
-                    Buscar
-                </button>
-            </div>
+            <aside className="nexusai-doc-sidebar">
+                <div className="nexusai-doc-sidebar__course">
+                    <span className="nexusai-doc-sidebar__course-label">Curso</span>
+                    <span className="nexusai-doc-sidebar__course-name">{courseFullname}</span>
+                </div>
 
+                <nav className="nexusai-doc-nav">
+                    {NAV_ITEMS.map(({ key, label, Icon }) => (
+                        <button
+                            key={key}
+                            type="button"
+                            className={`nexusai-doc-nav__item ${activeTab === key ? "nexusai-doc-nav__item--active" : ""}`}
+                            onClick={() => setActiveTab(key)}
+                        >
+                            <Icon size={15} />
+                            <span>{label}</span>
+                            {key === "material" && (
+                                <span className="nexusai-doc-nav__badge">{total}</span>
+                            )}
+                        </button>
+                    ))}
+                </nav>
+
+                <div className="nexusai-doc-sidebar__status">
+                    <IconCheck size={12} />
+                    Asistente activo
+                </div>
+            </aside>
+
+            <div className="nexusai-doc-content">
             {activeTab === "search" ? (
                 <SearchPanel
                     courseId={courseid}
@@ -327,7 +316,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
             ) : (
                 <GapsPanel courseId={courseid} />
             )}
-
+            </div>
         </div>
     );
 }

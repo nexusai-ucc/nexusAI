@@ -55,6 +55,8 @@ $PAGE->requires->js_call_amd('local_nexusai/documents-manager-lazy', 'init', [
         'sesskey'   => sesskey(),
         'wwwroot'   => (string) (new moodle_url('/'))->out(false),
         'lang'      => current_language(),
+        'fullname'  => (string) format_string($course->fullname),
+        'shortname' => (string) format_string($course->shortname),
     ],
 ]);
 
