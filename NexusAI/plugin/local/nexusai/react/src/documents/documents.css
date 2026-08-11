@@ -819,6 +819,11 @@
     border: 1px solid #e8edf5;
     border-radius: 8px;
     padding: 14px 16px;
+    /* UX-16: sin esto, el tamaño mínimo automático del grid item se calcula
+       a partir del contenido (el ancho mínimo de las barras diarias con
+       muchos días) y "revienta" la columna 1fr entera en vez de quedarse
+       adentro con scroll. */
+    min-width: 0;
 }
 .nexusai-analytics__section-empty {
     font-size: 13px;
@@ -832,6 +837,11 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    /* UX-16: tope defensivo — ya viene acotada a 10 desde el backend, pero
+       con preguntas largas que wrappean, 10 ítems pueden ocupar mucho alto
+       en pantallas chicas. */
+    max-height: 280px;
+    overflow-y: auto;
 }
 
 /* Barras genéricas (uso diario / distribución de puntajes) */
@@ -845,8 +855,15 @@
 .nexusai-analytics__bars--buckets {
     gap: 10px;
 }
+/* UX-16: con days=365 las barras diarias no deben achicarse a líneas
+   ilegibles — scrollean horizontalmente en vez de aplastarse. */
+.nexusai-analytics__bars--daily {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
 .nexusai-analytics__bar-col {
-    flex: 1;
+    flex: 1 1 6px;
+    min-width: 6px;
     display: flex;
     align-items: flex-end;
     height: 100%;
