@@ -44,9 +44,12 @@ export default function ExamGeneratorPanel({ courseId }) {
     useEffect(() => {
         let cancelled = false;
         listDocuments(courseId)
-            .then((docs) => {
+            .then((data) => {
                 if (!cancelled) {
-                    setDocuments((docs || []).filter((d) => d.status === "indexed"));
+                    // UX-17 (#387): sin limit, listDocuments trae todos los
+                    // documentos del curso (hasta el tope interno del backend)
+                    // — necesario acá para poder elegir de cualquiera.
+                    setDocuments((data?.items || []).filter((d) => d.status === "indexed"));
                     setDocsLoading(false);
                 }
             })

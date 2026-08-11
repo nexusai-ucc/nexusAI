@@ -794,8 +794,12 @@ class backend_client {
      * @param int $courseid ID del curso de Moodle.
      * @return array Lista de documentos con su estado actual.
      */
-    public function list_documents(int $courseid): array {
-        return $this->get('/api/v1/documents?course_id=' . $courseid);
+    public function list_documents(int $courseid, ?int $limit = null, int $offset = 0): array {
+        $query = 'course_id=' . $courseid . '&offset=' . $offset;
+        if ($limit !== null) {
+            $query .= '&limit=' . $limit;
+        }
+        return $this->get('/api/v1/documents?' . $query);
     }
 
     /**
