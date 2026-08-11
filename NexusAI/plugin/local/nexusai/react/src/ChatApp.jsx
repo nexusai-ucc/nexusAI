@@ -87,14 +87,6 @@ function isInsideMoodle() {
     return typeof window !== "undefined" && window.M && window.M.cfg;
 }
 
-// RDS-01: sidebar acoplado — angosta el contenido real del curso al abrir.
-// #page-content es el wrapper de Boost que ya trae `transition: all` propio,
-// así que el margin-right anima solo sin CSS de transición nuestro. Si el
-// theme no tiene ese selector (no es Boost), el push simplemente no aplica.
-const PAGE_CONTENT_SELECTOR = "#page-content";
-const SIDEBAR_WIDTH = 400;
-const PUSH_MIN_VIEWPORT = 768;
-
 /* ---- Iconos SVG inline ---- */
 const IconSparkle = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -177,21 +169,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         window.addEventListener("nexusai:toggle-panel", handleToggle);
         return () => window.removeEventListener("nexusai:toggle-panel", handleToggle);
     }, []);
-
-    // RDS-01: sidebar acoplado — angosta #page-content al abrir, en vez de
-    // cerrarse solo con un click afuera (ese comportamiento tenía sentido
-    // para un dropdown flotante, pero rompería la razón de ser de un panel
-    // docked: se cierra con su propio botón o el riel colapsado).
-    useEffect(() => {
-        const el = document.querySelector(PAGE_CONTENT_SELECTOR);
-        if (!el) return; // theme sin ese selector — fallback silencioso, no rompe nada
-        if (open && window.innerWidth >= PUSH_MIN_VIEWPORT) {
-            el.style.marginRight = `${SIDEBAR_WIDTH}px`;
-        } else {
-            el.style.marginRight = "";
-        }
-        return () => { el.style.marginRight = ""; };
-    }, [open]);
 
     const send = async (question) => {
         setError(null);

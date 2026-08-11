@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026081005;        // RDS-01 (chat: sidebar acoplado).
-$plugin->release   = '0.11.0';          // RDS-01: panel del chat pasa de dropdown flotante a sidebar acoplado que empuja el contenido del curso (issue #400).
+$plugin->version   = 2026081006;        // Fix: sidebar overlay (sin push) + study plan resiliente.
+$plugin->release   = '0.11.1';          // Fix post-RDS-01: el sidebar ya no angosta el contenido del curso; Modo Estudio > Plan no se rompe si falla el calendario.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
