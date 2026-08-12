@@ -11,10 +11,49 @@
  */
 
 import { useEffect, useState } from "react";
-import { listDocuments } from "./api.js";
+import { listDocuments, listGaps, getFaqTopics } from "./api.js";
 import { generateExam } from "../api/quiz.js";
 import { downloadGiftFile } from "./gift.js";
 import { IconClipboardList, IconDownload, IconFileText } from "../components/icons.jsx";
+
+// DOC-D09 (#390): cuántos temas con dificultad detectada se ofrecen como
+// máximo (combinados entre Gaps y FAQ) — coincide con el tope que acepta
+// el backend (ExamGenerateRequest.focus_topics, max_length=15).
+const MAX_FOCUS_TOPICS = 15;
+
+/**
+ * Trae temas con dificultad detectada desde Gaps (preguntas sin responder,
+ * DOC-D06) y FAQ agrupada (analytics), los combina y ordena por frecuencia.
+ * Gaps archivados quedan excluidos por default en listGaps (DOC-D08).
+ */
+async function fetchFocusTopicCandidates(courseId) {
+    const [gapsRes, faqRes] = await Promise.all([
+        listGaps(courseId, 30, 30, false, 0).catch(() => ({ items: [] })),
+        getFaqTopics(courseId, 30).catch(() => ({ topics: [] })),
+    ]);
+
+    const fromGaps = (gapsRes?.items || []).map((g) => ({
+        label: g.question,
+        source: "gap",
+        count: g.count,
+    }));
+    const fromFaq = (faqRes?.topics || []).map((t) => ({
+        label: t.topic,
+        source: "faq",
+        count: t.count,
+    }));
+
+    const seen = new Set();
+    const merged = [];
+    for (const item of [...fromGaps, ...fromFaq]) {
+        const key = item.label.trim().toLowerCase();
+        if (!item.label.trim() || seen.has(key)) continue;
+        seen.add(key);
+        merged.push(item);
+    }
+    merged.sort((a, b) => b.count - a.count);
+    return merged.slice(0, MAX_FOCUS_TOPICS);
+}
 
 const QUESTION_TYPES = [
     { value: "multiple_choice", label: "Opción múltiple" },
@@ -42,6 +81,13 @@ export default function ExamGeneratorPanel({ courseId }) {
     const [questions, setQuestions] = useState([]);
     const [error, setError] = useState(null);
 
+    // DOC-D09 (#390): "incluir temas con dificultad detectada" (Gaps/FAQ).
+    const [includeFocusTopics, setIncludeFocusTopics] = useState(false);
+    const [focusTopics, setFocusTopics] = useState([]); // candidatos {label, source, count}
+    const [focusTopicsLoading, setFocusTopicsLoading] = useState(false);
+    const [focusTopicsLoaded, setFocusTopicsLoaded] = useState(false);
+    const [selectedFocusTopics, setSelectedFocusTopics] = useState({}); // key(label+source) -> bool
+
     useEffect(() => {
         let cancelled = false;
         listDocuments(courseId)
@@ -66,11 +112,42 @@ export default function ExamGeneratorPanel({ courseId }) {
         );
     };
 
+    const focusTopicKey = (t) => `${t.source}:${t.label}`;
+
+    const toggleIncludeFocusTopics = (checked) => {
+        setIncludeFocusTopics(checked);
+        if (checked && !focusTopicsLoaded) {
+            setFocusTopicsLoading(true);
+            fetchFocusTopicCandidates(courseId)
+                .then((topics) => {
+                    setFocusTopics(topics);
+                    // Todos preseleccionados — el docente puede destildar los que no quiera.
+                    setSelectedFocusTopics(
+                        Object.fromEntries(topics.map((t) => [focusTopicKey(t), true]))
+                    );
+                })
+                .finally(() => {
+                    setFocusTopicsLoading(false);
+                    setFocusTopicsLoaded(true);
+                });
+        }
+    };
+
+    const toggleFocusTopic = (t) => {
+        const key = focusTopicKey(t);
+        setSelectedFocusTopics((prev) => ({ ...prev, [key]: !prev[key] }));
+    };
+
     const handleGenerate = async () => {
         if (!selectedIds.length) return;
         setStage("loading");
         setError(null);
         try {
+            const chosenFocusTopics = includeFocusTopics
+                ? focusTopics
+                    .filter((t) => selectedFocusTopics[focusTopicKey(t)])
+                    .map((t) => ({ label: t.label, source: t.source }))
+                : [];
             const result = await generateExam({
                 courseId,
                 documentIds: selectedIds,
@@ -78,6 +155,7 @@ export default function ExamGeneratorPanel({ courseId }) {
                 numQuestions,
                 questionType,
                 difficulty,
+                focusTopics: chosenFocusTopics,
             });
             setQuestions(result.questions || []);
             setStage("preview");
@@ -230,6 +308,47 @@ export default function ExamGeneratorPanel({ courseId }) {
                                 </label>
                             </div>
 
+                            <div className="nexusai-exam__focus">
+                                <label className="nexusai-exam__focus-toggle">
+                                    <input
+                                        type="checkbox"
+                                        checked={includeFocusTopics}
+                                        onChange={(e) => toggleIncludeFocusTopics(e.target.checked)}
+                                    />
+                                    Incluir temas con dificultad detectada (Gaps y preguntas frecuentes)
+                                </label>
+
+                                {includeFocusTopics && focusTopicsLoading && (
+                                    <div className="nexusai-loading">Buscando temas con dificultad detectada...</div>
+                                )}
+
+                                {includeFocusTopics && !focusTopicsLoading && focusTopicsLoaded && focusTopics.length === 0 && (
+                                    <p className="nexusai-exam__focus-empty">
+                                        No hay suficientes preguntas de alumnos (Gaps o FAQ) todavía para sugerir temas.
+                                    </p>
+                                )}
+
+                                {includeFocusTopics && !focusTopicsLoading && focusTopics.length > 0 && (
+                                    <ul className="nexusai-exam__doclist nexusai-exam__focus-list">
+                                        {focusTopics.map((t) => (
+                                            <li key={focusTopicKey(t)} className="nexusai-exam__docitem">
+                                                <label>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={!!selectedFocusTopics[focusTopicKey(t)]}
+                                                        onChange={() => toggleFocusTopic(t)}
+                                                    />
+                                                    <span className={`nexusai-exam__focus-badge nexusai-exam__focus-badge--${t.source}`}>
+                                                        {t.source === "gap" ? "Gap" : "FAQ"}
+                                                    </span>
+                                                    <span>{t.label}</span>
+                                                </label>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+
                             <div className="nexusai-exam__wizard-actions">
                                 <button
                                     type="button"
@@ -336,6 +455,11 @@ export default function ExamGeneratorPanel({ courseId }) {
 
                             {q.source_filename && (
                                 <div className="nexusai-exam__source">Fuente: {q.source_filename}</div>
+                            )}
+                            {q.source_topic && (
+                                <div className="nexusai-exam__source nexusai-exam__source--topic">
+                                    Tema con dificultad detectada: {q.source_topic}
+                                </div>
                             )}
                         </div>
                     ))}
