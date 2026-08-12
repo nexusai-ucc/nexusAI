@@ -398,14 +398,16 @@ class backend_client {
      * @param int $userid   $USER->id real.
      * @param int $days     Días hacia atrás (1..365).
      * @param int $limit    Máximo de items (1..200).
+     * @param int $offset   Cantidad de items a saltear (paginación, UX-19 #389).
      * @return array{course_id:int, total:int, items:array}
      */
-    public function list_quiz_errors(int $courseid, int $userid, int $days = 90, int $limit = 100): array {
+    public function list_quiz_errors(int $courseid, int $userid, int $days = 90, int $limit = 100, int $offset = 0): array {
         $payload = [
             'course_id' => $courseid,
             'user_id'   => $userid,
             'days'      => $days,
             'limit'     => $limit,
+            'offset'    => $offset,
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
