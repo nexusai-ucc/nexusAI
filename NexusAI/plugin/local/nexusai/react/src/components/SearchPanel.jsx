@@ -285,20 +285,6 @@ export default function SearchPanel({
                         key={`${r.document_filename}-${r.chunk_index}-${i}`}
                         className="nexusai-search__result"
                     >
-                        {r.document_id && (
-                            <button
-                                type="button"
-                                className="nexusai-search__summarize-btn"
-                                onClick={() => handleSummarize(r.document_id)}
-                                disabled={summaries[r.document_id]?.loading}
-                            >
-                                {summaries[r.document_id]?.loading
-                                    ? "..."
-                                    : summaries[r.document_id]?.text && summaries[r.document_id]?.visible
-                                        ? L.hideSummary
-                                        : L.summarize}
-                            </button>
-                        )}
                         <div className="nexusai-search__result-header">
                             <span className="nexusai-search__filename">
                                 <FileIcon filename={r.document_filename} />
@@ -317,6 +303,20 @@ export default function SearchPanel({
                                         onClick={() => openDownload(r.document_filename, r.course_id)}
                                     >
                                         {L.openFile}
+                                    </button>
+                                )}
+                                {r.document_id && (
+                                    <button
+                                        type="button"
+                                        className="nexusai-search__summarize-btn"
+                                        onClick={() => handleSummarize(r.document_id)}
+                                        disabled={summaries[r.document_id]?.loading}
+                                    >
+                                        {summaries[r.document_id]?.loading
+                                            ? "..."
+                                            : summaries[r.document_id]?.text && summaries[r.document_id]?.visible
+                                                ? L.hideSummary
+                                                : L.summarize}
                                     </button>
                                 )}
                             </div>

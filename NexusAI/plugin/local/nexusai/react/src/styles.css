@@ -1052,7 +1052,6 @@
     padding: 24px 0;
 }
 .nexusai-search__result {
-    position: relative;
     background: #f7f8fc;
     border: 1px solid #e8edf5;
     border-radius: 8px;
@@ -1067,11 +1066,11 @@
 }
 .nexusai-search__result-header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 6px;
-    gap: 8px;
-    padding-right: 60px; /* deja lugar al botón "Resumir" en la esquina */
+    gap: 6px 8px;
 }
 .nexusai-search__filename {
     display: inline-flex;
@@ -1084,6 +1083,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
+    flex: 1 1 120px;
 }
 .nexusai-search__score {
     font-size: 11px;
@@ -1092,6 +1092,7 @@
 }
 .nexusai-search__result-actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
     flex-shrink: 0;
@@ -1104,12 +1105,10 @@
     border: none;
     cursor: pointer;
     padding: 2px 4px;
+    white-space: nowrap;
 }
 .nexusai-search__open-btn:hover { text-decoration: underline; }
 .nexusai-search__summarize-btn {
-    position: absolute;
-    top: 8px;
-    right: 10px;
     font-size: 10.5px;
     font-weight: 600;
     color: var(--nexusai-primary, #6366f1);
@@ -1118,6 +1117,8 @@
     border-radius: var(--nexusai-radius-full, 9999px);
     padding: 2px 9px;
     cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .nexusai-search__summarize-btn:hover { background: var(--nexusai-primary-light, rgba(99,102,241,0.07)); }
 .nexusai-search__summarize-btn:disabled { opacity: .6; cursor: default; }
