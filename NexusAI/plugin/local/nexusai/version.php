@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026081201;        // RDS-07: restyle de Material/Gaps/FAQ/Generar examen/Buscar.
-$plugin->release   = '0.13.0';          // Pasada visual docente sobre los 5 tabs restantes (tarjetas SaaS, wizard de examen de 2 pasos, badges tri-color) — issue #406.
+$plugin->version   = 2026081202;        // Fix: botón "Resumir" de Buscar se superponía con "Open" en anchos angostos.
+$plugin->release   = '0.13.1';          // .nexusai-search__summarize-btn pasa de position:absolute con padding-right adivinado a flex in-flow dentro de .nexusai-search__result-actions — sin overlap a ningún ancho.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
