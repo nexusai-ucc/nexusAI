@@ -23,10 +23,14 @@ function formatDate(iso) {
     }
 }
 
+const PAGE_SIZE = 100;
+
 export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
     const [errors, setErrors] = useState([]);
+    const [total, setTotal] = useState(0);
     const [suggestions, setSuggestions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [suggestionsLoading, setSuggestionsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expanded, setExpanded] = useState({});
@@ -49,6 +53,8 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         typeOpen:       "Pregunta abierta",
         showMore:       "Ver explicación",
         showLess:       "Ocultar",
+        loadMore:       "Cargar más",
+        loading:        "Cargando...",
         score:          (n) => `${Math.round(n * 100)}% de la respuesta correcta`,
         suggTitle:      "Sugerencias de repaso",
         suggSubtitle:   "Basadas en tus errores más frecuentes.",
@@ -74,6 +80,8 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         typeOpen:       "Open question",
         showMore:       "See explanation",
         showLess:       "Hide",
+        loadMore:       "Load more",
+        loading:        "Loading...",
         score:          (n) => `${Math.round(n * 100)}% of the correct answer`,
         suggTitle:      "Review suggestions",
         suggSubtitle:   "Based on your most frequent mistakes.",
@@ -94,8 +102,12 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
 
         setLoading(true);
         setError(null);
-        listQuizErrors(courseId)
-            .then((data) => { if (!cancelled) setErrors(data?.items || []); })
+        listQuizErrors(courseId, 90, PAGE_SIZE, 0)
+            .then((data) => {
+                if (cancelled) return;
+                setErrors(data?.items || []);
+                setTotal(data?.total ?? 0);
+            })
             .catch((err) => { if (!cancelled) setError(err.message || L.loadError); })
             .finally(() => { if (!cancelled) setLoading(false); });
 
@@ -111,8 +123,24 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
 
     const clearAll = async () => {
         setErrors([]);
+        setTotal(0);
         setSuggestions([]);
         try { await clearQuizErrors(courseId); } catch { /* best-effort */ }
+    };
+
+    const hasMore = errors.length < total;
+
+    const handleLoadMore = async () => {
+        setLoadingMore(true);
+        try {
+            const data = await listQuizErrors(courseId, 90, PAGE_SIZE, errors.length);
+            setErrors((prev) => [...prev, ...(data?.items || [])]);
+            setTotal(data?.total ?? total);
+        } catch (err) {
+            setError(err.message || L.loadError);
+        } finally {
+            setLoadingMore(false);
+        }
     };
 
     const toggleExpand = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -220,7 +248,9 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
             <div className="nexusai-review__header">
                 <div>
                     <h4 className="nexusai-review__title">{L.title}</h4>
-                    <p className="nexusai-review__subtitle">{errors.length} {L.subtitle}</p>
+                    <p className="nexusai-review__subtitle">
+                        {hasMore ? `${errors.length} / ${total}` : errors.length} {L.subtitle}
+                    </p>
                 </div>
                 <button
                     type="button"
@@ -324,6 +354,17 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                     );
                 })}
             </div>
+
+            {hasMore && (
+                <button
+                    type="button"
+                    className="nexusai-review__load-more"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                >
+                    {loadingMore ? L.loading : `${L.loadMore} (${errors.length} / ${total})`}
+                </button>
+            )}
         </div>
     );
 }

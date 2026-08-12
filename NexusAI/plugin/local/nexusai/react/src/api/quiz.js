@@ -224,15 +224,16 @@ export async function recordQuizErrors({ courseId, errors }) {
  * @param {number} courseId
  * @param {number} [days=90]
  * @param {number} [limit=100]
+ * @param {number} [offset=0]
  * @returns {Promise<{course_id:number, total:number, items:Array}>}
  */
-export async function listQuizErrors(courseId, days = 90, limit = 100) {
+export async function listQuizErrors(courseId, days = 90, limit = 100, offset = 0) {
     const ajax = await getMoodleAjax();
     if (!ajax) return { course_id: courseId, total: 0, items: [] };
 
     const [response] = await ajax.call([{
         methodname: "local_nexusai_quiz_errors_list",
-        args: { courseid: courseId, days, limit },
+        args: { courseid: courseId, days, limit, offset },
     }]);
 
     return response;

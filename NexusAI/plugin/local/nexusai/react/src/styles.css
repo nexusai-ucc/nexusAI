@@ -2111,6 +2111,25 @@
     gap: 10px;
 }
 
+/* UX-19 (#389): "cargar más" con offset/total reales del backend — mismo
+   recipe visual que .nexusai-history__load-more más arriba. */
+.nexusai-review__load-more {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 8px 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexusai-primary, #6366f1);
+    background: #f7f8fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .12s;
+}
+.nexusai-review__load-more:hover { border-color: #c6d4f0; }
+.nexusai-review__load-more:disabled { color: #94a3b8; cursor: default; }
+
 /* Individual card */
 .nexusai-review__card {
     background: #fff;
