@@ -31,6 +31,7 @@ const DIFFICULTIES = [
 
 export default function ExamGeneratorPanel({ courseId }) {
     const [stage, setStage] = useState("setup"); // setup | loading | preview | error
+    const [wizardStep, setWizardStep] = useState("files"); // files | configure (solo dentro de stage "setup")
     const [documents, setDocuments] = useState([]);
     const [docsLoading, setDocsLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -113,6 +114,7 @@ export default function ExamGeneratorPanel({ courseId }) {
 
     const handleReset = () => {
         setStage("setup");
+        setWizardStep("files");
         setQuestions([]);
         setError(null);
     };
@@ -126,92 +128,128 @@ export default function ExamGeneratorPanel({ courseId }) {
             </p>
 
             {stage === "setup" && (
-                <div className="nexusai-exam__setup">
-                    <h3 className="nexusai-documents__heading">
-                        1. Elegí los archivos ({selectedIds.length} seleccionados)
-                    </h3>
-
-                    {docsLoading ? (
-                        <div className="nexusai-loading">Cargando material del curso...</div>
-                    ) : documents.length === 0 ? (
-                        <div className="nexusai-gaps__empty">
-                            <p className="nexusai-gaps__empty-title">
-                                Todavía no hay material indexado en este curso.
-                            </p>
-                            <p className="nexusai-gaps__empty-sub">
-                                Subí archivos en la tab "Material" antes de generar un examen.
-                            </p>
-                        </div>
-                    ) : (
-                        <ul className="nexusai-exam__doclist">
-                            {documents.map((doc) => (
-                                <li key={doc.id} className="nexusai-exam__docitem">
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedIds.includes(doc.id)}
-                                            onChange={() => toggleDoc(doc.id)}
-                                        />
-                                        <IconFileText size={14} />
-                                        <span>{doc.filename}</span>
-                                    </label>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-
-                    <h3 className="nexusai-documents__heading">2. Configurá el examen</h3>
-                    <div className="nexusai-exam__form">
-                        <label className="nexusai-exam__field">
-                            Tema (opcional)
-                            <input
-                                type="text"
-                                value={topic}
-                                onChange={(e) => setTopic(e.target.value)}
-                                placeholder="Ej: derivadas, unidad 3..."
-                                maxLength={200}
-                            />
-                        </label>
-
-                        <label className="nexusai-exam__field">
-                            Tipo de pregunta
-                            <select value={questionType} onChange={(e) => setQuestionType(e.target.value)}>
-                                {QUESTION_TYPES.map((t) => (
-                                    <option key={t.value} value={t.value}>{t.label}</option>
-                                ))}
-                            </select>
-                        </label>
-
-                        <label className="nexusai-exam__field">
-                            Dificultad
-                            <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-                                {DIFFICULTIES.map((d) => (
-                                    <option key={d.value} value={d.value}>{d.label}</option>
-                                ))}
-                            </select>
-                        </label>
-
-                        <label className="nexusai-exam__field">
-                            Cantidad de preguntas
-                            <input
-                                type="number"
-                                min={1}
-                                max={20}
-                                value={numQuestions}
-                                onChange={(e) => setNumQuestions(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
-                            />
-                        </label>
+                <div className="nexusai-exam__setup nexusai-doc-card">
+                    <div className="nexusai-exam__steps">
+                        <span className={`nexusai-exam__step ${wizardStep === "files" ? "nexusai-exam__step--active" : ""}`}>
+                            <span className="nexusai-exam__step-num">1</span>
+                            Archivos
+                        </span>
+                        <span className="nexusai-exam__step-arrow">→</span>
+                        <span className={`nexusai-exam__step ${wizardStep === "configure" ? "nexusai-exam__step--active" : ""}`}>
+                            <span className="nexusai-exam__step-num">2</span>
+                            Configurar
+                        </span>
                     </div>
 
-                    <button
-                        type="button"
-                        className="nexusai-btn nexusai-btn--primary"
-                        disabled={!selectedIds.length}
-                        onClick={handleGenerate}
-                    >
-                        <IconClipboardList size={15} />
-                        Generar examen
-                    </button>
+                    {wizardStep === "files" ? (
+                        <>
+                            <h3 className="nexusai-documents__heading">
+                                Elegí los archivos ({selectedIds.length} seleccionados)
+                            </h3>
+
+                            {docsLoading ? (
+                                <div className="nexusai-loading">Cargando material del curso...</div>
+                            ) : documents.length === 0 ? (
+                                <div className="nexusai-gaps__empty">
+                                    <p className="nexusai-gaps__empty-title">
+                                        Todavía no hay material indexado en este curso.
+                                    </p>
+                                    <p className="nexusai-gaps__empty-sub">
+                                        Subí archivos en la tab "Material" antes de generar un examen.
+                                    </p>
+                                </div>
+                            ) : (
+                                <ul className="nexusai-exam__doclist">
+                                    {documents.map((doc) => (
+                                        <li key={doc.id} className="nexusai-exam__docitem">
+                                            <label>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(doc.id)}
+                                                    onChange={() => toggleDoc(doc.id)}
+                                                />
+                                                <IconFileText size={14} />
+                                                <span>{doc.filename}</span>
+                                            </label>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+
+                            <button
+                                type="button"
+                                className="nexusai-btn nexusai-btn--primary"
+                                disabled={!selectedIds.length}
+                                onClick={() => setWizardStep("configure")}
+                            >
+                                Siguiente
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <h3 className="nexusai-documents__heading">Configurá el examen</h3>
+                            <div className="nexusai-exam__form">
+                                <label className="nexusai-exam__field">
+                                    Tema (opcional)
+                                    <input
+                                        type="text"
+                                        value={topic}
+                                        onChange={(e) => setTopic(e.target.value)}
+                                        placeholder="Ej: derivadas, unidad 3..."
+                                        maxLength={200}
+                                    />
+                                </label>
+
+                                <label className="nexusai-exam__field">
+                                    Tipo de pregunta
+                                    <select value={questionType} onChange={(e) => setQuestionType(e.target.value)}>
+                                        {QUESTION_TYPES.map((t) => (
+                                            <option key={t.value} value={t.value}>{t.label}</option>
+                                        ))}
+                                    </select>
+                                </label>
+
+                                <label className="nexusai-exam__field">
+                                    Dificultad
+                                    <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
+                                        {DIFFICULTIES.map((d) => (
+                                            <option key={d.value} value={d.value}>{d.label}</option>
+                                        ))}
+                                    </select>
+                                </label>
+
+                                <label className="nexusai-exam__field">
+                                    Cantidad de preguntas
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={20}
+                                        value={numQuestions}
+                                        onChange={(e) => setNumQuestions(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+                                    />
+                                </label>
+                            </div>
+
+                            <div className="nexusai-exam__wizard-actions">
+                                <button
+                                    type="button"
+                                    className="nexusai-btn"
+                                    onClick={() => setWizardStep("files")}
+                                >
+                                    Atrás
+                                </button>
+                                <button
+                                    type="button"
+                                    className="nexusai-btn nexusai-btn--primary"
+                                    disabled={!selectedIds.length}
+                                    onClick={handleGenerate}
+                                >
+                                    <IconClipboardList size={15} />
+                                    Generar examen
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 

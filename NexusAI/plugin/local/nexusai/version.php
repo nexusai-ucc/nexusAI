@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026081101;        // RDS-06: tarjetas de stats + "Salud del contenido" en Analytics.
-$plugin->release   = '0.12.0';          // Analytics docente: 4 stat-cards (quizzes, vacíos, preguntas, temas consultados) + barra de salud del contenido derivada del gaps_ratio (issue #405).
+$plugin->version   = 2026081201;        // RDS-07: restyle de Material/Gaps/FAQ/Generar examen/Buscar.
+$plugin->release   = '0.13.0';          // Pasada visual docente sobre los 5 tabs restantes (tarjetas SaaS, wizard de examen de 2 pasos, badges tri-color) — issue #406.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
