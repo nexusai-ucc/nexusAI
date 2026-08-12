@@ -134,6 +134,19 @@
     min-width: 0;
 }
 
+/* Contenedor tipo tarjeta SaaS (RDS-07) — envuelve secciones funcionales
+   (ej. dropzone + tabla de Material) para que se lean como un bloque
+   propio, consistente con .nexusai-gap-item/.nexusai-analytics__section. */
+.nexusai-doc-card {
+    background: var(--nexusai-bg, #fff);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius-lg, 12px);
+    box-shadow: var(--nexusai-shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+    padding: 20px;
+    min-width: 0;
+}
+.nexusai-doc-card .nexusai-documents__heading:first-child { margin-top: 0; }
+
 .nexusai-documents__intro {
     color: #475569;
     font-size: 13.5px;
@@ -686,6 +699,12 @@
 .nexusai-gap-item__sep {
     color: #cbd5e1;
 }
+.nexusai-gap-item__similarity {
+    font-weight: 600;
+}
+.nexusai-gap-item__similarity--low  { color: #65a30d; }
+.nexusai-gap-item__similarity--mid  { color: #d97706; }
+.nexusai-gap-item__similarity--high { color: #dc2626; }
 
 /* ── Archivar/desarchivar (DOC-D08, #383) ── */
 .nexusai-gaps__archived-toggle {
@@ -802,6 +821,57 @@
     padding-left: 18px;
     font-size: 12px;
     color: #64748b;
+    line-height: 1.5;
+}
+
+/* RDS-07: tarjetas de tema del tab FAQ del docente — clase propia
+   (nexusai-faq-card, NO nexusai-faq-topic) para no afectar el listado de
+   "Preguntas más frecuentes" de Analytics (RDS-06), que sigue usando
+   nexusai-faq-topic sin cambios. */
+.nexusai-faq__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+}
+.nexusai-faq-card {
+    background: var(--nexusai-bg, #fff);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius-lg, 12px);
+    box-shadow: var(--nexusai-shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+    padding: 14px 16px;
+    min-width: 0;
+}
+.nexusai-faq-card__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.nexusai-faq-card__row svg {
+    flex-shrink: 0;
+    margin-top: 3px;
+    color: var(--nexusai-primary, #6366f1);
+}
+.nexusai-faq-card__label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nexusai-fg, #1e293b);
+    line-height: 1.45;
+    flex: 1;
+}
+.nexusai-faq-card__count {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--nexusai-primary, #6366f1);
+    background: #e6edfb;
+    padding: 2px 8px;
+    border-radius: var(--nexusai-radius-full, 9999px);
+    flex-shrink: 0;
+}
+.nexusai-faq-card__examples {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    font-size: 12px;
+    color: var(--nexusai-fg-muted, #64748b);
     line-height: 1.5;
 }
 
@@ -1157,4 +1227,199 @@
 }
 .nexusai-analytics__health--high .nexusai-analytics__health-fill {
     background: #ef4444;
+}
+
+/* ============================================================
+   Generador de exámenes docente (EVAL-02, issue #235)
+   Movido acá desde styles.css en RDS-07 (#406) — uso exclusivo del
+   panel docente, nunca compartido con el chat del alumno.
+============================================================ */
+.nexusai-exam__doclist {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-sm);
+    padding: 8px;
+}
+.nexusai-exam__docitem label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border-radius: var(--nexusai-radius-sm);
+    font-size: 12.5px;
+    color: var(--nexusai-fg);
+    cursor: pointer;
+}
+.nexusai-exam__docitem label:hover { background: var(--nexusai-bg-subtle); }
+
+/* Indicador de paso del wizard (RDS-07) */
+.nexusai-exam__steps {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.nexusai-exam__step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexusai-fg-subtle, #94a3b8);
+}
+.nexusai-exam__step--active {
+    color: var(--nexusai-primary, #6366f1);
+}
+.nexusai-exam__step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--nexusai-radius-full, 9999px);
+    background: var(--nexusai-bg-subtle, #f1f5f9);
+    color: inherit;
+    font-size: 11px;
+}
+.nexusai-exam__step--active .nexusai-exam__step-num {
+    background: var(--nexusai-primary, #6366f1);
+    color: #fff;
+}
+.nexusai-exam__step-arrow {
+    color: var(--nexusai-border-strong, #cbd5e1);
+    font-size: 12px;
+}
+.nexusai-exam__wizard-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.nexusai-exam__form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.nexusai-exam__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-exam__field input,
+.nexusai-exam__field select {
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--nexusai-fg);
+    padding: 6px 8px;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-sm);
+    background: var(--nexusai-bg);
+}
+
+.nexusai-exam__preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.nexusai-exam__preview-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.nexusai-exam__question {
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius, 8px);
+    box-shadow: var(--nexusai-shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+    padding: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nexusai-exam__question-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.nexusai-exam__question-number {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--nexusai-fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+.nexusai-exam__remove {
+    background: none;
+    border: none;
+    color: var(--nexusai-fg-muted);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+}
+.nexusai-exam__remove:hover { color: #dc2626; }
+
+.nexusai-exam__question-text,
+.nexusai-exam__explanation {
+    width: 100%;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--nexusai-fg);
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-sm);
+    padding: 6px 8px;
+    resize: vertical;
+}
+.nexusai-exam__explanation { font-size: 12px; color: var(--nexusai-fg-muted); }
+
+.nexusai-exam__options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.nexusai-exam__option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.nexusai-exam__option input[type="text"] {
+    flex: 1;
+    font-family: inherit;
+    font-size: 12.5px;
+    padding: 5px 8px;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-sm);
+    color: var(--nexusai-fg);
+}
+
+.nexusai-exam__source {
+    font-size: 11px;
+    color: var(--nexusai-fg-muted);
+    font-style: italic;
+}
+
+/* Fix: .nexusai-btn--primary en styles.css está pensado para el chat
+   (rojo, error/retry) — acá lo repintamos al indigo del panel docente,
+   scopeado a .nexusai-documents para no afectar el chat. */
+.nexusai-documents .nexusai-btn--primary {
+    background: var(--nexusai-primary, #6366f1);
+    border-color: var(--nexusai-primary, #6366f1);
+}
+.nexusai-documents .nexusai-btn--primary:hover {
+    background: var(--nexusai-primary-hover, #4f46e5);
+    border-color: var(--nexusai-primary-hover, #4f46e5);
 }

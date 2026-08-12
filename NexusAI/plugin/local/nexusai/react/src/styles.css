@@ -1052,11 +1052,18 @@
     padding: 24px 0;
 }
 .nexusai-search__result {
+    position: relative;
     background: #f7f8fc;
     border: 1px solid #e8edf5;
     border-radius: 8px;
     padding: 10px 12px;
     margin-bottom: 8px;
+    box-shadow: var(--nexusai-shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+    transition: box-shadow .12s, border-color .12s;
+}
+.nexusai-search__result:hover {
+    border-color: var(--nexusai-primary-ring, rgba(99,102,241,0.2));
+    box-shadow: var(--nexusai-shadow, 0 4px 6px -1px rgba(0,0,0,0.07));
 }
 .nexusai-search__result-header {
     display: flex;
@@ -1064,6 +1071,7 @@
     align-items: center;
     margin-bottom: 6px;
     gap: 8px;
+    padding-right: 60px; /* deja lugar al botón "Resumir" en la esquina */
 }
 .nexusai-search__filename {
     display: inline-flex;
@@ -1082,6 +1090,42 @@
     font-weight: 600;
     flex-shrink: 0;
 }
+.nexusai-search__result-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.nexusai-search__open-btn {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--nexusai-primary, #6366f1);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+.nexusai-search__open-btn:hover { text-decoration: underline; }
+.nexusai-search__summarize-btn {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--nexusai-primary, #6366f1);
+    background: var(--nexusai-bg, #fff);
+    border: 1px solid var(--nexusai-primary-ring, rgba(99,102,241,0.2));
+    border-radius: var(--nexusai-radius-full, 9999px);
+    padding: 2px 9px;
+    cursor: pointer;
+}
+.nexusai-search__summarize-btn:hover { background: var(--nexusai-primary-light, rgba(99,102,241,0.07)); }
+.nexusai-search__summarize-btn:disabled { opacity: .6; cursor: default; }
+.nexusai-search__course {
+    font-size: 11px;
+    color: var(--nexusai-fg-muted, #64748b);
+    margin: 0 0 4px;
+}
 .nexusai-search__content {
     font-size: 12px;
     color: #5a6a7a;
@@ -1093,6 +1137,29 @@
     color: inherit;
     border-radius: 2px;
 }
+.nexusai-search__summary {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--nexusai-bg, #fff);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: 6px;
+}
+.nexusai-search__summary-label {
+    margin: 0 0 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--nexusai-fg-muted, #64748b);
+}
+.nexusai-search__summary-text {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--nexusai-fg, #1e293b);
+}
+.nexusai-search__summary-text--loading { color: var(--nexusai-fg-muted, #64748b); }
+.nexusai-search__summary-text--error { color: #dc2626; }
 
 /* Filtro por tipo de material (BUS-02) */
 .nexusai-search__typebtns {
@@ -2651,138 +2718,7 @@
 .nexusai-quiz__history-bar-fill--mid  { background: #f59e0b; }
 .nexusai-quiz__history-bar-fill--low  { background: #ef4444; }
 
-/* ── Generador de exámenes docente (EVAL-02, issue #235) ── */
-.nexusai-exam__doclist {
-    list-style: none;
-    margin: 0 0 16px;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 220px;
-    overflow-y: auto;
-    border: 1px solid var(--nexusai-border);
-    border-radius: var(--nexusai-radius-sm);
-    padding: 8px;
-}
-.nexusai-exam__docitem label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 6px;
-    border-radius: var(--nexusai-radius-sm);
-    font-size: 12.5px;
-    color: var(--nexusai-fg);
-    cursor: pointer;
-}
-.nexusai-exam__docitem label:hover { background: var(--nexusai-bg-hover, rgba(0, 0, 0, 0.03)); }
-
-.nexusai-exam__form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-}
-.nexusai-exam__field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--nexusai-fg-muted);
-}
-.nexusai-exam__field input,
-.nexusai-exam__field select {
-    font-family: inherit;
-    font-size: 12.5px;
-    font-weight: 400;
-    color: var(--nexusai-fg);
-    padding: 6px 8px;
-    border: 1px solid var(--nexusai-border);
-    border-radius: var(--nexusai-radius-sm);
-    background: var(--nexusai-bg);
-}
-
-.nexusai-exam__preview-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-}
-.nexusai-exam__preview-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.nexusai-exam__question {
-    border: 1px solid var(--nexusai-border);
-    border-radius: var(--nexusai-radius-sm);
-    padding: 12px;
-    margin-bottom: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.nexusai-exam__question-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.nexusai-exam__question-number {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--nexusai-fg-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-}
-.nexusai-exam__remove {
-    background: none;
-    border: none;
-    color: var(--nexusai-fg-muted);
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 2px 6px;
-}
-.nexusai-exam__remove:hover { color: #dc2626; }
-
-.nexusai-exam__question-text,
-.nexusai-exam__explanation {
-    width: 100%;
-    font-family: inherit;
-    font-size: 13px;
-    color: var(--nexusai-fg);
-    border: 1px solid var(--nexusai-border);
-    border-radius: var(--nexusai-radius-sm);
-    padding: 6px 8px;
-    resize: vertical;
-}
-.nexusai-exam__explanation { font-size: 12px; color: var(--nexusai-fg-muted); }
-
-.nexusai-exam__options {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-.nexusai-exam__option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.nexusai-exam__option input[type="text"] {
-    flex: 1;
-    font-family: inherit;
-    font-size: 12.5px;
-    padding: 5px 8px;
-    border: 1px solid var(--nexusai-border);
-    border-radius: var(--nexusai-radius-sm);
-    color: var(--nexusai-fg);
-}
-
-.nexusai-exam__source {
-    font-size: 11px;
-    color: var(--nexusai-fg-muted);
-    font-style: italic;
-}
+/* Generador de exámenes docente (EVAL-02, issue #235) — movido a
+   documents.css en RDS-07 (#406): estas clases las usa únicamente
+   ExamGeneratorPanel.jsx, un componente exclusivo del panel docente,
+   nunca compartido con el chat del alumno. */

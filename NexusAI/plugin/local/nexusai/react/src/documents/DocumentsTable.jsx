@@ -9,6 +9,7 @@
 import { useRef, useState } from "react";
 
 import { deleteDocument } from "./api.js";
+import { IconFileText } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 
@@ -173,7 +174,10 @@ function DocumentRow({ doc, onDelete, deleting }) {
     return (
         <tr className={`nexusai-table__row nexusai-table__row--${doc.status}`}>
             <td>
-                <div className="nexusai-table__filename">{doc.filename}</div>
+                <div className="nexusai-table__filename">
+                    <span className="nexusai-table__filename-icon"><IconFileText size={14} /></span>
+                    {doc.filename}
+                </div>
                 {doc.status === "indexing" && (
                     <div className="nexusai-table__progress">
                         <div className="nexusai-table__progress-fill"></div>

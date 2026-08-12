@@ -31,11 +31,11 @@ function relativeTime(iso) {
 
 function similarityLabel(sim) {
     if (sim === null || sim === undefined) {
-        return { text: "sin match", color: "#dc2626" };
+        return { text: "sin match", level: "high" };
     }
-    if (sim < 0.25) return { text: "match nulo",  color: "#dc2626" };
-    if (sim < 0.4)  return { text: "match débil", color: "#d97706" };
-    return { text: "match parcial", color: "#65a30d" };
+    if (sim < 0.25) return { text: "match nulo",  level: "high" };
+    if (sim < 0.4)  return { text: "match débil", level: "mid" };
+    return { text: "match parcial", level: "low" };
 }
 
 // UX-15 (#385): cantidad de gaps que se piden por página, tanto en la
@@ -186,7 +186,7 @@ export default function GapsPanel({ courseId }) {
                                     </span>
                                 </div>
                                 <div className="nexusai-gap-item__meta">
-                                    <span style={{ color: sim.color, fontWeight: 600 }}>
+                                    <span className={`nexusai-gap-item__similarity nexusai-gap-item__similarity--${sim.level}`}>
                                         {sim.text}
                                     </span>
                                     <span className="nexusai-gap-item__sep">·</span>

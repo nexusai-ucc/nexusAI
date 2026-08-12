@@ -258,46 +258,48 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                             La indexación tarda aproximadamente 30-60 segundos por archivo.
                         </p>
 
-                        {sections.length > 0 && (
-                            <div className="nexusai-documents__section-picker">
-                                <label htmlFor="nexusai-upload-section">Unidad/sección (opcional)</label>
-                                <select
-                                    id="nexusai-upload-section"
-                                    className="nexusai-documents__section-select"
-                                    value={selectedSection}
-                                    onChange={(e) => setSelectedSection(e.target.value)}
-                                    disabled={uploading}
+                        <div className="nexusai-doc-card">
+                            {sections.length > 0 && (
+                                <div className="nexusai-documents__section-picker">
+                                    <label htmlFor="nexusai-upload-section">Unidad/sección (opcional)</label>
+                                    <select
+                                        id="nexusai-upload-section"
+                                        className="nexusai-documents__section-select"
+                                        value={selectedSection}
+                                        onChange={(e) => setSelectedSection(e.target.value)}
+                                        disabled={uploading}
+                                    >
+                                        <option value="">Sin asignar</option>
+                                        {sections.map((s) => (
+                                            <option key={s.section} value={s.section}>{s.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <UploadZone onUpload={handleUpload} disabled={uploading} />
+
+                            <h3 className="nexusai-documents__heading">
+                                Material indexado ({total})
+                            </h3>
+
+                            <DocumentsTable
+                                courseId={courseid}
+                                documents={documents}
+                                onChange={handleDocumentsChange}
+                            />
+
+                            {hasMore && (
+                                <button
+                                    type="button"
+                                    className="nexusai-documents__load-more"
+                                    onClick={handleLoadMore}
+                                    disabled={loadingMore}
                                 >
-                                    <option value="">Sin asignar</option>
-                                    {sections.map((s) => (
-                                        <option key={s.section} value={s.section}>{s.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        <UploadZone onUpload={handleUpload} disabled={uploading} />
-
-                        <h3 className="nexusai-documents__heading">
-                            Material indexado ({total})
-                        </h3>
-
-                        <DocumentsTable
-                            courseId={courseid}
-                            documents={documents}
-                            onChange={handleDocumentsChange}
-                        />
-
-                        {hasMore && (
-                            <button
-                                type="button"
-                                className="nexusai-documents__load-more"
-                                onClick={handleLoadMore}
-                                disabled={loadingMore}
-                            >
-                                {loadingMore ? "Cargando..." : `Cargar más (${documents.length} de ${total})`}
-                            </button>
-                        )}
+                                    {loadingMore ? "Cargando..." : `Cargar más (${documents.length} de ${total})`}
+                                </button>
+                            )}
+                        </div>
 
                         {error && (
                             <ErrorModal
