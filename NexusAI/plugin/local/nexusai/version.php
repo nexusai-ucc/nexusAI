@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026081203;        // RDS-08: unifica "Preguntas frecuentes" y "Gaps detectados" en un tab.
-$plugin->release   = '0.14.0';          // Nuevo StudentQuestionsPanel envuelve FaqDashboardPanel/GapsPanel con selector Frecuentes/Sin responder — sidebar docente pasa de 6 a 5 ítems (issue #416).
+$plugin->version   = 2026081204;        // Fix: dropzone de Material usa ícono SVG en vez de emoji.
+$plugin->release   = '0.14.1';          // Nuevo IconUpload (lucide-style) reemplaza los emoji ⬆️/⏳ del dropzone; estado "subiendo" usa el spinner CSS ya establecido en vez de un emoji de reloj.
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

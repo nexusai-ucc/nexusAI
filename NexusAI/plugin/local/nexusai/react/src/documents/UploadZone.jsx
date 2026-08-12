@@ -7,6 +7,7 @@
  */
 
 import { useRef, useState } from "react";
+import { IconUpload } from "../components/icons.jsx";
 
 const ACCEPT_TYPES = [
     "application/pdf",
@@ -87,7 +88,11 @@ export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES }
                 disabled={disabled}
             />
             <div className="nexusai-dropzone__icon">
-                {disabled ? "⏳" : "⬆️"}
+                {disabled ? (
+                    <span className="nexusai-dropzone__spinner" />
+                ) : (
+                    <IconUpload size={26} />
+                )}
             </div>
             <div className="nexusai-dropzone__title">
                 {disabled ? "Subiendo archivo..." : "Arrastrá tu archivo acá"}
