@@ -112,9 +112,11 @@ export async function generateQuiz({ courseId, topic = "", numQuestions = 5, que
  * @param {number} [params.numQuestions]    Cantidad de preguntas (default 10).
  * @param {string} [params.questionType]    Tipo: multiple_choice | true_false | open | mix
  * @param {string} [params.difficulty]      Dificultad: easy | medium | hard (default medium)
+ * @param {Array<{label:string, source:string}>} [params.focusTopics]
+ *   Temas con dificultad detectada (Gaps/FAQ) a priorizar (DOC-D09, issue #390).
  * @returns {Promise<{course_id:number, topic:?string, questions:Array}>}
  */
-export async function generateExam({ courseId, documentIds, topic = "", numQuestions = 10, questionType = "multiple_choice", difficulty = "medium" }) {
+export async function generateExam({ courseId, documentIds, topic = "", numQuestions = 10, questionType = "multiple_choice", difficulty = "medium", focusTopics = [] }) {
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
@@ -123,6 +125,9 @@ export async function generateExam({ courseId, documentIds, topic = "", numQuest
         if (questionType !== "mix") {
             const filtered = mockQuestions.filter((q) => q.question_type === questionType);
             mockQuestions = filtered.length ? filtered : mockQuestions.slice(0, 1);
+        }
+        if (focusTopics.length) {
+            mockQuestions = mockQuestions.map((q, i) => ({ ...q, source_topic: focusTopics[i % focusTopics.length]?.label || null }));
         }
         return { course_id: courseId, topic: topic || null, questions: mockQuestions };
     }
@@ -136,6 +141,7 @@ export async function generateExam({ courseId, documentIds, topic = "", numQuest
             numquestions: numQuestions,
             questiontype: questionType,
             difficulty,
+            topics:       focusTopics,
         },
     }]);
 

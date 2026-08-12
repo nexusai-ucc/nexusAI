@@ -325,7 +325,8 @@ class backend_client {
         ?string $topic,
         int $numquestions,
         string $questiontype = 'multiple_choice',
-        string $difficulty = 'medium'
+        string $difficulty = 'medium',
+        array $focustopics = []
     ): array {
         $payload = [
             'course_id'     => $courseid,
@@ -337,6 +338,10 @@ class backend_client {
         ];
         if ($topic !== null && trim($topic) !== '') {
             $payload['topic'] = trim($topic);
+        }
+        if (!empty($focustopics)) {
+            // DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ).
+            $payload['focus_topics'] = array_values($focustopics);
         }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
