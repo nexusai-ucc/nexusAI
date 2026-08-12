@@ -23,7 +23,7 @@ from app.auth.hmac import verify_hmac
 from app.db.session import get_db
 from app.providers.embeddings import EmbeddingProvider, get_embedding_provider
 from app.providers.llm import LLMProvider, get_llm_provider
-from app.quiz.router import ExamGenerateRequest, QuizRequest, _build_quiz_prompt
+from app.quiz.router import ExamGenerateRequest, FocusTopic, QuizRequest, _build_quiz_prompt
 
 
 # ─────────────────────────────────────────────────────────────
@@ -345,6 +345,57 @@ def test_exam_request_rejects_flashcard_type():
 
 
 # ─────────────────────────────────────────────────────────────
+# focus_topics — temas con dificultad detectada (DOC-D09 / issue #390)
+# ─────────────────────────────────────────────────────────────
+
+def test_exam_request_defaults_to_no_focus_topics():
+    req = ExamGenerateRequest(course_id=1, user_id=5, document_ids=[_VALID_DOC_ID])
+    assert req.focus_topics == []
+
+
+def test_exam_request_accepts_gap_and_faq_focus_topics():
+    req = ExamGenerateRequest(
+        course_id=1, user_id=5, document_ids=[_VALID_DOC_ID],
+        focus_topics=[
+            {"label": "derivadas de orden superior", "source": "gap"},
+            {"label": "teorema de Bayes", "source": "faq"},
+        ],
+    )
+    assert [t.source for t in req.focus_topics] == ["gap", "faq"]
+
+
+def test_exam_request_rejects_invalid_focus_topic_source():
+    with pytest.raises(ValidationError):
+        ExamGenerateRequest(
+            course_id=1, user_id=5, document_ids=[_VALID_DOC_ID],
+            focus_topics=[{"label": "x", "source": "made_up"}],
+        )
+
+
+def test_exam_request_rejects_too_many_focus_topics():
+    topics = [{"label": f"tema {i}", "source": "gap"} for i in range(16)]
+    with pytest.raises(ValidationError):
+        ExamGenerateRequest(course_id=1, user_id=5, document_ids=[_VALID_DOC_ID], focus_topics=topics)
+
+
+def test_build_quiz_prompt_includes_focus_topics_block():
+    messages = _build_quiz_prompt(
+        _CHUNKS, num_questions=3, topic=None, question_type="multiple_choice",
+        focus_topics=["derivadas de orden superior", "teorema de Bayes"],
+    )
+    user_msg = messages[1]["content"]
+    assert "derivadas de orden superior" in user_msg
+    assert "teorema de Bayes" in user_msg
+    assert "source_topic" in user_msg
+
+
+def test_build_quiz_prompt_omits_focus_topics_block_when_empty():
+    messages = _build_quiz_prompt(_CHUNKS, num_questions=3, topic=None, question_type="multiple_choice")
+    user_msg = messages[1]["content"]
+    assert "TEMAS CON DIFICULTAD DETECTADA" not in user_msg
+
+
+# ─────────────────────────────────────────────────────────────
 # POST /generate-exam — endpoint end-to-end
 # ─────────────────────────────────────────────────────────────
 
@@ -380,6 +431,77 @@ async def test_generate_exam_404_when_no_chunks_for_selected_documents(client, m
     response = await client.post("/api/v1/quiz/generate-exam", json=payload)
 
     assert response.status_code == 404
+
+
+async def test_generate_exam_keeps_source_topic_matching_focus_topics(client, mock_llm):
+    llm_response = {
+        "questions": [{
+            "question_type": "multiple_choice",
+            "question": "¿Cuál es la derivada de x^2?",
+            "options": ["2x", "x", "x^2", "0"],
+            "correct_index": 0,
+            "explanation": "2x",
+            "source_filename": "apunte1.pdf",
+            "source_topic": "derivadas de orden superior",
+        }]
+    }
+    mock_llm.chat_completion.return_value = MagicMock(text=json.dumps(llm_response))
+    payload = {
+        "course_id": 1, "user_id": 9, "document_ids": [_VALID_DOC_ID], "num_questions": 1,
+        "focus_topics": [{"label": "derivadas de orden superior", "source": "gap"}],
+    }
+
+    response = await client.post("/api/v1/quiz/generate-exam", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["questions"][0]["source_topic"] == "derivadas de orden superior"
+
+
+async def test_generate_exam_discards_hallucinated_source_topic(client, mock_llm):
+    """DOC-D09: si el LLM inventa un source_topic que no está en la lista
+    provista, se descarta en vez de citar un tema falso."""
+    llm_response = {
+        "questions": [{
+            "question_type": "multiple_choice",
+            "question": "¿Cuál es la derivada de x^2?",
+            "options": ["2x", "x", "x^2", "0"],
+            "correct_index": 0,
+            "explanation": "2x",
+            "source_filename": "apunte1.pdf",
+            "source_topic": "tema inventado por el LLM",
+        }]
+    }
+    mock_llm.chat_completion.return_value = MagicMock(text=json.dumps(llm_response))
+    payload = {
+        "course_id": 1, "user_id": 9, "document_ids": [_VALID_DOC_ID], "num_questions": 1,
+        "focus_topics": [{"label": "derivadas de orden superior", "source": "gap"}],
+    }
+
+    response = await client.post("/api/v1/quiz/generate-exam", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["questions"][0]["source_topic"] is None
+
+
+async def test_generate_exam_without_focus_topics_never_sets_source_topic(client, mock_llm):
+    llm_response = {
+        "questions": [{
+            "question_type": "multiple_choice",
+            "question": "¿Cuál es la derivada de x^2?",
+            "options": ["2x", "x", "x^2", "0"],
+            "correct_index": 0,
+            "explanation": "2x",
+            "source_filename": "apunte1.pdf",
+            "source_topic": "algo que el LLM puso igual",
+        }]
+    }
+    mock_llm.chat_completion.return_value = MagicMock(text=json.dumps(llm_response))
+    payload = {"course_id": 1, "user_id": 9, "document_ids": [_VALID_DOC_ID], "num_questions": 1}
+
+    response = await client.post("/api/v1/quiz/generate-exam", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["questions"][0]["source_topic"] is None
 
 
 # ─────────────────────────────────────────────────────────────
@@ -448,5 +570,67 @@ async def test_record_attempt_rejects_negative_course_id(client):
     payload = {"course_id": -1, "user_id": 9, "total_questions": 5, "correct_answers": 3}
 
     response = await client.post("/api/v1/quiz/attempts", json=payload)
+
+
+# ─────────────────────────────────────────────────────────────
+# POST /errors/list — paginación (UX-19 / issue #389)
+# ─────────────────────────────────────────────────────────────
+
+def _stored_quiz_error_row(**kwargs):
+    defaults = dict(
+        id="00000000-0000-0000-0000-000000000001",
+        created_at=datetime.now(timezone.utc),
+        question_type="multiple_choice",
+        question="¿Cuál es la derivada de x^2?",
+        explanation="2x",
+        source_filename="apunte1.pdf",
+        source_document_id=None,
+        options=["2x", "x", "x^2", "0"],
+        correct_index=0,
+        user_selected_index=1,
+        user_answer=None,
+        ai_feedback=None,
+        ai_score=None,
+    )
+    defaults.update(kwargs)
+    return SimpleNamespace(**defaults)
+
+
+_ERRORS_LIST_PAYLOAD = {"course_id": 1, "user_id": 1}
+
+
+async def test_list_quiz_errors_total_reflects_real_count_not_page_size(client, mock_db):
+    """Regresión UX-19: `total` debe ser el COUNT(*) real, no `len(items)`
+    de la página devuelta — si no, el frontend nunca sabe que hay más."""
+    mock_db.scalar.return_value = 37  # el alumno tiene 37 errores en total
+    mock_db.execute.return_value = _mock_quiz_result([_stored_quiz_error_row(), _stored_quiz_error_row()])
+
+    response = await client.post(
+        "/api/v1/quiz/errors/list",
+        json={**_ERRORS_LIST_PAYLOAD, "limit": 2, "offset": 0},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 2
+    assert data["total"] == 37
+
+
+async def test_list_quiz_errors_defaults_offset_to_zero(client, mock_db):
+    mock_db.scalar.return_value = 1
+    mock_db.execute.return_value = _mock_quiz_result([_stored_quiz_error_row()])
+
+    response = await client.post("/api/v1/quiz/errors/list", json=_ERRORS_LIST_PAYLOAD)
+
+    assert response.status_code == 200
+
+
+async def test_list_quiz_errors_rejects_negative_offset(client):
+    response = await client.post(
+        "/api/v1/quiz/errors/list",
+        json={**_ERRORS_LIST_PAYLOAD, "offset": -1},
+    )
+
+    assert response.status_code == 422
 
     assert response.status_code == 422

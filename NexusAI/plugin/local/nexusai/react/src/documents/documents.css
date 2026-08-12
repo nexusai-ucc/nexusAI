@@ -1344,6 +1344,48 @@
     background: var(--nexusai-bg);
 }
 
+/* "Incluir temas con dificultad detectada" (Gaps/FAQ) — DOC-D09 (#390) */
+.nexusai-exam__focus {
+    margin-bottom: 16px;
+}
+.nexusai-exam__focus-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+    cursor: pointer;
+}
+.nexusai-exam__focus-empty {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-exam__focus-list {
+    margin-top: 8px;
+}
+.nexusai-exam__focus-badge {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border-radius: var(--nexusai-radius-full, 9999px);
+}
+.nexusai-exam__focus-badge--gap {
+    color: #92400e;
+    background: #fef3c7;
+}
+.nexusai-exam__focus-badge--faq {
+    color: #1e40af;
+    background: #dbeafe;
+}
+.nexusai-exam__source--topic {
+    color: var(--nexusai-primary, #6366f1);
+}
+
 .nexusai-exam__preview-header {
     display: flex;
     align-items: center;
