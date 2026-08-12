@@ -8,8 +8,8 @@
  *  - Upload: agrega el doc nuevo a la lista solo si el backend confirma éxito
  *    y el id no existe ya (evita sobreescribir un doc existente con fecha nula).
  *  - Errores de upload (incl. 409 y duplicados): muestra ErrorModal, no toca lista.
- *  - Tabs Material / Gaps detectados (Feature G) / Analytics (ANALYTICS-01/02) /
- *    Preguntas frecuentes (DOC-D02).
+ *  - Tabs Material / Preguntas de alumnos (Gaps + FAQ, RDS-08) / Analytics
+ *    (ANALYTICS-01/02) / Generar examen / Buscar.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -18,12 +18,11 @@ import { listDocuments, uploadDocument } from "./api.js";
 import { listCourseSections } from "../api/courseSections.js";
 import DocumentsTable, { ErrorModal } from "./DocumentsTable.jsx";
 import UploadZone from "./UploadZone.jsx";
-import GapsPanel from "./GapsPanel.jsx";
-import FaqDashboardPanel from "./FaqDashboardPanel.jsx";
+import StudentQuestionsPanel from "./StudentQuestionsPanel.jsx";
 import AnalyticsDashboardPanel from "./AnalyticsDashboardPanel.jsx";
 import ExamGeneratorPanel from "./ExamGeneratorPanel.jsx";
 import SearchPanel from "../components/SearchPanel.jsx";
-import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconSearch, IconTarget } from "../components/icons.jsx";
+import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconSearch } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
@@ -35,9 +34,8 @@ const PAGE_SIZE = 30;
 // hardcodeadas de antes.
 const NAV_ITEMS = [
     { key: "material",  label: "Material",             Icon: IconBookOpen },
-    { key: "gaps",      label: "Gaps detectados",       Icon: IconTarget },
+    { key: "questions", label: "Preguntas de alumnos",  Icon: IconHelpCircle },
     { key: "analytics", label: "Analytics",             Icon: IconBarChart },
-    { key: "faq",       label: "Preguntas frecuentes",  Icon: IconHelpCircle },
     { key: "exam",      label: "Generar examen",        Icon: IconClipboardList },
     { key: "search",    label: "Buscar",                Icon: IconSearch },
 ];
@@ -243,8 +241,6 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 />
             ) : activeTab === "analytics" ? (
                 <AnalyticsDashboardPanel courseId={courseid} />
-            ) : activeTab === "faq" ? (
-                <FaqDashboardPanel courseId={courseid} />
             ) : activeTab === "exam" ? (
                 <ExamGeneratorPanel courseId={courseid} />
             ) : activeTab === "material" ? (
@@ -316,7 +312,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                     </>
                 )
             ) : (
-                <GapsPanel courseId={courseid} />
+                <StudentQuestionsPanel courseId={courseid} />
             )}
             </div>
         </div>

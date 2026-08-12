@@ -1423,3 +1423,30 @@
     background: var(--nexusai-primary-hover, #4f46e5);
     border-color: var(--nexusai-primary-hover, #4f46e5);
 }
+
+/* ============================================================
+   Preguntas de alumnos: selector Frecuentes/Sin responder (RDS-08)
+============================================================ */
+.nexusai-questions__modebtns {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+.nexusai-questions__modebtn {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--nexusai-fg-muted, #64748b);
+    background: var(--nexusai-bg-muted, #f8fafc);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius, 8px);
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+}
+.nexusai-questions__modebtn:hover { color: var(--nexusai-fg, #1e293b); }
+.nexusai-questions__modebtn--active {
+    color: var(--nexusai-primary, #6366f1);
+    background: #e6edfb;
+    border-color: var(--nexusai-primary-ring, rgba(99,102,241,0.2));
+}
