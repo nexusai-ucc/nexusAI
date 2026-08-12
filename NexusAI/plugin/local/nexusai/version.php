@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026081202;        // Fix: botón "Resumir" de Buscar se superponía con "Open" en anchos angostos.
-$plugin->release   = '0.13.1';          // .nexusai-search__summarize-btn pasa de position:absolute con padding-right adivinado a flex in-flow dentro de .nexusai-search__result-actions — sin overlap a ningún ancho.
+$plugin->version   = 2026081203;        // RDS-08: unifica "Preguntas frecuentes" y "Gaps detectados" en un tab.
+$plugin->release   = '0.14.0';          // Nuevo StudentQuestionsPanel envuelve FaqDashboardPanel/GapsPanel con selector Frecuentes/Sin responder — sidebar docente pasa de 6 a 5 ítems (issue #416).
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
