@@ -32,19 +32,23 @@ async def get_daily_message_counts(
     interacción con el asistente — un proxy directo de "mensajes" sin
     depender de que el logging best-effort haya corrido para cada mensaje
     de la tabla `messages`.
+
+    Agrupa en SQL (UX-16) en vez de traer cada fila a Python — con mucha
+    actividad en el curso, `days=365` podía significar miles de filas
+    viajando solo para contarlas de a una.
     """
-    stmt = select(InteractionLog.created_at).where(
-        InteractionLog.course_id == course_id,
-        InteractionLog.created_at >= since,
+    day = func.date_trunc("day", InteractionLog.created_at, "UTC").label("day")
+    stmt = (
+        select(day, func.count().label("count"))
+        .where(
+            InteractionLog.course_id == course_id,
+            InteractionLog.created_at >= since,
+        )
+        .group_by(day)
     )
     result = await db.execute(stmt)
-    rows = result.all()
 
-    daily: dict[str, int] = {}
-    for (created_at,) in rows:
-        day = created_at.strftime("%Y-%m-%d")
-        daily[day] = daily.get(day, 0) + 1
-    return daily
+    return {row.day.strftime("%Y-%m-%d"): int(row.count) for row in result.all()}
 
 
 async def get_top_questions(
@@ -77,3 +81,28 @@ async def get_top_questions(
     )
     result = await db.execute(stmt)
     return [QuestionCount(question=row.question, count=int(row.count)) for row in result.all()]
+
+
+async def get_distinct_topic_count(
+    db: AsyncSession,
+    course_id: int,
+    since: datetime,
+) -> int:
+    """Cantidad de preguntas distintas (texto normalizado) en el período.
+
+    Mismo agrupado que get_top_questions (lower(trim(content))), pero
+    cuenta grupos distintos en vez de traer las N más frecuentes con su
+    texto — COUNT(DISTINCT ...) sin LLM, para el stat-card "Temas
+    consultados" (RDS-06).
+    """
+    norm_question = func.lower(func.trim(Message.content))
+    stmt = (
+        select(func.count(func.distinct(norm_question)))
+        .select_from(InteractionLog)
+        .join(Message, Message.id == InteractionLog.user_message_id)
+        .where(InteractionLog.course_id == course_id)
+        .where(InteractionLog.created_at >= since)
+        .where(Message.role == "user")
+    )
+    result = await db.execute(stmt)
+    return int(result.scalar_one())

@@ -226,6 +226,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Archivar/desarchivar un gap detectado (DOC-D08, issue #383).
+    'local_nexusai_gaps_archive' => [
+        'classname'     => '\local_nexusai\external\gaps_archive',
+        'methodname'    => 'execute',
+        'description'   => 'Archive or unarchive a detected content gap (teacher view).',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // Dashboard de preguntas frecuentes agrupadas por tema (DOC-D02).
     // Solo docentes/admins (capability :manage).
     'local_nexusai_analytics_faq_topics' => [
@@ -391,6 +402,27 @@ $functions = [
         'description'   => 'Dismiss a pending course file without indexing it into NexusAI.',
         'type'          => 'write',
         'ajax'          => true,
+        'loginrequired' => true,
+    ],
+
+    // PRIV-01 — Exportación y eliminación de datos personales (issue #310).
+    'local_nexusai_privacy_export' => [
+        'classname'     => '\local_nexusai\external\privacy_export',
+        'methodname'    => 'execute',
+        'description'   => "Export the current student's personal history (chat messages, quiz attempts, quiz errors) in a course.",
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    'local_nexusai_privacy_delete' => [
+        'classname'     => '\local_nexusai\external\privacy_delete',
+        'methodname'    => 'execute',
+        'description'   => "Delete the current student's personal history in a course (quiz attempts are anonymized, not deleted).",
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
         'loginrequired' => true,
     ],
 

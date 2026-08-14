@@ -8,8 +8,8 @@
  *  - Upload: agrega el doc nuevo a la lista solo si el backend confirma éxito
  *    y el id no existe ya (evita sobreescribir un doc existente con fecha nula).
  *  - Errores de upload (incl. 409 y duplicados): muestra ErrorModal, no toca lista.
- *  - Tabs Material / Gaps detectados (Feature G) / Analytics (ANALYTICS-01/02) /
- *    Preguntas frecuentes (DOC-D02).
+ *  - Tabs Material / Preguntas de alumnos (Gaps + FAQ, RDS-08) / Analytics
+ *    (ANALYTICS-01/02) / Generar examen / Buscar.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -18,15 +18,27 @@ import { listDocuments, uploadDocument } from "./api.js";
 import { listCourseSections } from "../api/courseSections.js";
 import DocumentsTable, { ErrorModal } from "./DocumentsTable.jsx";
 import UploadZone from "./UploadZone.jsx";
-import GapsPanel from "./GapsPanel.jsx";
-import FaqDashboardPanel from "./FaqDashboardPanel.jsx";
+import StudentQuestionsPanel from "./StudentQuestionsPanel.jsx";
 import AnalyticsDashboardPanel from "./AnalyticsDashboardPanel.jsx";
 import ExamGeneratorPanel from "./ExamGeneratorPanel.jsx";
 import SearchPanel from "../components/SearchPanel.jsx";
-import { IconBarChart, IconBookOpen, IconClipboardList, IconHelpCircle, IconSearch, IconTarget } from "../components/icons.jsx";
+import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconSearch } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
+// UX-17 (#387): cantidad de documentos que se piden por página, tanto en
+// la carga inicial como en cada "Cargar más".
+const PAGE_SIZE = 30;
+
+// RDS-05 (#404): nav lateral data-driven — reemplaza las 6 tabs
+// hardcodeadas de antes.
+const NAV_ITEMS = [
+    { key: "material",  label: "Material",             Icon: IconBookOpen },
+    { key: "questions", label: "Preguntas de alumnos",  Icon: IconHelpCircle },
+    { key: "analytics", label: "Analytics",             Icon: IconBarChart },
+    { key: "exam",      label: "Generar examen",        Icon: IconClipboardList },
+    { key: "search",    label: "Buscar",                Icon: IconSearch },
+];
 
 /**
  * Extrae el mensaje legible de un error de Moodle/FastAPI.
@@ -46,9 +58,11 @@ function extractErrorMessage(err) {
     return raw;
 }
 
-export default function DocumentsManager({ courseid, userid, sesskey, lang = "es" }) {
+export default function DocumentsManager({ courseid, userid, sesskey, lang = "es", courseFullname }) {
     const [documents, setDocuments]       = useState([]);
+    const [total, setTotal]               = useState(0);
     const [loading, setLoading]           = useState(true);
+    const [loadingMore, setLoadingMore]   = useState(false);
     const [uploading, setUploading]       = useState(false);
     const [error, setError]               = useState(null);
     const [warningToast, setWarningToast] = useState(null);
@@ -73,9 +87,10 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
         let cancelled = false;
         (async () => {
             try {
-                const docs = await listDocuments(courseid);
+                const data = await listDocuments(courseid, PAGE_SIZE, 0);
                 if (!cancelled) {
-                    setDocuments(docs);
+                    setDocuments(data?.items || []);
+                    setTotal(data?.total || 0);
                     setLoading(false);
                 }
             } catch (err) {
@@ -104,14 +119,20 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
     // algún doc en estado inestable. No depende de `documents` en el dep array,
     // así el interval no se recrea en cada actualización — usa documentsRef
     // para leer el estado fresco sin crear una dependencia.
+    //
+    // UX-17 (#387): pide `limit = documentsRef.current.length` en vez de
+    // paginar desde cero — así el refresco automático respeta cuánto ya
+    // cargó el docente con "Cargar más" en vez de devolverlo a la página 1.
     useEffect(() => {
         const intervalId = setInterval(async () => {
             if (!documentsRef.current.some((d) => !STABLE_STATUSES.has(d.status))) {
                 return; // nada pendiente, saltar este tick
             }
             try {
-                const fresh = await listDocuments(courseid);
-                setDocuments(fresh);
+                const loadedCount = Math.max(documentsRef.current.length, PAGE_SIZE);
+                const fresh = await listDocuments(courseid, loadedCount, 0);
+                setDocuments(fresh?.items || []);
+                setTotal(fresh?.total || 0);
             } catch (pollErr) {
                 // Loguear pero no parar el polling — se reintenta en el próximo tick.
                 // eslint-disable-next-line no-console
@@ -121,6 +142,33 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
 
         return () => clearInterval(intervalId);
     }, [courseid]); // solo se recrea si cambia el curso
+
+    const hasMore = documents.length < total;
+
+    // UX-17 (#387): wrapper de setDocuments para DocumentsTable — hoy solo
+    // lo usa el borrado, que achica la lista. Mantiene `total` en sincro
+    // con la cantidad real de documentos del curso (si no, quedaría
+    // desactualizado y "Cargar más" ofrecería una página que ya no existe).
+    const handleDocumentsChange = (updater) => {
+        setDocuments((prev) => {
+            const next = updater(prev);
+            setTotal((t) => t - (prev.length - next.length));
+            return next;
+        });
+    };
+
+    const handleLoadMore = async () => {
+        setLoadingMore(true);
+        try {
+            const data = await listDocuments(courseid, PAGE_SIZE, documents.length);
+            setDocuments((prev) => [...prev, ...(data?.items || [])]);
+            setTotal(data?.total ?? total);
+        } catch (err) {
+            setError(extractErrorMessage(err));
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     // ── Upload ─────────────────────────────────────────────────────────────
     const handleUpload = async (file) => {
@@ -137,6 +185,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 return;
             }
             setDocuments((prev) => [newDoc, ...prev]);
+            setTotal((prev) => prev + 1);
         } catch (err) {
             const raw = err?.message || String(err);
             if (/HTTP\s+409\b/.test(raw)) {
@@ -153,58 +202,36 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
 
     return (
         <div className="nexusai-documents">
-            {/* Tabs Material / Gaps / Buscar */}
-            <div className="nexusai-doc-tabs">
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "material" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("material")}
-                >
-                    <IconBookOpen size={15} />
-                    Material
-                </button>
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "gaps" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("gaps")}
-                >
-                    <IconTarget size={15} />
-                    Gaps detectados
-                </button>
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "analytics" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("analytics")}
-                >
-                    <IconBarChart size={15} />
-                    Analytics
-                </button>
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "faq" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("faq")}
-                >
-                    <IconHelpCircle size={15} />
-                    Preguntas frecuentes
-                </button>
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "exam" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("exam")}
-                >
-                    <IconClipboardList size={15} />
-                    Generar examen
-                </button>
-                <button
-                    type="button"
-                    className={`nexusai-doc-tab ${activeTab === "search" ? "nexusai-doc-tab--active" : ""}`}
-                    onClick={() => setActiveTab("search")}
-                >
-                    <IconSearch size={15} />
-                    Buscar
-                </button>
-            </div>
+            <aside className="nexusai-doc-sidebar">
+                <div className="nexusai-doc-sidebar__course">
+                    <span className="nexusai-doc-sidebar__course-label">Curso</span>
+                    <span className="nexusai-doc-sidebar__course-name">{courseFullname}</span>
+                </div>
 
+                <nav className="nexusai-doc-nav">
+                    {NAV_ITEMS.map(({ key, label, Icon }) => (
+                        <button
+                            key={key}
+                            type="button"
+                            className={`nexusai-doc-nav__item ${activeTab === key ? "nexusai-doc-nav__item--active" : ""}`}
+                            onClick={() => setActiveTab(key)}
+                        >
+                            <Icon size={15} />
+                            <span>{label}</span>
+                            {key === "material" && (
+                                <span className="nexusai-doc-nav__badge">{total}</span>
+                            )}
+                        </button>
+                    ))}
+                </nav>
+
+                <div className="nexusai-doc-sidebar__status">
+                    <IconCheck size={12} />
+                    Asistente activo
+                </div>
+            </aside>
+
+            <div className="nexusai-doc-content">
             {activeTab === "search" ? (
                 <SearchPanel
                     courseId={courseid}
@@ -214,8 +241,6 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 />
             ) : activeTab === "analytics" ? (
                 <AnalyticsDashboardPanel courseId={courseid} />
-            ) : activeTab === "faq" ? (
-                <FaqDashboardPanel courseId={courseid} />
             ) : activeTab === "exam" ? (
                 <ExamGeneratorPanel courseId={courseid} />
             ) : activeTab === "material" ? (
@@ -229,35 +254,48 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                             La indexación tarda aproximadamente 30-60 segundos por archivo.
                         </p>
 
-                        {sections.length > 0 && (
-                            <div className="nexusai-documents__section-picker">
-                                <label htmlFor="nexusai-upload-section">Unidad/sección (opcional)</label>
-                                <select
-                                    id="nexusai-upload-section"
-                                    className="nexusai-documents__section-select"
-                                    value={selectedSection}
-                                    onChange={(e) => setSelectedSection(e.target.value)}
-                                    disabled={uploading}
+                        <div className="nexusai-doc-card">
+                            {sections.length > 0 && (
+                                <div className="nexusai-documents__section-picker">
+                                    <label htmlFor="nexusai-upload-section">Unidad/sección (opcional)</label>
+                                    <select
+                                        id="nexusai-upload-section"
+                                        className="nexusai-documents__section-select"
+                                        value={selectedSection}
+                                        onChange={(e) => setSelectedSection(e.target.value)}
+                                        disabled={uploading}
+                                    >
+                                        <option value="">Sin asignar</option>
+                                        {sections.map((s) => (
+                                            <option key={s.section} value={s.section}>{s.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            <UploadZone onUpload={handleUpload} disabled={uploading} />
+
+                            <h3 className="nexusai-documents__heading">
+                                Material indexado ({total})
+                            </h3>
+
+                            <DocumentsTable
+                                courseId={courseid}
+                                documents={documents}
+                                onChange={handleDocumentsChange}
+                            />
+
+                            {hasMore && (
+                                <button
+                                    type="button"
+                                    className="nexusai-documents__load-more"
+                                    onClick={handleLoadMore}
+                                    disabled={loadingMore}
                                 >
-                                    <option value="">Sin asignar</option>
-                                    {sections.map((s) => (
-                                        <option key={s.section} value={s.section}>{s.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        <UploadZone onUpload={handleUpload} disabled={uploading} />
-
-                        <h3 className="nexusai-documents__heading">
-                            Material indexado ({documents.length})
-                        </h3>
-
-                        <DocumentsTable
-                            courseId={courseid}
-                            documents={documents}
-                            onChange={setDocuments}
-                        />
+                                    {loadingMore ? "Cargando..." : `Cargar más (${documents.length} de ${total})`}
+                                </button>
+                            )}
+                        </div>
 
                         {error && (
                             <ErrorModal
@@ -274,9 +312,9 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                     </>
                 )
             ) : (
-                <GapsPanel courseId={courseid} />
+                <StudentQuestionsPanel courseId={courseid} />
             )}
-
+            </div>
         </div>
     );
 }

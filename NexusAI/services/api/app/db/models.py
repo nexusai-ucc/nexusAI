@@ -209,8 +209,23 @@ class UnansweredQuestion(Base):
     max_similarity: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     # Cantidad de chunks que se llegaron a recuperar (0 = nada matcheó).
     chunks_retrieved: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Embedding de `question`, para agrupar gaps por similitud semántica en
+    # vez de texto normalizado (DOC-D06, issue #313). Nullable: filas viejas
+    # (de antes de esta feature) o casos donde el embed falló no lo tienen —
+    # el router cae de vuelta a agrupación por texto para esas filas.
+    embedding: Mapped[Optional[List[float]]] = mapped_column(
+        Vector(get_settings().embedding_dimensions), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    # NULL = gap activo. El docente lo archiva desde el panel cuando ya lo
+    # resolvió (agregó material, o decidió que no es relevante) — DOC-D08,
+    # issue #383. Si un alumno vuelve a preguntar algo equivalente después,
+    # se inserta una fila nueva con archived_at=NULL, así que el gap
+    # resurge solo sin lógica extra (ver app/gaps/router.py).
+    archived_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
 
@@ -231,7 +246,11 @@ class QuizAttempt(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     course_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Nullable: PRIV-01 anonimiza (en vez de borrar) los intentos de un alumno
+    # que pide eliminar sus datos, para no romper el histograma de puntajes
+    # de Analytics (app/admin/router.py::_get_quiz_score_distribution lee
+    # course_id/created_at/score, nunca user_id — el score sobrevive intacto).
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     question_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     difficulty: Mapped[str] = mapped_column(String(10), nullable=False, default="medium")
     topic: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
@@ -241,6 +260,10 @@ class QuizAttempt(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+    # NULL = intento activo del alumno. Timestamp = fue anonimizado a pedido
+    # del alumno (PRIV-01) — user_id ya es NULL, la fila se excluye del
+    # export/vista personal pero sigue contando en los agregados del curso.
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class QuizError(Base):

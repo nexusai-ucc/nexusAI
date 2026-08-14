@@ -25,6 +25,7 @@ class quiz_errors_list extends \external_api {
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
             'days'     => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_OPTIONAL, 90),
             'limit'    => new \external_value(PARAM_INT, 'Máximo de items (1..200)', VALUE_OPTIONAL, 100),
+            'offset'   => new \external_value(PARAM_INT, 'Items a saltear (paginación)', VALUE_OPTIONAL, 0),
         ]);
     }
 
@@ -54,24 +55,26 @@ class quiz_errors_list extends \external_api {
         ]);
     }
 
-    public static function execute(int $courseid, int $days = 90, int $limit = 100): array {
+    public static function execute(int $courseid, int $days = 90, int $limit = 100, int $offset = 0): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid' => $courseid,
             'days'     => $days,
             'limit'    => $limit,
+            'offset'   => $offset,
         ]);
 
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
 
-        $days  = max(1, min(365, (int) $params['days']));
-        $limit = max(1, min(200, (int) $params['limit']));
+        $days   = max(1, min(365, (int) $params['days']));
+        $limit  = max(1, min(200, (int) $params['limit']));
+        $offset = max(0, (int) $params['offset']);
 
         $client   = new backend_client();
-        $response = $client->list_quiz_errors((int) $params['courseid'], (int) $USER->id, $days, $limit);
+        $response = $client->list_quiz_errors((int) $params['courseid'], (int) $USER->id, $days, $limit, $offset);
 
         return [
             'course_id' => (int) ($response['course_id'] ?? $params['courseid']),

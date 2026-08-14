@@ -1,0 +1,61 @@
+# NexusAI — overlay de producción (Oracle Cloud)
+#
+# Alcance de este overlay: solo backend (postgres + redis + api) + reverse proxy.
+# Moodle NO corre en esta VM (recursos ARM/AMD free tier insuficientes) — corre
+# local en la máquina del equipo, apuntando el plugin a la IP/dominio de esta VM.
+#
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#   (sin --profile full: moodle no se levanta acá)
+#
+# Qué cambia respecto al docker-compose.yml de dev:
+#   - api: sin hot-reload (sin --reload, sin montar código fuente encima de la imagen)
+#   - postgres/redis: sin exponer puertos al host (solo alcanzables dentro de nexusai-net)
+#   - se agrega el servicio caddy (reverse proxy + TLS automático vía Let's Encrypt)
+#
+# Requiere NEXUSAI_DOMAIN en el .env de la VM (ej. api.1.2.3.4.nip.io) — lo
+# usa el Caddyfile para saber a qué dominio servir TLS. Distinto por ambiente
+# (prod/staging), nunca se commitea.
+
+services:
+  postgres:
+    ports: !reset []
+
+  redis:
+    ports: !reset []
+
+  api:
+    # El docker-compose.yml base fuerza "command: uvicorn ... --reload" (dev).
+    # Hay que pisarlo de vuelta a ./entrypoint.sh explícitamente, porque un
+    # "command:" en el compose base persiste si el overlay no lo redefine,
+    # y entrypoint.sh es el que corre "alembic upgrade head" antes de uvicorn.
+    command: ["./entrypoint.sh"]
+    volumes: !reset
+      - ./services/api/uploads:/app/uploads
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: nexusai-caddy
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # El Caddyfile usa {$NEXUSAI_DOMAIN} — sin esto en el .env de la VM,
+      # Caddy arranca pero no sirve nada. Distinto por ambiente (prod/staging),
+      # nunca se commitea.
+      NEXUSAI_DOMAIN: ${NEXUSAI_DOMAIN:?NEXUSAI_DOMAIN no está en .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [nexusai-net]
+
+volumes:
+  caddy_data:
+    name: nexusai_caddy_data
+  caddy_config:
+    name: nexusai_caddy_config

@@ -79,17 +79,25 @@ async function callMoodle(methodname, args) {
 // ============================================================
 
 /**
- * Lista todos los documentos del curso.
+ * Lista documentos del curso.
+ *
+ * UX-17 (#387): `limit`/`offset` son opcionales — sin `limit`, el backend
+ * devuelve todo hasta su tope interno (lo usa ExamGeneratorPanel.jsx, que
+ * necesita elegir entre todos los documentos indexados, no una página).
  *
  * @param {number} courseId
- * @returns {Promise<Array>}
+ * @param {number} [limit]  Máximo de items por página. Sin valor: sin paginar.
+ * @param {number} [offset] Desde qué posición paginar (default 0).
+ * @returns {Promise<{total:number, items:Array}>}
  */
-export async function listDocuments(courseId) {
+export async function listDocuments(courseId, limit = null, offset = 0) {
     if (typeof window === "undefined" || !window.M?.cfg) {
         await new Promise((r) => setTimeout(r, 300));
-        return MOCK_DOCS.filter((d) => d.course_id === courseId);
+        const all = MOCK_DOCS.filter((d) => d.course_id === courseId);
+        const items = limit != null ? all.slice(offset, offset + limit) : all;
+        return { total: all.length, items };
     }
-    return callMoodle("local_nexusai_document_list", { courseid: courseId });
+    return callMoodle("local_nexusai_document_list", { courseid: courseId, limit, offset });
 }
 
 /**
@@ -266,18 +274,24 @@ const MOCK_GAPS = {
             count: 5,
             last_asked_at: new Date(Date.now() - 86400000).toISOString(),
             avg_similarity: 0.18,
+            question_ids: ["mock-1a", "mock-1b"],
+            is_archived: false,
         },
         {
             question: "¿qué es la regla de la cadena en derivadas parciales?",
             count: 3,
             last_asked_at: new Date(Date.now() - 3 * 86400000).toISOString(),
             avg_similarity: 0.32,
+            question_ids: ["mock-2a"],
+            is_archived: false,
         },
         {
             question: "ejercicios resueltos de integrales por partes",
             count: 2,
             last_asked_at: new Date(Date.now() - 10 * 86400000).toISOString(),
             avg_similarity: null,
+            question_ids: ["mock-3a"],
+            is_archived: false,
         },
     ],
 };
@@ -287,10 +301,12 @@ const MOCK_GAPS = {
  *
  * @param {number} courseId
  * @param {number} [days]   Ventana temporal (default 30).
- * @param {number} [limit]  Máximo items (default 30).
+ * @param {number} [limit]  Máximo items por página (default 30).
+ * @param {boolean} [includeArchived] Incluir gaps ya archivados (DOC-D08).
+ * @param {number} [offset] Desde qué posición paginar (UX-15, default 0).
  * @returns {Promise<{course_id:number, days:number, total:number, items:Array}>}
  */
-export async function listGaps(courseId, days = 30, limit = 30) {
+export async function listGaps(courseId, days = 30, limit = 30, includeArchived = false, offset = 0) {
     const fetchMany = await getMoodleAjax();
     if (!fetchMany) {
         await new Promise((r) => setTimeout(r, 400));
@@ -299,7 +315,30 @@ export async function listGaps(courseId, days = 30, limit = 30) {
 
     const [response] = await fetchMany([{
         methodname: "local_nexusai_gaps_list",
-        args: { courseid: courseId, days, limit },
+        args: { courseid: courseId, days, limit, includearchived: includeArchived, offset },
+    }]);
+
+    return response;
+}
+
+/**
+ * Archiva o desarchiva un gap detectado (DOC-D08, issue #383).
+ *
+ * @param {number} courseId
+ * @param {string[]} questionIds IDs de fila devueltos por listGaps (no el texto).
+ * @param {boolean} archived true para archivar, false para desarchivar.
+ * @returns {Promise<{course_id:number, archived:boolean, affected:number}>}
+ */
+export async function archiveGap(courseId, questionIds, archived) {
+    const fetchMany = await getMoodleAjax();
+    if (!fetchMany) {
+        await new Promise((r) => setTimeout(r, 300));
+        return { course_id: courseId, archived, affected: questionIds.length };
+    }
+
+    const [response] = await fetchMany([{
+        methodname: "local_nexusai_gaps_archive",
+        args: { courseid: courseId, questionids: questionIds, archived },
     }]);
 
     return response;
@@ -390,6 +429,7 @@ const MOCK_ANALYTICS_DASHBOARD = {
         questions_answered: 78,
         ratio: 0.133,
     },
+    topics_consulted: 9,
 };
 
 /**
@@ -399,7 +439,8 @@ const MOCK_ANALYTICS_DASHBOARD = {
  * @param {number} courseId
  * @param {number} [days] Ventana temporal (default 30).
  * @returns {Promise<{course_id:number, period_days:number, top_queries:Array,
- *   daily_message_counts:Array, quiz_score_distribution:Object, gaps_ratio:Object}>}
+ *   daily_message_counts:Array, quiz_score_distribution:Object, gaps_ratio:Object,
+ *   topics_consulted:number}>}
  */
 export async function getAnalyticsDashboard(courseId, days = 30) {
     const fetchMany = await getMoodleAjax();

@@ -7,8 +7,8 @@
  */
 
 import { useEffect, useState } from "react";
-import { listGaps } from "./api.js";
-import { IconCheck } from "../components/icons.jsx";
+import { listGaps, archiveGap } from "./api.js";
+import { IconCheck, IconArchive } from "../components/icons.jsx";
 
 function relativeTime(iso) {
     if (!iso) return "";
@@ -31,27 +31,36 @@ function relativeTime(iso) {
 
 function similarityLabel(sim) {
     if (sim === null || sim === undefined) {
-        return { text: "sin match", color: "#dc2626" };
+        return { text: "sin match", level: "high" };
     }
-    if (sim < 0.25) return { text: "match nulo",  color: "#dc2626" };
-    if (sim < 0.4)  return { text: "match débil", color: "#d97706" };
-    return { text: "match parcial", color: "#65a30d" };
+    if (sim < 0.25) return { text: "match nulo",  level: "high" };
+    if (sim < 0.4)  return { text: "match débil", level: "mid" };
+    return { text: "match parcial", level: "low" };
 }
+
+// UX-15 (#385): cantidad de gaps que se piden por página, tanto en la
+// carga inicial como en cada "Cargar más".
+const PAGE_SIZE = 30;
 
 export default function GapsPanel({ courseId }) {
     const [items, setItems] = useState([]);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState(null);
     const [days, setDays] = useState(30);
+    const [showArchived, setShowArchived] = useState(false);
+    const [archivingIdx, setArchivingIdx] = useState(null);
 
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
         setError(null);
-        listGaps(courseId, days, 30)
+        listGaps(courseId, days, PAGE_SIZE, showArchived, 0)
             .then((data) => {
                 if (!cancelled) {
                     setItems(data?.items || []);
+                    setTotal(data?.total || 0);
                     setLoading(false);
                 }
             })
@@ -62,7 +71,44 @@ export default function GapsPanel({ courseId }) {
                 }
             });
         return () => { cancelled = true; };
-    }, [courseId, days]);
+    }, [courseId, days, showArchived]);
+
+    const hasMore = items.length < total;
+
+    const handleLoadMore = async () => {
+        setLoadingMore(true);
+        try {
+            const data = await listGaps(courseId, days, PAGE_SIZE, showArchived, items.length);
+            setItems((prev) => [...prev, ...(data?.items || [])]);
+            setTotal(data?.total ?? total);
+        } catch (err) {
+            setError(err.message || "Error cargando más gaps");
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
+    const handleToggleArchive = async (item, idx) => {
+        const nextArchived = !item.is_archived;
+        setArchivingIdx(idx);
+        try {
+            await archiveGap(courseId, item.question_ids, nextArchived);
+            if (!showArchived) {
+                // Vista default: un gap recién archivado deja de matchear el
+                // filtro (archived_at IS NULL), así que sale de la lista.
+                setItems((prev) => prev.filter((_, i) => i !== idx));
+                setTotal((prev) => Math.max(0, prev - 1));
+            } else {
+                setItems((prev) =>
+                    prev.map((g, i) => (i === idx ? { ...g, is_archived: nextArchived } : g))
+                );
+            }
+        } catch (err) {
+            setError(err.message || "No se pudo archivar el gap");
+        } finally {
+            setArchivingIdx(null);
+        }
+    };
 
     return (
         <div className="nexusai-gaps">
@@ -86,6 +132,14 @@ export default function GapsPanel({ courseId }) {
                         {d === 365 && "Último año"}
                     </button>
                 ))}
+                <label className="nexusai-gaps__archived-toggle">
+                    <input
+                        type="checkbox"
+                        checked={showArchived}
+                        onChange={(e) => setShowArchived(e.target.checked)}
+                    />
+                    Ver archivadas
+                </label>
             </div>
 
             {loading && <div className="nexusai-loading">Cargando gaps...</div>}
@@ -111,22 +165,28 @@ export default function GapsPanel({ courseId }) {
             {!loading && !error && items.length > 0 && (
                 <div className="nexusai-gaps__list">
                     <h3 className="nexusai-documents__heading">
-                        Preguntas sin respuesta ({items.length})
+                        Preguntas sin respuesta ({total})
                     </h3>
                     {items.map((g, i) => {
                         const sim = similarityLabel(g.avg_similarity);
                         return (
-                            <div key={i} className="nexusai-gap-item">
+                            <div
+                                key={i}
+                                className={`nexusai-gap-item ${g.is_archived ? "nexusai-gap-item--archived" : ""}`}
+                            >
                                 <div className="nexusai-gap-item__row">
                                     <span className="nexusai-gap-item__question">
                                         “{g.question}”
+                                        {g.is_archived && (
+                                            <span className="nexusai-gap-item__archived-badge">Archivada</span>
+                                        )}
                                     </span>
                                     <span className="nexusai-gap-item__count">
                                         ×{g.count}
                                     </span>
                                 </div>
                                 <div className="nexusai-gap-item__meta">
-                                    <span style={{ color: sim.color, fontWeight: 600 }}>
+                                    <span className={`nexusai-gap-item__similarity nexusai-gap-item__similarity--${sim.level}`}>
                                         {sim.text}
                                     </span>
                                     <span className="nexusai-gap-item__sep">·</span>
@@ -137,10 +197,33 @@ export default function GapsPanel({ courseId }) {
                                             <span>similaridad promedio {Math.round(g.avg_similarity * 100)}%</span>
                                         </>
                                     )}
+                                    <span className="nexusai-gap-item__sep">·</span>
+                                    <button
+                                        type="button"
+                                        className="nexusai-gap-item__archive-btn"
+                                        onClick={() => handleToggleArchive(g, i)}
+                                        disabled={archivingIdx === i}
+                                    >
+                                        <IconArchive size={12} />
+                                        {archivingIdx === i
+                                            ? "..."
+                                            : g.is_archived ? "Desarchivar" : "Archivar"}
+                                    </button>
                                 </div>
                             </div>
                         );
                     })}
+
+                    {hasMore && (
+                        <button
+                            type="button"
+                            className="nexusai-gaps__load-more"
+                            onClick={handleLoadMore}
+                            disabled={loadingMore}
+                        >
+                            {loadingMore ? "Cargando..." : `Cargar más (${items.length} de ${total})`}
+                        </button>
+                    )}
                 </div>
             )}
         </div>

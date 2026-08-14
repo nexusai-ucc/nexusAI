@@ -116,6 +116,14 @@ export const IconCheck = ({ size = 14 }) => (
     </svg>
 );
 
+export const IconArchive = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <rect x="3" y="4" width="18" height="4" rx="1" />
+        <path d="M4 8v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+        <line x1="10" y1="13" x2="14" y2="13" />
+    </svg>
+);
+
 export const IconX = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <line x1="18" y1="6"  x2="6"  y2="18" />
@@ -200,6 +208,15 @@ export const IconDownload = ({ size = 14 }) => (
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="7 10 12 15 17 10" />
         <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+);
+
+// ── Upload (dropzone de material) ────────────────────────────────────────────
+export const IconUpload = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
     </svg>
 );
 

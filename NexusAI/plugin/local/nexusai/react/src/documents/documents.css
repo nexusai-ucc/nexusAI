@@ -7,7 +7,10 @@
  */
 
 .nexusai-documents {
-    max-width: 900px;
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    max-width: 1200px;
     margin: 16px 0;
 
     /* Design tokens — mirrors .nexusai-widget in styles.css.
@@ -37,6 +40,113 @@
     --nexusai-shadow-md:      0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
 }
 
+/* ── Nav lateral (RDS-05) — reemplaza .nexusai-doc-tabs ── */
+.nexusai-doc-sidebar {
+    flex-shrink: 0;
+    width: 232px;
+    position: sticky;
+    top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.nexusai-doc-sidebar__course {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+    background: var(--nexusai-bg, #fff);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius, 8px);
+}
+.nexusai-doc-sidebar__course-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--nexusai-fg-muted, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.nexusai-doc-sidebar__course-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nexusai-fg, #1e293b);
+    line-height: 1.3;
+}
+.nexusai-doc-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.nexusai-doc-nav__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--nexusai-fg-muted, #64748b);
+    background: none;
+    border: none;
+    border-radius: var(--nexusai-radius, 8px);
+    cursor: pointer;
+    text-align: left;
+    transition: background .12s, color .12s;
+}
+.nexusai-doc-nav__item:hover {
+    background: var(--nexusai-bg-subtle, #f1f5f9);
+    color: var(--nexusai-fg, #1e293b);
+}
+.nexusai-doc-nav__item--active {
+    background: #e6edfb;
+    color: var(--nexusai-primary, #6366f1);
+}
+.nexusai-doc-nav__item span:first-of-type {
+    flex: 1;
+}
+.nexusai-doc-nav__badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: var(--nexusai-radius-full, 9999px);
+    background: var(--nexusai-bg-subtle, #f1f5f9);
+    color: var(--nexusai-fg-muted, #64748b);
+}
+.nexusai-doc-nav__item--active .nexusai-doc-nav__badge {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--nexusai-primary, #6366f1);
+}
+.nexusai-doc-sidebar__status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #166534;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: var(--nexusai-radius, 8px);
+}
+
+.nexusai-doc-content {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Contenedor tipo tarjeta SaaS (RDS-07) — envuelve secciones funcionales
+   (ej. dropzone + tabla de Material) para que se lean como un bloque
+   propio, consistente con .nexusai-gap-item/.nexusai-analytics__section. */
+.nexusai-doc-card {
+    background: var(--nexusai-bg, #fff);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius-lg, 12px);
+    box-shadow: var(--nexusai-shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+    padding: 20px;
+    min-width: 0;
+}
+.nexusai-doc-card .nexusai-documents__heading:first-child { margin-top: 0; }
+
 .nexusai-documents__intro {
     color: #475569;
     font-size: 13.5px;
@@ -55,6 +165,29 @@
     margin: 28px 0 12px;
     color: var(--nexusai-fg, #1e293b);
     letter-spacing: -0.01em;
+}
+
+/* UX-17 (#387): mismo estilo que .nexusai-gaps__load-more más abajo. */
+.nexusai-documents__load-more {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexusai-primary, #6366f1);
+    background: #f7f8fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .12s;
+}
+.nexusai-documents__load-more:hover {
+    border-color: #c6d4f0;
+}
+.nexusai-documents__load-more:disabled {
+    color: #94a3b8;
+    cursor: default;
 }
 
 /* ============================================================
@@ -87,9 +220,26 @@
     cursor: not-allowed;
 }
 .nexusai-dropzone__icon {
-    font-size: 36px;
-    margin-bottom: 10px;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 12px;
+    border-radius: var(--nexusai-radius-full, 9999px);
+    background: var(--nexusai-primary-light, rgba(99,102,241,0.1));
+    color: var(--nexusai-primary, #6366f1);
+}
+.nexusai-dropzone__spinner {
+    width: 26px;
+    height: 26px;
+    border: 3px solid var(--nexusai-primary-ring, rgba(99,102,241,0.2));
+    border-top-color: var(--nexusai-primary, #6366f1);
+    border-radius: 50%;
+    animation: nexusai-dropzone-spin .8s linear infinite;
+}
+@keyframes nexusai-dropzone-spin {
+    to { transform: rotate(360deg); }
 }
 .nexusai-dropzone__title {
     font-size: 15px;
@@ -115,7 +265,7 @@
 .nexusai-table-wrap {
     border: 1px solid var(--nexusai-border, #e2e8f0);
     border-radius: var(--nexusai-radius, 8px);
-    overflow: hidden;
+    overflow-x: auto;
     background: var(--nexusai-bg, white);
     box-shadow: var(--nexusai-shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
 }
@@ -430,33 +580,6 @@
     cursor: not-allowed;
 }
 
-/* ── Tabs internas Material / Gaps (Feature G) ── */
-.nexusai-doc-tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 18px;
-    border-bottom: 1px solid var(--nexusai-border, #e2e8f0);
-}
-.nexusai-doc-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--nexusai-fg-muted, #64748b);
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    transition: color .15s, border-color .15s;
-}
-.nexusai-doc-tab:hover { color: var(--nexusai-fg, #1e293b); }
-.nexusai-doc-tab--active {
-    color: var(--nexusai-primary, #6366f1);
-    border-bottom-color: var(--nexusai-primary, #6366f1);
-}
-
 /* ── Panel de Gaps ── */
 .nexusai-gaps__filter {
     display: flex;
@@ -593,6 +716,85 @@
 .nexusai-gap-item__sep {
     color: #cbd5e1;
 }
+.nexusai-gap-item__similarity {
+    font-weight: 600;
+}
+.nexusai-gap-item__similarity--low  { color: #65a30d; }
+.nexusai-gap-item__similarity--mid  { color: #d97706; }
+.nexusai-gap-item__similarity--high { color: #dc2626; }
+
+/* ── Archivar/desarchivar (DOC-D08, #383) ── */
+.nexusai-gaps__archived-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12.5px;
+    color: #64748b;
+    cursor: pointer;
+    margin-left: auto;
+}
+.nexusai-gaps__archived-toggle input {
+    cursor: pointer;
+}
+.nexusai-gap-item--archived {
+    opacity: 0.6;
+}
+.nexusai-gap-item__archived-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 1px 7px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+.nexusai-gaps__load-more {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 8px 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexusai-primary, #6366f1);
+    background: #f7f8fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .12s;
+}
+.nexusai-gaps__load-more:hover {
+    border-color: #c6d4f0;
+}
+.nexusai-gaps__load-more:disabled {
+    color: #94a3b8;
+    cursor: default;
+}
+
+.nexusai-gap-item__archive-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--nexusai-primary, #6366f1);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+}
+.nexusai-gap-item__archive-btn:hover {
+    text-decoration: underline;
+}
+.nexusai-gap-item__archive-btn:disabled {
+    color: #94a3b8;
+    cursor: default;
+    text-decoration: none;
+}
 
 /* ============================================================
    FAQ dashboard tab (DOC-D02)
@@ -636,6 +838,57 @@
     padding-left: 18px;
     font-size: 12px;
     color: #64748b;
+    line-height: 1.5;
+}
+
+/* RDS-07: tarjetas de tema del tab FAQ del docente — clase propia
+   (nexusai-faq-card, NO nexusai-faq-topic) para no afectar el listado de
+   "Preguntas más frecuentes" de Analytics (RDS-06), que sigue usando
+   nexusai-faq-topic sin cambios. */
+.nexusai-faq__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+}
+.nexusai-faq-card {
+    background: var(--nexusai-bg, #fff);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius-lg, 12px);
+    box-shadow: var(--nexusai-shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+    padding: 14px 16px;
+    min-width: 0;
+}
+.nexusai-faq-card__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.nexusai-faq-card__row svg {
+    flex-shrink: 0;
+    margin-top: 3px;
+    color: var(--nexusai-primary, #6366f1);
+}
+.nexusai-faq-card__label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--nexusai-fg, #1e293b);
+    line-height: 1.45;
+    flex: 1;
+}
+.nexusai-faq-card__count {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--nexusai-primary, #6366f1);
+    background: #e6edfb;
+    padding: 2px 8px;
+    border-radius: var(--nexusai-radius-full, 9999px);
+    flex-shrink: 0;
+}
+.nexusai-faq-card__examples {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    font-size: 12px;
+    color: var(--nexusai-fg-muted, #64748b);
     line-height: 1.5;
 }
 
@@ -768,6 +1021,11 @@
     border: 1px solid #e8edf5;
     border-radius: 8px;
     padding: 14px 16px;
+    /* UX-16: sin esto, el tamaño mínimo automático del grid item se calcula
+       a partir del contenido (el ancho mínimo de las barras diarias con
+       muchos días) y "revienta" la columna 1fr entera en vez de quedarse
+       adentro con scroll. */
+    min-width: 0;
 }
 .nexusai-analytics__section-empty {
     font-size: 13px;
@@ -781,6 +1039,11 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    /* UX-16: tope defensivo — ya viene acotada a 10 desde el backend, pero
+       con preguntas largas que wrappean, 10 ítems pueden ocupar mucho alto
+       en pantallas chicas. */
+    max-height: 280px;
+    overflow-y: auto;
 }
 
 /* Barras genéricas (uso diario / distribución de puntajes) */
@@ -794,8 +1057,15 @@
 .nexusai-analytics__bars--buckets {
     gap: 10px;
 }
+/* UX-16: con days=365 las barras diarias no deben achicarse a líneas
+   ilegibles — scrollean horizontalmente en vez de aplastarse. */
+.nexusai-analytics__bars--daily {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
 .nexusai-analytics__bar-col {
-    flex: 1;
+    flex: 1 1 6px;
+    min-width: 6px;
     display: flex;
     align-items: flex-end;
     height: 100%;
@@ -876,4 +1146,366 @@
 }
 .nexusai-analytics__gaps-ratio--high .nexusai-analytics__gaps-ratio-pct {
     color: #991b1b;
+}
+
+/* Stat-cards row (RDS-06) */
+.nexusai-analytics__stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+@media (max-width: 900px) {
+    .nexusai-analytics__stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 480px) {
+    .nexusai-analytics__stats {
+        grid-template-columns: 1fr;
+    }
+}
+.nexusai-analytics__stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--nexusai-bg-muted, #f8fafc);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius, 8px);
+    padding: 12px 14px;
+    color: var(--nexusai-primary, #6366f1);
+    /* UX-16: evita que el valor fuerce el ancho mínimo de la columna del grid */
+    min-width: 0;
+}
+.nexusai-analytics__stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--nexusai-fg, #0f172a);
+}
+.nexusai-analytics__stat-label {
+    font-size: 12px;
+    color: var(--nexusai-fg-muted, #64748b);
+}
+
+/* Salud del contenido (RDS-06) */
+.nexusai-analytics__health {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border: 1px solid #e8edf5;
+    border-radius: 8px;
+    background: #fff;
+}
+.nexusai-analytics__health-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+}
+.nexusai-analytics__health-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nexusai-fg, #0f172a);
+}
+.nexusai-analytics__health-pct {
+    font-size: 20px;
+    font-weight: 700;
+}
+.nexusai-analytics__health-bar {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+.nexusai-analytics__health-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width .25s ease-out;
+}
+.nexusai-analytics__health-sub {
+    display: block;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 6px;
+}
+.nexusai-analytics__health--low .nexusai-analytics__health-pct {
+    color: #166534;
+}
+.nexusai-analytics__health--low .nexusai-analytics__health-fill {
+    background: #22c55e;
+}
+.nexusai-analytics__health--mid .nexusai-analytics__health-pct {
+    color: #92400e;
+}
+.nexusai-analytics__health--mid .nexusai-analytics__health-fill {
+    background: #f59e0b;
+}
+.nexusai-analytics__health--high .nexusai-analytics__health-pct {
+    color: #991b1b;
+}
+.nexusai-analytics__health--high .nexusai-analytics__health-fill {
+    background: #ef4444;
+}
+
+/* ============================================================
+   Generador de exámenes docente (EVAL-02, issue #235)
+   Movido acá desde styles.css en RDS-07 (#406) — uso exclusivo del
+   panel docente, nunca compartido con el chat del alumno.
+============================================================ */
+.nexusai-exam__doclist {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-sm);
+    padding: 8px;
+}
+.nexusai-exam__docitem label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border-radius: var(--nexusai-radius-sm);
+    font-size: 12.5px;
+    color: var(--nexusai-fg);
+    cursor: pointer;
+}
+.nexusai-exam__docitem label:hover { background: var(--nexusai-bg-subtle); }
+
+/* Indicador de paso del wizard (RDS-07) */
+.nexusai-exam__steps {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.nexusai-exam__step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexusai-fg-subtle, #94a3b8);
+}
+.nexusai-exam__step--active {
+    color: var(--nexusai-primary, #6366f1);
+}
+.nexusai-exam__step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--nexusai-radius-full, 9999px);
+    background: var(--nexusai-bg-subtle, #f1f5f9);
+    color: inherit;
+    font-size: 11px;
+}
+.nexusai-exam__step--active .nexusai-exam__step-num {
+    background: var(--nexusai-primary, #6366f1);
+    color: #fff;
+}
+.nexusai-exam__step-arrow {
+    color: var(--nexusai-border-strong, #cbd5e1);
+    font-size: 12px;
+}
+.nexusai-exam__wizard-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.nexusai-exam__form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.nexusai-exam__field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-exam__field input,
+.nexusai-exam__field select {
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--nexusai-fg);
+    padding: 6px 8px;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-sm);
+    background: var(--nexusai-bg);
+}
+
+/* "Incluir temas con dificultad detectada" (Gaps/FAQ) — DOC-D09 (#390) */
+.nexusai-exam__focus {
+    margin-bottom: 16px;
+}
+.nexusai-exam__focus-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+    cursor: pointer;
+}
+.nexusai-exam__focus-empty {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-exam__focus-list {
+    margin-top: 8px;
+}
+.nexusai-exam__focus-badge {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border-radius: var(--nexusai-radius-full, 9999px);
+}
+.nexusai-exam__focus-badge--gap {
+    color: #92400e;
+    background: #fef3c7;
+}
+.nexusai-exam__focus-badge--faq {
+    color: #1e40af;
+    background: #dbeafe;
+}
+.nexusai-exam__source--topic {
+    color: var(--nexusai-primary, #6366f1);
+}
+
+.nexusai-exam__preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.nexusai-exam__preview-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.nexusai-exam__question {
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius, 8px);
+    box-shadow: var(--nexusai-shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+    padding: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nexusai-exam__question-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.nexusai-exam__question-number {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--nexusai-fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+.nexusai-exam__remove {
+    background: none;
+    border: none;
+    color: var(--nexusai-fg-muted);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+}
+.nexusai-exam__remove:hover { color: #dc2626; }
+
+.nexusai-exam__question-text,
+.nexusai-exam__explanation {
+    width: 100%;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--nexusai-fg);
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-sm);
+    padding: 6px 8px;
+    resize: vertical;
+}
+.nexusai-exam__explanation { font-size: 12px; color: var(--nexusai-fg-muted); }
+
+.nexusai-exam__options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.nexusai-exam__option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.nexusai-exam__option input[type="text"] {
+    flex: 1;
+    font-family: inherit;
+    font-size: 12.5px;
+    padding: 5px 8px;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-sm);
+    color: var(--nexusai-fg);
+}
+
+.nexusai-exam__source {
+    font-size: 11px;
+    color: var(--nexusai-fg-muted);
+    font-style: italic;
+}
+
+/* Fix: .nexusai-btn--primary en styles.css está pensado para el chat
+   (rojo, error/retry) — acá lo repintamos al indigo del panel docente,
+   scopeado a .nexusai-documents para no afectar el chat. */
+.nexusai-documents .nexusai-btn--primary {
+    background: var(--nexusai-primary, #6366f1);
+    border-color: var(--nexusai-primary, #6366f1);
+}
+.nexusai-documents .nexusai-btn--primary:hover {
+    background: var(--nexusai-primary-hover, #4f46e5);
+    border-color: var(--nexusai-primary-hover, #4f46e5);
+}
+
+/* ============================================================
+   Preguntas de alumnos: selector Frecuentes/Sin responder (RDS-08)
+============================================================ */
+.nexusai-questions__modebtns {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+.nexusai-questions__modebtn {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--nexusai-fg-muted, #64748b);
+    background: var(--nexusai-bg-muted, #f8fafc);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius, 8px);
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+}
+.nexusai-questions__modebtn:hover { color: var(--nexusai-fg, #1e293b); }
+.nexusai-questions__modebtn--active {
+    color: var(--nexusai-primary, #6366f1);
+    background: #e6edfb;
+    border-color: var(--nexusai-primary-ring, rgba(99,102,241,0.2));
 }

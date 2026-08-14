@@ -18,7 +18,7 @@
  *   - lang:      'es' | 'en'
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import ChatInput from "./components/ChatInput.jsx";
 import MessageBubble from "./components/MessageBubble.jsx";
@@ -36,6 +36,7 @@ const SECTION_TITLES = {
     study:    { es: "Modo Estudio", en: "Study Mode" },
     search:   { es: "Buscar",       en: "Search" },
     calendar: { es: "Calendario",   en: "Calendar" },
+    history:  { es: "Historial",    en: "History" },
 };
 
 const STRINGS = {
@@ -86,11 +87,6 @@ const STRINGS = {
 function isInsideMoodle() {
     return typeof window !== "undefined" && window.M && window.M.cfg;
 }
-
-// Disparador ahora vive en la navbar primaria de Moodle (fuera de este árbol
-// de React) — ver amd/src/nav-trigger.js y classes/hook/navigation/
-// primary_extend_listener.php (UX-02). Mismo selector en ambos lados.
-const NAV_TRIGGER_SELECTOR = 'li[data-key="local_nexusai_trigger"]';
 
 /* ---- Iconos SVG inline ---- */
 const IconSparkle = () => (
@@ -152,46 +148,13 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "study" | "calendar" | "search"
-    const [historyOpen, setHistoryOpen] = useState(false);
-    const [panelSize, setPanelSize] = useState({ width: 400, height: 600 });
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "history" | "study" | "calendar" | "search"
     const [navOpen, setNavOpen] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
     const widgetRef = useRef(null);
     const panelRef = useRef(null);
-
-    const startResize = useCallback((e, corner) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const startW = panelSize.width;
-        const startH = panelSize.height;
-        const minW = 320, maxW = window.innerWidth - 48;
-        const minH = 400, maxH = window.innerHeight - 120;
-
-        const onMove = (ev) => {
-            const dx = ev.clientX - startX;
-            const dy = ev.clientY - startY;
-            let w = startW, h = startH;
-            if (corner === "n") h = startH - dy;
-            if (corner === "s") h = startH + dy;
-            if (corner === "w") w = startW - dx;
-            if (corner === "e") w = startW + dx;
-            setPanelSize({
-                width:  Math.max(minW, Math.min(maxW, w)),
-                height: Math.max(minH, Math.min(maxH, h)),
-            });
-        };
-        const onUp = () => {
-            window.removeEventListener("mousemove", onMove);
-            window.removeEventListener("mouseup", onUp);
-        };
-        window.addEventListener("mousemove", onMove);
-        window.addEventListener("mouseup", onUp);
-    }, [panelSize]);
 
     useEffect(() => {
         if (!open) return;
@@ -206,32 +169,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         window.addEventListener("nexusai:toggle-panel", handleToggle);
         return () => window.removeEventListener("nexusai:toggle-panel", handleToggle);
     }, []);
-
-    // Cierre por click afuera (nuevo con UX-02: el panel ahora se comporta
-    // como un dropdown de navbar, no como una tarjeta flotante). No cierra si
-    // el click fue dentro del panel o sobre el propio ícono disparador.
-    useEffect(() => {
-        if (!open) return;
-        const handleOutsideClick = (e) => {
-            if (panelRef.current && panelRef.current.contains(e.target)) return;
-            const trigger = document.querySelector(NAV_TRIGGER_SELECTOR);
-            if (trigger && trigger.contains(e.target)) return;
-            setOpen(false);
-        };
-        document.addEventListener("mousedown", handleOutsideClick);
-        return () => document.removeEventListener("mousedown", handleOutsideClick);
-    }, [open]);
-
-    // Ancla el panel horizontalmente debajo del ícono real de la navbar — su
-    // posición varía según idioma/rol/tema, así que no alcanza un valor fijo.
-    useEffect(() => {
-        if (!open || !widgetRef.current) return;
-        const trigger = document.querySelector(NAV_TRIGGER_SELECTOR);
-        if (trigger) {
-            const rect = trigger.getBoundingClientRect();
-            widgetRef.current.style.setProperty("--nexusai-anchor-left", `${Math.max(rect.left, 8)}px`);
-        }
-    }, [open]);
 
     const send = async (question) => {
         setError(null);
@@ -353,7 +290,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
     const loadSession = async (id) => {
         if (!id) return;
-        setHistoryOpen(false);
+        setActiveTab("chat");
         setError(null);
         setLoading(true);
         try {
@@ -372,20 +309,25 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
     return (
         <div className="nexusai-widget" ref={widgetRef}>
+            {!open && (
+                <button
+                    type="button"
+                    className="nexusai-rail"
+                    onClick={() => setOpen(true)}
+                    aria-label={t.open}
+                    title={t.open}
+                >
+                    <span className="nexusai-rail__icon"><IconSparkle /></span>
+                    <span className="nexusai-rail__label">{t.title}</span>
+                </button>
+            )}
             {open && (
                 <div
                     className="nexusai-panel"
                     ref={panelRef}
                     role="dialog"
                     aria-labelledby="nexusai-title"
-                    style={{ width: panelSize.width, height: panelSize.height }}
                 >
-                    {/* Handles de resize en los 4 bordes */}
-                    <div className="nexusai-resize-handle nexusai-resize-handle--n" onMouseDown={(e) => startResize(e, "n")} />
-                    <div className="nexusai-resize-handle nexusai-resize-handle--s" onMouseDown={(e) => startResize(e, "s")} />
-                    <div className="nexusai-resize-handle nexusai-resize-handle--w" onMouseDown={(e) => startResize(e, "w")} />
-                    <div className="nexusai-resize-handle nexusai-resize-handle--e" onMouseDown={(e) => startResize(e, "e")} />
-
                     {/* Header */}
                     <header className="nexusai-panel__header">
                         {activeTab === "chat" ? (
@@ -442,8 +384,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             {hasCourse && activeTab === "chat" && (
                                 <button
                                     type="button"
-                                    className={`nexusai-icon-btn nexusai-history-toggle ${historyOpen ? "nexusai-history-toggle--active" : ""}`}
-                                    onClick={() => setHistoryOpen((v) => !v)}
+                                    className="nexusai-icon-btn nexusai-history-toggle"
+                                    onClick={() => setActiveTab("history")}
                                     aria-label={lang === "es" ? "Historial" : "History"}
                                     title={lang === "es" ? "Conversaciones previas" : "Previous conversations"}
                                 >
@@ -502,15 +444,6 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         </div>
                     ) : (
                     <>
-                    <HistoryDropdown
-                        open={historyOpen}
-                        onClose={() => setHistoryOpen(false)}
-                        courseId={courseid}
-                        currentSessionId={sessionId}
-                        onSelectSession={loadSession}
-                        lang={lang}
-                    />
-
                     <NavMenu
                         open={navOpen}
                         onClose={() => setNavOpen(false)}
@@ -591,6 +524,15 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         <span>{t.poweredBy}</span>
                     </footer>
                     </>
+                    ) : activeTab === "history" ? (
+                        <HistoryDropdown
+                            open={true}
+                            onClose={() => setActiveTab("chat")}
+                            courseId={courseid}
+                            currentSessionId={sessionId}
+                            onSelectSession={loadSession}
+                            lang={lang}
+                        />
                     ) : activeTab === "study" ? (
                         <div className="nexusai-panel__body">
                             <StudyPanel courseId={courseid} sesskey={sesskey} lang={lang} />

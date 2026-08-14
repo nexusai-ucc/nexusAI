@@ -5,7 +5,8 @@
 **Plugin para Moodle con asistente académico basado en inteligencia artificial.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status: MVP en desarrollo](https://img.shields.io/badge/status-MVP%20en%20desarrollo-orange)]()
+[![Status: Post-MVP en desarrollo](https://img.shields.io/badge/status-Post--MVP%20en%20desarrollo-orange)]()
+[![Version: 0.10.6](https://img.shields.io/badge/version-0.10.6-blue)]()
 [![Moodle: 4.1–4.5](https://img.shields.io/badge/Moodle-4.1--4.5-blue)]()
 [![Python: 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)]()
 [![React: 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)]()
@@ -36,10 +37,17 @@ A diferencia de otros plugins de IA para Moodle, **NexusAI implementa RAG autén
 
 | | |
 |---|---|
-| **Fase actual** | Sprint 1 (23 Abr – 6 May 2026) |
-| **Próximo hito** | MVP — 1 Jun 2026 |
-| **Roadmap completo** | Hasta defensa final 27 Feb 2027 |
-| **Backlog** | 334 SP MVP \| 538 SP Full |
+| **Fase actual** | Post-MVP Sprint D (hasta 14 Dic 2026) |
+| **MVP entregado** | 1 Jun 2026 |
+| **Próximo hito** | Check 2 PI — informe parcial (antes del 3 Nov 2026) |
+| **Roadmap completo** | Hasta defensa final 26 Feb 2027 |
+
+El MVP (entregado el 1° de junio) cubrió el asistente conversacional, el
+buscador semántico y la generación básica de quizzes. Todo el desarrollo
+post-MVP (Study Planner ampliado, Herramientas Docentes, Calendario, Foros
+con IA) ya está implementado y mergeado a `main` — el foco actual son
+confiabilidad, privacidad, testing automatizado y el deploy propio (ver
+Sprint D en el [backlog](https://github.com/nexusai-ucc/nexusAI/issues)).
 
 Ver [`investigacion/`](investigacion/) para el detalle técnico y de gestión, y [`docs/architecture.md`](docs/architecture.md) para la síntesis de arquitectura.
 
@@ -49,9 +57,9 @@ Ver [`investigacion/`](investigacion/) para el detalle técnico y de gestión, y
 
 | Persona | Rol | Área técnica | GitHub |
 |---|---|---|---|
-| Santiago Tricherri | Project Manager + AI/Backend Developer | Backend Python, integración OpenAI, arquitectura RAG, gestión del proyecto | _por completar_ |
+| Santiago Tricherri | Project Manager + AI/Backend Developer | Backend Python, arquitectura RAG, gestión del proyecto | [@SantiagoTricherri](https://github.com/SantiagoTricherri) |
 | Delfina Salinas | Scrum Master + AI/Frontend Developer | Frontend React, UX del plugin, ceremonias Scrum | [@delfisalinasmich](https://github.com/delfisalinasmich) |
-| Marcos Bugliotti | Database + AI/Integration Developer | PostgreSQL, integración Moodle, pipeline RAG, ChromaDB | _por completar_ |
+| Marcos Bugliotti | Database + AI/Integration Developer | PostgreSQL/pgvector, integración Moodle, pipeline RAG | [@marcosbugliotti](https://github.com/marcosbugliotti) |
 
 **Docentes:**
 
@@ -64,14 +72,14 @@ Ver [`investigacion/`](investigacion/) para el detalle técnico y de gestión, y
 
 | Capa | Tecnología |
 |---|---|
-| **Frontend** | React 18 + Webpack (bundle AMD embebido en Moodle) |
-| **Plugin Moodle** | PHP — plugin tipo `local`, `require_login()`, `has_capability()`, proxy cURL |
-| **Backend IA** | Python 3.11 + FastAPI |
-| **IA generativa** | Multi-provider — Gemini 2.5 Flash (MVP) / GPT-4o-mini (producción) |
-| **Embeddings** | Multi-provider — Gemini Embedding o nomic-embed-text (MVP) / text-embedding-3-small (producción) |
-| **Base vectorial** | **PostgreSQL + pgvector** (índice HNSW, distancia coseno) |
-| **Cache** | Redis |
-| **Base de datos** | PostgreSQL (compartida con Moodle, **única DB del sistema**) |
+| **Frontend** | React 18 + Webpack (bundles AMD embebidos en Moodle, uno por widget) |
+| **Plugin Moodle** | PHP 8.1 — plugin tipo `local`, `require_login()`, `has_capability()`, proxy HMAC vía cURL |
+| **Backend IA** | Python 3.11 + FastAPI (async), SQLAlchemy 2.0 + Alembic |
+| **IA generativa** | Multi-provider (SDK de OpenAI usado genéricamente) — Gemini 2.5 Flash (MVP, gratuito) / GPT-4o-mini (producción) |
+| **Embeddings** | Mismo abstracto multi-provider — Gemini Embedding 768d (MVP) / text-embedding-3-small 1536d (producción) |
+| **Base vectorial** | **PostgreSQL + pgvector**, sin base vectorial separada (ver ADR-002) — índice HNSW, distancia coseno |
+| **Cache / seguridad** | Redis — nonce anti-repetición del HMAC y rate limiting |
+| **Base de datos** | PostgreSQL 16 (única DB del backend; Moodle usa su propia base separada) |
 | **Compatibilidad Moodle** | 4.1 LTS – 4.5 LTS |
 
 ### Flujo de una consulta
@@ -104,14 +112,20 @@ nexusAI/
 │       ├── react/               # Source de React (compilado por Webpack)
 │       └── amd/build/           # Bundle AMD (commiteado)
 ├── services/
-│   └── api/                     # Backend FastAPI (Python)
+│   └── api/                     # Backend FastAPI (Python), un router por dominio
 │       ├── app/
-│       │   ├── chat/
-│       │   ├── documents/
-│       │   ├── infrastructure/
-│       │   └── shared/
+│       │   ├── chat/            # Asistente RAG (mensajes, streaming)
+│       │   ├── documents/       # Upload, extracción, chunking, pipeline de indexado
+│       │   ├── search/          # Buscador semántico + híbrido (sin LLM)
+│       │   ├── quiz/            # Generador de quiz, exámenes docente, plan de estudio
+│       │   ├── forums/          # Duplicados, resumen de hilo, sugerencia de respuesta
+│       │   ├── gaps/            # Vacíos de contenido detectados
+│       │   ├── analytics/       # FAQ agrupadas, métricas de curso
+│       │   ├── admin/           # Dashboard docente agregado
+│       │   ├── calendar/        # Alertas configurables
+│       │   ├── courses/, auth/, providers/, prompts/, db/, shared/
+│       ├── migrations/          # Alembic
 │       ├── tests/
-│       ├── data/                # Persistencia ChromaDB (gitignored)
 │       └── Dockerfile
 ├── docs/                        # Documentación técnica
 │   ├── architecture.md          # Síntesis de arquitectura
@@ -133,14 +147,14 @@ nexusAI/
 
 ¿Ya tenés un Moodle 4.1–4.5 corriendo y querés conectarlo al backend NexusAI hosteado? Es un solo ZIP:
 
-1. Bajá el ZIP del último release: [Releases · v0.8.0-mvp](https://github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp).
+1. Generá el ZIP del plugin con `scripts/package-plugin.sh` (o bajalo de un release si el equipo publicó uno más reciente que v0.8.0-mvp — ese release quedó desactualizado, hoy la versión real del plugin es **0.10.6**).
 2. En Moodle: **Site administration → Plugins → Install plugins**, subir el ZIP y seguir el wizard.
 3. Al terminar, **Site administration → Plugins → Local plugins → NexusAI** y completar:
-   - **Backend API URL:** `https://nexusai-api-ucc.fly.dev` (backend en producción)
-   - **API key + Shared secret:** pedirlas al equipo NexusAI ([Delfina](mailto:delfina.s@bircle.ai), Santiago, Marcos)
-4. Crear un curso, subir un PDF como docente desde el menú **📚 NexusAI · Materials** del curso, y probar el chat como alumno.
+   - **Backend API URL** del entorno que uses.
+   - **API key + Shared secret:** pedirlas al equipo NexusAI (Delfina, Santiago, Marcos).
+4. Crear un curso, subir material como docente desde el menú **NexusAI · Materials** del curso, y probar el chat como alumno.
 
-> El backend está deployado en Fly.io con autodeploy desde `main` (workflow [`deploy.yml`](.github/workflows/deploy.yml)). No hace falta instalar nada del lado servidor — solo el plugin en tu Moodle.
+> **Deploy en transición:** el backend de producción se está migrando a un hosting propio en Oracle Cloud (self-hosted, ver issue `DEPLOY-02`) — pedile al equipo la URL vigente en vez de asumir un endpoint fijo acá. No hace falta instalar nada del lado servidor por tu cuenta — solo el plugin en tu Moodle.
 
 Si querés correr **toda la pila local** (backend + Moodle + DB) en lugar de usar el deploy, ver la sección siguiente.
 
@@ -153,7 +167,7 @@ Si querés correr **toda la pila local** (backend + Moodle + DB) en lugar de usa
 - Docker + Docker Compose
 - Node.js 20 LTS
 - Python 3.11+
-- Cuenta OpenAI con API key
+- API key de un proveedor LLM compatible con el SDK de OpenAI (Gemini o OpenAI)
 - Git
 
 ### Setup rápido
@@ -165,17 +179,23 @@ cd nexusAI
 
 # 2. Configurar variables de entorno
 cp .env.example .env
-# Editar .env y completar OPENAI_API_KEY + secretos HMAC
+# Editar .env: LLM_API_KEY / EMBEDDING_API_KEY + secretos HMAC (NEXUSAI_API_KEY, NEXUSAI_SHARED_SECRET)
 
-# 3. Levantar servicios (Moodle + FastAPI + Redis + ChromaDB)
+# 3. Levantar servicios (Postgres+pgvector, Redis, API — Moodle es un profile opcional)
 docker compose up -d
+# Con Moodle incluido: docker compose --profile full up -d
 
-# 4. Instalar el plugin en Moodle
-# Visitar http://localhost:8000/admin → seguir wizard de instalación
+# 4. Correr las migraciones
+docker compose exec api alembic upgrade head
 
-# 5. (Opcional) Build del bundle React en watch
-cd plugin/local/nexusai && npm install && npm run dev
+# 5. Instalar el plugin en Moodle y completar Backend API URL + API key + Shared secret
+#    en Site administration → Plugins → Local plugins → NexusAI
+
+# 6. (Opcional) Build del bundle React en watch
+cd plugin/local/nexusai/react && npm install && npm run dev
 ```
+
+Guía completa (con troubleshooting) en [`docs/CORRER_PROYECTO.md`](docs/CORRER_PROYECTO.md).
 
 Más detalle por componente:
 
@@ -199,17 +219,20 @@ Más detalle por componente:
 
 ## Cronograma
 
-| Fase | Fechas | Entregable |
+| Fase | Fechas | Estado |
 |---|---|---|
-| Setup e Investigación | 9 Abr – 22 Abr 2026 | Entorno + arquitectura |
-| Sprint 1 | 23 Abr – 6 May 2026 | Plugin base + API Python + React |
-| Sprint 2 | 7 May – 20 May 2026 | RAG completo + chat end-to-end |
-| Sprint 3 | 21 May – 27 May 2026 | Integración Moodle + contenido docente |
-| **Sprint 4 — MVP** | **28 May – 1 Jun 2026** | **MVP entregado el 1 de junio** |
-| Documentación MVP | 2 Jun – 15 Jun 2026 | Informe + demo |
-| Post-MVP | Jun – Nov 2026 | Study Planner, Analytics, Foros, Calendario |
-| Check 2 PI | antes 3 Nov 2026 | Diagnóstico + MT + objetivos |
-| Ajustes + PPT + Defensa | Ene – 27 Feb 2027 | Defensa final |
+| Setup e Investigación | hasta 21 Abr 2026 | ✅ Completo |
+| Sprint 1 | hasta 5 May 2026 | ✅ Completo |
+| Sprint 2 | hasta 19 May 2026 | ✅ Completo |
+| Sprint 3 | hasta 26 May 2026 | ✅ Completo |
+| **Sprint 4 — MVP** | **hasta 31 May 2026** | **✅ MVP entregado** |
+| Documentación MVP | hasta 14 Jun 2026 | ✅ Completo |
+| Post-MVP Sprint A | hasta 29 Jun 2026 | ✅ Completo |
+| Post-MVP Sprint B | hasta 30 Jul 2026 | 🚧 En cierre (informe/PI) |
+| Post-MVP Sprint C | hasta 30 Ago 2026 | ✅ Completo (9/9) |
+| Post-MVP Sprint D | hasta 14 Dic 2026 | 🚧 En curso — confiabilidad, privacidad, testing, deploy propio |
+| Entrega Final | hasta 29 Nov 2026 | Check 2 PI antes del 3 Nov 2026 |
+| Defensa Final | hasta 26 Feb 2027 | Ajustes + PPT + defensa |
 
 **Metodología:** Scrum con sprints de 2 semanas. Planning, daily asíncrono, review y retrospectiva al cierre de cada sprint.
 
@@ -217,15 +240,20 @@ Más detalle por componente:
 
 ## Las 7 épicas
 
-| N° | Épica | Alcance |
-|---|---|---|
-| 01 | Asistente Académico Inteligente | Chat RAG sobre contenido real de la materia — **núcleo del MVP** |
-| 02 | Buscador y Resumen Inteligente | Búsqueda semántica y resúmenes automáticos de PDFs |
-| 03 | Study Planner | Quizzes, V/F, completar, preguntas abiertas, flashcards con corrección automática e IA |
-| 04 | Herramientas para Docentes | Dashboard analytics, generador de evaluaciones, detección de lagunas |
-| 05 | Calendario, Alertas y Notificaciones | Integración con calendario nativo de Moodle |
-| 06 | Foros Mejorados con IA | Detección de duplicados, sugerencias automáticas, resúmenes de hilos |
-| 07 | Integración con Moodle y Gestión de Contenido | Plugin local instalable, indexación automática de PDFs/DOCX/TXT |
+| N° | Épica | Alcance | Estado |
+|---|---|---|---|
+| 01 | Asistente Académico Inteligente | Chat RAG sobre contenido real de la materia — **núcleo del MVP** | ✅ |
+| 02 | Buscador y Resumen Inteligente | Búsqueda semántica, resúmenes por documento y resumen pre-parcial multi-documento | ✅ |
+| 03 | Study Planner | Quizzes (opción múltiple, V/F, completar, abiertas, flashcards), historial, plan de estudio personalizado | ✅ |
+| 04 | Herramientas para Docentes | Dashboard analytics, FAQ agrupadas, generador de exámenes + export GIFT, detección de lagunas | ✅ |
+| 05 | Calendario, Alertas y Notificaciones | Vista de calendario, alertas configurables, notificación de material nuevo | ✅ |
+| 06 | Foros Mejorados con IA | Detección de duplicados, sugerencia de respuesta, resumen de hilos | ✅ |
+| 07 | Integración con Moodle y Gestión de Contenido | Plugin local instalable, indexación multi-formato (PDF/DOCX/PPTX/XLSX/CSV/MD/HTML) | ✅ código \| 🚧 deploy propio |
+
+Las 7 épicas del MVP+post-MVP están implementadas y mergeadas a `main`. El
+trabajo actual (Sprint D) es sobre confiabilidad, privacidad, testing
+automatizado, publicación oficial del plugin y deploy propio — no
+funcionalidades nuevas del core.
 
 ---
 

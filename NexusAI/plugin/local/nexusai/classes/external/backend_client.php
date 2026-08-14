@@ -202,19 +202,43 @@ class backend_client {
      * @param int $courseid ID del curso.
      * @param int $days     Días hacia atrás (1..365).
      * @param int $limit    Máximo de items (1..100).
+     * @param bool $includearchived Incluir gaps ya archivados (DOC-D08, #383).
      * @return array{course_id:int, days:int, total:int, items:array}
      */
-    public function list_gaps(int $courseid, int $days = 30, int $limit = 20): array {
+    public function list_gaps(int $courseid, int $days = 30, int $limit = 20, bool $includearchived = false, int $offset = 0): array {
         $payload = [
-            'course_id' => $courseid,
-            'days'      => $days,
-            'limit'     => $limit,
+            'course_id'        => $courseid,
+            'days'             => $days,
+            'limit'            => $limit,
+            'offset'           => $offset,
+            'include_archived' => $includearchived,
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
         return $this->post('/api/v1/gaps/list', $body);
+    }
+
+    /**
+     * Archiva o desarchiva un gap detectado (DOC-D08, issue #383).
+     *
+     * @param int $courseid    ID del curso.
+     * @param array $questionids IDs (UUID string) de las filas a marcar.
+     * @param bool $archived   true para archivar, false para desarchivar.
+     * @return array{course_id:int, archived:bool, affected:int}
+     */
+    public function archive_gap(int $courseid, array $questionids, bool $archived): array {
+        $payload = [
+            'course_id'    => $courseid,
+            'question_ids' => $questionids,
+            'archived'     => $archived,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/gaps/archive', $body);
     }
 
     /**
@@ -301,7 +325,8 @@ class backend_client {
         ?string $topic,
         int $numquestions,
         string $questiontype = 'multiple_choice',
-        string $difficulty = 'medium'
+        string $difficulty = 'medium',
+        array $focustopics = []
     ): array {
         $payload = [
             'course_id'     => $courseid,
@@ -313,6 +338,10 @@ class backend_client {
         ];
         if ($topic !== null && trim($topic) !== '') {
             $payload['topic'] = trim($topic);
+        }
+        if (!empty($focustopics)) {
+            // DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ).
+            $payload['focus_topics'] = array_values($focustopics);
         }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
@@ -374,14 +403,16 @@ class backend_client {
      * @param int $userid   $USER->id real.
      * @param int $days     Días hacia atrás (1..365).
      * @param int $limit    Máximo de items (1..200).
+     * @param int $offset   Cantidad de items a saltear (paginación, UX-19 #389).
      * @return array{course_id:int, total:int, items:array}
      */
-    public function list_quiz_errors(int $courseid, int $userid, int $days = 90, int $limit = 100): array {
+    public function list_quiz_errors(int $courseid, int $userid, int $days = 90, int $limit = 100, int $offset = 0): array {
         $payload = [
             'course_id' => $courseid,
             'user_id'   => $userid,
             'days'      => $days,
             'limit'     => $limit,
+            'offset'    => $offset,
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
@@ -770,8 +801,12 @@ class backend_client {
      * @param int $courseid ID del curso de Moodle.
      * @return array Lista de documentos con su estado actual.
      */
-    public function list_documents(int $courseid): array {
-        return $this->get('/api/v1/documents?course_id=' . $courseid);
+    public function list_documents(int $courseid, ?int $limit = null, int $offset = 0): array {
+        $query = 'course_id=' . $courseid . '&offset=' . $offset;
+        if ($limit !== null) {
+            $query .= '&limit=' . $limit;
+        }
+        return $this->get('/api/v1/documents?' . $query);
     }
 
     /**
@@ -866,6 +901,43 @@ class backend_client {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
         return $this->post('/api/v1/calendar/alerts/mark-notified', $body);
+    }
+
+    // ----------------------------------------------------------------
+    // PRIV-01 — Exportación y eliminación de datos personales (issue #310)
+    // ----------------------------------------------------------------
+
+    /**
+     * Exporta todo el historial personal del alumno en un curso (mensajes
+     * de chat, intentos de quiz activos, errores de quiz).
+     *
+     * @param int $userid   $USER->id real — nunca un parámetro editable por el alumno.
+     * @param int $courseid ID del curso.
+     * @return array{user_id:int, course_id:int, messages:array, quiz_attempts:array, quiz_errors:array}
+     */
+    public function privacy_export(int $userid, int $courseid): array {
+        return $this->get('/api/v1/privacy/export?user_id=' . $userid . '&course_id=' . $courseid);
+    }
+
+    /**
+     * Borra el historial personal del alumno en un curso. Los intentos de
+     * quiz se anonimizan (no se borran) para no romper el dashboard de
+     * Analytics del docente — ver docstring de app/privacy/router.py.
+     *
+     * @param int $userid   $USER->id real — nunca un parámetro editable por el alumno.
+     * @param int $courseid ID del curso.
+     * @return array{messages_deleted:int, quiz_errors_deleted:int, quiz_attempts_anonymized:int}
+     */
+    public function privacy_delete(int $userid, int $courseid): array {
+        // No usamos el helper delete() de abajo: ese asume 204 No Content
+        // (expectjson: false). Este endpoint SÍ devuelve JSON con los
+        // conteos de lo borrado/anonimizado, así que llamamos request()
+        // directo con expectjson en su default (true).
+        return $this->request(
+            'DELETE',
+            '/api/v1/privacy/data?user_id=' . $userid . '&course_id=' . $courseid,
+            ''
+        );
     }
 
     /**

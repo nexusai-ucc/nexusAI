@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { getFaqTopics } from "./api.js";
-import { IconBookOpen } from "../components/icons.jsx";
+import { IconHelpCircle } from "../components/icons.jsx";
 
 export default function FaqDashboardPanel({ courseId }) {
     const [topics, setTopics] = useState([]);
@@ -74,7 +74,7 @@ export default function FaqDashboardPanel({ courseId }) {
             {!loading && !error && topics.length === 0 && (
                 <div className="nexusai-gaps__empty">
                     <div className="nexusai-gaps__empty-icon">
-                        <IconBookOpen size={20} />
+                        <IconHelpCircle size={20} />
                     </div>
                     <p className="nexusai-gaps__empty-title">No hay suficientes preguntas registradas en este período.</p>
                     <p className="nexusai-gaps__empty-sub">
@@ -88,21 +88,24 @@ export default function FaqDashboardPanel({ courseId }) {
                     <h3 className="nexusai-documents__heading">
                         Temas más consultados ({totalQuestions} preguntas)
                     </h3>
-                    {topics.map((t, i) => (
-                        <div key={i} className="nexusai-faq-topic">
-                            <div className="nexusai-faq-topic__row">
-                                <span className="nexusai-faq-topic__label">{t.topic}</span>
-                                <span className="nexusai-faq-topic__count">×{t.count}</span>
+                    <div className="nexusai-faq__grid">
+                        {topics.map((t, i) => (
+                            <div key={i} className="nexusai-faq-card">
+                                <div className="nexusai-faq-card__row">
+                                    <IconHelpCircle size={14} />
+                                    <span className="nexusai-faq-card__label">{t.topic}</span>
+                                    <span className="nexusai-faq-card__count">×{t.count}</span>
+                                </div>
+                                {t.example_questions?.length > 0 && (
+                                    <ul className="nexusai-faq-card__examples">
+                                        {t.example_questions.map((q, j) => (
+                                            <li key={j}>"{q}"</li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
-                            {t.example_questions?.length > 0 && (
-                                <ul className="nexusai-faq-topic__examples">
-                                    {t.example_questions.map((q, j) => (
-                                        <li key={j}>“{q}”</li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
