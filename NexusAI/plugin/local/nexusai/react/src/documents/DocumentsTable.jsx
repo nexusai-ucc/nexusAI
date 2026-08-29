@@ -44,9 +44,10 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
     if (documents.length === 0) {
         return (
             <div className="nexusai-empty">
-                <p>Todavía no hay documentos indexados para este curso.</p>
+                <p>Todavía no subiste material a este curso.</p>
                 <p className="nexusai-empty__hint">
-                    Subí tu primer PDF arrastrándolo arriba.
+                    Arrastrá un PDF, DOCX o TXT arriba y NexusAI lo indexa para que
+                    el asistente pueda responder sobre su contenido.
                 </p>
             </div>
         );

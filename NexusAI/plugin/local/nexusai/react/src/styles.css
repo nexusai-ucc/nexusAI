@@ -1049,7 +1049,13 @@
     font-size: 13px;
     color: #94a3b8;
     text-align: center;
-    padding: 24px 0;
+    padding: 24px 16px;
+    line-height: 1.55;
+}
+.nexusai-search__empty-hint {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
 }
 .nexusai-search__result {
     background: #f7f8fc;
@@ -1254,6 +1260,12 @@
     color: #94a3b8;
     text-align: center;
     font-size: 13px;
+}
+.nexusai-calendar__empty p { margin: 0; }
+.nexusai-calendar__empty-hint {
+    font-size: 12px;
+    max-width: 300px;
+    line-height: 1.5;
 }
 .nexusai-calendar__list {
     display: flex;

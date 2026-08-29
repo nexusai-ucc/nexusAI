@@ -49,7 +49,8 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         rangeLabel:   "Mostrar:",
         range30:      "Próximos 30 días",
         range90:      "Próximos 90 días",
-        empty:        "No hay exámenes ni entregas en este período.",
+        empty:        "No hay exámenes ni entregas próximos.",
+        emptyHint:    "Cuando tu docente cargue fechas en el curso, las vas a ver acá con la opción de que te avisemos antes.",
         error:        "No se pudo cargar el calendario del curso.",
         openInMoodle: "Ver en Moodle",
         alertLabel:   "Alertarme:",
@@ -64,7 +65,8 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         rangeLabel:   "Show:",
         range30:      "Next 30 days",
         range90:      "Next 90 days",
-        empty:        "No exams or assignments due in this period.",
+        empty:        "No upcoming exams or assignments.",
+        emptyHint:    "Once your teacher adds dates to the course, you'll see them here with the option to get reminded ahead of time.",
         error:        "Could not load the course calendar.",
         openInMoodle: "Open in Moodle",
         alertLabel:   "Alert me:",
@@ -172,6 +174,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                 <div className="nexusai-calendar__empty">
                     <IconCheck size={20} />
                     <p>{L.empty}</p>
+                    <p className="nexusai-calendar__empty-hint">{L.emptyHint}</p>
                 </div>
             )}
 
