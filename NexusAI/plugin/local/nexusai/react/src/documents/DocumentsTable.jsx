@@ -8,7 +8,7 @@
 
 import { useRef, useState } from "react";
 
-import { deleteDocument } from "./api.js";
+import { deleteDocument, getDocumentPreview } from "./api.js";
 import { IconFileText } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
@@ -19,6 +19,31 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
     const [deleteError, setDeleteError] = useState(null);
     const [successToast, setSuccessToast] = useState(null);
     const toastTimerRef = useRef(null);
+
+    // CONT-08 (#357): preview del texto extraído, por documento y bajo demanda.
+    // { [docId]: { loading, error, data } }
+    const [previews, setPreviews] = useState({});
+    const [openPreviewId, setOpenPreviewId] = useState(null);
+
+    const togglePreview = async (doc) => {
+        if (openPreviewId === doc.id) {
+            setOpenPreviewId(null);
+            return;
+        }
+        setOpenPreviewId(doc.id);
+        if (previews[doc.id]?.data || previews[doc.id]?.loading) return;
+
+        setPreviews((prev) => ({ ...prev, [doc.id]: { loading: true } }));
+        try {
+            const data = await getDocumentPreview(courseId, doc.id);
+            setPreviews((prev) => ({ ...prev, [doc.id]: { loading: false, data } }));
+        } catch (err) {
+            setPreviews((prev) => ({
+                ...prev,
+                [doc.id]: { loading: false, error: err.message || String(err) },
+            }));
+        }
+    };
 
     const handleDeleteRequest = (doc) => {
         setConfirmDoc(doc);
@@ -71,6 +96,9 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                                 doc={doc}
                                 onDelete={() => handleDeleteRequest(doc)}
                                 deleting={deletingId === doc.id}
+                                previewOpen={openPreviewId === doc.id}
+                                preview={previews[doc.id]}
+                                onTogglePreview={() => togglePreview(doc)}
                             />
                         ))}
                     </tbody>
@@ -169,38 +197,93 @@ export function ErrorModal({ message, onClose }) {
 // Fila de tabla
 // ============================================================
 
-function DocumentRow({ doc, onDelete, deleting }) {
+function DocumentRow({ doc, onDelete, deleting, previewOpen, preview, onTogglePreview }) {
     const showDate = STABLE_STATUSES.has(doc.status);
+    const canPreview = doc.status === "indexed";
     return (
-        <tr className={`nexusai-table__row nexusai-table__row--${doc.status}`}>
-            <td>
-                <div className="nexusai-table__filename">
-                    <span className="nexusai-table__filename-icon"><IconFileText size={14} /></span>
-                    {doc.filename}
-                </div>
-                {doc.status === "indexing" && (
-                    <div className="nexusai-table__progress">
-                        <div className="nexusai-table__progress-fill"></div>
+        <>
+            <tr className={`nexusai-table__row nexusai-table__row--${doc.status}`}>
+                <td>
+                    <div className="nexusai-table__filename">
+                        <span className="nexusai-table__filename-icon"><IconFileText size={14} /></span>
+                        {doc.filename}
                     </div>
-                )}
-            </td>
-            <td>
-                <StatusBadge status={doc.status} errorMessage={doc.error_message} />
-            </td>
-            <td className="nexusai-table__date">
-                {showDate ? formatIndexedAt(doc.updated_at) : "—"}
-            </td>
-            <td className="nexusai-table__actions">
-                <button
-                    type="button"
-                    className="nexusai-link-btn nexusai-link-btn--danger"
-                    onClick={onDelete}
-                    disabled={deleting}
-                >
-                    {deleting ? "Borrando..." : "Eliminar"}
-                </button>
-            </td>
-        </tr>
+                    {doc.status === "indexing" && (
+                        <div className="nexusai-table__progress">
+                            <div className="nexusai-table__progress-fill"></div>
+                        </div>
+                    )}
+                </td>
+                <td>
+                    <StatusBadge status={doc.status} errorMessage={doc.error_message} />
+                </td>
+                <td className="nexusai-table__date">
+                    {showDate ? formatIndexedAt(doc.updated_at) : "—"}
+                </td>
+                <td className="nexusai-table__actions">
+                    {canPreview && (
+                        <button
+                            type="button"
+                            className="nexusai-link-btn"
+                            onClick={onTogglePreview}
+                            aria-expanded={previewOpen}
+                        >
+                            {previewOpen ? "Ocultar texto" : "Ver texto extraído"}
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        className="nexusai-link-btn nexusai-link-btn--danger"
+                        onClick={onDelete}
+                        disabled={deleting}
+                    >
+                        {deleting ? "Borrando..." : "Eliminar"}
+                    </button>
+                </td>
+            </tr>
+            {previewOpen && (
+                <tr className="nexusai-table__preview-row">
+                    <td colSpan={4}>
+                        <DocumentPreview preview={preview} />
+                    </td>
+                </tr>
+            )}
+        </>
+    );
+}
+
+// ============================================================
+// Preview del texto extraído (CONT-08 / #357)
+// ============================================================
+
+function DocumentPreview({ preview }) {
+    if (!preview || preview.loading) {
+        return <p className="nexusai-preview__status">Cargando texto extraído...</p>;
+    }
+    if (preview.error) {
+        return (
+            <p className="nexusai-preview__status nexusai-preview__status--error">
+                No se pudo cargar el texto extraído: {preview.error}
+            </p>
+        );
+    }
+    const { preview: text, truncated } = preview.data || {};
+    if (!text) {
+        return (
+            <p className="nexusai-preview__status">
+                No hay texto extraído todavía para este documento.
+            </p>
+        );
+    }
+    return (
+        <div className="nexusai-preview">
+            <p className="nexusai-preview__label">
+                Primeros caracteres del texto que NexusAI indexó de este archivo.
+                Si se ve vacío o con símbolos raros, la extracción falló (típico en
+                PDFs escaneados sin OCR).
+            </p>
+            <pre className="nexusai-preview__text">{text}{truncated ? "…" : ""}</pre>
+        </div>
     );
 }
 

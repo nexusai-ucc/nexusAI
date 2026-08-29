@@ -820,6 +820,16 @@ class backend_client {
     }
 
     /**
+     * Preview del texto extraído de un documento (CONT-08 / #357).
+     *
+     * @param string $documentid UUID del documento.
+     * @return array { document_id, filename, course_id, status, preview, char_count, truncated }
+     */
+    public function get_document_preview(string $documentid): array {
+        return $this->get('/api/v1/documents/' . $documentid . '/preview');
+    }
+
+    /**
      * Borra un documento. El backend hace CASCADE sobre los chunks asociados.
      *
      * @param string $documentid UUID del documento.
