@@ -79,13 +79,23 @@ $timeend   = time() + 120 * DAYSECS;
 // sus grupos, pero no los de grupos a los que no pertenece.
 $usergroups = array_keys(groups_get_all_groups((int) $course->id, $userid));
 
+// $users = [$userid] hace falta para que se incluyan los eventos de actividad
+// (vencimientos de tareas y cuestionarios) — sin él solo vuelven los eventos
+// "de curso" sueltos, que son los menos.
 $events = calendar_get_legacy_events(
     $timestart,
     $timeend,
     [$userid],
-    $usergroups ?: 0,
+    $usergroups ?: false,
     [(int) $course->id]
 );
+
+// calendar_get_legacy_events combina user/group/course con OR, así que al pasar
+// $users también arrastra eventos de OTROS cursos del alumno. Filtramos
+// explícitamente: el feed de un curso son SOLO los eventos de ese curso.
+$events = array_filter($events, static function ($e) use ($course) {
+    return (int) $e->courseid === (int) $course->id;
+});
 
 // Tope defensivo: el feed es un endpoint sin login, no queremos servir
 // respuestas gigantes si un curso tiene cientos de eventos.
@@ -155,7 +165,18 @@ function local_nexusai_build_ics(array $events, string $calname, string $wwwroot
         }
         $link = '';
         if (!empty($event->modulename) && !empty($event->instance)) {
-            $link = $wwwroot . '/mod/' . $event->modulename . '/view.php?id=' . (int) $event->instance;
+            // El link de un módulo usa el course module id (cmid), no el
+            // instance id. Si no se puede resolver, se omite la URL.
+            $cm = get_coursemodule_from_instance(
+                $event->modulename,
+                (int) $event->instance,
+                (int) $event->courseid,
+                false,
+                IGNORE_MISSING
+            );
+            if ($cm) {
+                $link = $wwwroot . '/mod/' . $event->modulename . '/view.php?id=' . (int) $cm->id;
+            }
         }
 
         $lines[] = 'BEGIN:VEVENT';
