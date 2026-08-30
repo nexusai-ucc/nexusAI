@@ -10,6 +10,7 @@ import { useRef, useState } from "react";
 
 import { deleteDocument, getDocumentPreview } from "./api.js";
 import { IconFileText } from "../components/icons.jsx";
+import ConfirmModal from "../components/ConfirmModal.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 
@@ -69,9 +70,10 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
     if (documents.length === 0) {
         return (
             <div className="nexusai-empty">
-                <p>Todavía no hay documentos indexados para este curso.</p>
+                <p>Todavía no subiste material a este curso.</p>
                 <p className="nexusai-empty__hint">
-                    Subí tu primer PDF arrastrándolo arriba.
+                    Arrastrá un PDF, DOCX o TXT arriba y NexusAI lo indexa para que
+                    el asistente pueda responder sobre su contenido.
                 </p>
             </div>
         );
@@ -106,11 +108,17 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
             </div>
 
             {confirmDoc && (
-                <ConfirmDeleteModal
-                    filename={confirmDoc.filename}
+                <ConfirmModal
+                    title="Eliminar documento"
+                    confirmLabel="Eliminar"
+                    cancelLabel="Cancelar"
                     onConfirm={handleDeleteConfirm}
                     onCancel={() => setConfirmDoc(null)}
-                />
+                >
+                    ¿Borrar <strong>{confirmDoc.filename}</strong>? Esto elimina el
+                    documento y todos sus chunks indexados. La acción no se puede
+                    deshacer.
+                </ConfirmModal>
             )}
 
             {deleteError && (
@@ -126,42 +134,6 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                 </div>
             )}
         </>
-    );
-}
-
-// ============================================================
-// Modal de confirmación de borrado
-// ============================================================
-
-function ConfirmDeleteModal({ filename, onConfirm, onCancel }) {
-    return (
-        <div className="nexusai-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="nexusai-modal-title">
-            <div className="nexusai-modal">
-                <h2 className="nexusai-modal__title" id="nexusai-modal-title">
-                    Eliminar documento
-                </h2>
-                <p className="nexusai-modal__body">
-                    ¿Borrar <strong>{filename}</strong>? Esto elimina el documento y todos
-                    sus chunks indexados. La acción no se puede deshacer.
-                </p>
-                <div className="nexusai-modal__actions">
-                    <button
-                        type="button"
-                        className="nexusai-btn nexusai-btn--secondary"
-                        onClick={onCancel}
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        type="button"
-                        className="nexusai-btn nexusai-btn--danger"
-                        onClick={onConfirm}
-                    >
-                        Eliminar
-                    </button>
-                </div>
-            </div>
-        </div>
     );
 }
 

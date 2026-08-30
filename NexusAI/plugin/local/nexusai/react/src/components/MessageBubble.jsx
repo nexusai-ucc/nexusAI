@@ -17,15 +17,62 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
+import temml from "temml";
 import { IconFile, IconSparkles, IconX } from "./icons.jsx";
 
 // Regex conservador para detectar archivos citados en el texto del LLM.
 const SOURCE_REGEX = /([\w\-]+\.(pdf|docx|txt))/gi;
 
-// Marked: GFM + links en nueva pestaña.
+// ASIST-04 (#360): notación matemática en LaTeX.
+//
+// El chat no usa react-markdown (el import está en package.json pero nadie lo
+// usa) — renderiza con `marked` + DOMPurify. Así que en vez de remark-math +
+// rehype-katex sumamos una extensión de `marked` que matchea $...$ / $$...$$ y
+// los renderiza con Temml (LaTeX → MathML).
+//
+// Temml en vez de KaTeX porque KaTeX pesa ~110KB más y necesita su CSS +
+// ~1MB de fuentes woff (webpack acá no tiene regla para assets de fuente, y
+// los chunks/publicPath de Moodle ya dieron problemas antes — ver
+// webpack.config.js). Temml genera MathML puro que el navegador dibuja
+// nativo, sin CSS ni fuentes. Cubre todo lo que el chat mostraría (pérdidas,
+// distancias, probabilidades, sumatorias, fracciones).
+const mathExtension = {
+    name: "nexusaiMath",
+    level: "inline",
+    start(src) {
+        const i = src.indexOf("$");
+        return i < 0 ? undefined : i;
+    },
+    tokenizer(src) {
+        const block = /^\$\$([\s\S]+?)\$\$/.exec(src);
+        if (block) {
+            return { type: "nexusaiMath", raw: block[0], text: block[1].trim(), display: true };
+        }
+        // Inline: sin espacio pegado a los $, sin $ ni saltos de línea adentro.
+        // Evita falsos positivos tipo "cuesta $5 o $10".
+        const inline = /^\$(?!\s)([^$\n]+?)(?<!\s)\$/.exec(src);
+        if (inline) {
+            return { type: "nexusaiMath", raw: inline[0], text: inline[1].trim(), display: false };
+        }
+        return undefined;
+    },
+    renderer(token) {
+        try {
+            return temml.renderToString(token.text, {
+                throwOnError: false,
+                displayMode: token.display,
+            });
+        } catch {
+            return token.raw;
+        }
+    },
+};
+
+// Marked: GFM + links en nueva pestaña + fórmulas LaTeX.
 marked.use({
     gfm: true,
     breaks: true,
+    extensions: [mathExtension],
     renderer: {
         link(href, title, text) {
             const titleAttr = title ? ` title="${title}"` : "";
@@ -33,6 +80,22 @@ marked.use({
         },
     },
 });
+
+// Tags/atributos de MathML que emite Temml. Se suman al allowlist de
+// DOMPurify para que las fórmulas sobrevivan al sanitizado sin abrir la
+// puerta a HTML arbitrario (no se permite `style` ni `class`: el MathML
+// renderiza igual sin ellos).
+const MATHML_TAGS = [
+    "math", "semantics", "annotation", "mrow", "mi", "mo", "mn", "ms", "mtext",
+    "mspace", "msup", "msub", "msubsup", "mfrac", "msqrt", "mroot", "mstyle",
+    "munder", "mover", "munderover", "mmultiscripts", "mprescripts", "none",
+    "mtable", "mtr", "mtd", "mpadded", "mphantom", "menclose", "mlabeledtr",
+];
+const MATHML_ATTR = [
+    "xmlns", "encoding", "display", "displaystyle", "mathvariant", "scriptlevel",
+    "stretchy", "accent", "accentunder", "movablelimits", "columnalign",
+    "rowalign", "width", "lspace", "rspace", "separator", "fence", "notation",
+];
 
 function renderMarkdown(text) {
     const rawHtml = marked.parse(text || "");
@@ -42,8 +105,9 @@ function renderMarkdown(text) {
             "ul", "ol", "li", "code", "pre", "blockquote",
             "h1", "h2", "h3", "h4", "h5", "h6",
             "a", "hr", "table", "thead", "tbody", "tr", "th", "td",
+            ...MATHML_TAGS,
         ],
-        ALLOWED_ATTR: ["href", "target", "rel", "title"],
+        ALLOWED_ATTR: ["href", "target", "rel", "title", ...MATHML_ATTR],
         FORCE_BODY: false,
     });
 }
