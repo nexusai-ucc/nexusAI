@@ -26,6 +26,7 @@ Usar [`000-template.md`](000-template.md) como base. Estructura:
 | [004](004-gemini-mvp-openai-prod.md) | Gemini en MVP, OpenAI en producción | ✅ Aceptada | 2026-05-02 |
 | [005](005-hmac-php-python.md) | Autenticación PHP↔Python con HMAC SHA-256 en 3 capas | ✅ Aceptada | 2026-05-04 |
 | [006](006-privacy-strategy.md) | Estrategia de Privacy API — `null_provider` ahora, `metadata\provider` cuando se justifique | ✅ Aceptada | 2026-05-04 |
+| [010](010-onboarding-docente.md) | Alcance del copiloto de ayuda / onboarding al docente — solo lectura, un componente reusable, estado en `user_preferences` | 📝 Propuesta | 2026-08-30 |
 
 ## ADRs planificados (Sprint 2-3)
 
