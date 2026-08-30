@@ -950,6 +950,24 @@ class backend_client {
         );
     }
 
+    // ----------------------------------------------------------------
+    // ONB-02 — Estado de setup del curso (issue #425)
+    // ----------------------------------------------------------------
+
+    /**
+     * Estadísticas de material indexado en NexusAI para un curso (BACK-13).
+     *
+     * Es la única señal del "estado de setup" que no vive en Moodle: cuántos
+     * documentos llegaron a `status='indexed'`. El caller (course_setup_state)
+     * degrada esta señal a "desconocida" si el backend no responde.
+     *
+     * @param int $courseid ID del curso de Moodle.
+     * @return array{course_id:int, document_count:int, chunk_count:int, last_indexed_at:?string, has_indexed_content:bool}
+     */
+    public function get_course_stats(int $courseid): array {
+        return $this->get('/api/v1/courses/' . $courseid . '/stats');
+    }
+
     /**
      * GET autenticado con HMAC. Body firmado = string vacío.
      *
