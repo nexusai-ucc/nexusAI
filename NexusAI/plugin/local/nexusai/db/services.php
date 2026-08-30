@@ -393,6 +393,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Preview del texto extraído de un documento (CONT-08).
+    'local_nexusai_document_preview' => [
+        'classname'     => '\local_nexusai\external\document_preview',
+        'methodname'    => 'execute',
+        'description'   => 'Return the first characters of a document\'s extracted text.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // ----- CONFIRMACIÓN DE CARGA DESDE SECCIÓN DEL CURSO -----
 
     // Lista los archivos subidos al curso (tab general) pendientes de confirmación.

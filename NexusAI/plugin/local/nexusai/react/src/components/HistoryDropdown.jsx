@@ -83,7 +83,7 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
 
     const labels = lang === "es"
         ? {
-            empty:       "Todavía no tenés conversaciones previas.",
+            empty:       "Todavía no tenés conversaciones guardadas. Cada vez que le preguntes algo al asistente, la charla queda acá para que puedas retomarla.",
             loading:     "Cargando...",
             scopeCourse: "Este curso",
             scopeAll:    "Todos mis cursos",
@@ -92,7 +92,7 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             loadMore:    "Cargar más sesiones",
         }
         : {
-            empty:       "No previous conversations yet.",
+            empty:       "No saved conversations yet. Every time you ask the assistant something, the chat is kept here so you can pick it up later.",
             loading:     "Loading...",
             scopeCourse: "This course",
             scopeAll:    "All my courses",
