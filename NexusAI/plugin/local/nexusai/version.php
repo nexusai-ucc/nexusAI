@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026082901;        // feat: feed .ics suscribible del calendario del curso (CAL-07 / #377).
-$plugin->release   = '0.15.0';
+$plugin->version   = 2026083002;        // feat: tutorial de armado de curso al crear un curso nuevo (ONB-03 / #426).
+$plugin->release   = '0.16.0';
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
