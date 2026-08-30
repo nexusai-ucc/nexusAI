@@ -786,6 +786,85 @@
 .nexusai-btn--ghost:hover { background: #fee2e2; }
 
 /* ============================================================
+   ConfirmModal — confirmación de acciones destructivas (UX-06, #346)
+   Namespace propio (nexusai-confirm*) para no chocar con .nexusai-modal
+   de la vista docente ni con .nexusai-btn del chat. Vive acá porque los
+   dos bundles importan styles.css.
+============================================================ */
+.nexusai-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    padding: 24px;
+}
+.nexusai-confirm {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18), 0 4px 16px rgba(15, 23, 42, 0.08);
+    padding: 28px 32px;
+    width: 100%;
+    max-width: 420px;
+    font-family: inherit;
+}
+.nexusai-confirm__title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 12px;
+}
+.nexusai-confirm__body {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+    margin: 0 0 24px;
+}
+.nexusai-confirm__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+.nexusai-confirm__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.nexusai-confirm__btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.nexusai-confirm__btn--cancel {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+.nexusai-confirm__btn--cancel:hover { background: #e2e8f0; }
+.nexusai-confirm__btn--confirm {
+    background: #2563eb;
+    color: #ffffff;
+}
+.nexusai-confirm__btn--confirm:hover { background: #1d4ed8; }
+.nexusai-confirm__btn--danger {
+    background: #dc2626;
+    color: #ffffff;
+}
+.nexusai-confirm__btn--danger:hover {
+    background: #b91c1c;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+
+/* ============================================================
    Input area
 ============================================================ */
 .nexusai-input-wrap {
