@@ -285,6 +285,28 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // URL del feed .ics suscribible del alumno para un curso (CAL-07).
+    'local_nexusai_calendar_feed_url' => [
+        'classname'     => '\local_nexusai\external\calendar_feed_url',
+        'methodname'    => 'execute',
+        'description'   => 'Get the subscribable .ics feed URL for the current student in a course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Rota el token del feed .ics del alumno (revoca la URL anterior).
+    'local_nexusai_calendar_feed_revoke' => [
+        'classname'     => '\local_nexusai\external\calendar_feed_revoke',
+        'methodname'    => 'execute',
+        'description'   => 'Rotate the student\'s calendar feed token, invalidating the previous URL.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- FOROS — Épica 06 -----
 
     // Detecta posts similares al texto que el alumno está escribiendo (F-07).

@@ -1441,6 +1441,84 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* ----- CAL-07: feed .ics suscribible ----- */
+.nexusai-calendar__feed {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--nexusai-border, #e2e8f0);
+}
+.nexusai-calendar__feed-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--nexusai-primary, #6366f1);
+    cursor: pointer;
+}
+.nexusai-calendar__feed-toggle:hover { text-decoration: underline; }
+.nexusai-calendar__feed-body {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nexusai-calendar__feed-help,
+.nexusai-calendar__feed-revoke-hint {
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: #64748b;
+}
+.nexusai-calendar__feed-revoke-hint { margin-top: 4px; }
+.nexusai-calendar__feed-status {
+    margin: 0;
+    font-size: 12px;
+    color: #64748b;
+}
+.nexusai-calendar__feed-status--error { color: #dc2626; }
+.nexusai-calendar__feed-url-row {
+    display: flex;
+    gap: 6px;
+}
+.nexusai-calendar__feed-url {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    padding: 6px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #f8fafc;
+    color: #334155;
+}
+.nexusai-calendar__feed-copy,
+.nexusai-calendar__feed-revoke {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 12px;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.nexusai-calendar__feed-copy:hover,
+.nexusai-calendar__feed-revoke:hover { background: #e2e8f0; }
+.nexusai-calendar__feed-revoke-actions {
+    display: flex;
+    gap: 6px;
+}
+.nexusai-calendar__feed-revoke--danger {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #fff;
+}
+.nexusai-calendar__feed-revoke--danger:hover { background: #b91c1c; }
+.nexusai-calendar__feed-revoke:disabled { opacity: 0.55; cursor: not-allowed; }
 .nexusai-calendar__alert-banner {
     display: flex;
     flex-wrap: wrap;

@@ -22,7 +22,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026082900;        // feat: external function local_nexusai_document_preview (CONT-08 / #357).
+$plugin->version   = 2026082901;        // feat: feed .ics suscribible del calendario del curso (CAL-07 / #377).
 $plugin->release   = '0.15.0';
 $plugin->maturity  = MATURITY_ALPHA;
 
