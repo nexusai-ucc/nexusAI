@@ -786,6 +786,85 @@
 .nexusai-btn--ghost:hover { background: #fee2e2; }
 
 /* ============================================================
+   ConfirmModal — confirmación de acciones destructivas (UX-06, #346)
+   Namespace propio (nexusai-confirm*) para no chocar con .nexusai-modal
+   de la vista docente ni con .nexusai-btn del chat. Vive acá porque los
+   dos bundles importan styles.css.
+============================================================ */
+.nexusai-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    padding: 24px;
+}
+.nexusai-confirm {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18), 0 4px 16px rgba(15, 23, 42, 0.08);
+    padding: 28px 32px;
+    width: 100%;
+    max-width: 420px;
+    font-family: inherit;
+}
+.nexusai-confirm__title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 12px;
+}
+.nexusai-confirm__body {
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+    margin: 0 0 24px;
+}
+.nexusai-confirm__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+.nexusai-confirm__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.nexusai-confirm__btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.nexusai-confirm__btn--cancel {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
+}
+.nexusai-confirm__btn--cancel:hover { background: #e2e8f0; }
+.nexusai-confirm__btn--confirm {
+    background: #2563eb;
+    color: #ffffff;
+}
+.nexusai-confirm__btn--confirm:hover { background: #1d4ed8; }
+.nexusai-confirm__btn--danger {
+    background: #dc2626;
+    color: #ffffff;
+}
+.nexusai-confirm__btn--danger:hover {
+    background: #b91c1c;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+
+/* ============================================================
    Input area
 ============================================================ */
 .nexusai-input-wrap {
@@ -1049,7 +1128,13 @@
     font-size: 13px;
     color: #94a3b8;
     text-align: center;
-    padding: 24px 0;
+    padding: 24px 16px;
+    line-height: 1.55;
+}
+.nexusai-search__empty-hint {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
 }
 .nexusai-search__result {
     background: #f7f8fc;
@@ -1255,6 +1340,12 @@
     text-align: center;
     font-size: 13px;
 }
+.nexusai-calendar__empty p { margin: 0; }
+.nexusai-calendar__empty-hint {
+    font-size: 12px;
+    max-width: 300px;
+    line-height: 1.5;
+}
 .nexusai-calendar__list {
     display: flex;
     flex-direction: column;
@@ -1350,6 +1441,84 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* ----- CAL-07: feed .ics suscribible ----- */
+.nexusai-calendar__feed {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--nexusai-border, #e2e8f0);
+}
+.nexusai-calendar__feed-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--nexusai-primary, #6366f1);
+    cursor: pointer;
+}
+.nexusai-calendar__feed-toggle:hover { text-decoration: underline; }
+.nexusai-calendar__feed-body {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nexusai-calendar__feed-help,
+.nexusai-calendar__feed-revoke-hint {
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: #64748b;
+}
+.nexusai-calendar__feed-revoke-hint { margin-top: 4px; }
+.nexusai-calendar__feed-status {
+    margin: 0;
+    font-size: 12px;
+    color: #64748b;
+}
+.nexusai-calendar__feed-status--error { color: #dc2626; }
+.nexusai-calendar__feed-url-row {
+    display: flex;
+    gap: 6px;
+}
+.nexusai-calendar__feed-url {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    padding: 6px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #f8fafc;
+    color: #334155;
+}
+.nexusai-calendar__feed-copy,
+.nexusai-calendar__feed-revoke {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 12px;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.nexusai-calendar__feed-copy:hover,
+.nexusai-calendar__feed-revoke:hover { background: #e2e8f0; }
+.nexusai-calendar__feed-revoke-actions {
+    display: flex;
+    gap: 6px;
+}
+.nexusai-calendar__feed-revoke--danger {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #fff;
+}
+.nexusai-calendar__feed-revoke--danger:hover { background: #b91c1c; }
+.nexusai-calendar__feed-revoke:disabled { opacity: 0.55; cursor: not-allowed; }
 .nexusai-calendar__alert-banner {
     display: flex;
     flex-wrap: wrap;
