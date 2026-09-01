@@ -68,6 +68,23 @@ if ($hassiteconfig) {
         ''
     ));
 
+    // ----- Sección notificaciones -----
+    $settings->add(new admin_setting_heading(
+        'local_nexusai/section_notifications',
+        get_string('section_notifications', 'local_nexusai'),
+        get_string('section_notifications_desc', 'local_nexusai')
+    ));
+
+    // Email remitente de las alertas de calendario y notificaciones NexusAI.
+    // Si se deja vacío usa el noreplyaddress global de Moodle.
+    $settings->add(new admin_setting_configtext(
+        'local_nexusai/alert_from_email',
+        get_string('alert_from_email', 'local_nexusai'),
+        get_string('alert_from_email_desc', 'local_nexusai'),
+        'nexus.ai.mail@gmail.com',
+        PARAM_EMAIL
+    ));
+
     $ADMIN->add('localplugins', $settings);
 
     // Página de administración con health check del backend.

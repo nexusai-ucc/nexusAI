@@ -23,7 +23,11 @@ $string['nexusai:manage']        = 'Manage course materials for NexusAI indexing
 $string['nexusai:viewanalytics'] = 'View NexusAI analytics dashboard';
 
 // Settings page (admin).
-$string['settings']                = 'NexusAI settings';
+$string['settings']                    = 'NexusAI settings';
+$string['section_notifications']       = 'Notifications';
+$string['section_notifications_desc']  = 'Sender email for calendar alerts and plugin notifications.';
+$string['alert_from_email']            = 'Alert sender email';
+$string['alert_from_email_desc']       = 'Address shown as sender in NexusAI calendar alert emails. Leave empty to use Moodle\'s global noreply address (Site administration → Server → Email).';
 $string['section_general']         = 'General';
 $string['section_backend']         = 'Backend connection';
 $string['section_backend_desc']    = 'Configure how the plugin authenticates against the NexusAI Python backend. See ADR-005 in the project repository.';
