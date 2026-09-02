@@ -81,6 +81,18 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // ONB-02 (#425): estado de setup del curso para el tutorial/onboarding
+    // al docente — secciones, grupos, alumnos, foros, calendario y material.
+    'local_nexusai_course_setup_state' => [
+        'classname'     => '\local_nexusai\external\course_setup_state',
+        'methodname'    => 'execute',
+        'description'   => 'Aggregate a course\'s setup state (sections, groups, students, forums, calendar, NexusAI material) for the teacher onboarding tutorial (ONB-02).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // Historial de conversaciones — lista de sesiones previas del alumno (Feature E).
     'local_nexusai_chat_sessions_list' => [
         'classname'     => '\local_nexusai\external\chat_sessions_list',
