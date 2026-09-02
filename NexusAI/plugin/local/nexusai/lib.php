@@ -42,8 +42,32 @@ function local_nexusai_before_footer(): string {
     if (!isloggedin() || isguestuser()) {
         return '';
     }
+
+    // ONB-03: en la pantalla de crear un curso el widget muestra el tutorial
+    // de armado. Se evalúa antes del guard de curso real porque justamente ahí
+    // todavía no hay curso ($COURSE->id === 1).
+    $onboarding = \local_nexusai\visibility_helper::onboarding_hint();
+
     if (empty($COURSE->id) || $COURSE->id <= 1) {
-        return '';
+        if ($onboarding === null) {
+            // Resto de páginas sin curso: la experiencia out-of-course completa
+            // es solo 4.4+ (hook nuevo). En 4.1-4.3 queda como antes.
+            return '';
+        }
+
+        $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
+            [
+                'courseid'   => 0,
+                'userid'     => (int) $USER->id,
+                'sesskey'    => sesskey(),
+                'wwwroot'    => (string) (new moodle_url('/'))->out(false),
+                'lang'       => current_language(),
+                'isteacher'  => 0,
+                'onboarding' => $onboarding,
+            ],
+        ]);
+
+        return '<div id="local-nexusai-container" data-plugin="nexusai"></div>';
     }
 
     $context = context_course::instance($COURSE->id);
@@ -59,6 +83,7 @@ function local_nexusai_before_footer(): string {
             'wwwroot'    => (string) (new moodle_url('/'))->out(false),
             'lang'       => current_language(),
             'isteacher'  => (int) has_capability('local/nexusai:manage', $context),
+            'onboarding' => $onboarding,
         ],
     ]);
 
