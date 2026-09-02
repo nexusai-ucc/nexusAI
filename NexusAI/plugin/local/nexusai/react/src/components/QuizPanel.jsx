@@ -57,6 +57,23 @@ function is422(err) {
     return msg.includes("422");
 }
 
+// Entrada compartida por verify()/markFlashcard()/verifyOpen() para
+// wrongAnswersRef (persistencia de errores) y answersRef (revisión SP-14).
+function makeAnswerEntry(q, extra) {
+    return {
+        id: `${Date.now()}-${Math.random()}`,
+        timestamp: new Date().toISOString(),
+        question_type:      q.question_type || "multiple_choice",
+        question:            q.question,
+        explanation:         q.explanation,
+        source_filename:     q.source_filename,
+        source_document_id:  q.source_document_id ?? null,
+        options:             q.options || [],
+        correct_index:       q.correct_index ?? -1,
+        ...extra,
+    };
+}
+
 export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) {
     const [stage, setStage] = useState("setup"); // setup | loading | playing | finished | error
     const [topic, setTopic] = useState(initialTopic);
@@ -209,6 +226,16 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         yourAnswer:         "Your answer",
     };
 
+    // Usado por las pantallas "history" y "review" para mostrar el tipo de pregunta.
+    const typeLabel = (qt) => ({
+        multiple_choice: L.historyTypeMC,
+        true_false:      L.historyTypeTF,
+        open:            L.historyTypeOpen,
+        flashcard:       L.historyTypeFlash,
+        fill_blank:      L.historyTypeFill,
+        mix:             L.historyTypeMix,
+    }[qt] || qt);
+
     const resetQuestionState = () => {
         setSelectedIdx(null);
         setOpenAnswer("");
@@ -250,19 +277,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         setReveal(true);
         const q = quiz.questions[currentIdx];
         const isCorrect = q.correct_index === selectedIdx;
-        const entry = {
-            id: `${Date.now()}-${Math.random()}`,
-            timestamp: new Date().toISOString(),
-            question_type: q.question_type || "multiple_choice",
-            question:            q.question,
-            explanation:         q.explanation,
-            source_filename:     q.source_filename,
-            source_document_id:  q.source_document_id ?? null,
-            options:             q.options,
-            correct_index:       q.correct_index,
-            user_selected_index: selectedIdx,
-            correct:             isCorrect,
-        };
+        const entry = makeAnswerEntry(q, { user_selected_index: selectedIdx, correct: isCorrect });
         answersRef.current.push(entry);
         if (isCorrect) {
             setScore((s) => s + 1);
@@ -274,18 +289,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     // ── Autoevaluación de flashcard (sin IA): el alumno juzga si la sabía ──
     const markFlashcard = (knewIt) => {
         const q = quiz.questions[currentIdx];
-        const entry = {
-            id: `${Date.now()}-${Math.random()}`,
-            timestamp: new Date().toISOString(),
-            question_type:       "flashcard",
-            question:            q.question,
-            explanation:         q.explanation,
-            source_filename:     q.source_filename,
-            source_document_id:  q.source_document_id ?? null,
-            options:             [],
-            correct_index:       -1,
-            correct:             knewIt,
-        };
+        const entry = makeAnswerEntry(q, { question_type: "flashcard", options: [], correct_index: -1, correct: knewIt });
         answersRef.current.push(entry);
         if (knewIt) {
             setScore((s) => s + 1);
@@ -308,21 +312,14 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 userAnswer:  openAnswer,
             });
             setEvaluation(result);
-            const entry = {
-                id: `${Date.now()}-${Math.random()}`,
-                timestamp: new Date().toISOString(),
-                question_type:      q.question_type,
-                question:           q.question,
-                explanation:        q.explanation,
-                source_filename:    q.source_filename,
-                source_document_id: q.source_document_id ?? null,
-                options:            [],
-                correct_index:      -1,
-                user_answer:        openAnswer,
-                ai_feedback:        result.feedback,
-                ai_score:           result.score,
-                correct:            result.correct,
-            };
+            const entry = makeAnswerEntry(q, {
+                options:       [],
+                correct_index: -1,
+                user_answer:   openAnswer,
+                ai_feedback:   result.feedback,
+                ai_score:      result.score,
+                correct:       result.correct,
+            });
             answersRef.current.push(entry);
             if (result.correct) {
                 setScore((s) => s + 1);
@@ -330,7 +327,19 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 wrongAnswersRef.current.push(entry);
             }
         } catch {
-            setEvaluation({ correct: false, score: 0, feedback: "Error al evaluar la respuesta. Intentá de nuevo." });
+            const errMsg = "Error al evaluar la respuesta. Intentá de nuevo.";
+            setEvaluation({ correct: false, score: 0, feedback: errMsg });
+            // Igual se registra en la revisión post-quiz (SP-14): si no, el
+            // conteo de "Ver detalle de respuestas" queda por debajo del
+            // total de preguntas mostrado en la pantalla de resultado.
+            answersRef.current.push(makeAnswerEntry(q, {
+                options:       [],
+                correct_index: -1,
+                user_answer:   openAnswer,
+                ai_feedback:   errMsg,
+                ai_score:      0,
+                correct:       false,
+            }));
         } finally {
             setEvaluating(false);
             setReveal(true);
@@ -734,14 +743,6 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
 
     // ─── REVIEW (SP-14): detalle completo del intento recién terminado ───
     if (stage === "review" && quiz) {
-        const typeLabel = (qt) => ({
-            multiple_choice: L.historyTypeMC,
-            true_false:      L.historyTypeTF,
-            open:             L.historyTypeOpen,
-            flashcard:        L.historyTypeFlash,
-            fill_blank:       L.historyTypeFill,
-        }[qt] || qt);
-
         const answers = answersRef.current;
 
         return (
@@ -827,15 +828,6 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
 
     // ─── HISTORY (SP-09) ───
     if (stage === "history") {
-        const typeLabel = (qt) => ({
-            multiple_choice: L.historyTypeMC,
-            true_false:      L.historyTypeTF,
-            open:            L.historyTypeOpen,
-            flashcard:       L.historyTypeFlash,
-            fill_blank:      L.historyTypeFill,
-            mix:             L.historyTypeMix,
-        }[qt] || qt);
-
         const diffLabel = (d) => ({
             easy:   L.historyDiffEasy,
             medium: L.historyDiffMedium,
