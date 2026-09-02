@@ -2335,6 +2335,14 @@
     background: #f0fdf4;
     color: #15803d;
 }
+.nexusai-review__badge--fill_blank {
+    background: #fffbeb;
+    color: #b45309;
+}
+.nexusai-review__badge--flashcard {
+    background: #faf5ff;
+    color: #7e22ce;
+}
 .nexusai-review__date {
     margin-left: auto;
     font-size: 10.5px;
