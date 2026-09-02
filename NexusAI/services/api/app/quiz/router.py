@@ -98,6 +98,10 @@ class QuizQuestion(BaseModel):
     explanation: str = Field(min_length=1, max_length=1500)
     source_filename: str = Field(default="")
     source_document_id: Optional[str] = Field(default=None)  # filled after generation; Document.id is a UUID
+    # DOC-D09 (#390): tema débil (Gap/FAQ) del que salió esta pregunta, si
+    # el docente pidió incluir esos temas — texto exacto de FocusTopic.label,
+    # o None si la pregunta no cubre ninguno de los temas provistos.
+    source_topic: Optional[str] = Field(default=None, max_length=200)
 
 
 class QuizResponse(BaseModel):
@@ -107,6 +111,22 @@ class QuizResponse(BaseModel):
 
 
 _VALID_EXAM_QUESTION_TYPES = {"multiple_choice", "true_false", "open", "mix"}
+_VALID_FOCUS_TOPIC_SOURCES = {"gap", "faq"}
+
+
+class FocusTopic(BaseModel):
+    """Tema débil detectado (Gap sin responder o tópico de FAQ) que el
+    docente eligió incluir como contexto extra al generar el examen —
+    DOC-D09 (#390)."""
+    label: str = Field(min_length=1, max_length=200)
+    source: str = Field(default="gap")
+
+    @field_validator("source")
+    @classmethod
+    def check_source(cls, v: str) -> str:
+        if v not in _VALID_FOCUS_TOPIC_SOURCES:
+            raise ValueError(f"source must be one of {_VALID_FOCUS_TOPIC_SOURCES}")
+        return v
 
 
 class ExamGenerateRequest(BaseModel):
@@ -123,6 +143,10 @@ class ExamGenerateRequest(BaseModel):
     num_questions: int = Field(default=10, ge=1, le=20)
     question_type: str = Field(default="multiple_choice")
     difficulty: str = Field(default="medium")
+    # DOC-D09 (#390): temas con dificultad detectada (Gaps sin responder /
+    # FAQ agrupada) que el docente eligió priorizar. El caller (Moodle) es
+    # responsable de no mandar temas de gaps archivados — ver gaps/router.py.
+    focus_topics: List[FocusTopic] = Field(default_factory=list, max_length=15)
 
     @field_validator("question_type")
     @classmethod
@@ -194,6 +218,7 @@ class ErrorsListRequest(BaseModel):
     user_id: int = Field(gt=0)
     days: int = Field(default=90, ge=1, le=365)
     limit: int = Field(default=100, ge=1, le=200)
+    offset: int = Field(default=0, ge=0)
 
 
 class StoredQuizError(QuizErrorItem):
@@ -365,6 +390,7 @@ async def _run_quiz_generation(
     difficulty: str,
     db: AsyncSession,
     llm: LLMProvider,
+    focus_topics: Optional[list[FocusTopic]] = None,
 ) -> list[QuizQuestion]:
     """Llama al LLM con los chunks dados y devuelve preguntas validadas + enriquecidas.
 
@@ -373,7 +399,8 @@ async def _run_quiz_generation(
     prompt → JSON → validación → shuffle → mapeo a document_id, solo cambia
     de dónde salen los chunks.
     """
-    messages = _build_quiz_prompt(chunks, num_questions, topic, question_type, difficulty)
+    focus_labels = [t.label for t in focus_topics] if focus_topics else None
+    messages = _build_quiz_prompt(chunks, num_questions, topic, question_type, difficulty, focus_labels)
     try:
         result = await llm.chat_completion(
             messages,
@@ -433,6 +460,17 @@ async def _run_quiz_generation(
     # Truncar al número pedido (el LLM a veces se pasa por uno).
     questions = questions[:num_questions]
 
+    # DOC-D09 (#390): descartar source_topic que no matchea ninguno de los
+    # temas provistos — evita citar un tema inventado por el LLM.
+    if focus_labels:
+        valid_labels = set(focus_labels)
+        for q in questions:
+            if q.source_topic and q.source_topic not in valid_labels:
+                q.source_topic = None
+    else:
+        for q in questions:
+            q.source_topic = None
+
     # Shuffle de opciones para no dejar siempre la correcta en el mismo lugar.
     for q in questions:
         if q.question_type == "multiple_choice" and len(q.options) == 4 and q.correct_index >= 0:
@@ -469,6 +507,7 @@ def _build_quiz_prompt(
     topic: Optional[str],
     question_type: str = "multiple_choice",
     difficulty: str = "medium",
+    focus_topics: Optional[list[str]] = None,
 ) -> list[dict[str, str]]:
     """Arma los mensajes para el LLM según el tipo de pregunta solicitado."""
 
@@ -642,6 +681,24 @@ def _build_quiz_prompt(
         else "El alumno no especificó tema — variá temas para cubrir el material disponible.\n\n"
     )
 
+    # DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ) que el
+    # docente pidió priorizar al generar un examen. Además del schema por
+    # tipo de pregunta de arriba, cada pregunta debe declarar de qué tema de
+    # esta lista salió (campo extra "source_topic", fuera del schema_hint
+    # porque aplica igual a los 6 tipos de pregunta).
+    focus_topics_block = ""
+    if focus_topics:
+        topics_list = "\n".join(f"- {t}" for t in focus_topics)
+        focus_topics_block = (
+            "TEMAS CON DIFICULTAD DETECTADA (priorizar cobertura de estos temas, "
+            "en base a preguntas de alumnos sin responder o frecuentes):\n"
+            f"{topics_list}\n\n"
+            "Además de los campos del schema de arriba, agregá en cada pregunta un "
+            'campo "source_topic": el texto EXACTO del tema de la lista anterior que '
+            'esa pregunta cubre, o "" si la pregunta no cubre ninguno de esos temas '
+            "puntualmente. No inventes un tema que no esté en la lista.\n\n"
+        )
+
     material_block = "\n\n".join(
         f'FRAGMENTO {i + 1} (de "{filename}"):\n{content[:600].strip()}'
         for i, (filename, content) in enumerate(chunks)
@@ -676,6 +733,7 @@ def _build_quiz_prompt(
     user_msg = (
         f"{type_instruction}"
         f"{topic_line}"
+        f"{focus_topics_block}"
         f"{schema_hint}\n"
         f"{rules}\n"
         f"--- MATERIAL DEL CURSO ---\n\n{material_block}\n\n--- FIN DEL MATERIAL ---"
@@ -848,6 +906,7 @@ async def generate_exam(
         difficulty=payload.difficulty,
         db=db,
         llm=llm,
+        focus_topics=payload.focus_topics,
     )
 
     return QuizResponse(
@@ -970,15 +1029,29 @@ async def list_quiz_errors(
     _body: Annotated[bytes, Depends(verify_hmac)],
     db: AsyncSession = Depends(get_db),
 ) -> ErrorsListResponse:
-    """Historial de errores del alumno en un curso, más recientes primero."""
+    """Historial de errores del alumno en un curso, más recientes primero.
+
+    UX-19 (#389): `total` es el conteo real de errores en el rango de
+    `days` (no solo el tamaño de la página devuelta), para que el frontend
+    pueda saber si hay más resultados y pedirlos con `offset`.
+    """
     since = datetime.now(timezone.utc) - timedelta(days=payload.days)
+
+    base_filters = (
+        QuizError.course_id == payload.course_id,
+        QuizError.user_id == payload.user_id,
+        QuizError.created_at >= since,
+    )
+
+    total = await db.scalar(
+        select(func.count()).select_from(QuizError).where(*base_filters)
+    )
 
     stmt = (
         select(QuizError)
-        .where(QuizError.course_id == payload.course_id)
-        .where(QuizError.user_id == payload.user_id)
-        .where(QuizError.created_at >= since)
+        .where(*base_filters)
         .order_by(desc(QuizError.created_at))
+        .offset(payload.offset)
         .limit(payload.limit)
     )
     result = await db.execute(stmt)
@@ -1002,7 +1075,7 @@ async def list_quiz_errors(
         )
         for r in rows
     ]
-    return ErrorsListResponse(course_id=payload.course_id, total=len(items), items=items)
+    return ErrorsListResponse(course_id=payload.course_id, total=total or 0, items=items)
 
 
 @router.post("/errors/clear", response_model=ClearErrorsResponse)

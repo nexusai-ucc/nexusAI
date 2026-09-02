@@ -325,7 +325,8 @@ class backend_client {
         ?string $topic,
         int $numquestions,
         string $questiontype = 'multiple_choice',
-        string $difficulty = 'medium'
+        string $difficulty = 'medium',
+        array $focustopics = []
     ): array {
         $payload = [
             'course_id'     => $courseid,
@@ -337,6 +338,10 @@ class backend_client {
         ];
         if ($topic !== null && trim($topic) !== '') {
             $payload['topic'] = trim($topic);
+        }
+        if (!empty($focustopics)) {
+            // DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ).
+            $payload['focus_topics'] = array_values($focustopics);
         }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
@@ -398,14 +403,16 @@ class backend_client {
      * @param int $userid   $USER->id real.
      * @param int $days     Días hacia atrás (1..365).
      * @param int $limit    Máximo de items (1..200).
+     * @param int $offset   Cantidad de items a saltear (paginación, UX-19 #389).
      * @return array{course_id:int, total:int, items:array}
      */
-    public function list_quiz_errors(int $courseid, int $userid, int $days = 90, int $limit = 100): array {
+    public function list_quiz_errors(int $courseid, int $userid, int $days = 90, int $limit = 100, int $offset = 0): array {
         $payload = [
             'course_id' => $courseid,
             'user_id'   => $userid,
             'days'      => $days,
             'limit'     => $limit,
+            'offset'    => $offset,
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
@@ -810,6 +817,16 @@ class backend_client {
      */
     public function get_document(string $documentid): array {
         return $this->get('/api/v1/documents/' . $documentid);
+    }
+
+    /**
+     * Preview del texto extraído de un documento (CONT-08 / #357).
+     *
+     * @param string $documentid UUID del documento.
+     * @return array { document_id, filename, course_id, status, preview, char_count, truncated }
+     */
+    public function get_document_preview(string $documentid): array {
+        return $this->get('/api/v1/documents/' . $documentid . '/preview');
     }
 
     /**

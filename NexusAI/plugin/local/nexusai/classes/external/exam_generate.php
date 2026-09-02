@@ -32,6 +32,17 @@ class exam_generate extends \external_api {
             'numquestions' => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..20)', VALUE_OPTIONAL, 10),
             'questiontype' => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta (multiple_choice|true_false|open|mix)', VALUE_OPTIONAL, 'multiple_choice'),
             'difficulty'   => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_OPTIONAL, 'medium'),
+            // DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ) que el
+            // docente eligió priorizar como contexto extra de generación.
+            'topics'       => new \external_multiple_structure(
+                new \external_single_structure([
+                    'label'  => new \external_value(PARAM_TEXT, 'Texto del tema (gap o FAQ)'),
+                    'source' => new \external_value(PARAM_ALPHA, 'Origen del tema: gap|faq'),
+                ]),
+                'Temas con dificultad detectada a priorizar (máx 15)',
+                VALUE_OPTIONAL,
+                []
+            ),
         ]);
     }
 
@@ -50,6 +61,7 @@ class exam_generate extends \external_api {
                     'explanation'        => new \external_value(PARAM_RAW,  'Explicación / respuesta modelo'),
                     'source_filename'    => new \external_value(PARAM_TEXT, 'Archivo del que sale la pregunta'),
                     'source_document_id' => new \external_value(PARAM_ALPHANUMEXT, 'ID del documento fuente (UUID)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_topic'       => new \external_value(PARAM_TEXT, 'Tema de dificultad detectada del que sale la pregunta (DOC-D09)', VALUE_OPTIONAL, null, NULL_ALLOWED),
                 ])
             ),
         ]);
@@ -61,7 +73,8 @@ class exam_generate extends \external_api {
         string $topic = '',
         int $numquestions = 10,
         string $questiontype = 'multiple_choice',
-        string $difficulty = 'medium'
+        string $difficulty = 'medium',
+        array $topics = []
     ): array {
         global $USER;
 
@@ -72,6 +85,7 @@ class exam_generate extends \external_api {
             'numquestions' => $numquestions,
             'questiontype' => $questiontype,
             'difficulty'   => $difficulty,
+            'topics'       => $topics,
         ]);
 
         $context = \context_course::instance($params['courseid']);
@@ -97,6 +111,19 @@ class exam_generate extends \external_api {
         $allowed_difficulties = ['easy', 'medium', 'hard'];
         $difficulty = in_array($params['difficulty'], $allowed_difficulties, true) ? $params['difficulty'] : 'medium';
 
+        // DOC-D09 (#390): sanitizar la lista de temas — origen restringido a
+        // gap|faq, label recortado, y se ignora cualquier fila vacía.
+        $allowed_topic_sources = ['gap', 'faq'];
+        $focustopics = [];
+        foreach (array_slice($params['topics'], 0, 15) as $t) {
+            $label = trim((string) ($t['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            $source = in_array($t['source'] ?? '', $allowed_topic_sources, true) ? $t['source'] : 'gap';
+            $focustopics[] = ['label' => mb_substr($label, 0, 200), 'source' => $source];
+        }
+
         $client   = new backend_client();
         $response = $client->generate_exam(
             (int) $params['courseid'],
@@ -105,7 +132,8 @@ class exam_generate extends \external_api {
             $cleantopic !== '' ? $cleantopic : null,
             $numq,
             $qtype,
-            $difficulty
+            $difficulty,
+            $focustopics
         );
 
         if (!isset($response['questions']) || !is_array($response['questions'])) {
@@ -126,6 +154,7 @@ class exam_generate extends \external_api {
                         'explanation'        => (string) ($q['explanation'] ?? ''),
                         'source_filename'    => (string) ($q['source_filename'] ?? ''),
                         'source_document_id' => isset($q['source_document_id']) ? (string) $q['source_document_id'] : null,
+                        'source_topic'       => isset($q['source_topic']) && $q['source_topic'] !== '' ? (string) $q['source_topic'] : null,
                     ];
                 },
                 $response['questions']

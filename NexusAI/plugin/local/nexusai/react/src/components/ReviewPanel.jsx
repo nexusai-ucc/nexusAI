@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import { listQuizErrors, clearQuizErrors, getReviewSuggestions } from "../api/quiz.js";
 import { IconBook, IconCheck, IconFile, IconTarget, IconX } from "./icons.jsx";
+import ConfirmModal from "./ConfirmModal.jsx";
 
 function formatDate(iso) {
     try {
@@ -23,13 +24,19 @@ function formatDate(iso) {
     }
 }
 
+const PAGE_SIZE = 100;
+
 export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
     const [errors, setErrors] = useState([]);
+    const [total, setTotal] = useState(0);
     const [suggestions, setSuggestions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [suggestionsLoading, setSuggestionsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expanded, setExpanded] = useState({});
+    const [confirmClear, setConfirmClear] = useState(false);
+    const [clearing, setClearing] = useState(false);
 
     const L = lang === "es" ? {
         title:          "Repaso de errores",
@@ -37,6 +44,10 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         empty:          "¡Sin errores recientes!",
         emptyHint:      "Completá un quiz para que tus respuestas incorrectas aparezcan aquí.",
         clear:          "Borrar historial",
+        clearConfirmTitle: "Borrar historial de errores",
+        clearConfirmBody:  "Se van a borrar todas las preguntas que respondiste mal y las sugerencias de repaso. Esta acción no se puede deshacer.",
+        clearConfirmYes:   "Borrar todo",
+        cancel:            "Cancelar",
         yourAnswer:     "Tu respuesta",
         correctAnswer:  "Respuesta correcta",
         explanation:    "Explicación",
@@ -49,6 +60,8 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         typeOpen:       "Pregunta abierta",
         showMore:       "Ver explicación",
         showLess:       "Ocultar",
+        loadMore:       "Cargar más",
+        loading:        "Cargando...",
         score:          (n) => `${Math.round(n * 100)}% de la respuesta correcta`,
         suggTitle:      "Sugerencias de repaso",
         suggSubtitle:   "Basadas en tus errores más frecuentes.",
@@ -62,6 +75,10 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         empty:          "No recent errors!",
         emptyHint:      "Complete a quiz to see your incorrect answers here.",
         clear:          "Clear history",
+        clearConfirmTitle: "Clear error history",
+        clearConfirmBody:  "This will delete every question you answered incorrectly and the review suggestions. This action cannot be undone.",
+        clearConfirmYes:   "Delete all",
+        cancel:            "Cancel",
         yourAnswer:     "Your answer",
         correctAnswer:  "Correct answer",
         explanation:    "Explanation",
@@ -74,6 +91,8 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         typeOpen:       "Open question",
         showMore:       "See explanation",
         showLess:       "Hide",
+        loadMore:       "Load more",
+        loading:        "Loading...",
         score:          (n) => `${Math.round(n * 100)}% of the correct answer`,
         suggTitle:      "Review suggestions",
         suggSubtitle:   "Based on your most frequent mistakes.",
@@ -94,8 +113,12 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
 
         setLoading(true);
         setError(null);
-        listQuizErrors(courseId)
-            .then((data) => { if (!cancelled) setErrors(data?.items || []); })
+        listQuizErrors(courseId, 90, PAGE_SIZE, 0)
+            .then((data) => {
+                if (cancelled) return;
+                setErrors(data?.items || []);
+                setTotal(data?.total ?? 0);
+            })
             .catch((err) => { if (!cancelled) setError(err.message || L.loadError); })
             .finally(() => { if (!cancelled) setLoading(false); });
 
@@ -110,9 +133,34 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
     }, [courseId]);
 
     const clearAll = async () => {
-        setErrors([]);
-        setSuggestions([]);
-        try { await clearQuizErrors(courseId); } catch { /* best-effort */ }
+        setClearing(true);
+        try {
+            await clearQuizErrors(courseId);
+            setErrors([]);
+            setTotal(0);
+            setSuggestions([]);
+            setConfirmClear(false);
+        } catch (err) {
+            setError(err.message || L.loadError);
+            setConfirmClear(false);
+        } finally {
+            setClearing(false);
+        }
+    };
+
+    const hasMore = errors.length < total;
+
+    const handleLoadMore = async () => {
+        setLoadingMore(true);
+        try {
+            const data = await listQuizErrors(courseId, 90, PAGE_SIZE, errors.length);
+            setErrors((prev) => [...prev, ...(data?.items || [])]);
+            setTotal(data?.total ?? total);
+        } catch (err) {
+            setError(err.message || L.loadError);
+        } finally {
+            setLoadingMore(false);
+        }
     };
 
     const toggleExpand = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -220,17 +268,32 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
             <div className="nexusai-review__header">
                 <div>
                     <h4 className="nexusai-review__title">{L.title}</h4>
-                    <p className="nexusai-review__subtitle">{errors.length} {L.subtitle}</p>
+                    <p className="nexusai-review__subtitle">
+                        {hasMore ? `${errors.length} / ${total}` : errors.length} {L.subtitle}
+                    </p>
                 </div>
                 <button
                     type="button"
                     className="nexusai-review__clear-btn"
-                    onClick={clearAll}
+                    onClick={() => setConfirmClear(true)}
                     title={L.clear}
                 >
                     {L.clear}
                 </button>
             </div>
+
+            {confirmClear && (
+                <ConfirmModal
+                    title={L.clearConfirmTitle}
+                    confirmLabel={L.clearConfirmYes}
+                    cancelLabel={L.cancel}
+                    onConfirm={clearAll}
+                    onCancel={() => setConfirmClear(false)}
+                    busy={clearing}
+                >
+                    {L.clearConfirmBody}
+                </ConfirmModal>
+            )}
 
             {/* Error cards */}
             <div className="nexusai-review__list">
@@ -324,6 +387,17 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                     );
                 })}
             </div>
+
+            {hasMore && (
+                <button
+                    type="button"
+                    className="nexusai-review__load-more"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                >
+                    {loadingMore ? L.loading : `${L.loadMore} (${errors.length} / ${total})`}
+                </button>
+            )}
         </div>
     );
 }

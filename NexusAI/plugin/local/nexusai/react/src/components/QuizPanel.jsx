@@ -57,6 +57,23 @@ function is422(err) {
     return msg.includes("422");
 }
 
+// Entrada compartida por verify()/markFlashcard()/verifyOpen() para
+// wrongAnswersRef (persistencia de errores) y answersRef (revisión SP-14).
+function makeAnswerEntry(q, extra) {
+    return {
+        id: `${Date.now()}-${Math.random()}`,
+        timestamp: new Date().toISOString(),
+        question_type:      q.question_type || "multiple_choice",
+        question:            q.question,
+        explanation:         q.explanation,
+        source_filename:     q.source_filename,
+        source_document_id:  q.source_document_id ?? null,
+        options:             q.options || [],
+        correct_index:       q.correct_index ?? -1,
+        ...extra,
+    };
+}
+
 export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) {
     const [stage, setStage] = useState("setup"); // setup | loading | playing | finished | error
     const [topic, setTopic] = useState(initialTopic);
@@ -78,6 +95,9 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
 
     // Acumula respuestas incorrectas durante la partida (no causa re-render)
     const wrongAnswersRef = useRef([]);
+    // Acumula TODAS las respuestas (correctas e incorrectas) para la pantalla
+    // de revisión post-quiz (SP-14). No causa re-render.
+    const answersRef = useRef([]);
 
     // Historial de quizzes (SP-09)
     const [historyItems, setHistoryItems] = useState([]);
@@ -126,7 +146,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         fillBlankHint:      "Escribí la palabra que completa el espacio en blanco.",
         fillBlankPlaceholder: "Escribí la palabra aquí...",
         historyTitle:       "Historial de quizzes",
-        historyEmpty:       "Todavía no realizaste ningún quiz en este curso.",
+        historyEmpty:       "Todavía no hiciste ningún quiz en este curso. Cuando completes uno, vas a ver acá tu puntaje y tu progreso.",
         historyView:        "Ver historial",
         historyBack:        "Volver al quiz",
         historyLoading:     "Cargando historial...",
@@ -140,6 +160,10 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         historyDiffEasy:    "Fácil",
         historyDiffMedium:  "Media",
         historyDiffHard:    "Difícil",
+        reviewButton:       "Ver detalle de respuestas",
+        reviewTitle:        "Detalle del intento",
+        reviewBack:         "Volver al resultado",
+        yourAnswer:         "Tu respuesta",
     } : {
         introTitle:      "Practice Quiz",
         introText:       "Generate practice questions from the course material to review.",
@@ -182,7 +206,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         fillBlankHint:      "Write the word that completes the blank.",
         fillBlankPlaceholder: "Write the word here...",
         historyTitle:       "Quiz history",
-        historyEmpty:       "You haven't completed any quizzes in this course yet.",
+        historyEmpty:       "You haven't taken any quizzes in this course yet. Once you complete one, you'll see your score and progress here.",
         historyView:        "View history",
         historyBack:        "Back to quiz",
         historyLoading:     "Loading history...",
@@ -196,7 +220,21 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         historyDiffEasy:    "Easy",
         historyDiffMedium:  "Medium",
         historyDiffHard:    "Hard",
+        reviewButton:       "View answer details",
+        reviewTitle:        "Attempt review",
+        reviewBack:         "Back to result",
+        yourAnswer:         "Your answer",
     };
+
+    // Usado por las pantallas "history" y "review" para mostrar el tipo de pregunta.
+    const typeLabel = (qt) => ({
+        multiple_choice: L.historyTypeMC,
+        true_false:      L.historyTypeTF,
+        open:            L.historyTypeOpen,
+        flashcard:       L.historyTypeFlash,
+        fill_blank:      L.historyTypeFill,
+        mix:             L.historyTypeMix,
+    }[qt] || qt);
 
     const resetQuestionState = () => {
         setSelectedIdx(null);
@@ -214,6 +252,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         setCurrentIdx(0);
         setScore(0);
         wrongAnswersRef.current = [];
+        answersRef.current = [];
         resetQuestionState();
 
         try {
@@ -237,41 +276,25 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         if (selectedIdx === null) return;
         setReveal(true);
         const q = quiz.questions[currentIdx];
-        if (q.correct_index === selectedIdx) {
+        const isCorrect = q.correct_index === selectedIdx;
+        const entry = makeAnswerEntry(q, { user_selected_index: selectedIdx, correct: isCorrect });
+        answersRef.current.push(entry);
+        if (isCorrect) {
             setScore((s) => s + 1);
         } else {
-            wrongAnswersRef.current.push({
-                id: `${Date.now()}-${Math.random()}`,
-                timestamp: new Date().toISOString(),
-                question_type: q.question_type || "multiple_choice",
-                question:            q.question,
-                explanation:         q.explanation,
-                source_filename:     q.source_filename,
-                source_document_id:  q.source_document_id ?? null,
-                options:             q.options,
-                correct_index:       q.correct_index,
-                user_selected_index: selectedIdx,
-            });
+            wrongAnswersRef.current.push(entry);
         }
     };
 
     // ── Autoevaluación de flashcard (sin IA): el alumno juzga si la sabía ──
     const markFlashcard = (knewIt) => {
         const q = quiz.questions[currentIdx];
+        const entry = makeAnswerEntry(q, { question_type: "flashcard", options: [], correct_index: -1, correct: knewIt });
+        answersRef.current.push(entry);
         if (knewIt) {
             setScore((s) => s + 1);
         } else {
-            wrongAnswersRef.current.push({
-                id: `${Date.now()}-${Math.random()}`,
-                timestamp: new Date().toISOString(),
-                question_type:       "flashcard",
-                question:            q.question,
-                explanation:         q.explanation,
-                source_filename:     q.source_filename,
-                source_document_id:  q.source_document_id ?? null,
-                options:             [],
-                correct_index:       -1,
-            });
+            wrongAnswersRef.current.push(entry);
         }
         next();
     };
@@ -289,26 +312,34 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 userAnswer:  openAnswer,
             });
             setEvaluation(result);
+            const entry = makeAnswerEntry(q, {
+                options:       [],
+                correct_index: -1,
+                user_answer:   openAnswer,
+                ai_feedback:   result.feedback,
+                ai_score:      result.score,
+                correct:       result.correct,
+            });
+            answersRef.current.push(entry);
             if (result.correct) {
                 setScore((s) => s + 1);
             } else {
-                wrongAnswersRef.current.push({
-                    id: `${Date.now()}-${Math.random()}`,
-                    timestamp: new Date().toISOString(),
-                    question_type:      q.question_type,
-                    question:           q.question,
-                    explanation:        q.explanation,
-                    source_filename:    q.source_filename,
-                    source_document_id: q.source_document_id ?? null,
-                    options:            [],
-                    correct_index:      -1,
-                    user_answer:        openAnswer,
-                    ai_feedback:        result.feedback,
-                    ai_score:           result.score,
-                });
+                wrongAnswersRef.current.push(entry);
             }
         } catch {
-            setEvaluation({ correct: false, score: 0, feedback: "Error al evaluar la respuesta. Intentá de nuevo." });
+            const errMsg = "Error al evaluar la respuesta. Intentá de nuevo.";
+            setEvaluation({ correct: false, score: 0, feedback: errMsg });
+            // Igual se registra en la revisión post-quiz (SP-14): si no, el
+            // conteo de "Ver detalle de respuestas" queda por debajo del
+            // total de preguntas mostrado en la pantalla de resultado.
+            answersRef.current.push(makeAnswerEntry(q, {
+                options:       [],
+                correct_index: -1,
+                user_answer:   openAnswer,
+                ai_feedback:   errMsg,
+                ai_score:      0,
+                correct:       false,
+            }));
         } finally {
             setEvaluating(false);
             setReveal(true);
@@ -696,8 +727,100 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     <p className="nexusai-quiz__final-score">{L.finalScore(score, total)}</p>
                     <div className="nexusai-quiz__final-pct">{pct}%</div>
                 </div>
-                <button type="button" className="nexusai-quiz__primary" onClick={resetAll}>
-                    {L.again}
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+                    {answersRef.current.length > 0 && (
+                        <button type="button" className="nexusai-quiz__secondary" onClick={() => setStage("review")}>
+                            {L.reviewButton}
+                        </button>
+                    )}
+                    <button type="button" className="nexusai-quiz__primary" onClick={resetAll}>
+                        {L.again}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // ─── REVIEW (SP-14): detalle completo del intento recién terminado ───
+    if (stage === "review" && quiz) {
+        const answers = answersRef.current;
+
+        return (
+            <div className="nexusai-quiz">
+                <div className="nexusai-quiz__intro">
+                    <h4 className="nexusai-quiz__intro-title">{L.reviewTitle}</h4>
+                </div>
+
+                <div className="nexusai-review__list">
+                    {answers.map((a, i) => {
+                        const hasOptions = a.options && a.options.length > 0;
+                        const isTextType = a.question_type === "open" || a.question_type === "fill_blank";
+
+                        return (
+                            <div key={a.id} className="nexusai-review__card">
+                                <div className="nexusai-review__card-top">
+                                    <span className={`nexusai-review__badge nexusai-review__badge--${a.question_type}`}>
+                                        {typeLabel(a.question_type)}
+                                    </span>
+                                    <span className="nexusai-review__date">{L.questionOf(i + 1, answers.length)}</span>
+                                </div>
+
+                                <p className="nexusai-review__question">{a.question}</p>
+
+                                {hasOptions && (
+                                    <div className="nexusai-review__options">
+                                        {a.options.map((opt, oi) => {
+                                            const isCorrectOpt = oi === a.correct_index;
+                                            const isWrongOpt   = oi === a.user_selected_index && !isCorrectOpt;
+                                            let cls = "nexusai-review__opt";
+                                            if (isCorrectOpt) cls += " nexusai-review__opt--correct";
+                                            else if (isWrongOpt) cls += " nexusai-review__opt--wrong";
+                                            const letter = a.question_type === "true_false"
+                                                ? (oi === 0 ? "V" : "F")
+                                                : String.fromCharCode(65 + oi);
+                                            return (
+                                                <div key={oi} className={cls}>
+                                                    <span className="nexusai-review__opt-letter">{letter}</span>
+                                                    <span className="nexusai-review__opt-text">{opt}</span>
+                                                    {isCorrectOpt && <IconCheck size={12} />}
+                                                    {isWrongOpt && <IconX size={12} />}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {isTextType && a.user_answer && (
+                                    <div className="nexusai-review__open-answer">
+                                        <span className="nexusai-review__open-label">{L.yourAnswer}</span>
+                                        <p className="nexusai-review__open-text">{a.user_answer}</p>
+                                    </div>
+                                )}
+
+                                <div className={`nexusai-quiz__feedback ${a.correct ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong"}`}>
+                                    <strong className="nexusai-quiz__feedback-title">
+                                        {a.correct
+                                            ? <><IconCheck size={14} /> {L.correct}</>
+                                            : <><IconX size={14} /> {L.wrong}</>}
+                                    </strong>
+                                    <p className="nexusai-quiz__explanation">
+                                        {isTextType && a.ai_feedback ? a.ai_feedback : a.explanation}
+                                    </p>
+                                </div>
+
+                                {a.source_filename && (
+                                    <span className="nexusai-review__source">
+                                        <IconFile size={12} />
+                                        <span>{a.source_filename}</span>
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <button type="button" className="nexusai-quiz__secondary" onClick={() => setStage("finished")} style={{ marginTop: "12px" }}>
+                    {L.reviewBack}
                 </button>
             </div>
         );
@@ -705,15 +828,6 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
 
     // ─── HISTORY (SP-09) ───
     if (stage === "history") {
-        const typeLabel = (qt) => ({
-            multiple_choice: L.historyTypeMC,
-            true_false:      L.historyTypeTF,
-            open:            L.historyTypeOpen,
-            flashcard:       L.historyTypeFlash,
-            fill_blank:      L.historyTypeFill,
-            mix:             L.historyTypeMix,
-        }[qt] || qt);
-
         const diffLabel = (d) => ({
             easy:   L.historyDiffEasy,
             medium: L.historyDiffMedium,
