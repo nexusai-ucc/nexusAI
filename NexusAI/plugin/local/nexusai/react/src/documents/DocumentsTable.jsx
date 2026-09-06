@@ -10,6 +10,7 @@ import { useRef, useState } from "react";
 
 import { deleteDocument } from "./api.js";
 import { IconFileText } from "../components/icons.jsx";
+import ConfirmModal, { useDismissable } from "../components/ConfirmModal.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 
@@ -78,8 +79,18 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
             </div>
 
             {confirmDoc && (
-                <ConfirmDeleteModal
-                    filename={confirmDoc.filename}
+                <ConfirmModal
+                    title="Eliminar documento"
+                    message={
+                        <>
+                            ¿Borrar <strong>{confirmDoc.filename}</strong>? Esto elimina el
+                            documento y todos sus chunks indexados. La acción no se puede
+                            deshacer.
+                        </>
+                    }
+                    confirmLabel="Eliminar"
+                    cancelLabel="Cancelar"
+                    variant="danger"
                     onConfirm={handleDeleteConfirm}
                     onCancel={() => setConfirmDoc(null)}
                 />
@@ -102,48 +113,21 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
 }
 
 // ============================================================
-// Modal de confirmación de borrado
-// ============================================================
-
-function ConfirmDeleteModal({ filename, onConfirm, onCancel }) {
-    return (
-        <div className="nexusai-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="nexusai-modal-title">
-            <div className="nexusai-modal">
-                <h2 className="nexusai-modal__title" id="nexusai-modal-title">
-                    Eliminar documento
-                </h2>
-                <p className="nexusai-modal__body">
-                    ¿Borrar <strong>{filename}</strong>? Esto elimina el documento y todos
-                    sus chunks indexados. La acción no se puede deshacer.
-                </p>
-                <div className="nexusai-modal__actions">
-                    <button
-                        type="button"
-                        className="nexusai-btn nexusai-btn--secondary"
-                        onClick={onCancel}
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        type="button"
-                        className="nexusai-btn nexusai-btn--danger"
-                        onClick={onConfirm}
-                    >
-                        Eliminar
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ============================================================
 // Modal de error — exportado para que DocumentsManager lo use
 // ============================================================
 
 export function ErrorModal({ message, onClose }) {
+    useDismissable(onClose);
     return (
-        <div className="nexusai-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="nexusai-error-title">
+        <div
+            className="nexusai-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="nexusai-error-title"
+            onMouseDown={(e) => {
+                if (e.target === e.currentTarget) onClose();
+            }}
+        >
             <div className="nexusai-modal">
                 <h2 className="nexusai-modal__title nexusai-modal__title--error" id="nexusai-error-title">
                     Error

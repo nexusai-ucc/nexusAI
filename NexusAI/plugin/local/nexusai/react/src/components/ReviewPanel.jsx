@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import { listQuizErrors, clearQuizErrors, getReviewSuggestions } from "../api/quiz.js";
 import { IconBook, IconCheck, IconFile, IconTarget, IconX } from "./icons.jsx";
+import ConfirmModal from "./ConfirmModal.jsx";
 
 function formatDate(iso) {
     try {
@@ -34,6 +35,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
     const [suggestionsLoading, setSuggestionsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expanded, setExpanded] = useState({});
+    const [confirmClear, setConfirmClear] = useState(false);
 
     const L = lang === "es" ? {
         title:          "Repaso de errores",
@@ -41,6 +43,10 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         empty:          "¡Sin errores recientes!",
         emptyHint:      "Completá un quiz para que tus respuestas incorrectas aparezcan aquí.",
         clear:          "Borrar historial",
+        confirmClearTitle:   "Borrar historial de errores",
+        confirmClearMessage: "¿Borrar todo el historial de errores y sugerencias de repaso? Esta acción no se puede deshacer.",
+        confirm:        "Confirmar",
+        cancel:         "Cancelar",
         yourAnswer:     "Tu respuesta",
         correctAnswer:  "Respuesta correcta",
         explanation:    "Explicación",
@@ -68,6 +74,10 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         empty:          "No recent errors!",
         emptyHint:      "Complete a quiz to see your incorrect answers here.",
         clear:          "Clear history",
+        confirmClearTitle:   "Clear error history",
+        confirmClearMessage: "Clear the whole error history and review suggestions? This action can't be undone.",
+        confirm:        "Confirm",
+        cancel:         "Cancel",
         yourAnswer:     "Your answer",
         correctAnswer:  "Correct answer",
         explanation:    "Explanation",
@@ -255,12 +265,28 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                 <button
                     type="button"
                     className="nexusai-review__clear-btn"
-                    onClick={clearAll}
+                    onClick={() => setConfirmClear(true)}
+                    aria-label={L.clear}
                     title={L.clear}
                 >
                     {L.clear}
                 </button>
             </div>
+
+            {confirmClear && (
+                <ConfirmModal
+                    title={L.confirmClearTitle}
+                    message={L.confirmClearMessage}
+                    confirmLabel={L.confirm}
+                    cancelLabel={L.cancel}
+                    variant="default"
+                    onConfirm={() => {
+                        clearAll();
+                        setConfirmClear(false);
+                    }}
+                    onCancel={() => setConfirmClear(false)}
+                />
+            )}
 
             {/* Error cards */}
             <div className="nexusai-review__list">

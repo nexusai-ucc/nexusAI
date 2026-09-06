@@ -476,9 +476,9 @@
     padding: 24px;
 }
 .nexusai-modal {
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18), 0 4px 16px rgba(15, 23, 42, 0.08);
+    background: var(--nexusai-bg);
+    border-radius: var(--nexusai-radius-lg);
+    box-shadow: var(--nexusai-shadow-md);
     padding: 28px 32px;
     width: 100%;
     max-width: 440px;
@@ -486,7 +486,7 @@
 .nexusai-modal__title {
     font-size: 17px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--nexusai-fg);
     margin: 0 0 12px;
 }
 .nexusai-modal__title--error {
@@ -494,7 +494,7 @@
 }
 .nexusai-modal__body {
     font-size: 14px;
-    color: #475569;
+    color: var(--nexusai-fg-muted);
     line-height: 1.6;
     margin: 0 0 24px;
 }
@@ -551,7 +551,7 @@
     align-items: center;
     justify-content: center;
     border: none;
-    border-radius: 7px;
+    border-radius: var(--nexusai-radius);
     font-size: 14px;
     font-weight: 500;
     font-family: inherit;
@@ -560,12 +560,12 @@
     transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 .nexusai-btn--secondary {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    background: var(--nexusai-bg-subtle);
+    color: var(--nexusai-fg-muted);
+    border: 1px solid var(--nexusai-border);
 }
 .nexusai-btn--secondary:hover {
-    background: #e2e8f0;
+    background: var(--nexusai-border);
 }
 .nexusai-btn--danger {
     background: #dc2626;
@@ -574,6 +574,13 @@
 .nexusai-btn--danger:hover {
     background: #b91c1c;
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+.nexusai-btn--confirm {
+    background: var(--nexusai-primary);
+    color: #ffffff;
+}
+.nexusai-btn--confirm:hover {
+    background: var(--nexusai-primary-hover);
 }
 .nexusai-btn:disabled {
     opacity: 0.55;

@@ -28,6 +28,8 @@ import SearchPanel from "./components/SearchPanel.jsx";
 import CalendarPanel from "./components/CalendarPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import NavMenu from "./components/NavMenu.jsx";
+import Tooltip from "./components/Tooltip.jsx";
+import ConfirmModal from "./components/ConfirmModal.jsx";
 import { IconBookOpen, IconGlobe, IconGrid } from "./components/icons.jsx";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
 import { getSessionMessages } from "./api/history.js";
@@ -150,6 +152,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [multiCourse, setMultiCourse] = useState(false);
     const [activeTab, setActiveTab] = useState("chat"); // "chat" | "history" | "study" | "calendar" | "search"
     const [navOpen, setNavOpen] = useState(false);
+    const [confirmClear, setConfirmClear] = useState(false);
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
@@ -354,15 +357,17 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             </div>
                         ) : (
                             <div className="nexusai-panel__title-wrap">
-                                <button
-                                    type="button"
-                                    className="nexusai-icon-btn nexusai-panel__back-btn"
-                                    onClick={() => setActiveTab("chat")}
-                                    aria-label={lang === "es" ? "Volver al chat" : "Back to chat"}
-                                    title={lang === "es" ? "Volver al chat" : "Back to chat"}
-                                >
-                                    <IconBack />
-                                </button>
+                                <Tooltip label={lang === "es" ? "Volver al chat" : "Back to chat"}>
+                                    <button
+                                        type="button"
+                                        className="nexusai-icon-btn nexusai-panel__back-btn"
+                                        onClick={() => setActiveTab("chat")}
+                                        aria-label={lang === "es" ? "Volver al chat" : "Back to chat"}
+                                        title={lang === "es" ? "Volver al chat" : "Back to chat"}
+                                    >
+                                        <IconBack />
+                                    </button>
+                                </Tooltip>
                                 <h3 id="nexusai-title" className="nexusai-panel__title">
                                     {SECTION_TITLES[activeTab]?.[lang === "es" ? "es" : "en"]}
                                 </h3>
@@ -371,69 +376,100 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
                         <div className="nexusai-panel__actions">
                             {hasCourse && (
-                                <button
-                                    type="button"
-                                    className={`nexusai-icon-btn nexusai-nav-toggle ${navOpen ? "nexusai-nav-toggle--active" : ""}`}
-                                    onClick={() => setNavOpen((v) => !v)}
-                                    aria-label={lang === "es" ? "Navegación" : "Navigation"}
-                                    title={lang === "es" ? "Ir a..." : "Go to..."}
-                                >
-                                    <IconGrid />
-                                </button>
+                                <Tooltip label={lang === "es" ? "Ir a..." : "Go to..."}>
+                                    <button
+                                        type="button"
+                                        className={`nexusai-icon-btn nexusai-nav-toggle ${navOpen ? "nexusai-nav-toggle--active" : ""}`}
+                                        onClick={() => setNavOpen((v) => !v)}
+                                        aria-label={lang === "es" ? "Navegación" : "Navigation"}
+                                        title={lang === "es" ? "Ir a..." : "Go to..."}
+                                    >
+                                        <IconGrid />
+                                    </button>
+                                </Tooltip>
                             )}
                             {hasCourse && activeTab === "chat" && (
-                                <button
-                                    type="button"
-                                    className="nexusai-icon-btn nexusai-history-toggle"
-                                    onClick={() => setActiveTab("history")}
-                                    aria-label={lang === "es" ? "Historial" : "History"}
-                                    title={lang === "es" ? "Conversaciones previas" : "Previous conversations"}
-                                >
-                                    <IconHistory />
-                                </button>
+                                <Tooltip label={lang === "es" ? "Conversaciones previas" : "Previous conversations"}>
+                                    <button
+                                        type="button"
+                                        className="nexusai-icon-btn nexusai-history-toggle"
+                                        onClick={() => setActiveTab("history")}
+                                        aria-label={lang === "es" ? "Historial" : "History"}
+                                        title={lang === "es" ? "Conversaciones previas" : "Previous conversations"}
+                                    >
+                                        <IconHistory />
+                                    </button>
+                                </Tooltip>
                             )}
                             {hasCourse && (activeTab === "chat" || activeTab === "search") && (
-                                <button
-                                    type="button"
-                                    className={`nexusai-icon-btn nexusai-multicourse-toggle ${multiCourse ? "nexusai-multicourse-toggle--active" : ""}`}
-                                    onClick={() => {
-                                        setMultiCourse((v) => !v);
-                                        clearChat();
-                                    }}
-                                    aria-label={multiCourse
-                                        ? (lang === "es" ? "Buscar solo en este curso" : "Limit to this course")
-                                        : (lang === "es" ? "Buscar en todos tus cursos" : "Search all your courses")
-                                    }
-                                    title={multiCourse
-                                        ? (lang === "es" ? "Buscando en todos tus cursos (click para solo este curso)" : "Searching all courses (click to limit to this course)")
-                                        : (lang === "es" ? "Solo este curso (click para buscar en todos tus cursos)" : "This course only (click to search all your courses)")
-                                    }
-                                >
-                                    {multiCourse ? <IconGlobe /> : <IconBookOpen />}
-                                </button>
+                                <Tooltip label={multiCourse
+                                    ? (lang === "es" ? "Buscando en todos tus cursos (click para solo este curso)" : "Searching all courses (click to limit to this course)")
+                                    : (lang === "es" ? "Solo este curso (click para buscar en todos tus cursos)" : "This course only (click to search all your courses)")
+                                }>
+                                    <button
+                                        type="button"
+                                        className={`nexusai-icon-btn nexusai-multicourse-toggle ${multiCourse ? "nexusai-multicourse-toggle--active" : ""}`}
+                                        onClick={() => {
+                                            setMultiCourse((v) => !v);
+                                            clearChat();
+                                        }}
+                                        aria-label={multiCourse
+                                            ? (lang === "es" ? "Buscar solo en este curso" : "Limit to this course")
+                                            : (lang === "es" ? "Buscar en todos tus cursos" : "Search all your courses")
+                                        }
+                                        title={multiCourse
+                                            ? (lang === "es" ? "Buscando en todos tus cursos (click para solo este curso)" : "Searching all courses (click to limit to this course)")
+                                            : (lang === "es" ? "Solo este curso (click para buscar en todos tus cursos)" : "This course only (click to search all your courses)")
+                                        }
+                                    >
+                                        {multiCourse ? <IconGlobe /> : <IconBookOpen />}
+                                    </button>
+                                </Tooltip>
                             )}
                             {activeTab === "chat" && messages.length > 0 && (
+                                <Tooltip label={t.clearChat}>
+                                    <button
+                                        type="button"
+                                        className="nexusai-icon-btn"
+                                        onClick={() => setConfirmClear(true)}
+                                        aria-label={t.clearChat}
+                                        title={t.clearChat}
+                                    >
+                                        <IconNewChat />
+                                    </button>
+                                </Tooltip>
+                            )}
+                            <Tooltip label={t.close}>
                                 <button
                                     type="button"
                                     className="nexusai-icon-btn"
-                                    onClick={clearChat}
-                                    aria-label={t.clearChat}
-                                    title={t.clearChat}
+                                    onClick={() => setOpen(false)}
+                                    aria-label={t.close}
+                                    title={t.close}
                                 >
-                                    <IconNewChat />
+                                    <IconClose />
                                 </button>
-                            )}
-                            <button
-                                type="button"
-                                className="nexusai-icon-btn"
-                                onClick={() => setOpen(false)}
-                                aria-label={t.close}
-                                title={t.close}
-                            >
-                                <IconClose />
-                            </button>
+                            </Tooltip>
                         </div>
                     </header>
+
+                    {confirmClear && (
+                        <ConfirmModal
+                            title={lang === "es" ? "Nueva conversación" : "New conversation"}
+                            message={lang === "es"
+                                ? "¿Iniciar una nueva conversación? Se va a perder el historial visible de este chat. Esta acción no se puede deshacer."
+                                : "Start a new conversation? The visible history of this chat will be lost. This action can't be undone."
+                            }
+                            confirmLabel={lang === "es" ? "Confirmar" : "Confirm"}
+                            cancelLabel={lang === "es" ? "Cancelar" : "Cancel"}
+                            variant="default"
+                            onConfirm={() => {
+                                clearChat();
+                                setConfirmClear(false);
+                            }}
+                            onCancel={() => setConfirmClear(false)}
+                        />
+                    )}
 
                     {!hasCourse ? (
                         <div className="nexusai-panel__body nexusai-panel__body--empty">
