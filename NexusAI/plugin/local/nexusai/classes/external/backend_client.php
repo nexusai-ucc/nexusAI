@@ -619,6 +619,33 @@ class backend_client {
         return $this->post('/api/v1/documents', $body);
     }
 
+    /**
+     * CONT-07: reemplaza el archivo de un documento existente sin cambiar su
+     * document_id (las citas viejas del chat siguen apuntando al mismo id).
+     *
+     * @param string $documentid UUID del documento a reemplazar.
+     * @param string $filename   Nombre del archivo nuevo.
+     * @param string $mimetype   MIME type del archivo nuevo.
+     * @param string $filebytes  Contenido binario del archivo nuevo.
+     * @return array Document state después del reemplazo.
+     */
+    public function replace_document(
+        string $documentid, string $filename, string $mimetype, string $filebytes
+    ): array {
+        $payload = [
+            'filename'    => $filename,
+            'mime_type'   => $mimetype,
+            'content_b64' => base64_encode($filebytes),
+        ];
+
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+
+        return $this->post('/api/v1/documents/' . $documentid . '/replace', $body);
+    }
+
     // =========================================================
     // Foros — Épica 06
     // =========================================================

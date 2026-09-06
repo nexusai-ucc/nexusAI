@@ -36,11 +36,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.hmac import verify_hmac
-from app.db.models import Document
+from app.db.models import Chunk, Document
 from app.db.session import get_db, get_session_factory
 from app.documents.extractor import SUPPORTED_MIME_TYPES
 from app.documents.pipeline import index_document
@@ -108,9 +108,10 @@ class DocumentOut(BaseModel):
     error_message: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    text_preview: Optional[str] = None
 
     @classmethod
-    def from_orm(cls, doc: Document) -> "DocumentOut":
+    def from_orm(cls, doc: Document, text_preview: Optional[str] = None) -> "DocumentOut":
         return cls(
             id=doc.id,
             course_id=doc.course_id,
@@ -122,6 +123,7 @@ class DocumentOut(BaseModel):
             error_message=doc.error_message,
             created_at=doc.created_at,
             updated_at=doc.updated_at,
+            text_preview=text_preview,
         )
 
 
@@ -130,6 +132,9 @@ class DocumentOut(BaseModel):
 # documento indexado del curso sin paginar. Sigue siendo un límite, a
 # diferencia del `select(Document)...` sin `.limit()` que había antes.
 _DEFAULT_LIST_LIMIT = 500
+
+# CONT-08: largo del preview de texto extraído devuelto en el listado.
+_TEXT_PREVIEW_CHARS = 500
 
 
 class DocumentListResponse(BaseModel):
@@ -365,9 +370,28 @@ async def list_documents_by_course(
         .limit(effective_limit)
     )
     documents = result.scalars().all()
+
+    # CONT-08: preview del texto extraído. Todo documento 'indexed' tiene al
+    # menos un chunk con chunk_index=0 (si fallan todos los embeddings, el
+    # documento queda en 'error' sin persistir chunks) — una sola query
+    # batcheada para toda la página, no N+1.
+    doc_ids = [d.id for d in documents]
+    previews: dict = {}
+    if doc_ids:
+        preview_result = await db.execute(
+            select(Chunk.document_id, Chunk.content).where(
+                Chunk.document_id.in_(doc_ids),
+                Chunk.chunk_index == 0,
+            )
+        )
+        previews = {
+            doc_id: content[:_TEXT_PREVIEW_CHARS]
+            for doc_id, content in preview_result.all()
+        }
+
     return DocumentListResponse(
         total=total or 0,
-        items=[DocumentOut.from_orm(d) for d in documents],
+        items=[DocumentOut.from_orm(d, text_preview=previews.get(d.id)) for d in documents],
     )
 
 
@@ -400,6 +424,116 @@ async def download_document(
         filename=document.filename,
         media_type=document.mime_type,
     )
+
+
+class DocumentReplaceRequest(BaseModel):
+    """CONT-07: reemplaza el contenido de un documento existente, manteniendo
+    su document_id (las citas viejas del chat siguen apuntando al mismo id)."""
+
+    filename: str = Field(min_length=1, max_length=255)
+    mime_type: str = Field(default="application/pdf")
+    content_b64: str = Field(min_length=1)
+
+
+@router.post("/{document_id}/replace", response_model=DocumentOut, status_code=status.HTTP_202_ACCEPTED)
+async def replace_document(
+    document_id: UUID,
+    payload: DocumentReplaceRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+    embeddings: EmbeddingProvider = Depends(get_embedding_provider),
+) -> DocumentOut:
+    """Reemplaza el archivo de un documento existente sin cambiar su id.
+
+    A diferencia de POST "", no valida colisión de nombre (es una actualización
+    de la propia fila, no un documento nuevo). Borra los chunks viejos antes de
+    disparar la re-indexación: `index_document()` tiene un guard (CONT-04) que
+    salta la indexación si el documento ya tiene chunks persistidos.
+    """
+    result = await db.execute(select(Document).where(Document.id == document_id))
+    document = result.scalar_one_or_none()
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    if payload.mime_type not in SUPPORTED_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=(
+                f"Tipo de archivo no soportado: {payload.mime_type!r}. "
+                f"Tipos aceptados: {sorted(SUPPORTED_MIME_TYPES)}"
+            ),
+        )
+
+    try:
+        file_bytes = base64.b64decode(payload.content_b64, validate=True)
+    except (ValueError, base64.binascii.Error) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid base64 content: {exc}",
+        )
+
+    if not file_bytes:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File is empty")
+
+    if len(file_bytes) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large: {len(file_bytes)} bytes (max {MAX_UPLOAD_BYTES})",
+        )
+
+    expected_magic = _MAGIC_BYTES.get(payload.mime_type)
+    if expected_magic is not None and not file_bytes.startswith(expected_magic):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"El archivo no parece ser del tipo declarado ({payload.mime_type!r}): "
+                "los primeros bytes no coinciden con el formato esperado."
+            ),
+        )
+
+    file_hash = hashlib.sha256(payload.content_b64.encode()).hexdigest()
+
+    # Borrar los chunks viejos ANTES de re-indexar: si no, el guard de CONT-04
+    # ve que el documento ya tiene chunks y no vuelve a procesar el archivo nuevo.
+    await db.execute(delete(Chunk).where(Chunk.document_id == document_id))
+
+    document.filename = payload.filename
+    document.mime_type = payload.mime_type
+    document.file_hash = file_hash
+    document.status = "pending"
+    document.error_message = None
+    await db.commit()
+    await db.refresh(document)
+
+    safe_name = Path(payload.filename).name or "file"
+    storage_name = f"{document.id}_{safe_name}"
+    try:
+        UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+        (UPLOADS_DIR / storage_name).write_bytes(file_bytes)
+        # Si el nombre de archivo cambió, borrar el storage_path viejo del disco.
+        old_storage_path = document.storage_path
+        if old_storage_path and old_storage_path != storage_name:
+            (UPLOADS_DIR / old_storage_path).unlink(missing_ok=True)
+        document.storage_path = storage_name
+        await db.commit()
+    except Exception as exc:
+        logger.warning(
+            "Could not save replacement file to disk for document %s: %s",
+            document.id, exc,
+        )
+
+    await db.refresh(document)
+    doc_data = DocumentOut.from_orm(document)
+
+    asyncio.create_task(
+        _index_document_task(
+            document_id=document.id,
+            file_bytes=file_bytes,
+            embeddings=embeddings,
+        )
+    )
+
+    return doc_data
 
 
 class SummarizeRequest(BaseModel):

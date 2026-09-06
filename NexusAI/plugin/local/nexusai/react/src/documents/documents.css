@@ -337,7 +337,33 @@
 }
 .nexusai-table__actions {
     text-align: right;
-    width: 110px;
+    width: 220px;
+    white-space: nowrap;
+}
+
+/* CONT-08: extracto del texto indexado, expandible por fila */
+.nexusai-table__preview-row td {
+    padding-top: 0;
+    background: var(--nexusai-bg-muted, #f8fafc);
+}
+.nexusai-table__preview {
+    background: #fafbff;
+    border: 1px solid #e0e7ff;
+    border-radius: var(--nexusai-radius, 8px);
+    padding: 10px 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+.nexusai-table__preview-label {
+    font-weight: 600;
+    color: #4338ca;
+    font-size: 11px;
+    margin: 0 0 4px;
+}
+.nexusai-table__preview-text {
+    color: var(--nexusai-fg, #0f172a);
+    margin: 0;
+    white-space: pre-wrap;
 }
 
 /* ============================================================

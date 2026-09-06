@@ -8,8 +8,9 @@
 
 import { useRef, useState } from "react";
 
-import { deleteDocument } from "./api.js";
+import { deleteDocument, replaceDocument } from "./api.js";
 import { IconFileText } from "../components/icons.jsx";
+import ConfirmModal from "../components/ConfirmModal.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 
@@ -19,6 +20,15 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
     const [deleteError, setDeleteError] = useState(null);
     const [successToast, setSuccessToast] = useState(null);
     const toastTimerRef = useRef(null);
+
+    // CONT-07: reemplazar archivo manteniendo document_id.
+    const [replacingId, setReplacingId] = useState(null);
+    const [replaceTarget, setReplaceTarget] = useState(null); // { doc, file } pendiente de confirmar
+    const [replaceError, setReplaceError] = useState(null);
+
+    // CONT-08: preview del texto extraído (expand/collapse por fila).
+    const [expanded, setExpanded] = useState({});
+    const toggleExpand = (id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
     const handleDeleteRequest = (doc) => {
         setConfirmDoc(doc);
@@ -38,6 +48,27 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
             setDeleteError(err.message || String(err));
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const handleReplaceRequest = (doc, file) => {
+        setReplaceTarget({ doc, file });
+    };
+
+    const handleReplaceConfirm = async () => {
+        const { doc, file } = replaceTarget;
+        setReplaceTarget(null);
+        setReplacingId(doc.id);
+        try {
+            const updated = await replaceDocument(courseId, doc.id, file);
+            onChange((prev) => prev.map((d) => (d.id === doc.id ? updated : d)));
+            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+            setSuccessToast("Documento reemplazado, indexando de nuevo...");
+            toastTimerRef.current = setTimeout(() => setSuccessToast(null), 3000);
+        } catch (err) {
+            setReplaceError(err.message || String(err));
+        } finally {
+            setReplacingId(null);
         }
     };
 
@@ -71,6 +102,10 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                                 doc={doc}
                                 onDelete={() => handleDeleteRequest(doc)}
                                 deleting={deletingId === doc.id}
+                                onReplace={(file) => handleReplaceRequest(doc, file)}
+                                replacing={replacingId === doc.id}
+                                expanded={!!expanded[doc.id]}
+                                onToggleExpand={() => toggleExpand(doc.id)}
                             />
                         ))}
                     </tbody>
@@ -89,6 +124,31 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                 <ErrorModal
                     message={deleteError}
                     onClose={() => setDeleteError(null)}
+                />
+            )}
+
+            {replaceTarget && (
+                <ConfirmModal
+                    title="Reemplazar documento"
+                    message={
+                        <>
+                            ¿Reemplazar <strong>{replaceTarget.doc.filename}</strong> por{" "}
+                            <strong>{replaceTarget.file.name}</strong>? El contenido indexado
+                            actual se borra y se vuelve a indexar desde cero. La acción no se
+                            puede deshacer.
+                        </>
+                    }
+                    confirmLabel="Reemplazar"
+                    variant="danger"
+                    onConfirm={handleReplaceConfirm}
+                    onCancel={() => setReplaceTarget(null)}
+                />
+            )}
+
+            {replaceError && (
+                <ErrorModal
+                    message={replaceError}
+                    onClose={() => setReplaceError(null)}
                 />
             )}
 
@@ -169,38 +229,87 @@ export function ErrorModal({ message, onClose }) {
 // Fila de tabla
 // ============================================================
 
-function DocumentRow({ doc, onDelete, deleting }) {
+function DocumentRow({ doc, onDelete, deleting, onReplace, replacing, expanded, onToggleExpand }) {
     const showDate = STABLE_STATUSES.has(doc.status);
+    const canPreview = doc.status === "indexed" && !!doc.text_preview;
+    const replaceInputRef = useRef(null);
+    const busy = deleting || replacing;
+
+    const handleReplaceClick = () => {
+        if (busy) return;
+        replaceInputRef.current?.click();
+    };
+    const handleReplaceInputChange = (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = ""; // permite reemplazar por el mismo nombre de archivo dos veces seguidas
+        if (file) onReplace(file);
+    };
+
     return (
-        <tr className={`nexusai-table__row nexusai-table__row--${doc.status}`}>
-            <td>
-                <div className="nexusai-table__filename">
-                    <span className="nexusai-table__filename-icon"><IconFileText size={14} /></span>
-                    {doc.filename}
-                </div>
-                {doc.status === "indexing" && (
-                    <div className="nexusai-table__progress">
-                        <div className="nexusai-table__progress-fill"></div>
+        <>
+            <tr className={`nexusai-table__row nexusai-table__row--${doc.status}`}>
+                <td>
+                    <div className="nexusai-table__filename">
+                        <span className="nexusai-table__filename-icon"><IconFileText size={14} /></span>
+                        {doc.filename}
                     </div>
-                )}
-            </td>
-            <td>
-                <StatusBadge status={doc.status} errorMessage={doc.error_message} />
-            </td>
-            <td className="nexusai-table__date">
-                {showDate ? formatIndexedAt(doc.updated_at) : "—"}
-            </td>
-            <td className="nexusai-table__actions">
-                <button
-                    type="button"
-                    className="nexusai-link-btn nexusai-link-btn--danger"
-                    onClick={onDelete}
-                    disabled={deleting}
-                >
-                    {deleting ? "Borrando..." : "Eliminar"}
-                </button>
-            </td>
-        </tr>
+                    {(doc.status === "indexing" || replacing) && (
+                        <div className="nexusai-table__progress">
+                            <div className="nexusai-table__progress-fill"></div>
+                        </div>
+                    )}
+                </td>
+                <td>
+                    <StatusBadge status={doc.status} errorMessage={doc.error_message} />
+                </td>
+                <td className="nexusai-table__date">
+                    {showDate ? formatIndexedAt(doc.updated_at) : "—"}
+                </td>
+                <td className="nexusai-table__actions">
+                    {canPreview && (
+                        <button
+                            type="button"
+                            className="nexusai-link-btn"
+                            onClick={onToggleExpand}
+                        >
+                            {expanded ? "Ocultar extracto" : "Ver extracto"}
+                        </button>
+                    )}
+                    <input
+                        ref={replaceInputRef}
+                        type="file"
+                        style={{ display: "none" }}
+                        onChange={handleReplaceInputChange}
+                    />
+                    <button
+                        type="button"
+                        className="nexusai-link-btn"
+                        onClick={handleReplaceClick}
+                        disabled={busy}
+                    >
+                        {replacing ? "Reemplazando..." : "Reemplazar"}
+                    </button>
+                    <button
+                        type="button"
+                        className="nexusai-link-btn nexusai-link-btn--danger"
+                        onClick={onDelete}
+                        disabled={busy}
+                    >
+                        {deleting ? "Borrando..." : "Eliminar"}
+                    </button>
+                </td>
+            </tr>
+            {expanded && canPreview && (
+                <tr className="nexusai-table__preview-row">
+                    <td colSpan={4}>
+                        <div className="nexusai-table__preview">
+                            <p className="nexusai-table__preview-label">Extracto del texto indexado</p>
+                            <p className="nexusai-table__preview-text">{doc.text_preview}</p>
+                        </div>
+                    </td>
+                </tr>
+            )}
+        </>
     );
 }
 

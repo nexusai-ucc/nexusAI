@@ -371,6 +371,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // CONT-07: reemplazar el archivo de un documento manteniendo su document_id.
+    'local_nexusai_document_replace' => [
+        'classname'     => '\local_nexusai\external\document_replace',
+        'methodname'    => 'execute',
+        'description'   => 'Replace the file of an existing NexusAI document, keeping its id.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // ----- CONFIRMACIÓN DE CARGA DESDE SECCIÓN DEL CURSO -----
 
     // Lista los archivos subidos al curso (tab general) pendientes de confirmación.

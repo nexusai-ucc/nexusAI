@@ -45,6 +45,7 @@ class document_list extends \external_api {
                     'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si aplica', VALUE_OPTIONAL),
                     'created_at'    => new \external_value(PARAM_TEXT, 'Fecha de subida (ISO 8601)', VALUE_OPTIONAL),
                     'updated_at'    => new \external_value(PARAM_TEXT, 'Fecha de última actualización (ISO 8601)', VALUE_OPTIONAL),
+                    'text_preview'  => new \external_value(PARAM_RAW, 'Extracto del texto extraído (primeros ~500 caracteres)', VALUE_OPTIONAL),
                 ]),
                 'Documentos del curso, ordenados por fecha de subida descendente'
             ),
@@ -81,6 +82,7 @@ class document_list extends \external_api {
                     'error_message' => $d['error_message'] ?? null,
                     'created_at'    => isset($d['created_at']) ? (string) $d['created_at'] : null,
                     'updated_at'    => isset($d['updated_at']) ? (string) $d['updated_at'] : null,
+                    'text_preview'  => isset($d['text_preview']) ? (string) $d['text_preview'] : null,
                 ],
                 $response['items'] ?? []
             ),

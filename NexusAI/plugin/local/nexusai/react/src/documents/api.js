@@ -160,7 +160,15 @@ function resolveMimeType(file) {
     return byExtension || file.type;
 }
 
-export async function uploadDocument(courseId, file, section = null) {
+/**
+ * Valida tipo y tamaño de un archivo antes de subirlo/reemplazarlo.
+ * Compartida por uploadDocument y replaceDocument (CONT-07).
+ *
+ * @param {File} file
+ * @returns {string} MIME type resuelto.
+ * @throws {Error} si el archivo no es válido.
+ */
+function validateFile(file) {
     if (!file) throw new Error("No file provided");
 
     const mimeType = resolveMimeType(file);
@@ -176,6 +184,12 @@ export async function uploadDocument(courseId, file, section = null) {
     if (file.size === 0) {
         throw new Error("El archivo está vacío");
     }
+
+    return mimeType;
+}
+
+export async function uploadDocument(courseId, file, section = null) {
+    const mimeType = validateFile(file);
 
     // Convertir File → base64. FileReader es async pero lo envolvemos en Promise.
     const contentB64 = await fileToBase64(file);
@@ -225,6 +239,43 @@ export async function deleteDocument(courseId, documentId) {
     return callMoodle("local_nexusai_document_delete", {
         courseid:   courseId,
         documentid: documentId,
+    });
+}
+
+/**
+ * Reemplaza el archivo de un documento existente, manteniendo su document_id
+ * (CONT-07) — las citas viejas del chat siguen apuntando al mismo id.
+ *
+ * @param {number} courseId
+ * @param {string} documentId
+ * @param {File} file  Archivo nuevo del input HTML5.
+ * @returns {Promise<object>}  Document state (status vuelve a 'pending')
+ */
+export async function replaceDocument(courseId, documentId, file) {
+    const mimeType = validateFile(file);
+    const contentB64 = await fileToBase64(file);
+
+    if (typeof window === "undefined" || !window.M?.cfg) {
+        await new Promise((r) => setTimeout(r, 600));
+        const mock = MOCK_DOCS.find((d) => d.id === documentId);
+        if (mock) {
+            mock.filename = file.name;
+            mock.mime_type = mimeType;
+            mock.status = "pending";
+            mock.error_message = null;
+            setTimeout(() => { mock.status = "indexing"; }, 1500);
+            setTimeout(() => { mock.status = "indexed"; }, 4000);
+            return mock;
+        }
+        return { id: documentId, course_id: courseId, filename: file.name, mime_type: mimeType, status: "pending", error_message: null };
+    }
+
+    return callMoodle("local_nexusai_document_replace", {
+        courseid:    courseId,
+        documentid:  documentId,
+        filename:    file.name,
+        mimetype:    mimeType,
+        content_b64: contentB64,
     });
 }
 
