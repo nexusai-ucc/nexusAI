@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import { listQuizErrors, clearQuizErrors, getReviewSuggestions } from "../api/quiz.js";
 import { IconBook, IconCheck, IconFile, IconTarget, IconX } from "./icons.jsx";
+import { getFriendlyErrorMessage } from "./errors.js";
 
 function formatDate(iso) {
     try {
@@ -108,7 +109,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                 setErrors(data?.items || []);
                 setTotal(data?.total ?? 0);
             })
-            .catch((err) => { if (!cancelled) setError(err.message || L.loadError); })
+            .catch((err) => { if (!cancelled) setError(getFriendlyErrorMessage(err, L.loadError, lang)); })
             .finally(() => { if (!cancelled) setLoading(false); });
 
         setSuggestionsLoading(true);
@@ -137,7 +138,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
             setErrors((prev) => [...prev, ...(data?.items || [])]);
             setTotal(data?.total ?? total);
         } catch (err) {
-            setError(err.message || L.loadError);
+            setError(getFriendlyErrorMessage(err, L.loadError, lang));
         } finally {
             setLoadingMore(false);
         }

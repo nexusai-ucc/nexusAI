@@ -23,6 +23,8 @@ import AnalyticsDashboardPanel from "./AnalyticsDashboardPanel.jsx";
 import ExamGeneratorPanel from "./ExamGeneratorPanel.jsx";
 import SearchPanel from "../components/SearchPanel.jsx";
 import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconSearch } from "../components/icons.jsx";
+import { ToastProvider, useToast } from "../components/Toast.jsx";
+import { getFriendlyErrorMessage } from "../components/errors.js";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
@@ -40,47 +42,22 @@ const NAV_ITEMS = [
     { key: "search",    label: "Buscar",                Icon: IconSearch },
 ];
 
-/**
- * Extrae el mensaje legible de un error de Moodle/FastAPI.
- *
- * Moodle formatea los errores de backend como:
- *   "Error del backend NexusAI: HTTP 409: {"detail": "mensaje limpio"}"
- * Intentamos sacar el "detail" primero; si no, lo que sigue al código HTTP.
- */
-function extractErrorMessage(err) {
-    const raw = err?.message || String(err);
-    // Intentar extraer el campo "detail" del JSON de FastAPI embebido en el string.
-    const detailMatch = raw.match(/"detail"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    if (detailMatch) return detailMatch[1];
-    // Fallback: tomar lo que va después de "HTTP NNN: "
-    const httpMatch = raw.match(/HTTP\s+\d+[:\s]+(.+)/s);
-    if (httpMatch) return httpMatch[1].trim();
-    return raw;
-}
-
-export default function DocumentsManager({ courseid, userid, sesskey, lang = "es", courseFullname }) {
+function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseFullname }) {
     const [documents, setDocuments]       = useState([]);
     const [total, setTotal]               = useState(0);
     const [loading, setLoading]           = useState(true);
     const [loadingMore, setLoadingMore]   = useState(false);
     const [uploading, setUploading]       = useState(false);
     const [error, setError]               = useState(null);
-    const [warningToast, setWarningToast] = useState(null);
     const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps" | "faq" | "exam" | "search"
     const [sections, setSections]         = useState([]); // BUS-05: secciones del curso para el selector de upload
     const [selectedSection, setSelectedSection] = useState("");
-    const warningTimerRef = useRef(null);
+    const { showWarning } = useToast();
 
     // Ref para acceder al estado actual desde el closure del setInterval
     // sin incluirlo como dependencia del effect (evita recrear el interval).
     const documentsRef = useRef([]);
     documentsRef.current = documents;
-
-    const showWarningToast = (message) => {
-        if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
-        setWarningToast(message);
-        warningTimerRef.current = setTimeout(() => setWarningToast(null), 3000);
-    };
 
     // ── Carga inicial ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -95,7 +72,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 }
             } catch (err) {
                 if (!cancelled) {
-                    setError(extractErrorMessage(err));
+                    setError(getFriendlyErrorMessage(err, "No se pudieron cargar los documentos.", lang));
                     setLoading(false);
                 }
             }
@@ -164,7 +141,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
             setDocuments((prev) => [...prev, ...(data?.items || [])]);
             setTotal(data?.total ?? total);
         } catch (err) {
-            setError(extractErrorMessage(err));
+            setError(getFriendlyErrorMessage(err, "No se pudieron cargar más documentos.", lang));
         } finally {
             setLoadingMore(false);
         }
@@ -181,7 +158,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
             // es idéntico (CONT-04). Si el id ya está en la lista, el doc está
             // indexado — no sobreescribir con la respuesta que puede traer fecha nula.
             if (documentsRef.current.some((d) => d.id === newDoc.id)) {
-                showWarningToast("Este documento ya se encuentra indexado en este curso.");
+                showWarning("Este documento ya se encuentra indexado en este curso.");
                 return;
             }
             setDocuments((prev) => [newDoc, ...prev]);
@@ -189,9 +166,9 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
         } catch (err) {
             const raw = err?.message || String(err);
             if (/HTTP\s+409\b/.test(raw)) {
-                showWarningToast("Este documento ya se encuentra indexado en este curso.");
+                showWarning("Este documento ya se encuentra indexado en este curso.");
             } else {
-                setError(extractErrorMessage(err));
+                setError(getFriendlyErrorMessage(err, "No se pudo subir el archivo. Intentá de nuevo.", lang));
             }
         } finally {
             setUploading(false);
@@ -201,7 +178,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
     // ── Render ─────────────────────────────────────────────────────────────
 
     return (
-        <div className="nexusai-documents">
+        <>
             <aside className="nexusai-doc-sidebar">
                 <div className="nexusai-doc-sidebar__course">
                     <span className="nexusai-doc-sidebar__course-label">Curso</span>
@@ -303,18 +280,22 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                                 onClose={() => setError(null)}
                             />
                         )}
-
-                        {warningToast && (
-                            <div className="nexusai-toast nexusai-toast--warning" role="status">
-                                {warningToast}
-                            </div>
-                        )}
                     </>
                 )
             ) : (
                 <StudentQuestionsPanel courseId={courseid} />
             )}
             </div>
+        </>
+    );
+}
+
+export default function DocumentsManager(props) {
+    return (
+        <div className="nexusai-documents">
+            <ToastProvider>
+                <DocumentsManagerInner {...props} />
+            </ToastProvider>
         </div>
     );
 }

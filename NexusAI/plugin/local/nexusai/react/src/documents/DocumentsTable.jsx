@@ -6,10 +6,12 @@
  * confirmación + ejecución del borrado.
  */
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { deleteDocument } from "./api.js";
 import { IconFileText } from "../components/icons.jsx";
+import { useToast } from "../components/Toast.jsx";
+import { getFriendlyErrorMessage } from "../components/errors.js";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 
@@ -17,8 +19,7 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
     const [deletingId, setDeletingId]   = useState(null);
     const [confirmDoc, setConfirmDoc]   = useState(null);
     const [deleteError, setDeleteError] = useState(null);
-    const [successToast, setSuccessToast] = useState(null);
-    const toastTimerRef = useRef(null);
+    const { showSuccess } = useToast();
 
     const handleDeleteRequest = (doc) => {
         setConfirmDoc(doc);
@@ -31,11 +32,9 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
         try {
             await deleteDocument(courseId, doc.id);
             onChange((prev) => prev.filter((d) => d.id !== doc.id));
-            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-            setSuccessToast("Documento eliminado correctamente");
-            toastTimerRef.current = setTimeout(() => setSuccessToast(null), 3000);
+            showSuccess("Documento eliminado correctamente");
         } catch (err) {
-            setDeleteError(err.message || String(err));
+            setDeleteError(getFriendlyErrorMessage(err, "No se pudo eliminar el documento. Intentá de nuevo."));
         } finally {
             setDeletingId(null);
         }
@@ -90,12 +89,6 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                     message={deleteError}
                     onClose={() => setDeleteError(null)}
                 />
-            )}
-
-            {successToast && (
-                <div className="nexusai-toast nexusai-toast--success" role="status">
-                    {successToast}
-                </div>
             )}
         </>
     );

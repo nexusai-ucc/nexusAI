@@ -29,6 +29,8 @@ import CalendarPanel from "./components/CalendarPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import NavMenu from "./components/NavMenu.jsx";
 import { IconBookOpen, IconGlobe, IconGrid } from "./components/icons.jsx";
+import { ToastProvider } from "./components/Toast.jsx";
+import { getFriendlyErrorMessage } from "./components/errors.js";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
 import { getSessionMessages } from "./api/history.js";
 
@@ -273,7 +275,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     (m) => m.id !== optimisticUserMsg.id && m.id !== streamingAssistantId
                 )
             );
-            setError(err.message || t.errorGeneric);
+            setError(getFriendlyErrorMessage(err, t.errorGeneric, lang));
         } finally {
             setLoading(false);
         }
@@ -299,7 +301,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
             setMessages(data.messages || []);
             setLastQuestion(null);
         } catch (err) {
-            setError(err.message || "No se pudo cargar la conversación");
+            setError(getFriendlyErrorMessage(err, lang === "es" ? "No se pudo cargar la conversación" : "Couldn't load the conversation", lang));
         } finally {
             setLoading(false);
         }
@@ -309,6 +311,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
     return (
         <div className="nexusai-widget" ref={widgetRef}>
+        <ToastProvider>
             {!open && (
                 <button
                     type="button"
@@ -556,6 +559,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     )}
                 </div>
             )}
+        </ToastProvider>
         </div>
     );
 }

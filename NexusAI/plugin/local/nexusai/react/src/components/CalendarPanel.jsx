@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { getUpcomingEvents } from "../api/calendar.js";
 import { listCalendarAlerts, saveCalendarAlert } from "../api/calendarAlerts.js";
 import { IconCalendar, IconCheck } from "./icons.jsx";
+import { useToast } from "./Toast.jsx";
+import { getFriendlyErrorMessage } from "./errors.js";
 
 const TYPE_LABELS = {
     mod_assign: { es: "Entrega", en: "Assignment" },
@@ -43,6 +45,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
     const [savingAlert, setSavingAlert] = useState({});
 
     const userId = window.M?.cfg?.userId ?? 1;
+    const { showSuccess, showError } = useToast();
 
     const L = lang === "es" ? {
         title:        "Próximos vencimientos",
@@ -59,6 +62,8 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         alert7:       "7 días antes",
         bannerPrefix: "Próximo",
         bannerPrefixPlural: "Próximos",
+        alertSaved:   "Alerta guardada",
+        alertError:   "No se pudo guardar la alerta. Intentá de nuevo.",
     } : {
         title:        "Upcoming deadlines",
         rangeLabel:   "Show:",
@@ -74,6 +79,8 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         alert7:       "7 days before",
         bannerPrefix: "Upcoming",
         bannerPrefixPlural: "Upcoming",
+        alertSaved:   "Alert saved",
+        alertError:   "Couldn't save the alert. Try again.",
     };
 
     useEffect(() => {
@@ -82,7 +89,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         setError(null);
         getUpcomingEvents(courseId, days)
             .then((data) => { if (!cancelled) setEvents(data || []); })
-            .catch((err) => { if (!cancelled) setError(err.message || L.error); })
+            .catch((err) => { if (!cancelled) setError(getFriendlyErrorMessage(err, L.error, lang)); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,9 +121,11 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                 eventTimestamp: event.timestart,
                 daysBefore,
             });
+            showSuccess(L.alertSaved);
         } catch {
             // Revertir estado si falla
             setAlerts((prev) => ({ ...prev, [eventId]: alerts[eventId] ?? 0 }));
+            showError(L.alertError);
         } finally {
             setSavingAlert((prev) => ({ ...prev, [eventId]: false }));
         }
