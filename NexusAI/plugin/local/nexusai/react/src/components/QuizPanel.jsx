@@ -20,9 +20,9 @@
  * la complejidad de las preguntas generadas por el LLM.
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { generateQuiz, evaluateOpenAnswer, recordQuizErrors, saveQuizAttempt, listQuizAttempts } from "../api/quiz.js";
-import { IconBook, IconCheck, IconChevronRight, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
+import { IconBook, IconCheck, IconChevronRight, IconClock, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 
 // ── Persistencia de errores del quiz en el backend (SP-10) ──
 // Best-effort: si falla, no bloquea el flujo del quiz (el alumno ya vio su
@@ -78,11 +78,18 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
 
     // Acumula respuestas incorrectas durante la partida (no causa re-render)
     const wrongAnswersRef = useRef([]);
+    // SP-14: acumula TODAS las respuestas (correctas e incorrectas) del
+    // intento en curso, para la pantalla de revisión post-quiz.
+    const answersRef = useRef([]);
 
     // Historial de quizzes (SP-09)
     const [historyItems, setHistoryItems] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyError, setHistoryError] = useState(null);
+
+    // SP-15: modo cronometrado opcional.
+    const [timedMode, setTimedMode] = useState(false);
+    const [timeRemaining, setTimeRemaining] = useState(0);
 
     const L = lang === "es" ? {
         introTitle:      "Quiz de práctica",
@@ -140,6 +147,12 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         historyDiffEasy:    "Fácil",
         historyDiffMedium:  "Media",
         historyDiffHard:    "Difícil",
+        reviewAnswers:      "Revisar respuestas",
+        reviewTitle:        "Repaso del intento",
+        reviewYourAnswer:   "Tu respuesta",
+        reviewCorrectAnswer: "Respuesta correcta",
+        timedModeLabel:     "Modo cronometrado",
+        timedModeHint:      (min) => `Tiempo sugerido: ~${min} min para este quiz.`,
     } : {
         introTitle:      "Practice Quiz",
         introText:       "Generate practice questions from the course material to review.",
@@ -196,6 +209,12 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         historyDiffEasy:    "Easy",
         historyDiffMedium:  "Medium",
         historyDiffHard:    "Hard",
+        reviewAnswers:      "Review answers",
+        reviewTitle:        "Attempt review",
+        reviewYourAnswer:   "Your answer",
+        reviewCorrectAnswer: "Correct answer",
+        timedModeLabel:     "Timed mode",
+        timedModeHint:      (min) => `Suggested time: ~${min} min for this quiz.`,
     };
 
     const resetQuestionState = () => {
@@ -214,12 +233,14 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         setCurrentIdx(0);
         setScore(0);
         wrongAnswersRef.current = [];
+        answersRef.current = [];
         resetQuestionState();
 
         try {
             const data = await generateQuiz({ courseId, topic, numQuestions, questionType, difficulty });
             if (!data?.questions?.length) throw new Error(L.errorGeneric);
             setQuiz(data);
+            if (timedMode) setTimeRemaining(numQuestions * 90);
             setStage("playing");
         } catch (err) {
             if (is422(err)) {
@@ -237,7 +258,8 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         if (selectedIdx === null) return;
         setReveal(true);
         const q = quiz.questions[currentIdx];
-        if (q.correct_index === selectedIdx) {
+        const correct = q.correct_index === selectedIdx;
+        if (correct) {
             setScore((s) => s + 1);
         } else {
             wrongAnswersRef.current.push({
@@ -253,6 +275,17 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 user_selected_index: selectedIdx,
             });
         }
+        answersRef.current.push({
+            index:               currentIdx,
+            question_type:       q.question_type || "multiple_choice",
+            question:            q.question,
+            explanation:         q.explanation,
+            source_filename:     q.source_filename,
+            options:             q.options,
+            correct_index:       q.correct_index,
+            user_selected_index: selectedIdx,
+            correct,
+        });
     };
 
     // ── Autoevaluación de flashcard (sin IA): el alumno juzga si la sabía ──
@@ -273,6 +306,16 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 correct_index:       -1,
             });
         }
+        answersRef.current.push({
+            index:           currentIdx,
+            question_type:   "flashcard",
+            question:        q.question,
+            explanation:     q.explanation,
+            source_filename: q.source_filename,
+            options:         [],
+            correct_index:   -1,
+            correct:         knewIt,
+        });
         next();
     };
 
@@ -307,6 +350,19 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     ai_score:           result.score,
                 });
             }
+            answersRef.current.push({
+                index:           currentIdx,
+                question_type:   q.question_type,
+                question:        q.question,
+                explanation:     q.explanation,
+                source_filename: q.source_filename,
+                options:         [],
+                correct_index:   -1,
+                user_answer:     openAnswer,
+                ai_feedback:     result.feedback,
+                ai_score:        result.score,
+                correct:         result.correct,
+            });
         } catch {
             setEvaluation({ correct: false, score: 0, feedback: "Error al evaluar la respuesta. Intentá de nuevo." });
         } finally {
@@ -315,28 +371,43 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         }
     };
 
+    // SP-15: factorizado de next() para poder cerrar el intento tanto al
+    // llegar naturalmente a la última pregunta como al agotarse el tiempo
+    // (finishEarly), sin duplicar la lógica de persistencia.
+    const finalizeAttempt = (reachedQuestions) => {
+        const correctCount = answersRef.current.filter((a) => a.correct).length;
+        persistErrors(courseId, wrongAnswersRef.current);
+        saveQuizAttempt({
+            courseId,
+            questionType: questionType,
+            difficulty,
+            topic: topic || null,
+            totalQuestions: reachedQuestions,
+            correctCount,
+        }).catch(() => {});
+        setStage("finished");
+    };
+
     const next = () => {
         const isLast = currentIdx >= quiz.questions.length - 1;
         if (isLast) {
-            const correctCount = quiz.questions.length - wrongAnswersRef.current.length;
-            persistErrors(courseId, wrongAnswersRef.current);
-            saveQuizAttempt({
-                courseId,
-                questionType: questionType,
-                difficulty,
-                topic: topic || null,
-                totalQuestions: quiz.questions.length,
-                correctCount,
-            }).catch(() => {});
-            setStage("finished");
+            finalizeAttempt(quiz.questions.length);
         } else {
             setCurrentIdx((i) => i + 1);
             resetQuestionState();
         }
     };
 
+    // SP-15: se llama cuando se agota el tiempo del modo cronometrado —
+    // cierra el quiz con lo respondido hasta el momento, sin perderlo.
+    const finishEarly = () => {
+        const reached = currentIdx + (reveal ? 1 : 0);
+        finalizeAttempt(reached);
+    };
+
     const resetAll = () => {
         wrongAnswersRef.current = [];
+        answersRef.current = [];
         setStage("setup");
         setQuiz(null);
         setError(null);
@@ -358,6 +429,24 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
             setHistoryLoading(false);
         }
     };
+
+    // SP-15: cuenta regresiva mientras se juega en modo cronometrado.
+    useEffect(() => {
+        if (stage !== "playing" || !timedMode) return;
+        const intervalId = setInterval(() => {
+            setTimeRemaining((t) => (t <= 1 ? 0 : t - 1));
+        }, 1000);
+        return () => clearInterval(intervalId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stage, timedMode]);
+
+    // Se agotó el tiempo — cierra el intento con lo respondido hasta ahora.
+    useEffect(() => {
+        if (stage === "playing" && timedMode && timeRemaining === 0) {
+            finishEarly();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [timeRemaining]);
 
     // ─── SETUP ───
     if (stage === "setup") {
@@ -439,6 +528,22 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                         ))}
                     </div>
                 </div>
+                <div className="nexusai-quiz__field">
+                    <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", cursor: "pointer" }}>
+                        <input
+                            type="checkbox"
+                            checked={timedMode}
+                            onChange={(e) => setTimedMode(e.target.checked)}
+                        />
+                        <IconClock size={13} />
+                        {L.timedModeLabel}
+                    </label>
+                    {timedMode && (
+                        <p className="nexusai-quiz__intro-text">
+                            {L.timedModeHint(Math.round((numQuestions * 90) / 60))}
+                        </p>
+                    )}
+                </div>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     <button
                         type="button"
@@ -496,8 +601,27 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         const isTF        = qType === "true_false";
         const isFlashcard = qType === "flashcard";
 
+        const timeTotal = numQuestions * 90;
+        const timePct = timedMode ? Math.max(0, Math.round((timeRemaining / timeTotal) * 100)) : 0;
+        const timeMod = timeRemaining <= 30 ? "low" : timeRemaining <= timeTotal * 0.3 ? "mid" : "good";
+        const timeMM = Math.floor(timeRemaining / 60);
+        const timeSS = String(timeRemaining % 60).padStart(2, "0");
+
         return (
             <div className="nexusai-quiz">
+                {timedMode && (
+                    <div className="nexusai-quiz__field">
+                        <span className="nexusai-quiz__progress-label">
+                            <IconClock size={12} /> {timeMM}:{timeSS}
+                        </span>
+                        <div className="nexusai-quiz__history-bar">
+                            <div
+                                className={`nexusai-quiz__history-bar-fill nexusai-quiz__history-bar-fill--${timeMod}`}
+                                style={{ width: `${timePct}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
                 <div className="nexusai-quiz__progress">
                     <span className="nexusai-quiz__progress-label">
                         {L.questionOf(currentIdx + 1, total)}
@@ -696,8 +820,68 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     <p className="nexusai-quiz__final-score">{L.finalScore(score, total)}</p>
                     <div className="nexusai-quiz__final-pct">{pct}%</div>
                 </div>
-                <button type="button" className="nexusai-quiz__primary" onClick={resetAll}>
-                    {L.again}
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+                    <button type="button" className="nexusai-quiz__secondary" onClick={() => setStage("review")}>
+                        {L.reviewAnswers}
+                    </button>
+                    <button type="button" className="nexusai-quiz__primary" onClick={resetAll}>
+                        {L.again}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // ─── REVIEW (SP-14) ───
+    if (stage === "review" && quiz) {
+        const reviewTypeLabel = (qt) => ({
+            multiple_choice: L.typeMC,
+            true_false:      L.typeTF,
+            open:            L.typeOpen,
+            flashcard:       L.typeFlashcard,
+            fill_blank:      L.typeFillBlank,
+        }[qt] || qt);
+
+        const answered = answersRef.current.slice().sort((a, b) => a.index - b.index);
+
+        return (
+            <div className="nexusai-quiz">
+                <div className="nexusai-quiz__intro">
+                    <h4 className="nexusai-quiz__intro-title">{L.reviewTitle}</h4>
+                </div>
+                <div className="nexusai-quiz__history-list">
+                    {answered.map((a) => (
+                        <div key={a.index} className="nexusai-quiz__history-card">
+                            <div className="nexusai-quiz__history-header">
+                                <div className="nexusai-quiz__history-badges">
+                                    <span className="nexusai-quiz__history-type">{reviewTypeLabel(a.question_type)}</span>
+                                    <span className={`nexusai-quiz__history-pct nexusai-quiz__history-pct--${a.correct ? "good" : "low"}`}>
+                                        {a.correct ? <><IconCheck size={12} /> {L.correct}</> : <><IconX size={12} /> {L.wrong}</>}
+                                    </span>
+                                </div>
+                            </div>
+                            <p className="nexusai-quiz__question">{a.question}</p>
+                            {a.options?.length > 0 && a.user_selected_index !== undefined && (
+                                <p className="nexusai-quiz__explanation">
+                                    {L.reviewYourAnswer}: {a.options[a.user_selected_index] ?? "—"}
+                                    {!a.correct && a.correct_index >= 0 && (
+                                        <> · {L.reviewCorrectAnswer}: {a.options[a.correct_index]}</>
+                                    )}
+                                </p>
+                            )}
+                            {a.user_answer !== undefined && (
+                                <p className="nexusai-quiz__explanation">
+                                    {L.reviewYourAnswer}: {a.user_answer}
+                                </p>
+                            )}
+                            {a.explanation && (
+                                <p className="nexusai-quiz__explanation">{a.explanation}</p>
+                            )}
+                        </div>
+                    ))}
+                </div>
+                <button type="button" className="nexusai-quiz__secondary" onClick={() => setStage("finished")} style={{ marginTop: "12px" }}>
+                    {L.back}
                 </button>
             </div>
         );

@@ -70,6 +70,14 @@ export const IconHistory = ({ size = 15 }) => (
     </svg>
 );
 
+// ── Clock (modo cronometrado, SP-15) ───────────────────────────────────────
+export const IconClock = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <circle cx="12" cy="12" r="9" />
+        <polyline points="12 7 12 12 15.5 14" />
+    </svg>
+);
+
 // ── Target (gaps detectados) ───────────────────────────────────────────────
 export const IconTarget = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
