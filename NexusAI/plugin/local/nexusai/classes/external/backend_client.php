@@ -197,6 +197,30 @@ class backend_client {
     }
 
     /**
+     * Borra una sesión de chat puntual (ASIST-02, #350). El backend valida
+     * ownership (userid) antes de borrar; el cascade sobre los mensajes de
+     * la sesión ya está resuelto a nivel de FK en Postgres.
+     *
+     * POST en vez de un verbo DELETE real — mismo criterio que el resto de
+     * endpoints del módulo chat, para poder firmar el body con HMAC.
+     *
+     * @param int    $userid    $USER->id real (el backend valida ownership).
+     * @param string $sessionid UUID de la sesión a borrar.
+     * @return array{success: bool}
+     */
+    public function delete_chat_session(int $userid, string $sessionid): array {
+        $payload = [
+            'user_id'    => $userid,
+            'session_id' => $sessionid,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/chat/sessions/delete', $body);
+    }
+
+    /**
      * Lista los gaps del docente — preguntas que el material no pudo responder (Feature G).
      *
      * @param int $courseid ID del curso.

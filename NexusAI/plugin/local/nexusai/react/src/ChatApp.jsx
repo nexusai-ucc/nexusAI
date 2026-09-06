@@ -281,6 +281,22 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
     const retry = () => { if (lastQuestion) send(lastQuestion); };
 
+    // ASIST-03 (#359): reenvía la última pregunta, reemplazando el último
+    // par usuario+asistente visible en vez de agregar uno duplicado.
+    // send() siempre agrega un par nuevo al final — por eso hay que sacar
+    // el anterior antes de reinvocarlo.
+    const regenerate = () => {
+        if (!lastQuestion || loading) return;
+        setMessages((prev) => {
+            let idx = prev.length - 1;
+            while (idx >= 0 && prev[idx].role !== "assistant") idx--;
+            if (idx < 0) return prev;
+            const cut = prev[idx - 1]?.role === "user" ? idx - 1 : idx;
+            return prev.slice(0, cut);
+        });
+        send(lastQuestion);
+    };
+
     const clearChat = () => {
         setMessages([]);
         setSessionId(null);
@@ -296,8 +312,13 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         try {
             const data = await getSessionMessages({ courseId: courseid, sessionId: id });
             setSessionId(data.session_id);
-            setMessages(data.messages || []);
-            setLastQuestion(null);
+            const loadedMessages = data.messages || [];
+            setMessages(loadedMessages);
+            // ASIST-03: derivar lastQuestion del último mensaje de usuario
+            // cargado, para que "Regenerar" funcione también sobre una
+            // conversación retomada desde el historial (antes quedaba null).
+            const lastUserMsg = [...loadedMessages].reverse().find((m) => m.role === "user");
+            setLastQuestion(lastUserMsg?.content || null);
         } catch (err) {
             setError(err.message || "No se pudo cargar la conversación");
         } finally {
@@ -481,8 +502,20 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             </div>
                         )}
 
-                        {messages.map((msg) => (
-                            <MessageBubble key={msg.id} message={msg} sesskey={sesskey} />
+                        {messages.map((msg, idx) => (
+                            <MessageBubble
+                                key={msg.id}
+                                message={msg}
+                                sesskey={sesskey}
+                                canRegenerate={
+                                    msg.role === "assistant" &&
+                                    idx === messages.length - 1 &&
+                                    !msg.streaming &&
+                                    !loading &&
+                                    !!lastQuestion
+                                }
+                                onRegenerate={regenerate}
+                            />
                         ))}
 
                         {loading && !messages.some((m) => m.streaming && m.content) && <TypingIndicator />}
@@ -531,6 +564,12 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             courseId={courseid}
                             currentSessionId={sessionId}
                             onSelectSession={loadSession}
+                            onSessionDeleted={(deletedId) => {
+                                // ASIST-02: si se borró la sesión activa, limpiar el
+                                // chat para no seguir apuntando a un id inexistente
+                                // (el próximo mensaje pegaría un 404 contra el backend).
+                                if (deletedId === sessionId) clearChat();
+                            }}
                             lang={lang}
                         />
                     ) : activeTab === "study" ? (
