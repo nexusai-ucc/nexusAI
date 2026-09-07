@@ -75,3 +75,48 @@ export async function listCalendarAlerts(userId, courseId) {
     const response = await promise;
     return response?.alerts ?? [];
 }
+
+/**
+ * URL del feed .ics suscribible del alumno para el curso (CAL-07 / #377).
+ *
+ * @param {number} courseId
+ * @returns {Promise<string>} URL absoluta del feed.
+ */
+export async function getCalendarFeedUrl(courseId) {
+    const ajax = await getMoodleAjax();
+
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 150));
+        return `https://moodle.example/local/nexusai/calendar_feed.php?token=demotoken0000000000000000000000000000000000&course=${courseId}`;
+    }
+
+    const [promise] = ajax.call([{
+        methodname: "local_nexusai_calendar_feed_url",
+        args: { courseid: courseId },
+    }]);
+    const response = await promise;
+    return response?.url ?? "";
+}
+
+/**
+ * Rota el token del feed: la URL anterior deja de funcionar y se devuelve una
+ * nueva. Corta las suscripciones de todos los cursos del alumno.
+ *
+ * @param {number} courseId
+ * @returns {Promise<string>} Nueva URL absoluta del feed.
+ */
+export async function revokeCalendarFeed(courseId) {
+    const ajax = await getMoodleAjax();
+
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 150));
+        return `https://moodle.example/local/nexusai/calendar_feed.php?token=newdemotoken000000000000000000000000000000&course=${courseId}`;
+    }
+
+    const [promise] = ajax.call([{
+        methodname: "local_nexusai_calendar_feed_revoke",
+        args: { courseid: courseId },
+    }]);
+    const response = await promise;
+    return response?.url ?? "";
+}

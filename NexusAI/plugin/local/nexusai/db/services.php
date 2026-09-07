@@ -81,6 +81,39 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // ONB-02 (#425): estado de setup del curso para el tutorial/onboarding
+    // al docente — secciones, grupos, alumnos, foros, calendario y material.
+    'local_nexusai_course_setup_state' => [
+        'classname'     => '\local_nexusai\external\course_setup_state',
+        'methodname'    => 'execute',
+        'description'   => 'Aggregate a course\'s setup state (sections, groups, students, forums, calendar, NexusAI material) for the teacher onboarding tutorial (ONB-02).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    // ONB-05 (#428): estado de dismissal/progreso del tutorial de onboarding
+    // (persistido en user_preferences de core, no en tablas propias del plugin).
+    'local_nexusai_onboarding_state_get' => [
+        'classname'     => '\local_nexusai\external\onboarding_state_get',
+        'methodname'    => 'execute',
+        'description'   => 'Read the current user\'s onboarding dismissal/skip state for a course (ONB-05).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+    'local_nexusai_onboarding_state_set' => [
+        'classname'     => '\local_nexusai\external\onboarding_state_set',
+        'methodname'    => 'execute',
+        'description'   => 'Save the current user\'s onboarding dismissal/skip state for a course (ONB-05).',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // Historial de conversaciones — lista de sesiones previas del alumno (Feature E).
     'local_nexusai_chat_sessions_list' => [
         'classname'     => '\local_nexusai\external\chat_sessions_list',
@@ -285,6 +318,28 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // URL del feed .ics suscribible del alumno para un curso (CAL-07).
+    'local_nexusai_calendar_feed_url' => [
+        'classname'     => '\local_nexusai\external\calendar_feed_url',
+        'methodname'    => 'execute',
+        'description'   => 'Get the subscribable .ics feed URL for the current student in a course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Rota el token del feed .ics del alumno (revoca la URL anterior).
+    'local_nexusai_calendar_feed_revoke' => [
+        'classname'     => '\local_nexusai\external\calendar_feed_revoke',
+        'methodname'    => 'execute',
+        'description'   => 'Rotate the student\'s calendar feed token, invalidating the previous URL.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // ----- FOROS — Épica 06 -----
 
     // Detecta posts similares al texto que el alumno está escribiendo (F-07).
@@ -366,6 +421,17 @@ $functions = [
         'methodname'    => 'execute',
         'description'   => 'Delete a NexusAI-indexed document and all its chunks.',
         'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    // Preview del texto extraído de un documento (CONT-08).
+    'local_nexusai_document_preview' => [
+        'classname'     => '\local_nexusai\external\document_preview',
+        'methodname'    => 'execute',
+        'description'   => 'Return the first characters of a document\'s extracted text.',
+        'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:manage',
         'loginrequired' => true,

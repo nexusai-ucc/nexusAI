@@ -94,6 +94,8 @@ export default function SearchPanel({
         sectionAll:   "Todas las unidades",
         sectionUnassigned: "Sin unidad asignada",
         noResults:    (q) => `No se encontraron resultados para "${q}".`,
+        noResultsHint: "Probá con otras palabras o revisá el filtro de unidad y tipo de archivo. También podés buscar en todos tus cursos.",
+        idleHint:     "Buscá un concepto, una definición o un tema y te muestro en qué archivo del curso aparece.",
         error:        "No se pudo realizar la búsqueda. Intentá de nuevo.",
         openFile:        "Abrir ↗",
         summarize:       "Resumir",
@@ -109,6 +111,8 @@ export default function SearchPanel({
         sectionAll:   "All sections",
         sectionUnassigned: "Unassigned",
         noResults:    (q) => `No results found for "${q}".`,
+        noResultsHint: "Try other words, or check the section and file-type filters. You can also search across all your courses.",
+        idleHint:     "Search for a concept, a definition or a topic and I'll show you which course file it appears in.",
         error:        "Search failed. Please try again.",
         openFile:        "Open ↗",
         summarize:       "Summarize",
@@ -274,8 +278,16 @@ export default function SearchPanel({
                 </div>
             )}
 
+            {!loading && !error && !results && (
+                <p className="nexusai-search__empty">{L.idleHint}</p>
+            )}
+
             {results && results.total === 0 && (
-                <p className="nexusai-search__empty">{L.noResults(lastQuery)}</p>
+                <p className="nexusai-search__empty">
+                    {L.noResults(lastQuery)}
+                    <br />
+                    <span className="nexusai-search__empty-hint">{L.noResultsHint}</span>
+                </p>
             )}
 
             {results && results.results.map((r, i) => {

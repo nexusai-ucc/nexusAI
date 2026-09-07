@@ -36,6 +36,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
     const [error, setError] = useState(null);
     const [expanded, setExpanded] = useState({});
     const [confirmClear, setConfirmClear] = useState(false);
+    const [clearing, setClearing] = useState(false);
 
     const L = lang === "es" ? {
         title:          "Repaso de errores",
@@ -43,10 +44,10 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         empty:          "¡Sin errores recientes!",
         emptyHint:      "Completá un quiz para que tus respuestas incorrectas aparezcan aquí.",
         clear:          "Borrar historial",
-        confirmClearTitle:   "Borrar historial de errores",
-        confirmClearMessage: "¿Borrar todo el historial de errores y sugerencias de repaso? Esta acción no se puede deshacer.",
-        confirm:        "Confirmar",
-        cancel:         "Cancelar",
+        clearConfirmTitle: "Borrar historial de errores",
+        clearConfirmBody:  "Se van a borrar todas las preguntas que respondiste mal y las sugerencias de repaso. Esta acción no se puede deshacer.",
+        clearConfirmYes:   "Borrar todo",
+        cancel:            "Cancelar",
         yourAnswer:     "Tu respuesta",
         correctAnswer:  "Respuesta correcta",
         explanation:    "Explicación",
@@ -74,10 +75,10 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         empty:          "No recent errors!",
         emptyHint:      "Complete a quiz to see your incorrect answers here.",
         clear:          "Clear history",
-        confirmClearTitle:   "Clear error history",
-        confirmClearMessage: "Clear the whole error history and review suggestions? This action can't be undone.",
-        confirm:        "Confirm",
-        cancel:         "Cancel",
+        clearConfirmTitle: "Clear error history",
+        clearConfirmBody:  "This will delete every question you answered incorrectly and the review suggestions. This action cannot be undone.",
+        clearConfirmYes:   "Delete all",
+        cancel:            "Cancel",
         yourAnswer:     "Your answer",
         correctAnswer:  "Correct answer",
         explanation:    "Explanation",
@@ -132,10 +133,19 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
     }, [courseId]);
 
     const clearAll = async () => {
-        setErrors([]);
-        setTotal(0);
-        setSuggestions([]);
-        try { await clearQuizErrors(courseId); } catch { /* best-effort */ }
+        setClearing(true);
+        try {
+            await clearQuizErrors(courseId);
+            setErrors([]);
+            setTotal(0);
+            setSuggestions([]);
+            setConfirmClear(false);
+        } catch (err) {
+            setError(err.message || L.loadError);
+            setConfirmClear(false);
+        } finally {
+            setClearing(false);
+        }
     };
 
     const hasMore = errors.length < total;
@@ -266,7 +276,6 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                     type="button"
                     className="nexusai-review__clear-btn"
                     onClick={() => setConfirmClear(true)}
-                    aria-label={L.clear}
                     title={L.clear}
                 >
                     {L.clear}
@@ -275,17 +284,15 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
 
             {confirmClear && (
                 <ConfirmModal
-                    title={L.confirmClearTitle}
-                    message={L.confirmClearMessage}
-                    confirmLabel={L.confirm}
+                    title={L.clearConfirmTitle}
+                    confirmLabel={L.clearConfirmYes}
                     cancelLabel={L.cancel}
-                    variant="default"
-                    onConfirm={() => {
-                        clearAll();
-                        setConfirmClear(false);
-                    }}
+                    onConfirm={clearAll}
                     onCancel={() => setConfirmClear(false)}
-                />
+                    busy={clearing}
+                >
+                    {L.clearConfirmBody}
+                </ConfirmModal>
             )}
 
             {/* Error cards */}
