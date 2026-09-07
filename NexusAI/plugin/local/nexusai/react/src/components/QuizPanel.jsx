@@ -23,6 +23,7 @@
 import { useState, useRef, useEffect } from "react";
 import { generateQuiz, evaluateOpenAnswer, recordQuizErrors, saveQuizAttempt, listQuizAttempts } from "../api/quiz.js";
 import { IconBook, IconCheck, IconChevronRight, IconClock, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
+import { getFriendlyErrorMessage } from "./errors.js";
 
 // ── Persistencia de errores del quiz en el backend (SP-10) ──
 // Best-effort: si falla, no bloquea el flujo del quiz (el alumno ya vio su
@@ -30,26 +31,6 @@ import { IconBook, IconCheck, IconChevronRight, IconClock, IconFile, IconThumbsU
 function persistErrors(courseId, newErrors) {
     if (!newErrors.length) return;
     recordQuizErrors({ courseId, errors: newErrors }).catch(() => { /* best-effort */ });
-}
-
-function extractErrorMessage(err) {
-    const raw = err?.message || String(err);
-    const detailMatch = raw.match(/"detail"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    if (detailMatch) return detailMatch[1].replace(/\\"/g, '"');
-    const jsonFrag = raw.match(/HTTP\s+\d+[:\s]+(\{.+\})/s);
-    if (jsonFrag) {
-        try {
-            const parsed = JSON.parse(jsonFrag[1]);
-            if (typeof parsed?.detail === "string") return parsed.detail;
-        } catch { /* not valid JSON as-is */ }
-        try {
-            const parsed = JSON.parse(jsonFrag[1].replace(/\\"/g, '"'));
-            if (typeof parsed?.detail === "string") return parsed.detail;
-        } catch { /* fall through */ }
-    }
-    const httpMatch = raw.match(/HTTP\s+\d+[:\s]+(.+)/s);
-    if (httpMatch) return httpMatch[1].trim();
-    return raw;
 }
 
 function is422(err) {
@@ -244,10 +225,10 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
             setStage("playing");
         } catch (err) {
             if (is422(err)) {
-                setTopicError(extractErrorMessage(err) || L.errorGeneric);
+                setTopicError(getFriendlyErrorMessage(err, L.errorGeneric, lang));
                 setStage("setup");
             } else {
-                setError(extractErrorMessage(err) || L.errorGeneric);
+                setError(getFriendlyErrorMessage(err, L.errorGeneric, lang));
                 setStage("error");
             }
         }

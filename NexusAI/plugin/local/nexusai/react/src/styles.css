@@ -760,6 +760,41 @@
     gap: 8px;
 }
 
+/* ============================================================
+   Toast — UX-07
+============================================================ */
+.nexusai-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10000;
+    padding: 12px 20px;
+    border-radius: var(--nexusai-radius);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    box-shadow: var(--nexusai-shadow-md);
+    animation: nexusai-toast-in 0.22s ease;
+    pointer-events: none;
+}
+.nexusai-toast--success {
+    background: #059669;
+    color: #ffffff !important;
+}
+.nexusai-toast--warning {
+    background: #fef3c7;
+    color: #92400e !important;
+    border: 1px solid #fcd34d;
+}
+.nexusai-toast--error {
+    background: #dc2626;
+    color: #ffffff !important;
+}
+@keyframes nexusai-toast-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ----- Botones ----- */
 .nexusai-btn {
     border: 1px solid transparent;
