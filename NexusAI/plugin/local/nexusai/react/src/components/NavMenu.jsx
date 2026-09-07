@@ -6,15 +6,19 @@
  * patrón estructural que HistoryDropdown.jsx (open/onClose, panel absoluto
  * bajo el header). Al elegir un destino, cambia `activeTab` en ChatApp y se
  * cierra solo.
+ *
+ * ONB-06: "Revisión del curso" (teacherOnly) — acceso permanente al checklist
+ * de armado en modo review, sin depender de estar en `course/edit.php`.
  */
 
-import { IconBookOpen, IconCalendar, IconSearch, IconSparkles } from "./icons.jsx";
+import { IconBookOpen, IconCalendar, IconClipboardList, IconSearch, IconSparkles } from "./icons.jsx";
 
 const ITEMS = [
     { key: "chat", labelEs: "Chat", labelEn: "Chat", Icon: IconSparkles },
     { key: "study", labelEs: "Modo Estudio", labelEn: "Study Mode", Icon: IconBookOpen },
     { key: "search", labelEs: "Buscar", labelEn: "Search", Icon: IconSearch, studentOnly: true },
     { key: "calendar", labelEs: "Calendario", labelEn: "Calendar", Icon: IconCalendar },
+    { key: "review", labelEs: "Revisión del curso", labelEn: "Course review", Icon: IconClipboardList, teacherOnly: true },
 ];
 
 export default function NavMenu({ open, onClose, activeTab, onSelect, isTeacher = false, lang = "es" }) {
@@ -35,7 +39,7 @@ export default function NavMenu({ open, onClose, activeTab, onSelect, isTeacher 
             </div>
 
             <div className="nexusai-navmenu__list">
-                {ITEMS.filter((item) => !(item.studentOnly && isTeacher)).map(({ key, labelEs, labelEn, Icon }) => (
+                {ITEMS.filter((item) => !(item.studentOnly && isTeacher) && !(item.teacherOnly && !isTeacher)).map(({ key, labelEs, labelEn, Icon }) => (
                     <button
                         key={key}
                         type="button"

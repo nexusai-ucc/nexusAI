@@ -11,14 +11,21 @@
  * checklist de armado de curso (`OnboardingPanel`) en vez del chat.
  *
  * ONB-04: en modo `review` (editar un curso existente) busca el estado real
- * de setup del curso vía `getCourseSetupState()` y se lo pasa a
- * `OnboardingPanel`, que lo usa para marcar ✓/pendiente cada paso.
+ * de setup del curso y se lo pasa a `OnboardingPanel`, que lo usa para
+ * marcar ✓/pendiente cada paso.
+ *
+ * ONB-05: cerrar el panel en modo `review` (header X o botón "Cerrar" del
+ * panel) persiste el dismissal — `visibility_helper::onboarding_hint()` no
+ * vuelve a devolver `'review-course'` para este curso hasta que el docente
+ * lo reabra a mano desde el tab "Revisión del curso" del widget normal
+ * (ONB-06). En modo `create` no hay `courseid` todavía: cerrar es puramente
+ * local, `useOnboardingState` no dispara ningún fetch/persist con courseid=0.
  */
 
 import { useEffect, useState } from "react";
 
 import OnboardingPanel from "./components/OnboardingPanel.jsx";
-import { getCourseSetupState } from "./api/onboarding.js";
+import { useOnboardingState } from "./onboarding/useOnboardingState.js";
 
 const STRINGS = {
     es: {
@@ -58,27 +65,20 @@ export default function OnboardingApp({
     // será cerrado.
     const [open, setOpen] = useState(mode === "create");
 
-    // ONB-04: estado de setup del curso para modo revisión. Mientras es
-    // `null` (todavía no llegó, o falló la llamada), OnboardingPanel muestra
-    // cada paso como "unknown" — el mismo estado que ya usa cuando el
-    // backend de material no responde, no hace falta un loading aparte.
-    const [setupState, setSetupState] = useState(null);
+    // ONB-04/05: estado de setup + dismissal/"no aplica" del curso. Mientras
+    // setupState es `null` (todavía no llegó, o falló la llamada),
+    // OnboardingPanel muestra cada paso como "unknown" — el mismo estado que
+    // ya usa cuando el backend de material no responde, no hace falta un
+    // loading aparte. Con courseid=0 (modo create) el hook no fetchea nada.
+    const { setupState, skipped, dismiss, skip, unskip } = useOnboardingState(
+        courseid,
+        { enabled: mode === "review" }
+    );
 
-    useEffect(() => {
-        if (mode !== "review" || !(Number(courseid) > 0)) return undefined;
-
-        let cancelled = false;
-        getCourseSetupState(Number(courseid))
-            .then((state) => {
-                if (!cancelled) setSetupState(state);
-            })
-            .catch(() => {
-                // Deja setupState en null → los pasos quedan en "unknown".
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [mode, courseid]);
+    const closeAndDismiss = () => {
+        dismiss();
+        setOpen(false);
+    };
 
     // Sincronía con el ícono de la navbar (fuera de React), igual que ChatApp.
     useEffect(() => {
@@ -120,7 +120,7 @@ export default function OnboardingApp({
                             <button
                                 type="button"
                                 className="nexusai-icon-btn"
-                                onClick={() => setOpen(false)}
+                                onClick={closeAndDismiss}
                                 aria-label={t.close}
                                 title={t.close}
                             >
@@ -136,6 +136,10 @@ export default function OnboardingApp({
                             wwwroot={wwwroot}
                             lang={lang}
                             state={setupState}
+                            skipped={skipped}
+                            onSkip={skip}
+                            onUnskip={unskip}
+                            onDismiss={closeAndDismiss}
                         />
                     </div>
                 </div>
