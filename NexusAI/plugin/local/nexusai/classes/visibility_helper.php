@@ -62,4 +62,44 @@ class visibility_helper {
             'isteacher' => false,
         ];
     }
+
+    /**
+     * ONB-03: detecta si la página actual es la de **crear un curso nuevo** y
+     * el usuario puede crearlo. En ese caso el widget muestra el tutorial de
+     * armado de curso en vez del cartel de "no hay curso".
+     *
+     * La pantalla de crear y la de editar comparten `$PAGE->pagetype`
+     * (`course-edit`, verificado contra Moodle 4.1 — ver ADR-010). La
+     * distinción es por parámetro: sin `id` = crear, con `id` = editar (editar
+     * lo maneja ONB-04, todavía no).
+     *
+     * @return string|null 'create-course' o null.
+     */
+    public static function onboarding_hint(): ?string {
+        global $PAGE;
+
+        if ($PAGE->pagetype !== 'course-edit') {
+            return null;
+        }
+
+        // Editar un curso existente → ONB-04 (todavía no implementado).
+        if (optional_param('id', 0, PARAM_INT) > 0) {
+            return null;
+        }
+
+        $categoryid = optional_param('category', 0, PARAM_INT);
+        try {
+            $catcontext = $categoryid > 0
+                ? \context_coursecat::instance($categoryid, IGNORE_MISSING)
+                : \context_system::instance();
+        } catch (\Throwable $e) {
+            $catcontext = \context_system::instance();
+        }
+
+        if ($catcontext && has_capability('moodle/course:create', $catcontext)) {
+            return 'create-course';
+        }
+
+        return null;
+    }
 }

@@ -22,7 +22,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026083001;        // feat: external function de estado de setup del curso (ONB-02 / #425).
+$plugin->version   = 2026083003;        // feat: estado de setup del curso (ONB-02 / #425) + tutorial de armado (ONB-03 / #426).
 $plugin->release   = '0.16.0';
 $plugin->maturity  = MATURITY_ALPHA;
 

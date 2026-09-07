@@ -2911,3 +2911,130 @@
    documents.css en RDS-07 (#406): estas clases las usa únicamente
    ExamGeneratorPanel.jsx, un componente exclusivo del panel docente,
    nunca compartido con el chat del alumno. */
+
+/* ============================================================
+   Onboarding al docente (ONB-03 / ONB-04, issues #426 / #427)
+   Checklist de armado de curso. Reusa los tokens --nexusai-*.
+   ============================================================ */
+.nexusai-panel__body--onb {
+    display: block;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.nexusai-onb__intro {
+    margin: 0 0 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--nexusai-fg-muted);
+}
+
+.nexusai-onb__alldone {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: var(--nexusai-radius);
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803d;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.nexusai-onb__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nexusai-onb__step {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-md);
+    background: var(--nexusai-bg);
+}
+
+.nexusai-onb__step--done {
+    background: var(--nexusai-bg-muted);
+    border-color: var(--nexusai-border);
+}
+
+.nexusai-onb__step--pending {
+    border-color: var(--nexusai-border-strong);
+}
+
+.nexusai-onb__step-marker {
+    flex: 0 0 24px;
+    height: 24px;
+    border-radius: var(--nexusai-radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--nexusai-primary-light);
+    color: var(--nexusai-primary-hover);
+}
+
+.nexusai-onb__step--done .nexusai-onb__step-marker {
+    background: rgba(34, 197, 94, 0.15);
+    color: #15803d;
+}
+
+.nexusai-onb__step-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.nexusai-onb__step-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.nexusai-onb__step-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+}
+
+.nexusai-onb__badge {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 1px 6px;
+    border-radius: var(--nexusai-radius-sm);
+    background: var(--nexusai-bg-subtle);
+    color: var(--nexusai-fg-subtle);
+}
+
+.nexusai-onb__status {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 8px;
+    border-radius: var(--nexusai-radius-full);
+}
+.nexusai-onb__status--done    { background: rgba(34, 197, 94, 0.15); color: #15803d; }
+.nexusai-onb__status--pending { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+
+.nexusai-onb__step-why {
+    margin: 4px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--nexusai-fg-muted);
+}
+
+.nexusai-onb__step-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nexusai-primary);
+    text-decoration: none;
+}
+.nexusai-onb__step-link:hover { text-decoration: underline; }
