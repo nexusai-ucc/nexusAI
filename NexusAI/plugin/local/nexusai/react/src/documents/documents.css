@@ -752,6 +752,17 @@
     flex-direction: column;
     gap: 8px;
 }
+.nexusai-gaps__list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 16px 0 12px;
+}
+.nexusai-gaps__list-header .nexusai-documents__heading {
+    margin: 0;
+}
 .nexusai-gap-item {
     background: #fff;
     border: 1px solid #e8edf5;

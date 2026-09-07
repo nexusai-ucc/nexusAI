@@ -9,7 +9,8 @@
 
 import { useEffect, useState } from "react";
 import { getFaqTopics } from "./api.js";
-import { IconHelpCircle } from "../components/icons.jsx";
+import { downloadCsvFile } from "./csv.js";
+import { IconHelpCircle, IconDownload } from "../components/icons.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
 
 export default function FaqDashboardPanel({ courseId }) {
@@ -39,6 +40,15 @@ export default function FaqDashboardPanel({ courseId }) {
             });
         return () => { cancelled = true; };
     }, [courseId, days]);
+
+    const handleExportCsv = () => {
+        const rows = topics.map((t) => [t.topic, t.count]);
+        downloadCsvFile(
+            ["Tema", "Cantidad de preguntas"],
+            rows,
+            `faq-nexusai-curso-${courseId}.csv`
+        );
+    };
 
     return (
         <div className="nexusai-faq">
@@ -86,9 +96,15 @@ export default function FaqDashboardPanel({ courseId }) {
 
             {!loading && !error && topics.length > 0 && (
                 <div className="nexusai-faq__list">
-                    <h3 className="nexusai-documents__heading">
-                        Temas más consultados ({totalQuestions} preguntas)
-                    </h3>
+                    <div className="nexusai-gaps__list-header">
+                        <h3 className="nexusai-documents__heading">
+                            Temas más consultados ({totalQuestions} preguntas)
+                        </h3>
+                        <button type="button" className="nexusai-btn" onClick={handleExportCsv}>
+                            <IconDownload size={13} />
+                            Exportar CSV
+                        </button>
+                    </div>
                     <div className="nexusai-faq__grid">
                         {topics.map((t, i) => (
                             <div key={i} className="nexusai-faq-card">
