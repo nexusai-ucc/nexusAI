@@ -3,12 +3,12 @@
  *
  * El polling de estado se maneja en DocumentsManager (que usa listDocuments).
  * Esta tabla solo muestra el estado actual recibido via props y maneja la
- * confirmación + ejecución del borrado.
+ * confirmación + ejecución del borrado y del reemplazo de archivo (CONT-07).
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-import { deleteDocument, getDocumentPreview } from "./api.js";
+import { deleteDocument, getDocumentPreview, replaceDocument } from "./api.js";
 import { IconFileText } from "../components/icons.jsx";
 import { useToast } from "../components/Toast.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
@@ -21,6 +21,44 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
     const [confirmDoc, setConfirmDoc]   = useState(null);
     const [deleteError, setDeleteError] = useState(null);
     const { showSuccess } = useToast();
+
+    // CONT-07 (#356): reemplazar el archivo de un documento sin cambiar su id.
+    // Flujo: click "Reemplazar" → abre el file picker (input oculto) → al
+    // elegir un archivo, se pide confirmación antes de llamar al backend.
+    const [replacingId, setReplacingId] = useState(null);
+    const [pendingReplaceDoc, setPendingReplaceDoc] = useState(null);
+    const [replaceTarget, setReplaceTarget] = useState(null); // { doc, file }
+    const [replaceError, setReplaceError] = useState(null);
+    const replaceInputRef = useRef(null);
+
+    const handleReplaceRequest = (doc) => {
+        setPendingReplaceDoc(doc);
+        replaceInputRef.current?.click();
+    };
+
+    const handleReplaceFileChosen = (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = ""; // permite re-elegir el mismo archivo y disparar onChange igual
+        if (file && pendingReplaceDoc) {
+            setReplaceTarget({ doc: pendingReplaceDoc, file });
+        }
+        setPendingReplaceDoc(null);
+    };
+
+    const handleReplaceConfirm = async () => {
+        const { doc, file } = replaceTarget;
+        setReplaceTarget(null);
+        setReplacingId(doc.id);
+        try {
+            const updated = await replaceDocument(courseId, doc.id, file);
+            onChange((prev) => prev.map((d) => (d.id === doc.id ? { ...d, ...updated } : d)));
+            showSuccess("Documento reemplazado correctamente");
+        } catch (err) {
+            setReplaceError(getFriendlyErrorMessage(err, "No se pudo reemplazar el documento. Intentá de nuevo."));
+        } finally {
+            setReplacingId(null);
+        }
+    };
 
     // CONT-08 (#357): preview del texto extraído, por documento y bajo demanda.
     // { [docId]: { loading, error, data } }
@@ -97,6 +135,8 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                                 doc={doc}
                                 onDelete={() => handleDeleteRequest(doc)}
                                 deleting={deletingId === doc.id}
+                                onReplace={() => handleReplaceRequest(doc)}
+                                replacing={replacingId === doc.id}
                                 previewOpen={openPreviewId === doc.id}
                                 preview={previews[doc.id]}
                                 onTogglePreview={() => togglePreview(doc)}
@@ -105,6 +145,13 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                     </tbody>
                 </table>
             </div>
+
+            <input
+                ref={replaceInputRef}
+                type="file"
+                style={{ display: "none" }}
+                onChange={handleReplaceFileChosen}
+            />
 
             {confirmDoc && (
                 <ConfirmModal
@@ -120,10 +167,32 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                 </ConfirmModal>
             )}
 
+            {replaceTarget && (
+                <ConfirmModal
+                    title="Reemplazar documento"
+                    confirmLabel="Reemplazar"
+                    cancelLabel="Cancelar"
+                    onConfirm={handleReplaceConfirm}
+                    onCancel={() => setReplaceTarget(null)}
+                >
+                    ¿Reemplazar <strong>{replaceTarget.doc.filename}</strong> por{" "}
+                    <strong>{replaceTarget.file.name}</strong>? El documento se
+                    re-indexa desde cero; las citas viejas del chat siguen
+                    apuntando a este mismo material.
+                </ConfirmModal>
+            )}
+
             {deleteError && (
                 <ErrorModal
                     message={deleteError}
                     onClose={() => setDeleteError(null)}
+                />
+            )}
+
+            {replaceError && (
+                <ErrorModal
+                    message={replaceError}
+                    onClose={() => setReplaceError(null)}
                 />
             )}
         </>
@@ -171,7 +240,7 @@ export function ErrorModal({ message, onClose }) {
 // Fila de tabla
 // ============================================================
 
-function DocumentRow({ doc, onDelete, deleting, previewOpen, preview, onTogglePreview }) {
+function DocumentRow({ doc, onDelete, deleting, onReplace, replacing, previewOpen, preview, onTogglePreview }) {
     const showDate = STABLE_STATUSES.has(doc.status);
     const canPreview = doc.status === "indexed";
     return (
@@ -207,9 +276,17 @@ function DocumentRow({ doc, onDelete, deleting, previewOpen, preview, onTogglePr
                     )}
                     <button
                         type="button"
+                        className="nexusai-link-btn"
+                        onClick={onReplace}
+                        disabled={replacing || deleting}
+                    >
+                        {replacing ? "Reemplazando..." : "Reemplazar"}
+                    </button>
+                    <button
+                        type="button"
                         className="nexusai-link-btn nexusai-link-btn--danger"
                         onClick={onDelete}
-                        disabled={deleting}
+                        disabled={deleting || replacing}
                     >
                         {deleting ? "Borrando..." : "Eliminar"}
                     </button>

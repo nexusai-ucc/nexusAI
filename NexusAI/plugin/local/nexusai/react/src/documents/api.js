@@ -238,6 +238,59 @@ export async function uploadDocument(courseId, file, section = null) {
 }
 
 /**
+ * Reemplaza el archivo de un documento existente sin cambiar su document_id
+ * (CONT-07 / #356) — las citas viejas del chat siguen apuntando al mismo id.
+ *
+ * Mismas validaciones de tipo/tamaño que `uploadDocument`.
+ *
+ * @param {number} courseId
+ * @param {string} documentId
+ * @param {File} file
+ * @returns {Promise<object>} Document state después del reemplazo.
+ */
+export async function replaceDocument(courseId, documentId, file) {
+    if (!file) throw new Error("No file provided");
+
+    const mimeType = resolveMimeType(file);
+    if (!ACCEPTED_MIME_TYPES.has(mimeType)) {
+        throw new Error(
+            `Formato no soportado: ${file.type || "desconocido"}. `
+            + "Se aceptan PDF, DOCX, PPTX, XLSX, CSV, MD, HTML y TXT."
+        );
+    }
+    if (file.size > 20 * 1024 * 1024) {
+        throw new Error(`Archivo muy grande (${formatBytes(file.size)}). Máximo: 20 MB`);
+    }
+    if (file.size === 0) {
+        throw new Error("El archivo está vacío");
+    }
+
+    const contentB64 = await fileToBase64(file);
+
+    if (typeof window === "undefined" || !window.M?.cfg) {
+        await new Promise((r) => setTimeout(r, 600));
+        const mock = MOCK_DOCS.find((d) => d.id === documentId);
+        if (mock) {
+            mock.filename = file.name;
+            mock.mime_type = mimeType;
+            mock.status = "pending";
+            mock.error_message = null;
+            setTimeout(() => { mock.status = "indexing"; }, 1500);
+            setTimeout(() => { mock.status = "indexed"; }, 4000);
+        }
+        return mock || { id: documentId, filename: file.name, mime_type: mimeType, status: "pending" };
+    }
+
+    return callMoodle("local_nexusai_document_replace", {
+        courseid:    courseId,
+        documentid:  documentId,
+        filename:    file.name,
+        mimetype:    mimeType,
+        content_b64: contentB64,
+    });
+}
+
+/**
  * Borra un documento.
  *
  * @param {number} courseId
