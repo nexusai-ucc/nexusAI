@@ -311,11 +311,17 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     onAnswerMeta: ({ grounded }) => {
                         bufferedGrounded = grounded;
                     },
-                    onDone: () => {
+                    onDone: (doneEvent) => {
+                        // ASIST-01 (#321): el id local (`local-asst-...`) no es un
+                        // UUID real de `messages` — guardamos el real en `realId`
+                        // (en vez de pisar `id`, que rompería el matcher de
+                        // `bufferedGrounded` de más abajo, capturado con el id
+                        // local) para poder habilitar el feedback 👍/👎 recién
+                        // ahora que el mensaje ya está persistido.
                         setMessages((prev) =>
                             prev.map((m) =>
                                 m.id === streamingAssistantId
-                                    ? { ...m, streaming: false }
+                                    ? { ...m, streaming: false, realId: doneEvent?.assistant_message_id || null }
                                     : m
                             )
                         );
@@ -594,6 +600,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                 key={msg.id}
                                 message={msg}
                                 sesskey={sesskey}
+                                courseId={courseid}
+                                lang={lang}
                                 canRegenerate={
                                     msg.role === "assistant" &&
                                     idx === messages.length - 1 &&

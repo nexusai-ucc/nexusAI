@@ -21,7 +21,10 @@
  */
 
 import { useState, useRef, useEffect } from "react";
-import { generateQuiz, evaluateOpenAnswer, recordQuizErrors, saveQuizAttempt, listQuizAttempts, suggestDifficulty } from "../api/quiz.js";
+import {
+    generateQuiz, evaluateOpenAnswer, recordQuizErrors, saveQuizAttempt, listQuizAttempts, suggestDifficulty,
+    getFlashcardsSummary, getDueFlashcards, submitFlashcardReviews,
+} from "../api/quiz.js";
 import { IconBook, IconCheck, IconChevronRight, IconClock, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 import { getFriendlyErrorMessage } from "./errors.js";
 
@@ -49,6 +52,9 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     // campo de tema después — es solo el punto de partida, override manual
     // en cualquier momento vía los botones de dificultad de siempre).
     const [difficultySuggestion, setDifficultySuggestion] = useState(null);
+    // SP-11 (#315): cuántas flashcards ya generadas "tocan hoy" vs. el total
+    // — solo se pide cuando el alumno elige el tipo "flashcard" en el setup.
+    const [flashcardsSummary, setFlashcardsSummary] = useState(null);
     const [quiz, setQuiz] = useState(null);
     const [error, setError] = useState(null);
     const [topicError, setTopicError] = useState(null);
@@ -64,6 +70,9 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
 
     // Acumula respuestas incorrectas durante la partida (no causa re-render)
     const wrongAnswersRef = useRef([]);
+    // SP-11 (#315): acumula el resultado de autoevaluación {flashcardId, knewIt}
+    // de cada flashcard de la sesión, para aplicar SM-2 una sola vez al final.
+    const flashcardReviewsRef = useRef([]);
     // SP-14: acumula TODAS las respuestas (correctas e incorrectas) del
     // intento en curso, para la pantalla de revisión post-quiz.
     const answersRef = useRef([]);
@@ -139,6 +148,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         reviewCorrectAnswer: "Respuesta correcta",
         timedModeLabel:     "Modo cronometrado",
         timedModeHint:      (min) => `Tiempo sugerido: ~${min} min para este quiz.`,
+        flashcardsDueSummary: (due, total) => `${due} de ${total} flashcards generadas te tocan repasar hoy.`,
     } : {
         introTitle:      "Practice Quiz",
         introText:       "Generate practice questions from the course material to review.",
@@ -201,6 +211,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         reviewCorrectAnswer: "Correct answer",
         timedModeLabel:     "Timed mode",
         timedModeHint:      (min) => `Suggested time: ~${min} min for this quiz.`,
+        flashcardsDueSummary: (due, total) => `${due} of ${total} generated flashcards are due for review today.`,
     };
 
     const resetQuestionState = () => {
@@ -220,10 +231,27 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         setScore(0);
         wrongAnswersRef.current = [];
         answersRef.current = [];
+        flashcardReviewsRef.current = [];
         resetQuestionState();
 
         try {
-            const data = await generateQuiz({ courseId, topic, numQuestions, questionType, difficulty });
+            let data;
+            if (questionType === "flashcard") {
+                // SP-11: prioriza mostrar primero las flashcards ya generadas
+                // que "tocan hoy" (banco persistido, sin llamar al LLM) — solo
+                // completa con generación nueva el remanente que falte.
+                const due = await getDueFlashcards(courseId, topic, numQuestions);
+                const dueQuestions = due?.questions || [];
+                if (dueQuestions.length >= numQuestions) {
+                    data = { course_id: courseId, topic: topic || null, questions: dueQuestions.slice(0, numQuestions) };
+                } else {
+                    const remaining = numQuestions - dueQuestions.length;
+                    const generated = await generateQuiz({ courseId, topic, numQuestions: remaining, questionType, difficulty });
+                    data = { course_id: courseId, topic: topic || null, questions: [...dueQuestions, ...(generated?.questions || [])] };
+                }
+            } else {
+                data = await generateQuiz({ courseId, topic, numQuestions, questionType, difficulty });
+            }
             if (!data?.questions?.length) throw new Error(L.errorGeneric);
             setQuiz(data);
             if (timedMode) setTimeRemaining(numQuestions * 90);
@@ -277,6 +305,12 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     // ── Autoevaluación de flashcard (sin IA): el alumno juzga si la sabía ──
     const markFlashcard = (knewIt) => {
         const q = quiz.questions[currentIdx];
+        // SP-11: q.id solo falta si la flashcard es efímera (no debería pasar
+        // ya que /generate y /flashcards/due persisten todo lo que devuelven,
+        // pero se valida igual antes de acumular para el review-batch final).
+        if (q.id) {
+            flashcardReviewsRef.current.push({ flashcardId: q.id, knewIt });
+        }
         if (knewIt) {
             setScore((s) => s + 1);
         } else {
@@ -363,6 +397,9 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     const finalizeAttempt = (reachedQuestions) => {
         const correctCount = answersRef.current.filter((a) => a.correct).length;
         persistErrors(courseId, wrongAnswersRef.current);
+        if (questionType === "flashcard" && flashcardReviewsRef.current.length) {
+            submitFlashcardReviews(courseId, flashcardReviewsRef.current).catch(() => { /* best-effort */ });
+        }
         saveQuizAttempt({
             courseId,
             questionType: questionType,
@@ -394,6 +431,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     const resetAll = () => {
         wrongAnswersRef.current = [];
         answersRef.current = [];
+        flashcardReviewsRef.current = [];
         setStage("setup");
         setQuiz(null);
         setError(null);
@@ -450,6 +488,21 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseId]);
 
+    // SP-11 (#315): banner de "cuántas flashcards tocan hoy" — solo se pide
+    // cuando el alumno elige ese tipo de pregunta en el setup.
+    useEffect(() => {
+        if (questionType !== "flashcard") {
+            setFlashcardsSummary(null);
+            return;
+        }
+        let cancelled = false;
+        getFlashcardsSummary(courseId, topic)
+            .then((data) => { if (!cancelled) setFlashcardsSummary(data); })
+            .catch(() => { /* sin banner: no bloquea el flujo */ });
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseId, questionType]);
+
     // ─── SETUP ───
     if (stage === "setup") {
         const typeOptions = [
@@ -499,6 +552,11 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                             </button>
                         ))}
                     </div>
+                    {questionType === "flashcard" && flashcardsSummary && flashcardsSummary.total_count > 0 && (
+                        <p className="nexusai-quiz__diff-suggestion">
+                            {L.flashcardsDueSummary(flashcardsSummary.due_count, flashcardsSummary.total_count)}
+                        </p>
+                    )}
                 </div>
                 <div className="nexusai-quiz__field">
                     <label className="nexusai-quiz__label">{L.nQuestions}</label>

@@ -36,6 +36,7 @@ class quiz_generate extends \external_api {
             'topic'     => new \external_value(PARAM_RAW, 'Tema solicitado', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'questions' => new \external_multiple_structure(
                 new \external_single_structure([
+                    'id'                  => new \external_value(PARAM_ALPHANUMEXT, 'ID persistido (solo flashcards, SP-11)', VALUE_OPTIONAL, null, NULL_ALLOWED),
                     'question_type'      => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta'),
                     'question'           => new \external_value(PARAM_RAW,  'Texto de la pregunta'),
                     'options'            => new \external_multiple_structure(
@@ -98,6 +99,7 @@ class quiz_generate extends \external_api {
                 static function (array $q): array {
                     $opts = $q['options'] ?? [];
                     return [
+                        'id'                  => isset($q['id']) ? (string) $q['id'] : null,
                         'question_type'      => (string) ($q['question_type'] ?? 'multiple_choice'),
                         'question'           => (string) ($q['question'] ?? ''),
                         'options'            => array_map(static fn($o) => (string) $o, is_array($opts) ? $opts : []),

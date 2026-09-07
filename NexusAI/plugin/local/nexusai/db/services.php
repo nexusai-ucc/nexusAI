@@ -37,6 +37,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Feedback 👍/👎 del alumno sobre una respuesta puntual del chat (ASIST-01).
+    'local_nexusai_chat_message_feedback' => [
+        'classname'     => '\local_nexusai\external\chat_message_feedback',
+        'methodname'    => 'execute',
+        'description'   => 'Record a student 👍/👎 vote on a specific assistant chat response.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Resumen automático de un documento indexado usando el LLM (BUS-03).
     'local_nexusai_document_summarize' => [
         'classname'     => '\local_nexusai\external\document_summarize',
@@ -274,6 +285,39 @@ $functions = [
         'classname'     => '\local_nexusai\external\quiz_study_plan_dismiss',
         'methodname'    => 'execute',
         'description'   => 'Dismiss a specific study-plan topic for the current student without deleting the underlying history.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Repetición espaciada de flashcards — cuántas tocan hoy vs. el total (SP-11).
+    'local_nexusai_quiz_flashcards_summary' => [
+        'classname'     => '\local_nexusai\external\quiz_flashcards_summary',
+        'methodname'    => 'execute',
+        'description'   => 'Get how many generated flashcards are due today vs. the total generated so far.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Repetición espaciada de flashcards — las que tocan hoy, del banco ya generado (SP-11).
+    'local_nexusai_quiz_flashcards_due' => [
+        'classname'     => '\local_nexusai\external\quiz_flashcards_due',
+        'methodname'    => 'execute',
+        'description'   => 'Get already-generated flashcards due today (spaced repetition), no LLM call.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Repetición espaciada de flashcards — aplica SM-2 al final de una sesión (SP-11).
+    'local_nexusai_quiz_flashcards_review_batch' => [
+        'classname'     => '\local_nexusai\external\quiz_flashcards_review_batch',
+        'methodname'    => 'execute',
+        'description'   => 'Apply SM-2 spaced repetition scheduling for a batch of self-rated flashcards.',
         'type'          => 'write',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:use',

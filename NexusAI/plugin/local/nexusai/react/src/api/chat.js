@@ -152,6 +152,41 @@ export function resetMockState() {
     mockResponseIdx = 0;
 }
 
+/**
+ * Guarda el voto 👍/👎 del alumno sobre una respuesta puntual del chat
+ * (ASIST-01 / #321). Best-effort: si falla, no debe bloquear la UI del chat
+ * — el caller solo usa el resultado para actualizar el estado visual local.
+ *
+ * @param {Object} params
+ * @param {string} params.messageId  UUID real del mensaje (no el id local
+ *   temporal que usa el streaming antes de que llegue `done`).
+ * @param {number} params.courseId
+ * @param {boolean} params.isHelpful true = 👍, false = 👎.
+ * @param {string} [params.comment]  Comentario corto opcional (solo con 👎).
+ * @returns {Promise<{ok:boolean}>}
+ */
+export async function submitMessageFeedback({ messageId, courseId, isHelpful, comment = "" }) {
+    const fetchMany = await getMoodleAjax();
+    if (!fetchMany) {
+        // Modo mock (fuera de Moodle): no hay backend real para persistir.
+        return { ok: true };
+    }
+
+    const [response] = await fetchMany([
+        {
+            methodname: "local_nexusai_chat_message_feedback",
+            args: {
+                courseid:  courseId,
+                messageid: messageId,
+                ishelpful: isHelpful,
+                comment:   comment || "",
+            },
+        },
+    ]);
+
+    return response;
+}
+
 
 // ============================================================
 // STREAMING — Server-Sent Events vía endpoint PHP proxy
