@@ -197,6 +197,7 @@ Cada decisión está formalizada como ADR (Architecture Decision Record):
 | 007 (TBD) | **Chunking 512 tokens / 64 overlap** (formalizar lo implementado por Marcos) | 🟨 pendiente Sprint 3 |
 | 008 (TBD) | React compilado como **bundle único AMD vía Webpack** (sin chunks lazy, con `publicPath` configurado) | 🟨 pendiente Sprint 3 |
 | 009 (TBD) | Plugin tipo **`local`** con **Hook API nuevo de Moodle 4.4+** y callback legacy para 4.1-4.3 | 🟨 pendiente Sprint 3 |
+| [010](adr/010-onboarding-docente.md) | **Onboarding al docente**: capa de ayuda de solo lectura (crear/editar curso + pestaña Ayuda), un componente reusable, estado en `user_preferences` | 📝 Propuesta |
 
 ---
 
