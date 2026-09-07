@@ -212,6 +212,59 @@
 }
 
 /* ============================================================
+   Cola de uploads (CONT-06, #320) — progreso individual por archivo
+   cuando se sueltan/eligen varios a la vez.
+============================================================ */
+.nexusai-upload-queue {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.nexusai-upload-queue__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    background: var(--nexusai-bg-muted, #f8fafc);
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: 6px;
+}
+.nexusai-upload-queue__item--error {
+    background: rgba(220, 38, 38, 0.06);
+    border-color: rgba(220, 38, 38, 0.25);
+}
+.nexusai-upload-queue__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--nexusai-fg, #1e293b);
+}
+.nexusai-upload-queue__status {
+    flex: 0 0 auto;
+    color: var(--nexusai-fg-muted, #64748b);
+}
+.nexusai-upload-queue__item--error .nexusai-upload-queue__status {
+    color: #b91c1c;
+}
+.nexusai-upload-queue__dismiss {
+    flex: 0 0 auto;
+    border: none;
+    background: transparent;
+    color: #b91c1c;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+}
+
+/* ============================================================
    Drop zone
 ============================================================ */
 .nexusai-dropzone {

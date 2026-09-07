@@ -561,6 +561,32 @@ class backend_client {
     }
 
     /**
+     * SP-13 (#323): descarta un tema puntual del plan de estudio del alumno
+     * (opera sobre IDs reales de fila, no sobre el texto del topic).
+     *
+     * @param int      $courseid       ID del curso.
+     * @param int      $userid         $USER->id real del alumno.
+     * @param string[] $quizerrorids   IDs de quiz_errors a descartar.
+     * @param string[] $gapquestionids IDs de unanswered_questions a descartar.
+     * @return array{affected:int}
+     */
+    public function dismiss_study_plan_topic(
+        int $courseid, int $userid, array $quizerrorids, array $gapquestionids
+    ): array {
+        $payload = [
+            'course_id'        => $courseid,
+            'user_id'          => $userid,
+            'quiz_error_ids'   => $quizerrorids,
+            'gap_question_ids' => $gapquestionids,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/study-plan/dismiss', $body);
+    }
+
+    /**
      * Búsqueda semántica en el material del curso (Feature A — sin LLM).
      *
      * @param int    $courseid ID del curso de Moodle.

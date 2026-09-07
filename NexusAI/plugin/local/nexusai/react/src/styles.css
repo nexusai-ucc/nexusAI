@@ -2873,6 +2873,23 @@
 .nexusai-studyplan__card-btn:hover {
     background: var(--nexusai-primary-ring);
 }
+.nexusai-studyplan__card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 2px;
+}
+.nexusai-studyplan__card-btn--ghost {
+    color: var(--nexusai-fg-muted);
+    background: transparent;
+    border-color: var(--nexusai-border);
+}
+.nexusai-studyplan__card-btn--ghost:hover {
+    background: var(--nexusai-bg-muted);
+}
+.nexusai-studyplan__card-btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
 
 /* ── Resumen de repaso pre-parcial (BUS-04) ── */
 .nexusai-studyplan__review {
