@@ -78,6 +78,16 @@ export const IconClock = ({ size = 14 }) => (
     </svg>
 );
 
+// ── RefreshCw (regenerar respuesta — ASIST-03) ──────────────────────────────
+export const IconRefreshCw = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <polyline points="23 4 23 10 17 10" />
+        <polyline points="1 20 1 14 7 14" />
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" />
+        <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+    </svg>
+);
+
 // ── Target (gaps detectados) ───────────────────────────────────────────────
 export const IconTarget = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
