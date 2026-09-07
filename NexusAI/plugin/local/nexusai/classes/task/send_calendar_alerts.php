@@ -47,10 +47,17 @@ class send_calendar_alerts extends \core\task\scheduled_task {
 
             $eventname = (string) ($alert['event_name'] ?? '');
 
+            $noreply    = \core_user::get_noreply_user();
+            $fromemail  = trim(get_config('local_nexusai', 'alert_from_email'));
+            if (!empty($fromemail)) {
+                $noreply        = clone $noreply;
+                $noreply->email = $fromemail;
+            }
+
             $message                     = new \core\message\message();
             $message->component          = 'local_nexusai';
             $message->name               = 'cal_alert';
-            $message->userfrom           = \core_user::get_noreply_user();
+            $message->userfrom           = $noreply;
             $message->userto             = $userto;
             $message->subject            = get_string('cal_alert_subject', 'local_nexusai', $eventname);
             $message->fullmessage        = get_string('cal_alert_body', 'local_nexusai', $eventname);
