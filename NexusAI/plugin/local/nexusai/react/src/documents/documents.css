@@ -167,6 +167,27 @@
     letter-spacing: -0.01em;
 }
 
+/* ONB-07 (#430): pestaña Ayuda — una tarjeta por herramienta. */
+.nexusai-help__card {
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--nexusai-border, #e2e8f0);
+}
+.nexusai-help__card:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+.nexusai-help__card-title {
+    margin-top: 0;
+}
+.nexusai-help__card-body {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--nexusai-fg-muted, #475569);
+}
+
 /* UX-17 (#387): mismo estilo que .nexusai-gaps__load-more más abajo. */
 .nexusai-documents__load-more {
     display: block;

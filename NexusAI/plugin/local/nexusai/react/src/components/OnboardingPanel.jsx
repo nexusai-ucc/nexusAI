@@ -11,6 +11,12 @@
  *
  * NexusAI nunca ejecuta los pasos: cada uno abre la pantalla nativa de Moodle
  * en una pestaña nueva.
+ *
+ * ONB-07 (#430): en modo `review` agrega un link a la pestaña "Ayuda" de
+ * NexusAI Materiales (`documents.php?tab=help`) — punto de acceso a la
+ * explicación de las 5 herramientas del panel docente, alcanzable tanto
+ * desde `course/edit.php` como desde el tab "Revisión del curso" del chat
+ * normal (ONB-06) una vez que ese componente reuse este mismo panel.
  */
 
 import { COURSE_SETUP_STEPS, stepStatus } from "../onboarding/steps.js";
@@ -24,6 +30,7 @@ const T = {
         optional: "opcional",
         done: "Listo",
         pending: "Falta",
+        helpLink: "¿Necesitás ayuda con las herramientas de NexusAI?",
         stepOf: (n, total) => `Paso ${n} de ${total}`,
     },
     en: {
@@ -34,6 +41,7 @@ const T = {
         optional: "optional",
         done: "Done",
         pending: "Missing",
+        helpLink: "Need help with the NexusAI tools?",
         stepOf: (n, total) => `Step ${n} of ${total}`,
     },
 };
@@ -108,6 +116,17 @@ export default function OnboardingPanel({
                     );
                 })}
             </ol>
+
+            {mode === "review" && ctx.courseid > 0 && (
+                <a
+                    className="nexusai-onb__help-link"
+                    href={`${String(wwwroot || "/").replace(/\/$/, "")}/local/nexusai/documents.php?courseid=${ctx.courseid}&tab=help`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    {t.helpLink}
+                </a>
+            )}
         </div>
     );
 }

@@ -98,6 +98,15 @@ export const IconHelpCircle = ({ size = 14 }) => (
     </svg>
 );
 
+// ── Info (pestaña Ayuda, ONB-07 — círculo con "i", distinto del "?" de HelpCircle) ──
+export const IconInfo = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="11.5" />
+        <line x1="12" y1="8" x2="12.01" y2="8" />
+    </svg>
+);
+
 // ── Sparkles (intro / empty state positivo) ────────────────────────────────
 export const IconSparkles = ({ size = 16 }) => (
     <svg {...baseProps(size)}>

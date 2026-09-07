@@ -3038,3 +3038,16 @@
     text-decoration: none;
 }
 .nexusai-onb__step-link:hover { text-decoration: underline; }
+
+.nexusai-onb__help-link {
+    display: block;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--nexusai-border);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nexusai-primary);
+    text-decoration: none;
+    text-align: center;
+}
+.nexusai-onb__help-link:hover { text-decoration: underline; }
