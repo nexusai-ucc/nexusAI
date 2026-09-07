@@ -28,15 +28,18 @@ import SearchPanel from "./components/SearchPanel.jsx";
 import CalendarPanel from "./components/CalendarPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import NavMenu from "./components/NavMenu.jsx";
+import OnboardingPanel from "./components/OnboardingPanel.jsx";
 import { IconBookOpen, IconGlobe, IconGrid } from "./components/icons.jsx";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
 import { getSessionMessages } from "./api/history.js";
+import { useOnboardingState } from "./onboarding/useOnboardingState.js";
 
 const SECTION_TITLES = {
-    study:    { es: "Modo Estudio", en: "Study Mode" },
-    search:   { es: "Buscar",       en: "Search" },
-    calendar: { es: "Calendario",   en: "Calendar" },
-    history:  { es: "Historial",    en: "History" },
+    study:    { es: "Modo Estudio",         en: "Study Mode" },
+    search:   { es: "Buscar",               en: "Search" },
+    calendar: { es: "Calendario",           en: "Calendar" },
+    history:  { es: "Historial",            en: "History" },
+    review:   { es: "Revisión del curso",   en: "Course review" },
 };
 
 const STRINGS = {
@@ -148,8 +151,17 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "history" | "study" | "calendar" | "search"
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "history" | "study" | "calendar" | "search" | "review"
     const [navOpen, setNavOpen] = useState(false);
+
+    // ONB-06: estado de revisión del curso, fetch solo mientras ese tab está
+    // activo — mismo criterio "bajo demanda" que StudyPanel/CalendarPanel.
+    const {
+        setupState: reviewSetupState,
+        skipped: reviewSkipped,
+        skip: reviewSkip,
+        unskip: reviewUnskip,
+    } = useOnboardingState(courseid, { enabled: isTeacher && activeTab === "review" });
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
@@ -540,6 +552,19 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     ) : activeTab === "calendar" ? (
                         <div className="nexusai-panel__body">
                             <CalendarPanel courseId={courseid} lang={lang} />
+                        </div>
+                    ) : activeTab === "review" ? (
+                        <div className="nexusai-panel__body nexusai-panel__body--onb">
+                            <OnboardingPanel
+                                mode="review"
+                                courseid={courseid}
+                                wwwroot={wwwroot}
+                                lang={lang}
+                                state={reviewSetupState}
+                                skipped={reviewSkipped}
+                                onSkip={reviewSkip}
+                                onUnskip={reviewUnskip}
+                            />
                         </div>
                     ) : (
                         <div className="nexusai-panel__body">

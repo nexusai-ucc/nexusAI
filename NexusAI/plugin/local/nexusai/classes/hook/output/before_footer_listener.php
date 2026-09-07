@@ -47,6 +47,10 @@ class before_footer_listener {
         $courseid  = $context['courseid'];
         $isteacher = $context['isteacher'];
 
+        // ONB-03: en la pantalla de crear un curso el widget muestra el
+        // tutorial de armado en vez del cartel de "no hay curso".
+        $onboarding = visibility_helper::onboarding_hint();
+
         // 2. Cargar el bundle React vía AMD/RequireJS.
         $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
             [
@@ -56,6 +60,7 @@ class before_footer_listener {
                 'wwwroot'    => (string) (new \moodle_url('/'))->out(false),
                 'lang'       => current_language(),
                 'isteacher'  => (int) $isteacher,
+                'onboarding' => $onboarding,
             ],
         ]);
 

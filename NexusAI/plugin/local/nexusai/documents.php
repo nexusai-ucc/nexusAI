@@ -25,6 +25,11 @@ global $PAGE, $OUTPUT, $USER, $COURSE, $DB;
 $courseid = required_param('courseid', PARAM_INT);
 $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 
+// ONB-07 (#430): tab inicial opcional (p.ej. ?tab=help desde el link de
+// OnboardingPanel en modo revisión). DocumentsManager.jsx ignora cualquier
+// valor que no matchee una de sus keys y cae a "material".
+$initialtab = optional_param('tab', '', PARAM_ALPHA);
+
 // ----- 2. Login + capability -----
 require_login($course);
 $context = context_course::instance($course->id);
@@ -57,6 +62,7 @@ $PAGE->requires->js_call_amd('local_nexusai/documents-manager-lazy', 'init', [
         'lang'      => current_language(),
         'fullname'  => (string) format_string($course->fullname),
         'shortname' => (string) format_string($course->shortname),
+        'initialtab' => $initialtab,
     ],
 ]);
 
