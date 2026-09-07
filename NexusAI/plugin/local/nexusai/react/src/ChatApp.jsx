@@ -37,6 +37,13 @@ import { sendMessage, sendMessageStream } from "./api/chat.js";
 import { getSessionMessages } from "./api/history.js";
 import { useOnboardingState } from "./onboarding/useOnboardingState.js";
 
+// UX-14 (#373): clave de sessionStorage para el tab activo, por curso —
+// evita que el tab de un curso "contamine" a otro en la misma sesión.
+function TAB_STORAGE_KEY(courseid) {
+    return Number(courseid) > 0 ? `nexusai_tab_${courseid}` : null;
+}
+const PERSISTABLE_TABS = new Set(["chat", "study", "calendar", "search"]);
+
 const SECTION_TITLES = {
     study:    { es: "Modo Estudio",         en: "Study Mode" },
     search:   { es: "Buscar",               en: "Search" },
@@ -154,7 +161,19 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "history" | "study" | "calendar" | "search" | "review"
+    // UX-14 (#373): tab activo persistido en sessionStorage, por curso —
+    // no se pierde al navegar a otra página del curso y volver en la misma
+    // sesión de navegador. Solo los 4 tabs "destino" (no history/review,
+    // que son vistas de acción puntual, no un lugar al que volver).
+    const [activeTab, setActiveTab] = useState(() => {
+        if (typeof window === "undefined" || !TAB_STORAGE_KEY(courseid)) return "chat";
+        try {
+            const stored = sessionStorage.getItem(TAB_STORAGE_KEY(courseid));
+            return PERSISTABLE_TABS.has(stored) ? stored : "chat";
+        } catch {
+            return "chat";
+        }
+    }); // "chat" | "history" | "study" | "calendar" | "search" | "review"
     const [navOpen, setNavOpen] = useState(false);
 
     // ONB-06: estado de revisión del curso, fetch solo mientras ese tab está
@@ -184,6 +203,43 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         window.addEventListener("nexusai:toggle-panel", handleToggle);
         return () => window.removeEventListener("nexusai:toggle-panel", handleToggle);
     }, []);
+
+    // UX-14 (#373): persistir el tab activo. Try/catch porque sessionStorage
+    // puede tirar en modo privado/con storage bloqueado — no debe romper el
+    // render del widget.
+    useEffect(() => {
+        const key = TAB_STORAGE_KEY(courseid);
+        if (!key || !PERSISTABLE_TABS.has(activeTab)) return;
+        try {
+            sessionStorage.setItem(key, activeTab);
+        } catch {
+            // Storage bloqueado — no afecta la sesión actual.
+        }
+    }, [activeTab, courseid]);
+
+    // UX-13 (#372): atajos globales, solo mientras el widget está abierto
+    // (fuera de `open` no intercepta nada de la página — menos superficie
+    // de conflicto con atajos nativos del navegador/Moodle).
+    useEffect(() => {
+        if (!open) return undefined;
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") {
+                setOpen(false);
+                return;
+            }
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+                // Mismo criterio que NavMenu para ocultar "Buscar": los
+                // docentes no tienen ese tab acá (tienen su propio buscador
+                // en NexusAI Materiales).
+                if (!hasCourse || isTeacher) return;
+                e.preventDefault(); // pisa "borrar hasta fin de línea" (Ctrl+K, macOS) en el textarea
+                setNavOpen(false);
+                setActiveTab("search");
+            }
+        };
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [open, hasCourse, isTeacher]);
 
     const send = async (question) => {
         setError(null);
