@@ -8,7 +8,8 @@
 
 import { useEffect, useState } from "react";
 import { listGaps, archiveGap } from "./api.js";
-import { IconCheck, IconArchive } from "../components/icons.jsx";
+import { downloadCsvFile } from "./csv.js";
+import { IconCheck, IconArchive, IconDownload } from "../components/icons.jsx";
 
 function relativeTime(iso) {
     if (!iso) return "";
@@ -88,6 +89,21 @@ export default function GapsPanel({ courseId }) {
         }
     };
 
+    const handleExportCsv = () => {
+        const rows = items.map((g) => [
+            g.question,
+            g.avg_similarity === null || g.avg_similarity === undefined
+                ? "sin match"
+                : `${Math.round(g.avg_similarity * 100)}%`,
+            g.last_asked_at ? new Date(g.last_asked_at).toLocaleString("es-AR") : "",
+        ]);
+        downloadCsvFile(
+            ["Pregunta", "Similitud", "Última consulta"],
+            rows,
+            `gaps-nexusai-curso-${courseId}.csv`
+        );
+    };
+
     const handleToggleArchive = async (item, idx) => {
         const nextArchived = !item.is_archived;
         setArchivingIdx(idx);
@@ -164,9 +180,15 @@ export default function GapsPanel({ courseId }) {
 
             {!loading && !error && items.length > 0 && (
                 <div className="nexusai-gaps__list">
-                    <h3 className="nexusai-documents__heading">
-                        Preguntas sin respuesta ({total})
-                    </h3>
+                    <div className="nexusai-gaps__list-header">
+                        <h3 className="nexusai-documents__heading">
+                            Preguntas sin respuesta ({total})
+                        </h3>
+                        <button type="button" className="nexusai-btn" onClick={handleExportCsv}>
+                            <IconDownload size={13} />
+                            Exportar CSV
+                        </button>
+                    </div>
                     {items.map((g, i) => {
                         const sim = similarityLabel(g.avg_similarity);
                         return (
