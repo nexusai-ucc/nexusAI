@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { getStudyPlan } from "../api/quiz.js";
+import { getStudyPlan, dismissStudyPlanTopic } from "../api/quiz.js";
 import { getUpcomingEvents } from "../api/calendar.js";
 import { getPreExamSummary } from "../api/summary.js";
 import { listCourseSections } from "../api/courseSections.js";
@@ -36,6 +36,7 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
 
     const [sections, setSections] = useState([]);
     const [selectedSection, setSelectedSection] = useState("");
+    const [dismissingIdx, setDismissingIdx] = useState(null);
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [summaryError, setSummaryError] = useState(null);
     const [summary, setSummary] = useState(null);
@@ -45,6 +46,8 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
         emptyHint:  "No detectamos temas pendientes por ahora. Seguí practicando para mantenerlo así.",
         error:      "No se pudo cargar tu plan de estudio.",
         practice:   "Practicar este tema",
+        dismiss:    "Ya lo entendí",
+        dismissing: "Descartando...",
         quizErrors: (n) => `${n} error${n === 1 ? "" : "es"} de quiz`,
         gaps:       (n) => `${n} pregunta${n === 1 ? "" : "s"} sin responder`,
         eventIn:    (name, d) => (d === 0 ? `${name} es hoy` : `${name} es en ${d} día${d === 1 ? "" : "s"}`),
@@ -61,6 +64,8 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
         emptyHint:  "No pending topics detected right now. Keep practicing to stay on track.",
         error:      "Could not load your study plan.",
         practice:   "Practice this topic",
+        dismiss:    "I've got this",
+        dismissing: "Dismissing...",
         quizErrors: (n) => `${n} quiz error${n === 1 ? "" : "s"}`,
         gaps:       (n) => `${n} unanswered question${n === 1 ? "" : "s"}`,
         eventIn:    (name, d) => (d === 0 ? `${name} is today` : `${name} is in ${d} day${d === 1 ? "" : "s"}`),
@@ -72,6 +77,18 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
         reviewError:    "Could not generate the summary. Try again.",
         reviewEmpty:    "No indexed material to summarize (try a different section).",
         sourcesLabel:   (n) => `Based on ${n} document${n === 1 ? "" : "s"}`,
+    };
+
+    const handleDismissTopic = async (t, idx) => {
+        setDismissingIdx(idx);
+        try {
+            await dismissStudyPlanTopic(courseId, t.quiz_error_ids || [], t.gap_question_ids || []);
+            setTopics((prev) => prev.filter((_, i) => i !== idx));
+        } catch {
+            // Falla silenciosa: el tema queda visible, el alumno puede reintentar.
+        } finally {
+            setDismissingIdx(null);
+        }
     };
 
     const handleGenerateSummary = async () => {
@@ -223,13 +240,23 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
                                 {t.quiz_error_count > 0 && <span>{L.quizErrors(t.quiz_error_count)}</span>}
                                 {t.gap_count > 0 && <span>{L.gaps(t.gap_count)}</span>}
                             </div>
-                            <button
-                                type="button"
-                                className="nexusai-studyplan__card-btn"
-                                onClick={() => onPracticeTopic?.(t.suggested_quiz_topic || t.topic)}
-                            >
-                                {L.practice}
-                            </button>
+                            <div className="nexusai-studyplan__card-actions">
+                                <button
+                                    type="button"
+                                    className="nexusai-studyplan__card-btn"
+                                    onClick={() => onPracticeTopic?.(t.suggested_quiz_topic || t.topic)}
+                                >
+                                    {L.practice}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="nexusai-studyplan__card-btn nexusai-studyplan__card-btn--ghost"
+                                    onClick={() => handleDismissTopic(t, i)}
+                                    disabled={dismissingIdx === i}
+                                >
+                                    {dismissingIdx === i ? L.dismissing : L.dismiss}
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>

@@ -360,6 +360,8 @@ export async function getStudyPlan(courseId, days = 30) {
                     gap_count: 1,
                     reason: "Fallaste 3 preguntas de práctica y preguntaste esto una vez en el chat sin buena respuesta.",
                     suggested_quiz_topic: "derivadas trigonométricas",
+                    quiz_error_ids: ["mock-qe-1", "mock-qe-2", "mock-qe-3"],
+                    gap_question_ids: ["mock-gq-1"],
                 },
             ],
         };
@@ -368,6 +370,37 @@ export async function getStudyPlan(courseId, days = 30) {
     const [response] = await ajax.call([{
         methodname: "local_nexusai_quiz_study_plan",
         args: { courseid: courseId, days },
+    }]);
+
+    return response;
+}
+
+/**
+ * Descarta un tema puntual del plan de estudio (SP-13 / #323) — sin borrar
+ * el historial subyacente de quiz_errors/unanswered_questions. Opera sobre
+ * los IDs reales de fila (`StudyPlanTopic.quiz_error_ids`/`gap_question_ids`),
+ * no sobre el texto del topic (lo genera el LLM en cada llamada, no es una
+ * clave estable).
+ *
+ * @param {number} courseId
+ * @param {string[]} quizErrorIds
+ * @param {string[]} gapQuestionIds
+ * @returns {Promise<{affected:number}>}
+ */
+export async function dismissStudyPlanTopic(courseId, quizErrorIds = [], gapQuestionIds = []) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 200));
+        return { affected: quizErrorIds.length + gapQuestionIds.length };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_study_plan_dismiss",
+        args: {
+            courseid: courseId,
+            quizerrorids: quizErrorIds,
+            gapquestionids: gapQuestionIds,
+        },
     }]);
 
     return response;

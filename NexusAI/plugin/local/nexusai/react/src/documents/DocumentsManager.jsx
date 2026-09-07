@@ -71,6 +71,12 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
     ); // "material" | "questions" | "analytics" | "exam" | "search" | "help"
     const [sections, setSections]         = useState([]); // BUS-05: secciones del curso para el selector de upload
     const [selectedSection, setSelectedSection] = useState("");
+    // CONT-06 (#320): cola de archivos subiéndose en secuencia — un item por
+    // archivo, { key, filename, status: "queued"|"uploading"|"error", error }.
+    // "uploading"/"queued" se sacan solos al terminar bien; "error" queda
+    // visible (con botón para descartarlo) porque uno que falla no cancela
+    // a los demás.
+    const [uploadQueue, setUploadQueue]   = useState([]);
     const { showWarning } = useToast();
 
     // Ref para acceder al estado actual desde el closure del setInterval
@@ -167,31 +173,58 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
     };
 
     // ── Upload ─────────────────────────────────────────────────────────────
-    const handleUpload = async (file) => {
+    // CONT-06 (#320): recibe un array de archivos y los sube EN SECUENCIA
+    // (no en paralelo — más simple y evita condiciones de carrera con la
+    // detección de colisión de nombre y con documentsRef, que asumen un
+    // upload a la vez). Si uno falla, se sigue con el siguiente.
+    const handleUpload = async (files) => {
+        const items = files.map((file, idx) => ({
+            key: `${Date.now()}-${idx}-${file.name}`,
+            file,
+            filename: file.name,
+            status: "queued",
+            error: null,
+        }));
+        setUploadQueue((prev) => [...prev, ...items]);
         setUploading(true);
-        setError(null);
-        try {
-            const section = selectedSection === "" ? null : Number(selectedSection);
-            const newDoc = await uploadDocument(courseid, file, section);
-            // El backend devuelve 200 con el doc existente cuando el contenido
-            // es idéntico (CONT-04). Si el id ya está en la lista, el doc está
-            // indexado — no sobreescribir con la respuesta que puede traer fecha nula.
-            if (documentsRef.current.some((d) => d.id === newDoc.id)) {
-                showWarning("Este documento ya se encuentra indexado en este curso.");
-                return;
+
+        const section = selectedSection === "" ? null : Number(selectedSection);
+
+        for (const item of items) {
+            setUploadQueue((prev) =>
+                prev.map((q) => (q.key === item.key ? { ...q, status: "uploading" } : q))
+            );
+            try {
+                const newDoc = await uploadDocument(courseid, item.file, section);
+                // El backend devuelve 200 con el doc existente cuando el contenido
+                // es idéntico (CONT-04). Si el id ya está en la lista, el doc está
+                // indexado — no sobreescribir con la respuesta que puede traer fecha nula.
+                if (documentsRef.current.some((d) => d.id === newDoc.id)) {
+                    showWarning(`"${item.filename}" ya se encuentra indexado en este curso.`);
+                } else {
+                    setDocuments((prev) => [newDoc, ...prev]);
+                    setTotal((prev) => prev + 1);
+                }
+                setUploadQueue((prev) => prev.filter((q) => q.key !== item.key));
+            } catch (err) {
+                const raw = err?.message || String(err);
+                if (/HTTP\s+409\b/.test(raw)) {
+                    showWarning(`"${item.filename}" ya se encuentra indexado en este curso.`);
+                    setUploadQueue((prev) => prev.filter((q) => q.key !== item.key));
+                } else {
+                    const msg = getFriendlyErrorMessage(err, "No se pudo subir el archivo.", lang);
+                    setUploadQueue((prev) =>
+                        prev.map((q) => (q.key === item.key ? { ...q, status: "error", error: msg } : q))
+                    );
+                }
             }
-            setDocuments((prev) => [newDoc, ...prev]);
-            setTotal((prev) => prev + 1);
-        } catch (err) {
-            const raw = err?.message || String(err);
-            if (/HTTP\s+409\b/.test(raw)) {
-                showWarning("Este documento ya se encuentra indexado en este curso.");
-            } else {
-                setError(getFriendlyErrorMessage(err, "No se pudo subir el archivo. Intentá de nuevo.", lang));
-            }
-        } finally {
-            setUploading(false);
         }
+
+        setUploading(false);
+    };
+
+    const handleDismissUploadError = (key) => {
+        setUploadQueue((prev) => prev.filter((q) => q.key !== key));
     };
 
     // ── Render ─────────────────────────────────────────────────────────────
@@ -273,6 +306,36 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                             )}
 
                             <UploadZone onUpload={handleUpload} disabled={uploading} />
+
+                            {uploadQueue.length > 0 && (
+                                <ul className="nexusai-upload-queue">
+                                    {uploadQueue.map((item) => (
+                                        <li
+                                            key={item.key}
+                                            className={`nexusai-upload-queue__item nexusai-upload-queue__item--${item.status}`}
+                                        >
+                                            <span className="nexusai-upload-queue__name">{item.filename}</span>
+                                            {item.status === "error" ? (
+                                                <>
+                                                    <span className="nexusai-upload-queue__status">{item.error}</span>
+                                                    <button
+                                                        type="button"
+                                                        className="nexusai-upload-queue__dismiss"
+                                                        onClick={() => handleDismissUploadError(item.key)}
+                                                        aria-label={`Descartar error de ${item.filename}`}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span className="nexusai-upload-queue__status">
+                                                    {item.status === "uploading" ? "Subiendo..." : "En cola..."}
+                                                </span>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
 
                             <h3 className="nexusai-documents__heading">
                                 Material indexado ({total})

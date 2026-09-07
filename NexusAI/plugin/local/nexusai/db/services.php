@@ -258,6 +258,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Descartar un tema puntual del plan de estudio, sin borrar el historial (SP-13).
+    'local_nexusai_quiz_study_plan_dismiss' => [
+        'classname'     => '\local_nexusai\external\quiz_study_plan_dismiss',
+        'methodname'    => 'execute',
+        'description'   => 'Dismiss a specific study-plan topic for the current student without deleting the underlying history.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Detección de gaps — preguntas que el material no respondió (Feature G).
     // Solo docentes ven sus gaps (capability :manage).
     'local_nexusai_gaps_list' => [
