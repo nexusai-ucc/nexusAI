@@ -6,6 +6,38 @@ Versionado siguiendo [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [v0.14.2] — 2026-08-17 — Post-MVP Sprint C (cierre) + Rediseño de interfaz
+
+### Agregado
+- feat(docentes): archivar preguntas sin respuesta en Gaps detectados — DOC-D08 — cierra #383
+- feat(exam): generar preguntas de examen desde temas con más dificultad (Gaps/FAQ) — DOC-D09 — cierra #390
+- feat(calendar): alertas configurables por el alumno — CAL-02 — cierra #238
+- feat(docentes): exportación al sistema de cuestionarios nativo de Moodle — DOC-D05 — cierra #236
+- feat(docentes): detección de lagunas de contenido — DOC-D03 — cierra #234
+- feat(study): resumen pre-parcial por fecha de examen — BUS-04 — cierra #231
+- feat(widget): rediseño de interfaz — chat pasa de dropdown flotante a panel lateral acoplado — RDS-01/02 — cierra #400, #401
+- feat(docentes): nav lateral + restyle completo del panel docente (Material/Analytics/Gaps/FAQ/Generar examen/Buscar) en lenguaje visual tipo dashboard — RDS-05/06/07 — cierra #404, #405, #406
+- feat(docentes): unificar Gaps + FAQ en un solo panel — RDS-08 — cierra #416
+
+### Corregido
+- fix(mobile): aumentar área táctil de los botones de ícono del widget — UX-04 — cierra #325
+- fix(mobile): scroll horizontal de respaldo en la tabla de documentos — UX-03 — cierra #324
+- fix(ux): paginar historial de errores de quiz en Repaso — UX-19 — cierra #389
+- fix(ux): paginar historial de sesiones del alumno (antes fijo en 20) — UX-18 — cierra #388
+- fix(ux): paginar tabla de materiales del docente — UX-17 — cierra #387
+- fix(ux): mejorar manejo visual/funcional de Analytics con volumen alto de datos — UX-16 — cierra #386
+- fix(ux): paginar preguntas en Gaps detectados — UX-15 — cierra #385
+- fix(chat): colapsar texto largo pegado o en respuestas — ASIST-06 — cierra #384
+- fix(upload): usar ModalSaveCancel para el modal de material en Moodle 5.x
+
+### Revertido
+- revert(widget): modo estudio vía chat en lenguaje natural — RDS-03 — no persistía en quiz_errors/quiz_attempts, se mantiene el motor de quiz estructurado
+
+### Documentación
+- docs(repo): crear CHANGELOG.md y actualizar estado en README — DOC-REPO-01 — cierra #297
+
+---
+
 ## [v0.11.0] — 2026-07-28 — Post-MVP Sprint C
 
 ### Agregado
