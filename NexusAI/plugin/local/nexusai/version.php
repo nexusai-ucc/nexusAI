@@ -22,7 +22,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026090701;        // feat: persistir dismissal/"no aplica" + acceso permanente al tutorial (ONB-05/06 / #428, #429).
+$plugin->version   = 2026090703;        // feat: dismissal/"no aplica" + acceso permanente (ONB-05/06 / #428, #429) + pestaña Ayuda (ONB-07/08 / #430, #431).
 $plugin->release   = '0.17.0';
 $plugin->maturity  = MATURITY_ALPHA;
 

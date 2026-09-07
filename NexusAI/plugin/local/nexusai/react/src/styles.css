@@ -3078,3 +3078,16 @@
     background: var(--nexusai-bg-muted);
     color: var(--nexusai-fg);
 }
+
+.nexusai-onb__help-link {
+    display: block;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--nexusai-border);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nexusai-primary);
+    text-decoration: none;
+    text-align: center;
+}
+.nexusai-onb__help-link:hover { text-decoration: underline; }
