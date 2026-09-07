@@ -1,10 +1,14 @@
 /**
- * CalendarPanel — próximos exámenes y entregas del curso (CAL-01 + CAL-02).
+ * CalendarPanel — próximos exámenes y entregas del curso (CAL-01 + CAL-02 + CAL-04).
  *
  * CAL-01: Los eventos vienen de la webservice nativa core_calendar_get_action_events_by_course.
  * CAL-02: El alumno puede configurar alertas por evento (sin alerta / 1 / 3 / 7 días antes).
  *         Las alertas se persisten en FastAPI. Un banner muestra los eventos cuyo momento
  *         de alerta ya llegó (calculado client-side).
+ * CAL-04: getUpcomingEvents (api/calendar.js) también trae avisos genéricos
+ *         de curso (sin Tarea/Quiz asociado) — se distinguen acá con la
+ *         entrada "course" de TYPE_LABELS. Las alertas de CAL-02 aplican
+ *         igual a estos eventos, sin ningún cambio (ya tienen una fecha real).
  */
 
 import { useEffect, useState } from "react";
@@ -22,6 +26,7 @@ import { getFriendlyErrorMessage } from "./errors.js";
 const TYPE_LABELS = {
     mod_assign: { es: "Entrega", en: "Assignment" },
     mod_quiz:   { es: "Examen",  en: "Quiz" },
+    course:     { es: "Aviso del curso", en: "Course notice" },
 };
 
 function eventTypeLabel(component, lang) {

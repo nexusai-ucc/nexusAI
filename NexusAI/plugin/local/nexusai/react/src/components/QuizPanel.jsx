@@ -21,7 +21,7 @@
  */
 
 import { useState, useRef, useEffect } from "react";
-import { generateQuiz, evaluateOpenAnswer, recordQuizErrors, saveQuizAttempt, listQuizAttempts } from "../api/quiz.js";
+import { generateQuiz, evaluateOpenAnswer, recordQuizErrors, saveQuizAttempt, listQuizAttempts, suggestDifficulty } from "../api/quiz.js";
 import { IconBook, IconCheck, IconChevronRight, IconClock, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 import { getFriendlyErrorMessage } from "./errors.js";
 
@@ -44,6 +44,11 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     const [numQuestions, setNumQuestions] = useState(5);
     const [questionType, setQuestionType] = useState("multiple_choice");
     const [difficulty, setDifficulty] = useState("medium");
+    // SP-12 (#322): sugerencia de dificultad de partida, calculada una sola
+    // vez al abrir el generador (no se re-consulta si el alumno edita el
+    // campo de tema después — es solo el punto de partida, override manual
+    // en cualquier momento vía los botones de dificultad de siempre).
+    const [difficultySuggestion, setDifficultySuggestion] = useState(null);
     const [quiz, setQuiz] = useState(null);
     const [error, setError] = useState(null);
     const [topicError, setTopicError] = useState(null);
@@ -429,6 +434,22 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [timeRemaining]);
 
+    // SP-12: sugerencia de dificultad al abrir el generador — una sola vez.
+    useEffect(() => {
+        let cancelled = false;
+        suggestDifficulty(courseId, initialTopic)
+            .then((data) => {
+                if (cancelled || !data.difficulty) return;
+                setDifficultySuggestion(data);
+                setDifficulty(data.difficulty);
+            })
+            .catch(() => {
+                // Sin sugerencia: se mantiene el comportamiento actual (medium, manual).
+            });
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [courseId]);
+
     // ─── SETUP ───
     if (stage === "setup") {
         const typeOptions = [
@@ -496,6 +517,9 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 </div>
                 <div className="nexusai-quiz__field">
                     <label className="nexusai-quiz__label">{L.difficultyLabel}</label>
+                    {difficultySuggestion?.reason && (
+                        <p className="nexusai-quiz__diff-suggestion">{difficultySuggestion.reason}</p>
+                    )}
                     <div className="nexusai-quiz__diffbtns">
                         {difficultyOptions.map(({ key, label }) => (
                             <button

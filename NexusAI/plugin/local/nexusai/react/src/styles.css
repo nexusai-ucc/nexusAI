@@ -2019,6 +2019,17 @@
     color: #fff;
 }
 
+/* Sugerencia de dificultad según historial (SP-12, #322) */
+.nexusai-quiz__diff-suggestion {
+    margin: 4px 0 6px;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--nexusai-primary-hover, #4f46e5);
+    background: var(--nexusai-primary-light, rgba(99,102,241,0.08));
+    border-radius: 6px;
+}
+
 /* Selector de dificultad (SP-08) */
 .nexusai-quiz__diffbtns {
     display: flex;
