@@ -28,17 +28,21 @@ import SearchPanel from "./components/SearchPanel.jsx";
 import CalendarPanel from "./components/CalendarPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import NavMenu from "./components/NavMenu.jsx";
+import Tooltip from "./components/Tooltip.jsx";
+import OnboardingPanel from "./components/OnboardingPanel.jsx";
 import { IconBookOpen, IconGlobe, IconGrid } from "./components/icons.jsx";
 import { ToastProvider } from "./components/Toast.jsx";
 import { getFriendlyErrorMessage } from "./components/errors.js";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
 import { getSessionMessages } from "./api/history.js";
+import { useOnboardingState } from "./onboarding/useOnboardingState.js";
 
 const SECTION_TITLES = {
-    study:    { es: "Modo Estudio", en: "Study Mode" },
-    search:   { es: "Buscar",       en: "Search" },
-    calendar: { es: "Calendario",   en: "Calendar" },
-    history:  { es: "Historial",    en: "History" },
+    study:    { es: "Modo Estudio",         en: "Study Mode" },
+    search:   { es: "Buscar",               en: "Search" },
+    calendar: { es: "Calendario",           en: "Calendar" },
+    history:  { es: "Historial",            en: "History" },
+    review:   { es: "Revisión del curso",   en: "Course review" },
 };
 
 const STRINGS = {
@@ -150,8 +154,17 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "history" | "study" | "calendar" | "search"
+    const [activeTab, setActiveTab] = useState("chat"); // "chat" | "history" | "study" | "calendar" | "search" | "review"
     const [navOpen, setNavOpen] = useState(false);
+
+    // ONB-06: estado de revisión del curso, fetch solo mientras ese tab está
+    // activo — mismo criterio "bajo demanda" que StudyPanel/CalendarPanel.
+    const {
+        setupState: reviewSetupState,
+        skipped: reviewSkipped,
+        skip: reviewSkip,
+        unskip: reviewUnskip,
+    } = useOnboardingState(courseid, { enabled: isTeacher && activeTab === "review" });
 
     const t = STRINGS[lang] || STRINGS.es;
     const messagesEndRef = useRef(null);
@@ -357,15 +370,17 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             </div>
                         ) : (
                             <div className="nexusai-panel__title-wrap">
-                                <button
-                                    type="button"
-                                    className="nexusai-icon-btn nexusai-panel__back-btn"
-                                    onClick={() => setActiveTab("chat")}
-                                    aria-label={lang === "es" ? "Volver al chat" : "Back to chat"}
-                                    title={lang === "es" ? "Volver al chat" : "Back to chat"}
-                                >
-                                    <IconBack />
-                                </button>
+                                <Tooltip label={lang === "es" ? "Volver al chat" : "Back to chat"}>
+                                    <button
+                                        type="button"
+                                        className="nexusai-icon-btn nexusai-panel__back-btn"
+                                        onClick={() => setActiveTab("chat")}
+                                        aria-label={lang === "es" ? "Volver al chat" : "Back to chat"}
+                                        title={lang === "es" ? "Volver al chat" : "Back to chat"}
+                                    >
+                                        <IconBack />
+                                    </button>
+                                </Tooltip>
                                 <h3 id="nexusai-title" className="nexusai-panel__title">
                                     {SECTION_TITLES[activeTab]?.[lang === "es" ? "es" : "en"]}
                                 </h3>
@@ -374,67 +389,80 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
                         <div className="nexusai-panel__actions">
                             {hasCourse && (
-                                <button
-                                    type="button"
-                                    className={`nexusai-icon-btn nexusai-nav-toggle ${navOpen ? "nexusai-nav-toggle--active" : ""}`}
-                                    onClick={() => setNavOpen((v) => !v)}
-                                    aria-label={lang === "es" ? "Navegación" : "Navigation"}
-                                    title={lang === "es" ? "Ir a..." : "Go to..."}
-                                >
-                                    <IconGrid />
-                                </button>
+                                <Tooltip label={lang === "es" ? "Ir a..." : "Go to..."}>
+                                    <button
+                                        type="button"
+                                        className={`nexusai-icon-btn nexusai-nav-toggle ${navOpen ? "nexusai-nav-toggle--active" : ""}`}
+                                        onClick={() => setNavOpen((v) => !v)}
+                                        aria-label={lang === "es" ? "Navegación" : "Navigation"}
+                                        title={lang === "es" ? "Ir a..." : "Go to..."}
+                                    >
+                                        <IconGrid />
+                                    </button>
+                                </Tooltip>
                             )}
                             {hasCourse && activeTab === "chat" && (
-                                <button
-                                    type="button"
-                                    className="nexusai-icon-btn nexusai-history-toggle"
-                                    onClick={() => setActiveTab("history")}
-                                    aria-label={lang === "es" ? "Historial" : "History"}
-                                    title={lang === "es" ? "Conversaciones previas" : "Previous conversations"}
-                                >
-                                    <IconHistory />
-                                </button>
+                                <Tooltip label={lang === "es" ? "Conversaciones previas" : "Previous conversations"}>
+                                    <button
+                                        type="button"
+                                        className="nexusai-icon-btn nexusai-history-toggle"
+                                        onClick={() => setActiveTab("history")}
+                                        aria-label={lang === "es" ? "Historial" : "History"}
+                                        title={lang === "es" ? "Conversaciones previas" : "Previous conversations"}
+                                    >
+                                        <IconHistory />
+                                    </button>
+                                </Tooltip>
                             )}
                             {hasCourse && (activeTab === "chat" || activeTab === "search") && (
-                                <button
-                                    type="button"
-                                    className={`nexusai-icon-btn nexusai-multicourse-toggle ${multiCourse ? "nexusai-multicourse-toggle--active" : ""}`}
-                                    onClick={() => {
-                                        setMultiCourse((v) => !v);
-                                        clearChat();
-                                    }}
-                                    aria-label={multiCourse
-                                        ? (lang === "es" ? "Buscar solo en este curso" : "Limit to this course")
-                                        : (lang === "es" ? "Buscar en todos tus cursos" : "Search all your courses")
-                                    }
-                                    title={multiCourse
-                                        ? (lang === "es" ? "Buscando en todos tus cursos (click para solo este curso)" : "Searching all courses (click to limit to this course)")
-                                        : (lang === "es" ? "Solo este curso (click para buscar en todos tus cursos)" : "This course only (click to search all your courses)")
-                                    }
-                                >
-                                    {multiCourse ? <IconGlobe /> : <IconBookOpen />}
-                                </button>
+                                <Tooltip label={multiCourse
+                                    ? (lang === "es" ? "Buscando en todos tus cursos (click para solo este curso)" : "Searching all courses (click to limit to this course)")
+                                    : (lang === "es" ? "Solo este curso (click para buscar en todos tus cursos)" : "This course only (click to search all your courses)")
+                                }>
+                                    <button
+                                        type="button"
+                                        className={`nexusai-icon-btn nexusai-multicourse-toggle ${multiCourse ? "nexusai-multicourse-toggle--active" : ""}`}
+                                        onClick={() => {
+                                            setMultiCourse((v) => !v);
+                                            clearChat();
+                                        }}
+                                        aria-label={multiCourse
+                                            ? (lang === "es" ? "Buscar solo en este curso" : "Limit to this course")
+                                            : (lang === "es" ? "Buscar en todos tus cursos" : "Search all your courses")
+                                        }
+                                        title={multiCourse
+                                            ? (lang === "es" ? "Buscando en todos tus cursos (click para solo este curso)" : "Searching all courses (click to limit to this course)")
+                                            : (lang === "es" ? "Solo este curso (click para buscar en todos tus cursos)" : "This course only (click to search all your courses)")
+                                        }
+                                    >
+                                        {multiCourse ? <IconGlobe /> : <IconBookOpen />}
+                                    </button>
+                                </Tooltip>
                             )}
                             {activeTab === "chat" && messages.length > 0 && (
+                                <Tooltip label={t.clearChat}>
+                                    <button
+                                        type="button"
+                                        className="nexusai-icon-btn"
+                                        onClick={clearChat}
+                                        aria-label={t.clearChat}
+                                        title={t.clearChat}
+                                    >
+                                        <IconNewChat />
+                                    </button>
+                                </Tooltip>
+                            )}
+                            <Tooltip label={t.close}>
                                 <button
                                     type="button"
                                     className="nexusai-icon-btn"
-                                    onClick={clearChat}
-                                    aria-label={t.clearChat}
-                                    title={t.clearChat}
+                                    onClick={() => setOpen(false)}
+                                    aria-label={t.close}
+                                    title={t.close}
                                 >
-                                    <IconNewChat />
+                                    <IconClose />
                                 </button>
-                            )}
-                            <button
-                                type="button"
-                                className="nexusai-icon-btn"
-                                onClick={() => setOpen(false)}
-                                aria-label={t.close}
-                                title={t.close}
-                            >
-                                <IconClose />
-                            </button>
+                            </Tooltip>
                         </div>
                     </header>
 
@@ -543,6 +571,19 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     ) : activeTab === "calendar" ? (
                         <div className="nexusai-panel__body">
                             <CalendarPanel courseId={courseid} lang={lang} />
+                        </div>
+                    ) : activeTab === "review" ? (
+                        <div className="nexusai-panel__body nexusai-panel__body--onb">
+                            <OnboardingPanel
+                                mode="review"
+                                courseid={courseid}
+                                wwwroot={wwwroot}
+                                lang={lang}
+                                state={reviewSetupState}
+                                skipped={reviewSkipped}
+                                onSkip={reviewSkip}
+                                onUnskip={reviewUnskip}
+                            />
                         </div>
                     ) : (
                         <div className="nexusai-panel__body">

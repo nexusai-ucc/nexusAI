@@ -820,6 +820,16 @@ class backend_client {
     }
 
     /**
+     * Preview del texto extraído de un documento (CONT-08 / #357).
+     *
+     * @param string $documentid UUID del documento.
+     * @return array { document_id, filename, course_id, status, preview, char_count, truncated }
+     */
+    public function get_document_preview(string $documentid): array {
+        return $this->get('/api/v1/documents/' . $documentid . '/preview');
+    }
+
+    /**
      * Borra un documento. El backend hace CASCADE sobre los chunks asociados.
      *
      * @param string $documentid UUID del documento.
@@ -938,6 +948,24 @@ class backend_client {
             '/api/v1/privacy/data?user_id=' . $userid . '&course_id=' . $courseid,
             ''
         );
+    }
+
+    // ----------------------------------------------------------------
+    // ONB-02 — Estado de setup del curso (issue #425)
+    // ----------------------------------------------------------------
+
+    /**
+     * Estadísticas de material indexado en NexusAI para un curso (BACK-13).
+     *
+     * Es la única señal del "estado de setup" que no vive en Moodle: cuántos
+     * documentos llegaron a `status='indexed'`. El caller (course_setup_state)
+     * degrada esta señal a "desconocida" si el backend no responde.
+     *
+     * @param int $courseid ID del curso de Moodle.
+     * @return array{course_id:int, document_count:int, chunk_count:int, last_indexed_at:?string, has_indexed_content:bool}
+     */
+    public function get_course_stats(int $courseid): array {
+        return $this->get('/api/v1/courses/' . $courseid . '/stats');
     }
 
     /**

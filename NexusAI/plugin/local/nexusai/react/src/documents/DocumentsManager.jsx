@@ -21,8 +21,10 @@ import UploadZone from "./UploadZone.jsx";
 import StudentQuestionsPanel from "./StudentQuestionsPanel.jsx";
 import AnalyticsDashboardPanel from "./AnalyticsDashboardPanel.jsx";
 import ExamGeneratorPanel from "./ExamGeneratorPanel.jsx";
+import HelpPanel from "./HelpPanel.jsx";
 import SearchPanel from "../components/SearchPanel.jsx";
-import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconSearch } from "../components/icons.jsx";
+import Tooltip from "../components/Tooltip.jsx";
+import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconInfo, IconSearch } from "../components/icons.jsx";
 import { ToastProvider, useToast } from "../components/Toast.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
 
@@ -33,23 +35,40 @@ const POLL_INTERVAL_MS = 3000;
 const PAGE_SIZE = 30;
 
 // RDS-05 (#404): nav lateral data-driven — reemplaza las 6 tabs
-// hardcodeadas de antes.
+// hardcodeadas de antes. ONB-07 (#430) suma "help".
 const NAV_ITEMS = [
     { key: "material",  label: "Material",             Icon: IconBookOpen },
     { key: "questions", label: "Preguntas de alumnos",  Icon: IconHelpCircle },
     { key: "analytics", label: "Analytics",             Icon: IconBarChart },
     { key: "exam",      label: "Generar examen",        Icon: IconClipboardList },
     { key: "search",    label: "Buscar",                Icon: IconSearch },
+    { key: "help",      label: "Ayuda",                 Icon: IconInfo },
 ];
+const NAV_KEYS = new Set(NAV_ITEMS.map((item) => item.key));
 
-function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseFullname }) {
+// UX-05 (#345): descripción corta por tab para el tooltip del nav lateral.
+const NAV_TOOLTIPS = {
+    material:  "Subir y gestionar el material indexado del curso",
+    questions: "Preguntas frecuentes y sin responder detectadas en el chat",
+    analytics: "Estadísticas de uso e interacciones de los alumnos",
+    exam:      "Generar un examen exportable a partir del material",
+    search:    "Buscar dentro del material indexado",
+    help:      "Qué hace cada herramienta de NexusAI",
+};
+
+function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseFullname, initialTab }) {
     const [documents, setDocuments]       = useState([]);
     const [total, setTotal]               = useState(0);
     const [loading, setLoading]           = useState(true);
     const [loadingMore, setLoadingMore]   = useState(false);
     const [uploading, setUploading]       = useState(false);
     const [error, setError]               = useState(null);
-    const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps" | "faq" | "exam" | "search"
+    // ONB-07 (#430): documents.php puede pedir un tab inicial vía ?tab=
+    // (p.ej. el link "Ayuda" del checklist de revisión) — "material" si no
+    // viene o no es una key válida.
+    const [activeTab, setActiveTab]       = useState(
+        NAV_KEYS.has(initialTab) ? initialTab : "material"
+    ); // "material" | "questions" | "analytics" | "exam" | "search" | "help"
     const [sections, setSections]         = useState([]); // BUS-05: secciones del curso para el selector de upload
     const [selectedSection, setSelectedSection] = useState("");
     const { showWarning } = useToast();
@@ -187,18 +206,19 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
 
                 <nav className="nexusai-doc-nav">
                     {NAV_ITEMS.map(({ key, label, Icon }) => (
-                        <button
-                            key={key}
-                            type="button"
-                            className={`nexusai-doc-nav__item ${activeTab === key ? "nexusai-doc-nav__item--active" : ""}`}
-                            onClick={() => setActiveTab(key)}
-                        >
-                            <Icon size={15} />
-                            <span>{label}</span>
-                            {key === "material" && (
-                                <span className="nexusai-doc-nav__badge">{total}</span>
-                            )}
-                        </button>
+                        <Tooltip key={key} label={NAV_TOOLTIPS[key]} placement="top">
+                            <button
+                                type="button"
+                                className={`nexusai-doc-nav__item ${activeTab === key ? "nexusai-doc-nav__item--active" : ""}`}
+                                onClick={() => setActiveTab(key)}
+                            >
+                                <Icon size={15} />
+                                <span>{label}</span>
+                                {key === "material" && (
+                                    <span className="nexusai-doc-nav__badge">{total}</span>
+                                )}
+                            </button>
+                        </Tooltip>
                     ))}
                 </nav>
 
@@ -220,6 +240,8 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                 <AnalyticsDashboardPanel courseId={courseid} />
             ) : activeTab === "exam" ? (
                 <ExamGeneratorPanel courseId={courseid} />
+            ) : activeTab === "help" ? (
+                <HelpPanel lang={lang} />
             ) : activeTab === "material" ? (
                 loading ? (
                     <div className="nexusai-loading">Cargando documentos...</div>

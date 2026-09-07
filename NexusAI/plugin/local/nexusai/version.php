@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026081205;        // fix: upload-prompt usa ModalSaveCancel directamente (Moodle 5.x no tiene Modal.types).
-$plugin->release   = '0.14.2';
+$plugin->version   = 2026090703;        // feat: dismissal/"no aplica" + acceso permanente (ONB-05/06 / #428, #429) + pestaña Ayuda (ONB-07/08 / #430, #431).
+$plugin->release   = '0.17.0';
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
