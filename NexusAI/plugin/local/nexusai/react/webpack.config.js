@@ -96,6 +96,14 @@ module.exports = (env, argv) => {
                     // Evita pelearnos con el sistema de stylesheets de Moodle.
                     use: ['style-loader', 'css-loader'],
                 },
+                {
+                    // ASIST-04: katex.min.css referencia sus propias fuentes
+                    // (@font-face) — sin esta regla, css-loader no sabe qué
+                    // hacer con esos url() y el build falla.
+                    test: /\.(woff2?|ttf|eot)$/,
+                    type: 'asset/resource',
+                    generator: { filename: 'fonts/[name][ext]' },
+                },
             ],
         },
 
@@ -107,10 +115,13 @@ module.exports = (env, argv) => {
         devtool: isProd ? false : 'eval-source-map',
 
         // Performance hints: Moodle no tolera bundles gigantes en cada page load.
-        // Si superamos 500KB hay que pensar en code-splitting / lazy loading.
+        // ASIST-04 (#360): KaTeX le suma ~300KB raw (~80KB gzip real, medido)
+        // al bundle de chat — inevitable para renderizar LaTeX de verdad, no
+        // hay alternativa liviana con la misma calidad. Subimos el budget acá
+        // a propósito en vez de dejar el warning sonando en cada build.
         performance: {
-            maxAssetSize: 500 * 1024,
-            maxEntrypointSize: 500 * 1024,
+            maxAssetSize: 700 * 1024,
+            maxEntrypointSize: 700 * 1024,
             hints: isProd ? 'warning' : false,
         },
 

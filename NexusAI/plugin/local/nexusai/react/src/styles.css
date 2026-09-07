@@ -507,6 +507,19 @@
     background: rgba(255,255,255,0.2);
     color: white;
 }
+
+/* ASIST-04: fórmulas KaTeX heredan la tipografía/color del widget en vez de
+   los defaults de KaTeX (Times New Roman negro). Solo se toca el color de
+   texto — el layout interno de KaTeX (tamaños, kerning) no se toca. */
+.nexusai-widget .nexusai-msg__markdown .katex {
+    color: var(--nexusai-fg);
+    font-size: 1em;
+}
+.nexusai-widget .nexusai-msg__markdown .katex-display {
+    margin: 8px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
 .nexusai-msg--user .nexusai-msg__bubble a { color: white; }
 
 /* ----- Copy button en bloques de código ----- */
@@ -1219,6 +1232,92 @@
 
 /* ── Calendario del curso (CAL-01) ── */
 .nexusai-calendar { padding: 12px; }
+
+/* ── Feed .ics suscribible (CAL-07) ── */
+.nexusai-calendar__feed {
+    margin-bottom: 14px;
+}
+.nexusai-calendar__feed-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--nexusai-primary);
+    background: var(--nexusai-primary-light, rgba(99,102,241,0.08));
+    border: 1px solid var(--nexusai-primary-ring, rgba(99,102,241,0.2));
+    border-radius: 6px;
+    cursor: pointer;
+}
+.nexusai-calendar__feed-toggle:hover {
+    background: var(--nexusai-primary-ring, rgba(99,102,241,0.15));
+}
+.nexusai-calendar__feed-panel {
+    margin-top: 8px;
+    padding: 12px 14px;
+    background: var(--nexusai-bg-subtle, #f8fafc);
+    border: 1px solid var(--nexusai-border);
+    border-radius: 8px;
+}
+.nexusai-calendar__feed-intro {
+    margin: 0 0 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--nexusai-fg-muted, #64748b);
+}
+.nexusai-calendar__feed-status {
+    margin: 0;
+    font-size: 12px;
+    color: var(--nexusai-fg-muted, #64748b);
+}
+.nexusai-calendar__feed-status--error {
+    color: #b91c1c;
+}
+.nexusai-calendar__feed-urlrow {
+    display: flex;
+    gap: 6px;
+}
+.nexusai-calendar__feed-url {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    font-size: 11.5px;
+    font-family: monospace;
+    color: var(--nexusai-fg);
+    background: var(--nexusai-bg, #fff);
+    border: 1px solid var(--nexusai-border);
+    border-radius: 6px;
+}
+.nexusai-calendar__feed-copybtn {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #fff;
+    background: var(--nexusai-primary);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.nexusai-calendar__feed-copybtn:hover {
+    background: var(--nexusai-primary-hover, var(--nexusai-primary));
+}
+.nexusai-calendar__feed-regenbtn {
+    margin-top: 8px;
+    padding: 0;
+    font-size: 11.5px;
+    color: var(--nexusai-fg-muted, #64748b);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.nexusai-calendar__feed-regenbtn:hover {
+    color: var(--nexusai-fg);
+}
+
 .nexusai-calendar__rangebtns {
     display: flex;
     align-items: center;

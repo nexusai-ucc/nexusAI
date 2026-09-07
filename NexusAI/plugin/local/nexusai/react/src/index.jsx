@@ -21,6 +21,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import ChatApp from './ChatApp.jsx';
 import './styles.css';
+import 'katex/dist/katex.min.css';
 
 export const init = (params = {}) => {
     const container = document.getElementById('local-nexusai-container');

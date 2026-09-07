@@ -285,6 +285,31 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // ----- CALENDARIO — CAL-07 (feed .ics suscribible) -----
+    // Sin capability de NexusAI: es una función "de cuenta personal", no de
+    // curso — cualquier usuario logueado no-invitado puede generar su URL,
+    // igual que el export de calendario nativo de Moodle.
+
+    // Get-or-create de la URL de suscripción .ics del usuario actual.
+    'local_nexusai_calendar_feed_get' => [
+        'classname'     => '\local_nexusai\external\calendar_feed_get',
+        'methodname'    => 'execute',
+        'description'   => 'Get or create the current user\'s subscribable calendar feed URL.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'loginrequired' => true,
+    ],
+
+    // Revoca la URL de suscripción actual del usuario (borra el token).
+    'local_nexusai_calendar_feed_revoke' => [
+        'classname'     => '\local_nexusai\external\calendar_feed_revoke',
+        'methodname'    => 'execute',
+        'description'   => 'Revoke the current user\'s calendar feed token.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'loginrequired' => true,
+    ],
+
     // ----- FOROS — Épica 06 -----
 
     // Detecta posts similares al texto que el alumno está escribiendo (F-07).

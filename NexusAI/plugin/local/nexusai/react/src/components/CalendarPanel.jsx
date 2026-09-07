@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { getUpcomingEvents } from "../api/calendar.js";
 import { listCalendarAlerts, saveCalendarAlert } from "../api/calendarAlerts.js";
+import { getCalendarFeed, revokeCalendarFeed } from "../api/calendarFeed.js";
 import { IconCalendar, IconCheck } from "./icons.jsx";
 
 const TYPE_LABELS = {
@@ -42,6 +43,16 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
     const [alerts, setAlerts] = useState({});
     const [savingAlert, setSavingAlert] = useState({});
 
+    // CAL-07: feed .ics suscribible — se carga solo cuando el alumno abre la
+    // sección (evita crear un token en cada page load si nunca la usa).
+    const [feedOpen, setFeedOpen] = useState(false);
+    const [feedLoading, setFeedLoading] = useState(false);
+    const [feedUrl, setFeedUrl] = useState(null);
+    const [feedEnabled, setFeedEnabled] = useState(true);
+    const [feedError, setFeedError] = useState(null);
+    const [feedCopied, setFeedCopied] = useState(false);
+    const [feedRegenerating, setFeedRegenerating] = useState(false);
+
     const userId = window.M?.cfg?.userId ?? 1;
 
     const L = lang === "es" ? {
@@ -59,6 +70,14 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         alert7:       "7 días antes",
         bannerPrefix: "Próximo",
         bannerPrefixPlural: "Próximos",
+        feedToggle:      "Suscribite a tu calendario",
+        feedIntro:       "Recibí los exámenes y entregas de todos tus cursos directo en Google Calendar o Apple Calendar — se actualiza solo, sin tener que volver a exportar.",
+        feedLoadingMsg:  "Generando tu link...",
+        feedCopy:        "Copiar link",
+        feedCopied:      "¡Copiado!",
+        feedRegenerate:  "Generar nuevo link",
+        feedDisabled:    "El calendario de este sitio no tiene la exportación habilitada. Pedile al administrador que la active en Site administration → Calendar.",
+        feedErrorMsg:    "No se pudo generar el link de suscripción.",
     } : {
         title:        "Upcoming deadlines",
         rangeLabel:   "Show:",
@@ -74,7 +93,58 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         alert7:       "7 days before",
         bannerPrefix: "Upcoming",
         bannerPrefixPlural: "Upcoming",
+        feedToggle:      "Subscribe to your calendar",
+        feedIntro:       "Get exams and assignments from all your courses straight into Google Calendar or Apple Calendar — it refreshes on its own, no need to export again.",
+        feedLoadingMsg:  "Generating your link...",
+        feedCopy:        "Copy link",
+        feedCopied:      "Copied!",
+        feedRegenerate:  "Generate new link",
+        feedDisabled:    "This site has calendar export disabled. Ask an administrator to enable it under Site administration → Calendar.",
+        feedErrorMsg:    "Could not generate the subscription link.",
     };
+
+    useEffect(() => {
+        if (!feedOpen || feedUrl || feedError) return;
+        let cancelled = false;
+        setFeedLoading(true);
+        getCalendarFeed()
+            .then((data) => {
+                if (cancelled) return;
+                setFeedEnabled(!!data?.enabled);
+                setFeedUrl(data?.url || null);
+            })
+            .catch((err) => { if (!cancelled) setFeedError(err.message || String(err)); })
+            .finally(() => { if (!cancelled) setFeedLoading(false); });
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [feedOpen]);
+
+    async function handleCopyFeedUrl() {
+        if (!feedUrl) return;
+        try {
+            await navigator.clipboard.writeText(feedUrl);
+            setFeedCopied(true);
+            setTimeout(() => setFeedCopied(false), 2000);
+        } catch {
+            // Clipboard API puede fallar en contextos raros — el link ya
+            // queda visible en pantalla para copiarlo a mano.
+        }
+    }
+
+    async function handleRegenerateFeedUrl() {
+        setFeedRegenerating(true);
+        setFeedError(null);
+        try {
+            await revokeCalendarFeed();
+            const data = await getCalendarFeed();
+            setFeedEnabled(!!data?.enabled);
+            setFeedUrl(data?.url || null);
+        } catch (err) {
+            setFeedError(err.message || String(err));
+        } finally {
+            setFeedRegenerating(false);
+        }
+    }
 
     useEffect(() => {
         let cancelled = false;
@@ -141,6 +211,68 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                     ))}
                 </div>
             )}
+
+            <div className="nexusai-calendar__feed">
+                <button
+                    type="button"
+                    className="nexusai-calendar__feed-toggle"
+                    onClick={() => setFeedOpen((v) => !v)}
+                >
+                    <IconCalendar size={13} />
+                    {L.feedToggle}
+                </button>
+
+                {feedOpen && (
+                    <div className="nexusai-calendar__feed-panel">
+                        <p className="nexusai-calendar__feed-intro">{L.feedIntro}</p>
+
+                        {feedLoading && (
+                            <p className="nexusai-calendar__feed-status">{L.feedLoadingMsg}</p>
+                        )}
+
+                        {!feedLoading && feedError && (
+                            <p className="nexusai-calendar__feed-status nexusai-calendar__feed-status--error">
+                                {L.feedErrorMsg}
+                            </p>
+                        )}
+
+                        {!feedLoading && !feedError && feedEnabled === false && (
+                            <p className="nexusai-calendar__feed-status nexusai-calendar__feed-status--error">
+                                {L.feedDisabled}
+                            </p>
+                        )}
+
+                        {!feedLoading && !feedError && feedEnabled && feedUrl && (
+                            <>
+                                <div className="nexusai-calendar__feed-urlrow">
+                                    <input
+                                        type="text"
+                                        className="nexusai-calendar__feed-url"
+                                        value={feedUrl}
+                                        readOnly
+                                        onFocus={(e) => e.target.select()}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="nexusai-calendar__feed-copybtn"
+                                        onClick={handleCopyFeedUrl}
+                                    >
+                                        {feedCopied ? L.feedCopied : L.feedCopy}
+                                    </button>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="nexusai-calendar__feed-regenbtn"
+                                    onClick={handleRegenerateFeedUrl}
+                                    disabled={feedRegenerating}
+                                >
+                                    {feedRegenerating ? "..." : L.feedRegenerate}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
 
             <div className="nexusai-calendar__rangebtns">
                 <span className="nexusai-quiz__label">{L.rangeLabel}</span>

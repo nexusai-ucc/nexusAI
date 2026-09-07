@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/nexusai/db" VERSION="20260501" COMMENT="NexusAI local plugin schema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd">
+<XMLDB PATH="local/nexusai/db" VERSION="20260906" COMMENT="NexusAI local plugin schema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd">
   <TABLES>
     <TABLE NAME="local_nexusai_placeholder" COMMENT="Placeholder table">
       <FIELDS>
@@ -8,6 +8,21 @@
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
+    </TABLE>
+    <TABLE NAME="local_nexusai_calendar_feed" COMMENT="CAL-07: token revocable por alumno para el feed .ics suscribible. No guarda eventos — solo el mapeo userid-token; el contenido real del feed lo sirve calendar_feed.php redirigiendo al export nativo de Moodle.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="token" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid_unique" TYPE="unique" FIELDS="userid"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="token" UNIQUE="true" FIELDS="token"/>
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

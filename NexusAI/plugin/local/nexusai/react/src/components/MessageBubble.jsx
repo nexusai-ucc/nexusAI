@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
+import katex from "katex";
 import { IconFile, IconSparkles, IconX } from "./icons.jsx";
 
 // Regex conservador para detectar archivos citados en el texto del LLM.
@@ -34,6 +35,93 @@ marked.use({
     },
 });
 
+/**
+ * ASIST-04 (#360): notación matemática LaTeX ($...$, $$...$$, \(...\), \[...\]).
+ *
+ * `marked` acá NO es un pipeline remark/unified (no hay remark-math/rehype-katex
+ * en uso pese a estar en package.json — son dependencias muertas de un
+ * prototipo previo). Se usa la extension API propia de marked (soportada
+ * desde v10+) con tokenizers a medida por cada delimitador.
+ *
+ * `output: "html"` (en vez del default "htmlAndMathml") evita que KaTeX
+ * agregue un árbol MathML paralelo — simplifica mucho el allowlist de
+ * DOMPurify de abajo (solo hace falta permitir <span> + class/style) a
+ * costa de perder el árbol accesible para lectores de pantalla.
+ *
+ * throwOnError:false es clave: si el LLM generó LaTeX inválido, KaTeX
+ * devuelve un <span> con el error resaltado en vez de tirar una excepción
+ * que rompería el render de todo el mensaje.
+ */
+function renderMath(tex, displayMode) {
+    try {
+        return katex.renderToString(tex, {
+            throwOnError: false,
+            output: "html",
+            displayMode,
+        });
+    } catch {
+        // No debería pasar con throwOnError:false, pero por las dudas no
+        // dejamos que un error de KaTeX tire abajo el resto del mensaje.
+        const raw = displayMode ? `$$${tex}$$` : `$${tex}$`;
+        return raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+}
+
+// Extensiones de bloque ($$...$$ y \[...\]) — se intentan antes que el
+// tokenizer de párrafo de marked, así una fórmula multilínea no queda
+// partida en varios <p>.
+const mathBlockExtensions = [
+    {
+        name: "mathBlockDollar",
+        level: "block",
+        start(src) { const i = src.indexOf("$$"); return i === -1 ? undefined : i; },
+        tokenizer(src) {
+            const match = /^\$\$([\s\S]+?)\$\$(?:\n+|$)/.exec(src);
+            if (match) return { type: "mathBlockDollar", raw: match[0], text: match[1].trim() };
+        },
+        renderer(token) { return renderMath(token.text, true); },
+    },
+    {
+        name: "mathBlockBracket",
+        level: "block",
+        start(src) { const i = src.indexOf("\\["); return i === -1 ? undefined : i; },
+        tokenizer(src) {
+            const match = /^\\\[([\s\S]+?)\\\](?:\n+|$)/.exec(src);
+            if (match) return { type: "mathBlockBracket", raw: match[0], text: match[1].trim() };
+        },
+        renderer(token) { return renderMath(token.text, true); },
+    },
+];
+
+// Extensiones inline ($...$ y \(...\)). El regex de $...$ exige que no
+// empiece/termine en espacio y que no lo siga un dígito, para no confundir
+// precios como "cuesta $5 o $10" con notación matemática.
+const mathInlineExtensions = [
+    {
+        name: "mathInlineDollar",
+        level: "inline",
+        start(src) { const i = src.indexOf("$"); return i === -1 ? undefined : i; },
+        tokenizer(src) {
+            const match = /^\$(?!\s)((?:\\\$|[^$\n])*?[^\s\\])\$(?!\d)/.exec(src)
+                || /^\$([^\s$\n])\$(?!\d)/.exec(src);
+            if (match) return { type: "mathInlineDollar", raw: match[0], text: match[1] };
+        },
+        renderer(token) { return renderMath(token.text, false); },
+    },
+    {
+        name: "mathInlineParen",
+        level: "inline",
+        start(src) { const i = src.indexOf("\\("); return i === -1 ? undefined : i; },
+        tokenizer(src) {
+            const match = /^\\\(([\s\S]+?)\\\)/.exec(src);
+            if (match) return { type: "mathInlineParen", raw: match[0], text: match[1].trim() };
+        },
+        renderer(token) { return renderMath(token.text, false); },
+    },
+];
+
+marked.use({ extensions: [...mathBlockExtensions, ...mathInlineExtensions] });
+
 function renderMarkdown(text) {
     const rawHtml = marked.parse(text || "");
     return DOMPurify.sanitize(rawHtml, {
@@ -42,8 +130,9 @@ function renderMarkdown(text) {
             "ul", "ol", "li", "code", "pre", "blockquote",
             "h1", "h2", "h3", "h4", "h5", "h6",
             "a", "hr", "table", "thead", "tbody", "tr", "th", "td",
+            "span",
         ],
-        ALLOWED_ATTR: ["href", "target", "rel", "title"],
+        ALLOWED_ATTR: ["href", "target", "rel", "title", "class", "style", "aria-hidden"],
         FORCE_BODY: false,
     });
 }
