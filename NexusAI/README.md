@@ -154,7 +154,7 @@ nexusAI/
    - **API key + Shared secret:** pedirlas al equipo NexusAI (Delfina, Santiago, Marcos).
 4. Crear un curso, subir material como docente desde el menú **NexusAI · Materials** del curso, y probar el chat como alumno.
 
-> **Deploy en transición:** el backend de producción se está migrando a un hosting propio en Oracle Cloud (self-hosted, ver issue `DEPLOY-02`) — pedile al equipo la URL vigente en vez de asumir un endpoint fijo acá. No hace falta instalar nada del lado servidor por tu cuenta — solo el plugin en tu Moodle.
+> **Dónde corre el backend:** self-hosted en Oracle Cloud, con dos ambientes (staging y producción) — ver [`docs/DEPLOY_ORACLE.md`](docs/DEPLOY_ORACLE.md). Pedile al equipo la URL del ambiente que quieras usar, junto con su API key y shared secret (son distintos por ambiente), en vez de asumir un endpoint fijo acá. No hace falta instalar nada del lado servidor por tu cuenta — solo el plugin en tu Moodle.
 
 Si querés correr **toda la pila local** (backend + Moodle + DB) en lugar de usar el deploy, ver la sección siguiente.
 

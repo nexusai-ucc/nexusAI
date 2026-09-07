@@ -1,5 +1,11 @@
 # Diagrama de arquitectura — NexusAI
 
+> **Nota (2026-09-07):** el bloque "Backend NexusAI" figura acá como
+> *Railway / Hetzner*, que era el hosting proyectado en mayo de 2026. El deploy
+> vigente es self-hosted en Oracle Cloud — ver
+> [`../DEPLOY_ORACLE.md`](../DEPLOY_ORACLE.md). La estructura de componentes y
+> el flujo de datos del diagrama siguen siendo correctos.
+
 Vista de componentes del sistema completo. Incluye flujo de datos entre el navegador del alumno, Moodle, el backend Python y los servicios externos.
 
 ```mermaid

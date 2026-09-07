@@ -198,10 +198,19 @@ Cada decisión está formalizada como ADR (Architecture Decision Record):
 | 008 (TBD) | React compilado como **bundle único AMD vía Webpack** (sin chunks lazy, con `publicPath` configurado) | 🟨 pendiente Sprint 3 |
 | 009 (TBD) | Plugin tipo **`local`** con **Hook API nuevo de Moodle 4.4+** y callback legacy para 4.1-4.3 | 🟨 pendiente Sprint 3 |
 | [010](adr/010-onboarding-docente.md) | **Onboarding al docente**: capa de ayuda de solo lectura (crear/editar curso + pestaña Ayuda), un componente reusable, estado en `user_preferences` | 📝 Propuesta |
+| [011](adr/011-deploy-self-hosted-oracle.md) | **Deploy self-hosted en Oracle Cloud** (staging + producción), retiro de Railway y Fly.io | ✅ Aceptada |
 
 ---
 
 ## 8. Despliegue (MVP)
+
+> **Nota (2026-09-07):** el diagrama y la tabla de costos de esta sección
+> describen la **arquitectura objetivo** sobre infraestructura de UCC (Moodle y
+> PostgreSQL de la universidad, backend en Railway/Hetzner), tal como se
+> proyectó en mayo de 2026. **No es el deploy vigente.** Hoy el backend corre
+> self-hosted en dos VMs de Oracle Cloud (staging y producción) y Moodle corre
+> local en la máquina de cada uno. Ver [`DEPLOY_ORACLE.md`](DEPLOY_ORACLE.md) y
+> [ADR-011](adr/011-deploy-self-hosted-oracle.md).
 
 ```mermaid
 flowchart LR
