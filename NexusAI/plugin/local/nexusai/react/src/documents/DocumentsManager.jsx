@@ -23,6 +23,7 @@ import AnalyticsDashboardPanel from "./AnalyticsDashboardPanel.jsx";
 import ExamGeneratorPanel from "./ExamGeneratorPanel.jsx";
 import HelpPanel from "./HelpPanel.jsx";
 import SearchPanel from "../components/SearchPanel.jsx";
+import Tooltip from "../components/Tooltip.jsx";
 import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconInfo, IconSearch } from "../components/icons.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
@@ -42,6 +43,16 @@ const NAV_ITEMS = [
     { key: "help",      label: "Ayuda",                 Icon: IconInfo },
 ];
 const NAV_KEYS = new Set(NAV_ITEMS.map((item) => item.key));
+
+// UX-05 (#345): descripción corta por tab para el tooltip del nav lateral.
+const NAV_TOOLTIPS = {
+    material:  "Subir y gestionar el material indexado del curso",
+    questions: "Preguntas frecuentes y sin responder detectadas en el chat",
+    analytics: "Estadísticas de uso e interacciones de los alumnos",
+    exam:      "Generar un examen exportable a partir del material",
+    search:    "Buscar dentro del material indexado",
+    help:      "Qué hace cada herramienta de NexusAI",
+};
 
 /**
  * Extrae el mensaje legible de un error de Moodle/FastAPI.
@@ -218,18 +229,19 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
 
                 <nav className="nexusai-doc-nav">
                     {NAV_ITEMS.map(({ key, label, Icon }) => (
-                        <button
-                            key={key}
-                            type="button"
-                            className={`nexusai-doc-nav__item ${activeTab === key ? "nexusai-doc-nav__item--active" : ""}`}
-                            onClick={() => setActiveTab(key)}
-                        >
-                            <Icon size={15} />
-                            <span>{label}</span>
-                            {key === "material" && (
-                                <span className="nexusai-doc-nav__badge">{total}</span>
-                            )}
-                        </button>
+                        <Tooltip key={key} label={NAV_TOOLTIPS[key]} placement="top">
+                            <button
+                                type="button"
+                                className={`nexusai-doc-nav__item ${activeTab === key ? "nexusai-doc-nav__item--active" : ""}`}
+                                onClick={() => setActiveTab(key)}
+                            >
+                                <Icon size={15} />
+                                <span>{label}</span>
+                                {key === "material" && (
+                                    <span className="nexusai-doc-nav__badge">{total}</span>
+                                )}
+                            </button>
+                        </Tooltip>
                     ))}
                 </nav>
 

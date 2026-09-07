@@ -10,7 +10,7 @@ import { useRef, useState } from "react";
 
 import { deleteDocument, getDocumentPreview } from "./api.js";
 import { IconFileText } from "../components/icons.jsx";
-import ConfirmModal from "../components/ConfirmModal.jsx";
+import ConfirmModal, { useDismissable } from "../components/ConfirmModal.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 
@@ -142,8 +142,17 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
 // ============================================================
 
 export function ErrorModal({ message, onClose }) {
+    useDismissable(onClose);
     return (
-        <div className="nexusai-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="nexusai-error-title">
+        <div
+            className="nexusai-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="nexusai-error-title"
+            onMouseDown={(e) => {
+                if (e.target === e.currentTarget) onClose();
+            }}
+        >
             <div className="nexusai-modal">
                 <h2 className="nexusai-modal__title nexusai-modal__title--error" id="nexusai-error-title">
                     Error
