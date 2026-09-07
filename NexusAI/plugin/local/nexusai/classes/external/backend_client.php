@@ -609,6 +609,102 @@ class backend_client {
     }
 
     /**
+     * SP-11 (#315): cuántas flashcards ya generadas "tocan hoy" vs. el total.
+     *
+     * @param int         $courseid ID del curso.
+     * @param int         $userid   $USER->id real del alumno.
+     * @param string|null $topic    Tema (opcional).
+     * @return array{due_count:int, total_count:int}
+     */
+    public function flashcards_summary(int $courseid, int $userid, ?string $topic): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'topic'     => $topic,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/flashcards/summary', $body);
+    }
+
+    /**
+     * SP-11 (#315): flashcards ya generadas que "tocan hoy" (más vencidas
+     * primero) — no llama al LLM, sirve del banco ya persistido.
+     *
+     * @param int         $courseid ID del curso.
+     * @param int         $userid   $USER->id real del alumno.
+     * @param string|null $topic    Tema (opcional).
+     * @param int         $limit    Cantidad máxima.
+     * @return array{course_id:int, questions:array}
+     */
+    public function flashcards_due(int $courseid, int $userid, ?string $topic, int $limit): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'topic'     => $topic,
+            'limit'     => $limit,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/flashcards/due', $body);
+    }
+
+    /**
+     * SP-11 (#315): aplica repetición espaciada (SM-2) sobre el resultado de
+     * autoevaluación de una sesión de flashcards. Se llama una sola vez al
+     * final de la sesión (mismo patrón que save_quiz_attempt/record_quiz_errors).
+     *
+     * @param int   $courseid ID del curso.
+     * @param int   $userid   $USER->id real del alumno.
+     * @param array $reviews  [{flashcard_id: string, knew_it: bool}, ...]
+     * @return array{updated:int}
+     */
+    public function flashcards_review_batch(int $courseid, int $userid, array $reviews): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'reviews'   => $reviews,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/flashcards/review-batch', $body);
+    }
+
+    /**
+     * ASIST-01 (#321): guarda el voto 👍/👎 del alumno sobre una respuesta
+     * puntual del chat.
+     *
+     * @param string      $messageid ID del mensaje (UUID de `messages`).
+     * @param int         $courseid  ID del curso.
+     * @param int         $userid    $USER->id real del alumno.
+     * @param bool        $ishelpful true = 👍, false = 👎.
+     * @param string|null $comment   Comentario corto opcional (solo con 👎).
+     * @return array{ok:bool}
+     */
+    public function submit_message_feedback(
+        string $messageid, int $courseid, int $userid, bool $ishelpful, ?string $comment
+    ): array {
+        $payload = [
+            'message_id'  => $messageid,
+            'course_id'   => $courseid,
+            'user_id'     => $userid,
+            'is_helpful'  => $ishelpful,
+            'comment'     => $comment,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/chat/messages/feedback', $body);
+    }
+
+    /**
      * Búsqueda semántica en el material del curso (Feature A — sin LLM).
      *
      * @param int    $courseid ID del curso de Moodle.

@@ -177,6 +177,14 @@ export const IconThumbsUp = ({ size = 22 }) => (
     </svg>
 );
 
+// ── ThumbsDown (ASIST-01: feedback negativo sobre una respuesta) ───────────
+export const IconThumbsDown = ({ size = 22 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M17 14V2" />
+        <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H17v12l-4 9a3 3 0 0 1-3-3z" />
+    </svg>
+);
+
 // ── Book (score bajo, "a estudiar") ────────────────────────────────────────
 export const IconBook = ({ size = 22 }) => (
     <svg {...baseProps(size)}>

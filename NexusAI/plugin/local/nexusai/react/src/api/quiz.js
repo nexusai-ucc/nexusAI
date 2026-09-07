@@ -434,3 +434,78 @@ export async function suggestDifficulty(courseId, topic = "") {
         accuracy_pct: response.accuracypct ?? null,
     };
 }
+
+/**
+ * Repetición espaciada de flashcards (SM-2) — SP-11 / #315.
+ *
+ * Cuántas flashcards ya generadas "tocan hoy" vs. el total generado hasta
+ * ahora en el curso (persistidas por generateQuiz cuando questionType es
+ * "flashcard").
+ *
+ * @param {number} courseId
+ * @param {string} [topic]
+ * @returns {Promise<{due_count:number, total_count:number}>}
+ */
+export async function getFlashcardsSummary(courseId, topic = "") {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 150));
+        return { due_count: 0, total_count: 0 };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_flashcards_summary",
+        args: { courseid: courseId, topic },
+    }]);
+
+    return {
+        due_count: response.duecount ?? 0,
+        total_count: response.totalcount ?? 0,
+    };
+}
+
+/**
+ * Flashcards ya generadas que "tocan hoy" (más vencidas primero), del banco
+ * persistido — sin llamar al LLM (SP-11 / #315).
+ *
+ * @param {number} courseId
+ * @param {string} [topic]
+ * @param {number} [limit=10]
+ * @returns {Promise<{course_id:number, questions:Array}>}
+ */
+export async function getDueFlashcards(courseId, topic = "", limit = 10) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { course_id: courseId, questions: [] };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_flashcards_due",
+        args: { courseid: courseId, topic, limit },
+    }]);
+
+    return response;
+}
+
+/**
+ * Aplica repetición espaciada (SM-2) sobre el resultado de autoevaluación de
+ * una sesión de flashcards. Se llama UNA vez al final de la sesión (SP-11 /
+ * #315), no por-tarjeta. Best-effort: no debe bloquear el flujo si falla.
+ *
+ * @param {number} courseId
+ * @param {Array<{flashcardId:string, knewIt:boolean}>} reviews
+ * @returns {Promise<{updated:number}>}
+ */
+export async function submitFlashcardReviews(courseId, reviews) {
+    if (!reviews?.length) return { updated: 0 };
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { updated: 0 };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_flashcards_review_batch",
+        args: {
+            courseid: courseId,
+            reviews: reviews.map((r) => ({ flashcardid: r.flashcardId, knewit: r.knewIt })),
+        },
+    }]);
+
+    return response;
+}

@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026090706;        // feat: dificultad sugerida en el quiz + eventos genéricos de curso en el calendario (SP-12 / #322, CAL-04 / #319).
-$plugin->release   = '0.17.3';
+$plugin->version   = 2026090707;        // feat: repetición espaciada de flashcards + feedback 👍/👎 del chat (SP-11 / #315, ASIST-01 / #321).
+$plugin->release   = '0.17.4';
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

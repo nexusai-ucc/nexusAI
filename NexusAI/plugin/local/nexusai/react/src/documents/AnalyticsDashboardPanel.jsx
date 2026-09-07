@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from "react";
 import { getAnalyticsDashboard } from "./api.js";
-import { IconBarChart, IconClipboardList, IconHelpCircle, IconTarget } from "../components/icons.jsx";
+import { IconBarChart, IconClipboardList, IconHelpCircle, IconTarget, IconThumbsUp } from "../components/icons.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
 
 export default function AnalyticsDashboardPanel({ courseId }) {
@@ -47,6 +47,10 @@ export default function AnalyticsDashboardPanel({ courseId }) {
     const dailyCounts = data?.daily_message_counts || [];
     const quizDist = data?.quiz_score_distribution || { total_attempts: 0, average_score: 0, buckets: [] };
     const gapsRatio = data?.gaps_ratio || { gaps_detected: 0, questions_answered: 0, ratio: 0 };
+    // ASIST-01 (#321): % de respuestas del chat marcadas como útiles por los
+    // alumnos — señal complementaria al ratio de gaps (cubre respuestas que sí
+    // encontraron material relevante pero fueron malas igual).
+    const feedbackRatio = data?.feedback_ratio || { helpful_count: 0, total_rated: 0, useful_pct: 0 };
     const topicsConsulted = data?.topics_consulted || 0;
 
     const maxDaily = Math.max(1, ...dailyCounts.map((d) => d.message_count));
@@ -60,7 +64,8 @@ export default function AnalyticsDashboardPanel({ courseId }) {
         topQueries.length === 0 &&
         dailyCounts.every((d) => d.message_count === 0) &&
         quizDist.total_attempts === 0 &&
-        totalGapsBase === 0;
+        totalGapsBase === 0 &&
+        feedbackRatio.total_rated === 0;
 
     return (
         <div className="nexusai-analytics">
@@ -130,6 +135,15 @@ export default function AnalyticsDashboardPanel({ courseId }) {
                             <IconBarChart size={16} />
                             <span className="nexusai-analytics__stat-value">{topicsConsulted}</span>
                             <span className="nexusai-analytics__stat-label">Temas consultados</span>
+                        </div>
+                        <div className="nexusai-analytics__stat-card">
+                            <IconThumbsUp size={16} />
+                            <span className="nexusai-analytics__stat-value">
+                                {feedbackRatio.total_rated > 0 ? `${feedbackRatio.useful_pct}%` : "—"}
+                            </span>
+                            <span className="nexusai-analytics__stat-label">
+                                Respuestas útiles{feedbackRatio.total_rated > 0 ? ` (${feedbackRatio.total_rated} votos)` : ""}
+                            </span>
                         </div>
                     </div>
 

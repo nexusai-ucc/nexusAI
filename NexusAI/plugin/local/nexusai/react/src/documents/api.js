@@ -510,6 +510,11 @@ const MOCK_ANALYTICS_DASHBOARD = {
         questions_answered: 78,
         ratio: 0.133,
     },
+    feedback_ratio: {
+        helpful_count: 34,
+        total_rated: 41,
+        useful_pct: 82.9,
+    },
     topics_consulted: 9,
 };
 

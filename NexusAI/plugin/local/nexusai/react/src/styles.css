@@ -444,6 +444,67 @@
     text-decoration: underline;
 }
 
+/* ASIST-01 (#321): feedback 👍/👎 del alumno sobre una respuesta puntual. */
+.nexusai-msg__feedback-btn {
+    display: inline-flex;
+    align-items: center;
+    background: none;
+    border: none;
+    color: var(--nexusai-fg-muted);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: var(--nexusai-radius-sm);
+    line-height: 0;
+}
+.nexusai-msg__feedback-btn:hover:not(:disabled) {
+    color: var(--nexusai-primary);
+    background: var(--nexusai-primary-light);
+}
+.nexusai-msg__feedback-btn:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+.nexusai-msg__feedback-btn--active-up {
+    color: #16a34a;
+}
+.nexusai-msg__feedback-btn--active-down {
+    color: #dc2626;
+}
+.nexusai-msg__feedback-comment {
+    margin-top: 6px;
+    padding-left: 34px;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+}
+.nexusai-msg__feedback-comment textarea {
+    flex: 1;
+    font-size: 12px;
+    font-family: inherit;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-sm);
+    padding: 6px 8px;
+    resize: vertical;
+    min-height: 36px;
+}
+.nexusai-msg__feedback-comment button {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--nexusai-primary);
+    border: none;
+    border-radius: var(--nexusai-radius-sm);
+    padding: 6px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.nexusai-msg__feedback-thanks {
+    padding-left: 34px;
+    font-size: 12px;
+    color: var(--nexusai-fg-muted);
+    margin-top: 4px;
+}
+
 .nexusai-msg__markdown p { margin: 0 0 8px; }
 .nexusai-msg__markdown p:last-child { margin-bottom: 0; }
 .nexusai-msg__markdown ul,
