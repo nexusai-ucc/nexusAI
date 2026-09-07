@@ -1,5 +1,12 @@
 # Sprint 3 — Plan ejecutable
 
+> **Nota (2026-09-07):** documento histórico. El deploy a Fly.io que se planifica
+> acá se ejecutó en su momento y luego fue reemplazado por el deploy self-hosted
+> en Oracle Cloud; los archivos `fly.toml` y el workflow de Fly.io ya no existen
+> en el repo. Ver [ADR-011](adr/011-deploy-self-hosted-oracle.md) y
+> [`DEPLOY_ORACLE.md`](DEPLOY_ORACLE.md). Se conserva sin modificar como registro
+> de la planificación de ese sprint.
+
 **Duración:** 21 may → 27 may 2026 (7 días)
 **Foco:** producción + setup de validación interna
 

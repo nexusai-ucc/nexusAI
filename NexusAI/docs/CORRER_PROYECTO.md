@@ -342,4 +342,4 @@ npm run build
 - El backend FastAPI **nunca es llamado directamente desde el browser**. El browser llama a Moodle PHP, Moodle llama al backend con HMAC.
 - La URL correcta del backend en la config de Moodle es `http://host.docker.internal:8001` (no `localhost`).
 - `dev.sh full` y `dev.sh tools` levantan **pgAdmin** (no Moodle). Moodle siempre va por `moodle-docker`.
-- Las migraciones de DB se corren con `docker compose exec api alembic upgrade head`. En producción (Fly.io/Railway) el `entrypoint.sh` las corre solo al arrancar.
+- Las migraciones de DB se corren con `docker compose exec api alembic upgrade head`. En staging y producción (VMs de Oracle Cloud) el `entrypoint.sh` las corre solo al arrancar — ver [`DEPLOY_ORACLE.md`](DEPLOY_ORACLE.md).
