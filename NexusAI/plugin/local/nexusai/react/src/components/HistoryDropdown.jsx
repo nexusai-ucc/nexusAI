@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { listSessions, deleteSession } from "../api/history.js";
 import { IconX } from "./icons.jsx";
 import ConfirmModal from "./ConfirmModal.jsx";
+import { getFriendlyErrorMessage } from "./errors.js";
 
 const INITIAL_LIMIT = 20;
 const LOAD_MORE_STEP = 20;
@@ -57,7 +58,7 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
         setLimit(INITIAL_LIMIT);
         listSessions({ courseId, scopeCourse, limit: INITIAL_LIMIT })
             .then((data) => { if (!cancelled) setSessions(data?.sessions || []); })
-            .catch((err) => { if (!cancelled) setError(err.message || "Error"); })
+            .catch((err) => { if (!cancelled) setError(getFriendlyErrorMessage(err, lang === "es" ? "No se pudo cargar el historial." : "Couldn't load the history.", lang)); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [open, courseId, scopeCourse]);
@@ -79,7 +80,7 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             setSessions(data?.sessions || []);
             setLimit(nextLimit);
         } catch (err) {
-            setError(err.message || "Error cargando más sesiones");
+            setError(getFriendlyErrorMessage(err, lang === "es" ? "No se pudieron cargar más sesiones." : "Couldn't load more sessions.", lang));
         } finally {
             setLoadingMore(false);
         }
@@ -87,7 +88,7 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
 
     const labels = lang === "es"
         ? {
-            empty:       "Todavía no tenés conversaciones previas.",
+            empty:       "Todavía no tenés conversaciones guardadas. Cada vez que le preguntes algo al asistente, la charla queda acá para que puedas retomarla.",
             loading:     "Cargando...",
             scopeCourse: "Este curso",
             scopeAll:    "Todos mis cursos",
@@ -101,7 +102,7 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             cancel:      "Cancelar",
         }
         : {
-            empty:       "No previous conversations yet.",
+            empty:       "No saved conversations yet. Every time you ask the assistant something, the chat is kept here so you can pick it up later.",
             loading:     "Loading...",
             scopeCourse: "This course",
             scopeAll:    "All my courses",
@@ -203,13 +204,13 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             {confirmSession && (
                 <ConfirmModal
                     title={labels.confirmTitle}
-                    message={labels.confirmMessage}
                     confirmLabel={labels.confirm}
                     cancelLabel={labels.cancel}
-                    variant="danger"
                     onConfirm={handleDeleteConfirm}
                     onCancel={() => setConfirmSession(null)}
-                />
+                >
+                    {labels.confirmMessage}
+                </ConfirmModal>
             )}
         </div>
     );

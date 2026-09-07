@@ -15,6 +15,7 @@
 import { useEffect, useState } from "react";
 import { getAnalyticsDashboard } from "./api.js";
 import { IconBarChart, IconClipboardList, IconHelpCircle, IconTarget } from "../components/icons.jsx";
+import { getFriendlyErrorMessage } from "../components/errors.js";
 
 export default function AnalyticsDashboardPanel({ courseId }) {
     const [data, setData] = useState(null);
@@ -35,7 +36,7 @@ export default function AnalyticsDashboardPanel({ courseId }) {
             })
             .catch((err) => {
                 if (!cancelled) {
-                    setError(err.message || "Error cargando el dashboard de analytics");
+                    setError(getFriendlyErrorMessage(err, "No se pudo cargar el dashboard de analytics."));
                     setLoading(false);
                 }
             });

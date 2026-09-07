@@ -1,8 +1,35 @@
+/**
+ * ConfirmModal — diálogo de confirmación reutilizable (UX-06, #346).
+ *
+ * Antes cada acción destructiva resolvía la confirmación por su cuenta
+ * (o directamente no la tenía). Este componente es el único lugar donde
+ * vive el markup + comportamiento del modal, para que todas las acciones
+ * irreversibles del widget se vean y se comporten igual.
+ *
+ * Se usa en los dos bundles (chat y vista docente): el CSS vive en
+ * styles.css, que ambos entrypoints importan.
+ *
+ * Comportamiento:
+ *   - Esc o click en el fondo → cancela (nunca ejecuta la acción).
+ *   - El foco entra en "Cancelar" (opción segura por default).
+ *   - `busy` deshabilita los botones mientras la acción está corriendo.
+ *
+ * Props:
+ *   title        string           — título del modal
+ *   children     node             — cuerpo: texto específico de la acción
+ *   confirmLabel string           — texto del botón que ejecuta (default "Confirmar")
+ *   cancelLabel  string           — texto del botón que cancela (default "Cancelar")
+ *   onConfirm    () => void
+ *   onCancel     () => void
+ *   danger       boolean          — botón de confirmar en rojo (default true)
+ *   busy         boolean          — acción en curso: botones deshabilitados
+ */
+
 import { useEffect, useRef } from "react";
 
-// Cierra el overlay con Escape o con click afuera del contenido.
-// (Recreado acá porque la rama de UX-06, donde se introdujo por primera vez,
-// todavía no está mergeada a development — mismo componente.)
+// Cierra un overlay con Escape (UX-06/#346, extraído del propio ConfirmModal
+// para reusarlo en otros modales sin Esc/click-afuera propio, p.ej. ErrorModal
+// en documents/DocumentsTable.jsx).
 export function useDismissable(onDismiss) {
     useEffect(() => {
         const onKeyDown = (e) => {
@@ -13,53 +40,66 @@ export function useDismissable(onDismiss) {
     }, [onDismiss]);
 }
 
-// Modal de confirmación genérico. Usado por UX-06 (eliminar documento,
-// limpiar chat, borrar historial de errores) y ahora también por ASIST-02
-// (borrar una sesión puntual del historial de chat).
 export default function ConfirmModal({
     title,
-    message,
-    confirmLabel,
-    cancelLabel,
-    variant = "default",
+    children,
+    confirmLabel = "Confirmar",
+    cancelLabel = "Cancelar",
     onConfirm,
     onCancel,
+    danger = true,
+    busy = false,
 }) {
-    useDismissable(onCancel);
-    const cancelBtnRef = useRef(null);
+    const cancelRef = useRef(null);
 
     useEffect(() => {
-        cancelBtnRef.current?.focus();
+        cancelRef.current?.focus();
     }, []);
+
+    useEffect(() => {
+        const onKeyDown = (e) => {
+            if (e.key === "Escape" && !busy) onCancel();
+        };
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [onCancel, busy]);
 
     return (
         <div
-            className="nexusai-modal-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="nexusai-confirm-title"
-            onMouseDown={(e) => {
-                if (e.target === e.currentTarget) onCancel();
-            }}
+            className="nexusai-confirm-overlay"
+            onClick={() => { if (!busy) onCancel(); }}
         >
-            <div className="nexusai-modal">
-                <h2 className="nexusai-modal__title" id="nexusai-confirm-title">
+            <div
+                className="nexusai-confirm"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="nexusai-confirm-title"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <h2 className="nexusai-confirm__title" id="nexusai-confirm-title">
                     {title}
                 </h2>
-                <p className="nexusai-modal__body">{message}</p>
-                <div className="nexusai-modal__actions">
+                <div className="nexusai-confirm__body">{children}</div>
+                <div className="nexusai-confirm__actions">
                     <button
-                        ref={cancelBtnRef}
                         type="button"
-                        className="nexusai-btn nexusai-btn--secondary"
+                        ref={cancelRef}
+                        className="nexusai-confirm__btn nexusai-confirm__btn--cancel"
                         onClick={onCancel}
+                        disabled={busy}
                     >
                         {cancelLabel}
                     </button>
                     <button
                         type="button"
-                        className={`nexusai-btn ${variant === "danger" ? "nexusai-btn--danger" : "nexusai-btn--confirm"}`}
+                        className={
+                            "nexusai-confirm__btn " +
+                            (danger
+                                ? "nexusai-confirm__btn--danger"
+                                : "nexusai-confirm__btn--confirm")
+                        }
                         onClick={onConfirm}
+                        disabled={busy}
                     >
                         {confirmLabel}
                     </button>

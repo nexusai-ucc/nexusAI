@@ -119,6 +119,34 @@ export async function getDocumentStatus(courseId, documentId) {
 }
 
 /**
+ * Preview del texto extraído de un documento (CONT-08 / #357).
+ *
+ * @param {number} courseId
+ * @param {string} documentId
+ * @returns {Promise<{document_id:string, filename:string, status:string, preview:?string, char_count:number, truncated:boolean}>}
+ */
+export async function getDocumentPreview(courseId, documentId) {
+    if (typeof window === "undefined" || !window.M?.cfg) {
+        await new Promise((r) => setTimeout(r, 200));
+        const doc = MOCK_DOCS.find((d) => d.id === documentId);
+        const sample = "Una derivada mide la tasa de cambio instantánea de una función. "
+            + "Formalmente, f'(x) = lim(h→0) [f(x+h) - f(x)] / h. ".repeat(12);
+        return {
+            document_id: documentId,
+            filename: doc?.filename || "",
+            status: doc?.status || "indexed",
+            preview: doc?.status === "indexed" ? sample.slice(0, 600) : null,
+            char_count: doc?.status === "indexed" ? 600 : 0,
+            truncated: doc?.status === "indexed",
+        };
+    }
+    return callMoodle("local_nexusai_document_preview", {
+        courseid: courseId,
+        documentid: documentId,
+    });
+}
+
+/**
  * Sube un archivo PDF — convierte a base64 y llama al External Function.
  *
  * @param {number} courseId
