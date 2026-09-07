@@ -10,6 +10,8 @@
  *  3. `id` del query string que no matchea el curso real de $PAGE/$COURSE → null.
  *  4. La pantalla de crear curso (sin `id`) sigue devolviendo 'create-course' —
  *     ONB-04 no debe romper ONB-03.
+ *  5. Curso dismisseado (ONB-05 / #428) → null aunque sea el propio docente
+ *     editando su curso — no vuelve a aparecer solo.
  *
  * @package    local_nexusai
  * @category   test
@@ -75,6 +77,21 @@ class visibility_helper_test extends \advanced_testcase {
         $this->set_course_edit_page($course, $othercourse->id);
 
         $this->assertNull(\local_nexusai\visibility_helper::onboarding_hint());
+    }
+
+    public function test_null_when_course_dismissed(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        set_user_preference('local_nexusai_onb_dismissed_' . $course->id, '1');
+
+        $this->set_course_edit_page($course, $course->id);
+
+        $this->assertNull(
+            \local_nexusai\visibility_helper::onboarding_hint(),
+            'Un curso dismisseado no debe volver a mostrar el tutorial solo'
+        );
     }
 
     public function test_create_course_hint_unaffected(): void {

@@ -22,7 +22,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026090702;        // feat: pestaña Ayuda en NexusAI Materiales (ONB-07/08 / #430, #431).
+$plugin->version   = 2026090703;        // feat: dismissal/"no aplica" + acceso permanente (ONB-05/06 / #428, #429) + pestaña Ayuda (ONB-07/08 / #430, #431).
 $plugin->release   = '0.17.0';
 $plugin->maturity  = MATURITY_ALPHA;
 

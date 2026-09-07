@@ -1,11 +1,13 @@
 /**
- * Cliente API del onboarding al docente (ONB-02 / #425).
+ * Cliente API del onboarding al docente (ONB-02 / #425, ONB-05 / #428).
  *
- * Llama a la external function:
- *   - local_nexusai_course_setup_state → estado de setup del curso
+ * Llama a las external functions:
+ *   - local_nexusai_course_setup_state    → estado de setup del curso
+ *   - local_nexusai_onboarding_state_get  → dismissal + pasos "no aplica"
+ *   - local_nexusai_onboarding_state_set  → guarda dismissal + "no aplica"
  *
- * Fuera de Moodle (Storybook / dev server) devuelve un mock con un curso
- * a medio armar, para poder desarrollar el tutorial (ONB-03/04) aislado.
+ * Fuera de Moodle (Storybook / dev server) devuelve mocks para poder
+ * desarrollar el tutorial (ONB-03/04/05/06) aislado.
  */
 
 async function getMoodleAjax() {
@@ -52,6 +54,53 @@ export async function getCourseSetupState(courseId) {
     const [response] = await ajax.call([{
         methodname: "local_nexusai_course_setup_state",
         args: { courseid: courseId },
+    }]);
+
+    return response;
+}
+
+const MOCK_ONBOARDING_STATE = { courseid: 0, dismissed: false, skipped: [] };
+
+/**
+ * Estado de dismissal/progreso del tutorial para el usuario actual y un curso.
+ *
+ * @param {number} courseId
+ * @returns {Promise<{courseid:number, dismissed:boolean, skipped:string[]}>}
+ */
+export async function getOnboardingState(courseId) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 150));
+        return { ...MOCK_ONBOARDING_STATE, courseid: courseId || 0 };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_onboarding_state_get",
+        args: { courseid: courseId },
+    }]);
+
+    return response;
+}
+
+/**
+ * Guarda el estado de dismissal/progreso del tutorial. Reemplazo completo:
+ * el caller manda el estado final ya mergeado (read-modify-write del lado
+ * del componente), no un delta.
+ *
+ * @param {number} courseId
+ * @param {{dismissed: boolean, skipped: string[]}} state
+ * @returns {Promise<{success: boolean}>}
+ */
+export async function setOnboardingState(courseId, { dismissed, skipped }) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 150));
+        return { success: true };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_onboarding_state_set",
+        args: { courseid: courseId, dismissed: !!dismissed, skipped: skipped || [] },
     }]);
 
     return response;

@@ -106,18 +106,22 @@ export const COURSE_SETUP_STEPS = [
 
 /**
  * En modo revisión (ONB-04): dada la respuesta de `course_setup_state`, decide
- * el estado de cada paso.
+ * el estado de cada paso. `skipped` (ONB-05) marca pasos opcionales que el
+ * docente excluyó a mano ("no aplica") — solo pesa cuando la señal real
+ * todavía no está presente; si el paso ya se cumplió, gana "done" igual.
  *
  * @param {object} step  Un elemento de COURSE_SETUP_STEPS.
  * @param {object|null} state  Respuesta de getCourseSetupState(), o null.
- * @returns {"done"|"pending"|"unknown"}
+ * @param {string[]} [skipped]  Respuesta de getOnboardingState().skipped.
+ * @returns {"done"|"pending"|"skipped"|"unknown"}
  */
-export function stepStatus(step, state) {
+export function stepStatus(step, state, skipped = []) {
     if (!state) return "unknown";
     const signalKey = step.signal || step.key;
     const signal = state[signalKey];
     if (!signal || signal.present === null || signal.present === undefined) {
         return "unknown";
     }
-    return signal.present ? "done" : "pending";
+    if (signal.present) return "done";
+    return skipped.includes(signalKey) ? "skipped" : "pending";
 }
