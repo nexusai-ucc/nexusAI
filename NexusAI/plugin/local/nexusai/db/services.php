@@ -158,6 +158,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Sugiere una dificultad de partida según el historial del alumno (SP-12).
+    'local_nexusai_quiz_suggest_difficulty' => [
+        'classname'     => '\local_nexusai\external\quiz_suggest_difficulty',
+        'methodname'    => 'execute',
+        'description'   => 'Suggest a starting difficulty for the practice quiz based on the student\'s attempt history.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Quiz evaluator — evalúa respuestas abiertas con IA (SP-05).
     'local_nexusai_quiz_evaluate' => [
         'classname'     => '\local_nexusai\external\quiz_evaluate',

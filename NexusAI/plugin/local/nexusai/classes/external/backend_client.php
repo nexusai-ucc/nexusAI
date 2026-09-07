@@ -561,6 +561,28 @@ class backend_client {
     }
 
     /**
+     * SP-12 (#322): sugiere una dificultad de partida para el generador de
+     * quiz, basada en el historial de `quiz_attempts` del alumno.
+     *
+     * @param int         $courseid ID del curso.
+     * @param int         $userid   $USER->id real del alumno.
+     * @param string|null $topic    Tema elegido, o null para historial general.
+     * @return array{difficulty:?string, reason:?string, based_on_attempts:int, accuracy_pct:?int}
+     */
+    public function suggest_difficulty(int $courseid, int $userid, ?string $topic): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'topic'     => $topic,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/suggest-difficulty', $body);
+    }
+
+    /**
      * SP-13 (#323): descarta un tema puntual del plan de estudio del alumno
      * (opera sobre IDs reales de fila, no sobre el texto del topic).
      *

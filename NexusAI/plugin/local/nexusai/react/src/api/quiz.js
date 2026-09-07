@@ -405,3 +405,32 @@ export async function dismissStudyPlanTopic(courseId, quizErrorIds = [], gapQues
 
     return response;
 }
+
+/**
+ * Sugiere una dificultad de partida para el generador de quiz, basada en el
+ * historial de intentos del alumno (SP-12 / #322). Es solo una sugerencia —
+ * el alumno siempre puede elegir otra dificultad a mano.
+ *
+ * @param {number} courseId
+ * @param {string} [topic] Tema elegido; vacío = historial general del curso.
+ * @returns {Promise<{difficulty:?string, reason:?string, based_on_attempts:number, accuracy_pct:?number}>}
+ */
+export async function suggestDifficulty(courseId, topic = "") {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 150));
+        return { difficulty: null, reason: null, based_on_attempts: 0, accuracy_pct: null };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_suggest_difficulty",
+        args: { courseid: courseId, topic },
+    }]);
+
+    return {
+        difficulty: response.difficulty ?? null,
+        reason: response.reason ?? null,
+        based_on_attempts: response.basedonattempts ?? 0,
+        accuracy_pct: response.accuracypct ?? null,
+    };
+}
