@@ -11,6 +11,12 @@
  *
  * NexusAI nunca ejecuta los pasos: cada uno abre la pantalla nativa de Moodle
  * en una pestaña nueva.
+ *
+ * ONB-05: pasos opcionales pendientes pueden marcarse "no aplica" (`onSkip`)
+ * — quedan en estado `skipped`, deshacible (`onUnskip`), y no cuentan como
+ * pendientes para el mensaje de "curso listo". ONB-06: el botón "Cerrar"
+ * (`onDismiss`, solo en modo `review`) persiste el cierre además de
+ * colapsar el panel — así no vuelve a aparecer solo en `course/edit.php`.
  */
 
 import { COURSE_SETUP_STEPS, stepStatus } from "../onboarding/steps.js";
@@ -24,6 +30,11 @@ const T = {
         optional: "opcional",
         done: "Listo",
         pending: "Falta",
+        skipped: "No aplica",
+        notApplicable: "No aplica",
+        undoSkip: "Deshacer «no aplica»",
+        close: "Cerrar",
+        closeCreate: "Cerrar tutorial",
         stepOf: (n, total) => `Paso ${n} de ${total}`,
     },
     en: {
@@ -34,6 +45,11 @@ const T = {
         optional: "optional",
         done: "Done",
         pending: "Missing",
+        skipped: "Not applicable",
+        notApplicable: "Not applicable",
+        undoSkip: "Undo “not applicable”",
+        close: "Close",
+        closeCreate: "Close tutorial",
         stepOf: (n, total) => `Step ${n} of ${total}`,
     },
 };
@@ -44,13 +60,17 @@ export default function OnboardingPanel({
     wwwroot = "/",
     lang = "es",
     state = null,
+    skipped = [],
+    onSkip = null,
+    onUnskip = null,
+    onDismiss = null,
 }) {
     const t = T[lang] || T.es;
     const ctx = { wwwroot, courseid: Number(courseid) || 0 };
 
     const steps = COURSE_SETUP_STEPS.map((step) => ({
         step,
-        status: mode === "review" ? stepStatus(step, state) : "pending",
+        status: mode === "review" ? stepStatus(step, state, skipped) : "pending",
     }));
 
     const allDone =
@@ -76,7 +96,7 @@ export default function OnboardingPanel({
                             className={`nexusai-onb__step nexusai-onb__step--${status}`}
                         >
                             <div className="nexusai-onb__step-marker" aria-hidden="true">
-                                {status === "done" ? "✓" : i + 1}
+                                {status === "done" ? "✓" : status === "skipped" ? "–" : i + 1}
                             </div>
                             <div className="nexusai-onb__step-body">
                                 <div className="nexusai-onb__step-head">
@@ -88,12 +108,12 @@ export default function OnboardingPanel({
                                         <span
                                             className={`nexusai-onb__status nexusai-onb__status--${status}`}
                                         >
-                                            {status === "done" ? t.done : t.pending}
+                                            {status === "done" ? t.done : status === "skipped" ? t.skipped : t.pending}
                                         </span>
                                     )}
                                 </div>
                                 <p className="nexusai-onb__step-why">{why}</p>
-                                {status !== "done" && (
+                                {(status === "pending" || status === "unknown") && (
                                     <a
                                         className="nexusai-onb__step-link"
                                         href={step.href(ctx)}
@@ -103,11 +123,40 @@ export default function OnboardingPanel({
                                         {t.goTo} →
                                     </a>
                                 )}
+                                {status === "pending" && step.optional && onSkip && (
+                                    <button
+                                        type="button"
+                                        className="nexusai-onb__step-skip"
+                                        onClick={() => onSkip(step.signal || step.key)}
+                                    >
+                                        {t.notApplicable}
+                                    </button>
+                                )}
+                                {status === "skipped" && onUnskip && (
+                                    <button
+                                        type="button"
+                                        className="nexusai-onb__step-skip"
+                                        onClick={() => onUnskip(step.signal || step.key)}
+                                    >
+                                        {t.undoSkip}
+                                    </button>
+                                )}
                             </div>
                         </li>
                     );
                 })}
             </ol>
+
+            {mode === "review" && onDismiss && (
+                <button type="button" className="nexusai-onb__close-btn" onClick={onDismiss}>
+                    {t.close}
+                </button>
+            )}
+            {mode === "create" && onDismiss && (
+                <button type="button" className="nexusai-onb__close-btn" onClick={onDismiss}>
+                    {t.closeCreate}
+                </button>
+            )}
         </div>
     );
 }

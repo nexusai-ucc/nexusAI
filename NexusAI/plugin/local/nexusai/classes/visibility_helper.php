@@ -98,6 +98,14 @@ class visibility_helper {
                 return null;
             }
 
+            // ONB-05: si el docente ya cerró el tutorial para este curso, no
+            // se vuelve a mostrar solo — sigue accesible a mano desde el tab
+            // "Revisión del curso" del widget normal (ONB-06). Sin esto, esta
+            // página caería en el widget normal (ChatApp) para ese curso.
+            if (get_user_preferences('local_nexusai_onb_dismissed_' . $COURSE->id, '0') === '1') {
+                return null;
+            }
+
             return 'review-course';
         }
 

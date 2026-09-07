@@ -93,6 +93,27 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // ONB-05 (#428): estado de dismissal/progreso del tutorial de onboarding
+    // (persistido en user_preferences de core, no en tablas propias del plugin).
+    'local_nexusai_onboarding_state_get' => [
+        'classname'     => '\local_nexusai\external\onboarding_state_get',
+        'methodname'    => 'execute',
+        'description'   => 'Read the current user\'s onboarding dismissal/skip state for a course (ONB-05).',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+    'local_nexusai_onboarding_state_set' => [
+        'classname'     => '\local_nexusai\external\onboarding_state_set',
+        'methodname'    => 'execute',
+        'description'   => 'Save the current user\'s onboarding dismissal/skip state for a course (ONB-05).',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // Historial de conversaciones — lista de sesiones previas del alumno (Feature E).
     'local_nexusai_chat_sessions_list' => [
         'classname'     => '\local_nexusai\external\chat_sessions_list',

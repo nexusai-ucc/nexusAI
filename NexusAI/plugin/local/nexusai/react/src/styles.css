@@ -2966,6 +2966,11 @@
     border-color: var(--nexusai-border-strong);
 }
 
+.nexusai-onb__step--skipped {
+    background: var(--nexusai-bg-muted);
+    opacity: 0.75;
+}
+
 .nexusai-onb__step-marker {
     flex: 0 0 24px;
     height: 24px;
@@ -3021,6 +3026,7 @@
 }
 .nexusai-onb__status--done    { background: rgba(34, 197, 94, 0.15); color: #15803d; }
 .nexusai-onb__status--pending { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+.nexusai-onb__status--skipped { background: var(--nexusai-bg-subtle); color: var(--nexusai-fg-subtle); }
 
 .nexusai-onb__step-why {
     margin: 4px 0 0;
@@ -3038,3 +3044,37 @@
     text-decoration: none;
 }
 .nexusai-onb__step-link:hover { text-decoration: underline; }
+
+.nexusai-onb__step-skip {
+    display: inline-block;
+    margin-top: 8px;
+    margin-left: 12px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--nexusai-fg-subtle);
+    cursor: pointer;
+    text-decoration: underline;
+}
+.nexusai-onb__step-skip:hover { color: var(--nexusai-fg-muted); }
+
+.nexusai-onb__close-btn {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 8px 12px;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-md);
+    background: var(--nexusai-bg);
+    color: var(--nexusai-fg-muted);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+}
+.nexusai-onb__close-btn:hover {
+    background: var(--nexusai-bg-muted);
+    color: var(--nexusai-fg);
+}
