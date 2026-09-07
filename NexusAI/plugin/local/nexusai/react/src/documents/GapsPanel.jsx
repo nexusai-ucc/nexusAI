@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { listGaps, archiveGap } from "./api.js";
 import { downloadCsvFile } from "./csv.js";
 import { IconCheck, IconArchive, IconDownload } from "../components/icons.jsx";
+import { getFriendlyErrorMessage } from "../components/errors.js";
 
 function relativeTime(iso) {
     if (!iso) return "";
@@ -67,7 +68,7 @@ export default function GapsPanel({ courseId }) {
             })
             .catch((err) => {
                 if (!cancelled) {
-                    setError(err.message || "Error cargando gaps");
+                    setError(getFriendlyErrorMessage(err, "No se pudieron cargar los vacíos de contenido."));
                     setLoading(false);
                 }
             });
@@ -83,7 +84,7 @@ export default function GapsPanel({ courseId }) {
             setItems((prev) => [...prev, ...(data?.items || [])]);
             setTotal(data?.total ?? total);
         } catch (err) {
-            setError(err.message || "Error cargando más gaps");
+            setError(getFriendlyErrorMessage(err, "No se pudieron cargar más vacíos de contenido."));
         } finally {
             setLoadingMore(false);
         }
@@ -120,7 +121,7 @@ export default function GapsPanel({ courseId }) {
                 );
             }
         } catch (err) {
-            setError(err.message || "No se pudo archivar el gap");
+            setError(getFriendlyErrorMessage(err, "No se pudo archivar el vacío de contenido."));
         } finally {
             setArchivingIdx(null);
         }

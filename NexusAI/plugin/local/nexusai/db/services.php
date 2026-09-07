@@ -136,6 +136,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Borrar una sesión puntual del historial del alumno (ASIST-02, #350).
+    'local_nexusai_chat_session_delete' => [
+        'classname'     => '\local_nexusai\external\chat_session_delete',
+        'methodname'    => 'execute',
+        'description'   => 'Delete a single NexusAI chat session (and its messages via cascade).',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Quiz generator — preguntas de práctica desde el material (Feature F / SP-03).
     'local_nexusai_quiz_generate' => [
         'classname'     => '\local_nexusai\external\quiz_generate',

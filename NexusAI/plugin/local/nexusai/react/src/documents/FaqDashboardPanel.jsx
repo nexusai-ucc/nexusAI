@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { getFaqTopics } from "./api.js";
 import { downloadCsvFile } from "./csv.js";
 import { IconHelpCircle, IconDownload } from "../components/icons.jsx";
+import { getFriendlyErrorMessage } from "../components/errors.js";
 
 export default function FaqDashboardPanel({ courseId }) {
     const [topics, setTopics] = useState([]);
@@ -33,7 +34,7 @@ export default function FaqDashboardPanel({ courseId }) {
             })
             .catch((err) => {
                 if (!cancelled) {
-                    setError(err.message || "Error cargando preguntas frecuentes");
+                    setError(getFriendlyErrorMessage(err, "No se pudieron cargar las preguntas frecuentes."));
                     setLoading(false);
                 }
             });

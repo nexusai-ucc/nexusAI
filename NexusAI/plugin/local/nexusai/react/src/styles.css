@@ -426,6 +426,24 @@
     text-decoration: underline;
 }
 
+.nexusai-msg__regenerate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    background: none;
+    border: none;
+    color: var(--nexusai-fg-muted);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+}
+.nexusai-msg__regenerate-btn:hover {
+    color: var(--nexusai-primary);
+    text-decoration: underline;
+}
+
 .nexusai-msg__markdown p { margin: 0 0 8px; }
 .nexusai-msg__markdown p:last-child { margin-bottom: 0; }
 .nexusai-msg__markdown ul,
@@ -760,6 +778,41 @@
     gap: 8px;
 }
 
+/* ============================================================
+   Toast — UX-07
+============================================================ */
+.nexusai-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10000;
+    padding: 12px 20px;
+    border-radius: var(--nexusai-radius);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    box-shadow: var(--nexusai-shadow-md);
+    animation: nexusai-toast-in 0.22s ease;
+    pointer-events: none;
+}
+.nexusai-toast--success {
+    background: #059669;
+    color: #ffffff !important;
+}
+.nexusai-toast--warning {
+    background: #fef3c7;
+    color: #92400e !important;
+    border: 1px solid #fcd34d;
+}
+.nexusai-toast--error {
+    background: #dc2626;
+    color: #ffffff !important;
+}
+@keyframes nexusai-toast-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ----- Botones ----- */
 .nexusai-btn {
     border: 1px solid transparent;
@@ -784,6 +837,107 @@
     border-color: #fecaca;
 }
 .nexusai-btn--ghost:hover { background: #fee2e2; }
+.nexusai-btn--secondary {
+    background: var(--nexusai-bg-subtle);
+    color: var(--nexusai-fg-muted);
+    border: 1px solid var(--nexusai-border);
+}
+.nexusai-btn--secondary:hover {
+    background: var(--nexusai-border);
+}
+.nexusai-btn--danger {
+    background: #dc2626;
+    color: #ffffff;
+    border-color: #dc2626;
+}
+.nexusai-btn--danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+.nexusai-btn--confirm {
+    background: var(--nexusai-primary);
+    color: #ffffff;
+    border-color: var(--nexusai-primary);
+}
+.nexusai-btn--confirm:hover {
+    background: var(--nexusai-primary-hover);
+    border-color: var(--nexusai-primary-hover);
+}
+
+/* ============================================================
+   Modales (confirmación) — UX-06
+============================================================ */
+.nexusai-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10010;
+    padding: 24px;
+}
+.nexusai-modal {
+    background: var(--nexusai-bg);
+    border-radius: var(--nexusai-radius-lg);
+    box-shadow: var(--nexusai-shadow-md);
+    padding: 28px 32px;
+    width: 100%;
+    max-width: 440px;
+}
+.nexusai-modal__title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--nexusai-fg);
+    margin: 0 0 12px;
+}
+.nexusai-modal__body {
+    font-size: 14px;
+    color: var(--nexusai-fg-muted);
+    line-height: 1.6;
+    margin: 0 0 24px;
+}
+.nexusai-modal__actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* ============================================================
+   Tooltip — UX-05
+============================================================ */
+.nexusai-tooltip-wrap {
+    position: relative;
+    display: inline-flex;
+}
+.nexusai-tooltip-bubble {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    background: var(--nexusai-fg);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 5px 9px;
+    border-radius: var(--nexusai-radius-sm);
+    box-shadow: var(--nexusai-shadow);
+    z-index: 10005;
+    pointer-events: none;
+    animation: nexusai-tooltip-in 0.12s ease;
+}
+.nexusai-tooltip-bubble--bottom {
+    top: calc(100% + 6px);
+}
+.nexusai-tooltip-bubble--top {
+    bottom: calc(100% + 6px);
+}
+@keyframes nexusai-tooltip-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(-2px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
 
 /* ============================================================
    ConfirmModal — confirmación de acciones destructivas (UX-06, #346)
@@ -1634,6 +1788,40 @@
     font-size: 10.5px;
     color: #94a3b8;
     margin-top: 2px;
+}
+.nexusai-history__item-wrap {
+    position: relative;
+}
+.nexusai-history__item-wrap .nexusai-history__item {
+    padding-right: 32px;
+}
+.nexusai-history__item-delete {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: #94a3b8;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .12s, background .12s, color .12s;
+}
+.nexusai-history__item-wrap:hover .nexusai-history__item-delete {
+    opacity: 1;
+}
+.nexusai-history__item-delete:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+.nexusai-history__item-delete:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 /* UX-18 (#388): sin offset/total en el backend de sesiones, "cargar más"
@@ -3078,3 +3266,16 @@
     background: var(--nexusai-bg-muted);
     color: var(--nexusai-fg);
 }
+
+.nexusai-onb__help-link {
+    display: block;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--nexusai-border);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nexusai-primary);
+    text-decoration: none;
+    text-align: center;
+}
+.nexusai-onb__help-link:hover { text-decoration: underline; }

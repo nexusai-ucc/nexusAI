@@ -21,8 +21,12 @@ import UploadZone from "./UploadZone.jsx";
 import StudentQuestionsPanel from "./StudentQuestionsPanel.jsx";
 import AnalyticsDashboardPanel from "./AnalyticsDashboardPanel.jsx";
 import ExamGeneratorPanel from "./ExamGeneratorPanel.jsx";
+import HelpPanel from "./HelpPanel.jsx";
 import SearchPanel from "../components/SearchPanel.jsx";
-import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconSearch } from "../components/icons.jsx";
+import Tooltip from "../components/Tooltip.jsx";
+import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconInfo, IconSearch } from "../components/icons.jsx";
+import { ToastProvider, useToast } from "../components/Toast.jsx";
+import { getFriendlyErrorMessage } from "../components/errors.js";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
@@ -31,56 +35,48 @@ const POLL_INTERVAL_MS = 3000;
 const PAGE_SIZE = 30;
 
 // RDS-05 (#404): nav lateral data-driven — reemplaza las 6 tabs
-// hardcodeadas de antes.
+// hardcodeadas de antes. ONB-07 (#430) suma "help".
 const NAV_ITEMS = [
     { key: "material",  label: "Material",             Icon: IconBookOpen },
     { key: "questions", label: "Preguntas de alumnos",  Icon: IconHelpCircle },
     { key: "analytics", label: "Analytics",             Icon: IconBarChart },
     { key: "exam",      label: "Generar examen",        Icon: IconClipboardList },
     { key: "search",    label: "Buscar",                Icon: IconSearch },
+    { key: "help",      label: "Ayuda",                 Icon: IconInfo },
 ];
+const NAV_KEYS = new Set(NAV_ITEMS.map((item) => item.key));
 
-/**
- * Extrae el mensaje legible de un error de Moodle/FastAPI.
- *
- * Moodle formatea los errores de backend como:
- *   "Error del backend NexusAI: HTTP 409: {"detail": "mensaje limpio"}"
- * Intentamos sacar el "detail" primero; si no, lo que sigue al código HTTP.
- */
-function extractErrorMessage(err) {
-    const raw = err?.message || String(err);
-    // Intentar extraer el campo "detail" del JSON de FastAPI embebido en el string.
-    const detailMatch = raw.match(/"detail"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    if (detailMatch) return detailMatch[1];
-    // Fallback: tomar lo que va después de "HTTP NNN: "
-    const httpMatch = raw.match(/HTTP\s+\d+[:\s]+(.+)/s);
-    if (httpMatch) return httpMatch[1].trim();
-    return raw;
-}
+// UX-05 (#345): descripción corta por tab para el tooltip del nav lateral.
+const NAV_TOOLTIPS = {
+    material:  "Subir y gestionar el material indexado del curso",
+    questions: "Preguntas frecuentes y sin responder detectadas en el chat",
+    analytics: "Estadísticas de uso e interacciones de los alumnos",
+    exam:      "Generar un examen exportable a partir del material",
+    search:    "Buscar dentro del material indexado",
+    help:      "Qué hace cada herramienta de NexusAI",
+};
 
-export default function DocumentsManager({ courseid, userid, sesskey, lang = "es", courseFullname }) {
+function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseFullname, initialTab }) {
     const [documents, setDocuments]       = useState([]);
     const [total, setTotal]               = useState(0);
     const [loading, setLoading]           = useState(true);
     const [loadingMore, setLoadingMore]   = useState(false);
     const [uploading, setUploading]       = useState(false);
     const [error, setError]               = useState(null);
-    const [warningToast, setWarningToast] = useState(null);
-    const [activeTab, setActiveTab]       = useState("material"); // "material" | "gaps" | "faq" | "exam" | "search"
+    // ONB-07 (#430): documents.php puede pedir un tab inicial vía ?tab=
+    // (p.ej. el link "Ayuda" del checklist de revisión) — "material" si no
+    // viene o no es una key válida.
+    const [activeTab, setActiveTab]       = useState(
+        NAV_KEYS.has(initialTab) ? initialTab : "material"
+    ); // "material" | "questions" | "analytics" | "exam" | "search" | "help"
     const [sections, setSections]         = useState([]); // BUS-05: secciones del curso para el selector de upload
     const [selectedSection, setSelectedSection] = useState("");
-    const warningTimerRef = useRef(null);
+    const { showWarning } = useToast();
 
     // Ref para acceder al estado actual desde el closure del setInterval
     // sin incluirlo como dependencia del effect (evita recrear el interval).
     const documentsRef = useRef([]);
     documentsRef.current = documents;
-
-    const showWarningToast = (message) => {
-        if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
-        setWarningToast(message);
-        warningTimerRef.current = setTimeout(() => setWarningToast(null), 3000);
-    };
 
     // ── Carga inicial ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -95,7 +91,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 }
             } catch (err) {
                 if (!cancelled) {
-                    setError(extractErrorMessage(err));
+                    setError(getFriendlyErrorMessage(err, "No se pudieron cargar los documentos.", lang));
                     setLoading(false);
                 }
             }
@@ -164,7 +160,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
             setDocuments((prev) => [...prev, ...(data?.items || [])]);
             setTotal(data?.total ?? total);
         } catch (err) {
-            setError(extractErrorMessage(err));
+            setError(getFriendlyErrorMessage(err, "No se pudieron cargar más documentos.", lang));
         } finally {
             setLoadingMore(false);
         }
@@ -181,7 +177,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
             // es idéntico (CONT-04). Si el id ya está en la lista, el doc está
             // indexado — no sobreescribir con la respuesta que puede traer fecha nula.
             if (documentsRef.current.some((d) => d.id === newDoc.id)) {
-                showWarningToast("Este documento ya se encuentra indexado en este curso.");
+                showWarning("Este documento ya se encuentra indexado en este curso.");
                 return;
             }
             setDocuments((prev) => [newDoc, ...prev]);
@@ -189,9 +185,9 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
         } catch (err) {
             const raw = err?.message || String(err);
             if (/HTTP\s+409\b/.test(raw)) {
-                showWarningToast("Este documento ya se encuentra indexado en este curso.");
+                showWarning("Este documento ya se encuentra indexado en este curso.");
             } else {
-                setError(extractErrorMessage(err));
+                setError(getFriendlyErrorMessage(err, "No se pudo subir el archivo. Intentá de nuevo.", lang));
             }
         } finally {
             setUploading(false);
@@ -201,7 +197,7 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
     // ── Render ─────────────────────────────────────────────────────────────
 
     return (
-        <div className="nexusai-documents">
+        <>
             <aside className="nexusai-doc-sidebar">
                 <div className="nexusai-doc-sidebar__course">
                     <span className="nexusai-doc-sidebar__course-label">Curso</span>
@@ -210,18 +206,19 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
 
                 <nav className="nexusai-doc-nav">
                     {NAV_ITEMS.map(({ key, label, Icon }) => (
-                        <button
-                            key={key}
-                            type="button"
-                            className={`nexusai-doc-nav__item ${activeTab === key ? "nexusai-doc-nav__item--active" : ""}`}
-                            onClick={() => setActiveTab(key)}
-                        >
-                            <Icon size={15} />
-                            <span>{label}</span>
-                            {key === "material" && (
-                                <span className="nexusai-doc-nav__badge">{total}</span>
-                            )}
-                        </button>
+                        <Tooltip key={key} label={NAV_TOOLTIPS[key]} placement="top">
+                            <button
+                                type="button"
+                                className={`nexusai-doc-nav__item ${activeTab === key ? "nexusai-doc-nav__item--active" : ""}`}
+                                onClick={() => setActiveTab(key)}
+                            >
+                                <Icon size={15} />
+                                <span>{label}</span>
+                                {key === "material" && (
+                                    <span className="nexusai-doc-nav__badge">{total}</span>
+                                )}
+                            </button>
+                        </Tooltip>
                     ))}
                 </nav>
 
@@ -243,6 +240,8 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                 <AnalyticsDashboardPanel courseId={courseid} />
             ) : activeTab === "exam" ? (
                 <ExamGeneratorPanel courseId={courseid} />
+            ) : activeTab === "help" ? (
+                <HelpPanel lang={lang} />
             ) : activeTab === "material" ? (
                 loading ? (
                     <div className="nexusai-loading">Cargando documentos...</div>
@@ -303,18 +302,22 @@ export default function DocumentsManager({ courseid, userid, sesskey, lang = "es
                                 onClose={() => setError(null)}
                             />
                         )}
-
-                        {warningToast && (
-                            <div className="nexusai-toast nexusai-toast--warning" role="status">
-                                {warningToast}
-                            </div>
-                        )}
                     </>
                 )
             ) : (
                 <StudentQuestionsPanel courseId={courseid} />
             )}
             </div>
+        </>
+    );
+}
+
+export default function DocumentsManager(props) {
+    return (
+        <div className="nexusai-documents">
+            <ToastProvider>
+                <DocumentsManagerInner {...props} />
+            </ToastProvider>
         </div>
     );
 }

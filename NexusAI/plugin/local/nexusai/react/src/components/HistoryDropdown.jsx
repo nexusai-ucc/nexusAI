@@ -8,7 +8,10 @@
  */
 
 import { useEffect, useState } from "react";
-import { listSessions } from "../api/history.js";
+import { listSessions, deleteSession } from "../api/history.js";
+import { IconX } from "./icons.jsx";
+import ConfirmModal from "./ConfirmModal.jsx";
+import { getFriendlyErrorMessage } from "./errors.js";
 
 const INITIAL_LIMIT = 20;
 const LOAD_MORE_STEP = 20;
@@ -37,13 +40,15 @@ function relativeTime(iso, lang = "es") {
     }
 }
 
-export default function HistoryDropdown({ open, onClose, courseId, currentSessionId, onSelectSession, lang = "es" }) {
+export default function HistoryDropdown({ open, onClose, courseId, currentSessionId, onSelectSession, onSessionDeleted, lang = "es" }) {
     const [sessions, setSessions] = useState(null);
     const [loading, setLoading]   = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError]       = useState(null);
     const [scopeCourse, setScopeCourse] = useState(true);
     const [limit, setLimit] = useState(INITIAL_LIMIT);
+    const [confirmSession, setConfirmSession] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
 
     useEffect(() => {
         if (!open) return;
@@ -53,7 +58,7 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
         setLimit(INITIAL_LIMIT);
         listSessions({ courseId, scopeCourse, limit: INITIAL_LIMIT })
             .then((data) => { if (!cancelled) setSessions(data?.sessions || []); })
-            .catch((err) => { if (!cancelled) setError(err.message || "Error"); })
+            .catch((err) => { if (!cancelled) setError(getFriendlyErrorMessage(err, lang === "es" ? "No se pudo cargar el historial." : "Couldn't load the history.", lang)); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [open, courseId, scopeCourse]);
@@ -75,7 +80,7 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             setSessions(data?.sessions || []);
             setLimit(nextLimit);
         } catch (err) {
-            setError(err.message || "Error cargando más sesiones");
+            setError(getFriendlyErrorMessage(err, lang === "es" ? "No se pudieron cargar más sesiones." : "Couldn't load more sessions.", lang));
         } finally {
             setLoadingMore(false);
         }
@@ -90,6 +95,11 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             messagesPl:  "mensajes",
             messageSg:   "mensaje",
             loadMore:    "Cargar más sesiones",
+            deleteLabel: "Borrar conversación",
+            confirmTitle:   "Borrar conversación",
+            confirmMessage: "¿Borrar esta conversación del historial? Esta acción no se puede deshacer.",
+            confirm:     "Eliminar",
+            cancel:      "Cancelar",
         }
         : {
             empty:       "No saved conversations yet. Every time you ask the assistant something, the chat is kept here so you can pick it up later.",
@@ -99,7 +109,28 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             messagesPl:  "messages",
             messageSg:   "message",
             loadMore:    "Load more sessions",
+            deleteLabel: "Delete conversation",
+            confirmTitle:   "Delete conversation",
+            confirmMessage: "Delete this conversation from your history? This action can't be undone.",
+            confirm:     "Delete",
+            cancel:      "Cancel",
         };
+
+    const handleDeleteConfirm = async () => {
+        const session = confirmSession;
+        setConfirmSession(null);
+        setDeletingId(session.id);
+        try {
+            await deleteSession({ courseId, sessionId: session.id });
+            setSessions((prev) => (prev || []).filter((s) => s.id !== session.id));
+            onSessionDeleted?.(session.id);
+        } catch {
+            // Best-effort: si falla, la sesión sigue en la lista y el
+            // alumno puede reintentar sin perder nada.
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     return (
         <div className="nexusai-history">
@@ -127,24 +158,36 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
                     <p className="nexusai-history__empty">{labels.empty}</p>
                 )}
                 {!loading && !error && sessions && sessions.map((s) => (
-                    <button
-                        key={s.id}
-                        type="button"
-                        className={`nexusai-history__item ${currentSessionId === s.id ? "nexusai-history__item--active" : ""}`}
-                        onClick={() => onSelectSession?.(s.id)}
-                    >
-                        <div className="nexusai-history__item-row">
-                            <span className="nexusai-history__item-preview">
-                                {s.last_message_preview || "(sin mensajes)"}
-                            </span>
-                            <span className="nexusai-history__item-time">
-                                {relativeTime(s.updated_at, lang)}
-                            </span>
-                        </div>
-                        <div className="nexusai-history__item-meta">
-                            {s.message_count} {s.message_count === 1 ? labels.messageSg : labels.messagesPl}
-                        </div>
-                    </button>
+                    <div key={s.id} className="nexusai-history__item-wrap">
+                        <button
+                            type="button"
+                            className={`nexusai-history__item ${currentSessionId === s.id ? "nexusai-history__item--active" : ""}`}
+                            onClick={() => onSelectSession?.(s.id)}
+                            disabled={deletingId === s.id}
+                        >
+                            <div className="nexusai-history__item-row">
+                                <span className="nexusai-history__item-preview">
+                                    {s.last_message_preview || "(sin mensajes)"}
+                                </span>
+                                <span className="nexusai-history__item-time">
+                                    {relativeTime(s.updated_at, lang)}
+                                </span>
+                            </div>
+                            <div className="nexusai-history__item-meta">
+                                {s.message_count} {s.message_count === 1 ? labels.messageSg : labels.messagesPl}
+                            </div>
+                        </button>
+                        <button
+                            type="button"
+                            className="nexusai-history__item-delete"
+                            onClick={(e) => { e.stopPropagation(); setConfirmSession(s); }}
+                            aria-label={labels.deleteLabel}
+                            title={labels.deleteLabel}
+                            disabled={deletingId === s.id}
+                        >
+                            <IconX size={12} />
+                        </button>
+                    </div>
                 ))}
                 {hasMore && (
                     <button
@@ -157,6 +200,18 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
                     </button>
                 )}
             </div>
+
+            {confirmSession && (
+                <ConfirmModal
+                    title={labels.confirmTitle}
+                    confirmLabel={labels.confirm}
+                    cancelLabel={labels.cancel}
+                    onConfirm={handleDeleteConfirm}
+                    onCancel={() => setConfirmSession(null)}
+                >
+                    {labels.confirmMessage}
+                </ConfirmModal>
+            )}
         </div>
     );
 }

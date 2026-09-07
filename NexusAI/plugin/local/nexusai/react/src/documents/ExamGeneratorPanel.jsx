@@ -15,6 +15,7 @@ import { listDocuments, listGaps, getFaqTopics } from "./api.js";
 import { generateExam } from "../api/quiz.js";
 import { downloadGiftFile } from "./gift.js";
 import { IconClipboardList, IconDownload, IconFileText } from "../components/icons.jsx";
+import { getFriendlyErrorMessage } from "../components/errors.js";
 
 // DOC-D09 (#390): cuántos temas con dificultad detectada se ofrecen como
 // máximo (combinados entre Gaps y FAQ) — coincide con el tope que acepta
@@ -160,7 +161,7 @@ export default function ExamGeneratorPanel({ courseId }) {
             setQuestions(result.questions || []);
             setStage("preview");
         } catch (err) {
-            setError(err?.message || "No se pudo generar el examen. Intentá de nuevo.");
+            setError(getFriendlyErrorMessage(err, "No se pudo generar el examen. Intentá de nuevo."));
             setStage("error");
         }
     };

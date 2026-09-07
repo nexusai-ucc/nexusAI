@@ -18,7 +18,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import temml from "temml";
-import { IconFile, IconSparkles, IconX } from "./icons.jsx";
+import { IconFile, IconRefreshCw, IconSparkles, IconX } from "./icons.jsx";
 
 // Regex conservador para detectar archivos citados en el texto del LLM.
 const SOURCE_REGEX = /([\w\-]+\.(pdf|docx|txt))/gi;
@@ -196,7 +196,7 @@ function useCopyButtons(ref, htmlContent) {
     }, [htmlContent]);
 }
 
-export default function MessageBubble({ message, sesskey }) {
+export default function MessageBubble({ message, sesskey, canRegenerate = false, onRegenerate }) {
     if (!message || message.role === "system") return null;
     // Ocultar burbuja del asistente vacía (esperando primer token del stream).
     // El TypingIndicator se muestra en su lugar.
@@ -404,8 +404,17 @@ export default function MessageBubble({ message, sesskey }) {
                 </div>
             )}
 
-            <div className="nexusai-msg__meta" style={{ paddingLeft: "34px" }}>
+            <div className="nexusai-msg__meta" style={{ paddingLeft: "34px", display: "flex", alignItems: "center", gap: "10px" }}>
                 {formatTimestamp(message.created_at)}
+                {canRegenerate && (
+                    <button
+                        type="button"
+                        className="nexusai-msg__regenerate-btn"
+                        onClick={onRegenerate}
+                    >
+                        <IconRefreshCw size={11} /> Regenerar
+                    </button>
+                )}
             </div>
         </div>
     );

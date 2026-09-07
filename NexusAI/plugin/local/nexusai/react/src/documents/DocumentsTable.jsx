@@ -6,11 +6,13 @@
  * confirmación + ejecución del borrado.
  */
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { deleteDocument, getDocumentPreview } from "./api.js";
 import { IconFileText } from "../components/icons.jsx";
-import ConfirmModal from "../components/ConfirmModal.jsx";
+import { useToast } from "../components/Toast.jsx";
+import { getFriendlyErrorMessage } from "../components/errors.js";
+import ConfirmModal, { useDismissable } from "../components/ConfirmModal.jsx";
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 
@@ -18,8 +20,7 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
     const [deletingId, setDeletingId]   = useState(null);
     const [confirmDoc, setConfirmDoc]   = useState(null);
     const [deleteError, setDeleteError] = useState(null);
-    const [successToast, setSuccessToast] = useState(null);
-    const toastTimerRef = useRef(null);
+    const { showSuccess } = useToast();
 
     // CONT-08 (#357): preview del texto extraído, por documento y bajo demanda.
     // { [docId]: { loading, error, data } }
@@ -57,11 +58,9 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
         try {
             await deleteDocument(courseId, doc.id);
             onChange((prev) => prev.filter((d) => d.id !== doc.id));
-            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-            setSuccessToast("Documento eliminado correctamente");
-            toastTimerRef.current = setTimeout(() => setSuccessToast(null), 3000);
+            showSuccess("Documento eliminado correctamente");
         } catch (err) {
-            setDeleteError(err.message || String(err));
+            setDeleteError(getFriendlyErrorMessage(err, "No se pudo eliminar el documento. Intentá de nuevo."));
         } finally {
             setDeletingId(null);
         }
@@ -127,12 +126,6 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                     onClose={() => setDeleteError(null)}
                 />
             )}
-
-            {successToast && (
-                <div className="nexusai-toast nexusai-toast--success" role="status">
-                    {successToast}
-                </div>
-            )}
         </>
     );
 }
@@ -142,8 +135,17 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
 // ============================================================
 
 export function ErrorModal({ message, onClose }) {
+    useDismissable(onClose);
     return (
-        <div className="nexusai-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="nexusai-error-title">
+        <div
+            className="nexusai-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="nexusai-error-title"
+            onMouseDown={(e) => {
+                if (e.target === e.currentTarget) onClose();
+            }}
+        >
             <div className="nexusai-modal">
                 <h2 className="nexusai-modal__title nexusai-modal__title--error" id="nexusai-error-title">
                     Error

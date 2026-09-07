@@ -27,6 +27,19 @@
 
 import { useEffect, useRef } from "react";
 
+// Cierra un overlay con Escape (UX-06/#346, extraído del propio ConfirmModal
+// para reusarlo en otros modales sin Esc/click-afuera propio, p.ej. ErrorModal
+// en documents/DocumentsTable.jsx).
+export function useDismissable(onDismiss) {
+    useEffect(() => {
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") onDismiss();
+        };
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [onDismiss]);
+}
+
 export default function ConfirmModal({
     title,
     children,
