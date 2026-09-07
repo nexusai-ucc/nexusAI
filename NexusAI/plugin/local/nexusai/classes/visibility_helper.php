@@ -70,21 +70,35 @@ class visibility_helper {
      *
      * La pantalla de crear y la de editar comparten `$PAGE->pagetype`
      * (`course-edit`, verificado contra Moodle 4.1 — ver ADR-010). La
-     * distinción es por parámetro: sin `id` = crear, con `id` = editar (editar
-     * lo maneja ONB-04, todavía no).
+     * distinción es por parámetro: sin `id` = crear, con `id` = editar
+     * (modo revisión, ONB-04).
      *
-     * @return string|null 'create-course' o null.
+     * @return string|null 'create-course', 'review-course' o null.
      */
     public static function onboarding_hint(): ?string {
-        global $PAGE;
+        global $PAGE, $COURSE;
 
         if ($PAGE->pagetype !== 'course-edit') {
             return null;
         }
 
-        // Editar un curso existente → ONB-04 (todavía no implementado).
-        if (optional_param('id', 0, PARAM_INT) > 0) {
-            return null;
+        $editid = optional_param('id', 0, PARAM_INT);
+
+        if ($editid > 0) {
+            // ONB-04: editar un curso existente. require_login($course) en
+            // course/edit.php ya deja $COURSE seteado al curso editado antes
+            // de que corra el hook de footer — mismo mecanismo del que
+            // depende resolve() para el widget normal.
+            if (empty($COURSE->id) || (int) $COURSE->id !== $editid) {
+                return null;
+            }
+
+            $context = \context_course::instance($COURSE->id);
+            if (!has_capability('local/nexusai:manage', $context)) {
+                return null;
+            }
+
+            return 'review-course';
         }
 
         $categoryid = optional_param('category', 0, PARAM_INT);

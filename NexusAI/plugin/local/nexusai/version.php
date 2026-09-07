@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026083003;        // feat: estado de setup del curso (ONB-02 / #425) + tutorial de armado (ONB-03 / #426).
-$plugin->release   = '0.16.0';
+$plugin->version   = 2026083004;        // feat: modo revisión al editar un curso existente (ONB-04 / #427).
+$plugin->release   = '0.16.1';
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

@@ -10,13 +10,15 @@
  * Misma estética que ChatApp (rail flotante + panel), pero el cuerpo es el
  * checklist de armado de curso (`OnboardingPanel`) en vez del chat.
  *
- * ONB-04 va a extender esto al modo `review` sobre cursos existentes; por eso
- * el `mode` ya es una prop.
+ * ONB-04: en modo `review` (editar un curso existente) busca el estado real
+ * de setup del curso vía `getCourseSetupState()` y se lo pasa a
+ * `OnboardingPanel`, que lo usa para marcar ✓/pendiente cada paso.
  */
 
 import { useEffect, useState } from "react";
 
 import OnboardingPanel from "./components/OnboardingPanel.jsx";
+import { getCourseSetupState } from "./api/onboarding.js";
 
 const STRINGS = {
     es: {
@@ -55,6 +57,28 @@ export default function OnboardingApp({
     // el docente más necesita la guía. En otras páginas (ONB-04/06) el default
     // será cerrado.
     const [open, setOpen] = useState(mode === "create");
+
+    // ONB-04: estado de setup del curso para modo revisión. Mientras es
+    // `null` (todavía no llegó, o falló la llamada), OnboardingPanel muestra
+    // cada paso como "unknown" — el mismo estado que ya usa cuando el
+    // backend de material no responde, no hace falta un loading aparte.
+    const [setupState, setSetupState] = useState(null);
+
+    useEffect(() => {
+        if (mode !== "review" || !(Number(courseid) > 0)) return undefined;
+
+        let cancelled = false;
+        getCourseSetupState(Number(courseid))
+            .then((state) => {
+                if (!cancelled) setSetupState(state);
+            })
+            .catch(() => {
+                // Deja setupState en null → los pasos quedan en "unknown".
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [mode, courseid]);
 
     // Sincronía con el ícono de la navbar (fuera de React), igual que ChatApp.
     useEffect(() => {
@@ -111,6 +135,7 @@ export default function OnboardingApp({
                             courseid={courseid}
                             wwwroot={wwwroot}
                             lang={lang}
+                            state={setupState}
                         />
                     </div>
                 </div>
