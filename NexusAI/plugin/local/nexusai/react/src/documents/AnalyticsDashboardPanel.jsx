@@ -9,7 +9,10 @@
  * son agregaciones directas ya calculadas por el backend.
  *
  * Las "barras" son CSS puro (alto/ancho en %), mismo criterio liviano que el
- * resto del plugin — no se agrega ninguna librería de gráficos.
+ * resto del plugin — no se agrega ninguna librería de gráficos, solo un
+ * componente propio (`BarChart`, ANALYTICS-04 #371) con tooltip real al
+ * hover/foco y scroll horizontal para que no se aplasten con muchos puntos
+ * de datos (365 días).
  */
 
 import { useEffect, useState } from "react";
@@ -17,6 +20,7 @@ import { getAnalyticsDashboard } from "./api.js";
 import { IconBarChart, IconClipboardList, IconHelpCircle, IconTarget, IconThumbsUp } from "../components/icons.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
 import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
+import BarChart from "./BarChart.jsx";
 
 // UX-12 (#370): silueta de carga — fila de cards de métricas + dos
 // secciones con barras, aproximando el layout real de abajo.
@@ -217,16 +221,12 @@ export default function AnalyticsDashboardPanel({ courseId }) {
                             {dailyCounts.length === 0 ? (
                                 <p className="nexusai-analytics__section-empty">Sin actividad registrada en este período.</p>
                             ) : (
-                                <div className="nexusai-analytics__bars nexusai-analytics__bars--daily">
-                                    {dailyCounts.map((d) => (
-                                        <div key={d.date} className="nexusai-analytics__bar-col" title={`${d.date}: ${d.message_count}`}>
-                                            <div
-                                                className="nexusai-analytics__bar"
-                                                style={{ height: `${Math.round((d.message_count / maxDaily) * 100)}%` }}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
+                                <BarChart
+                                    variant="daily"
+                                    maxValue={maxDaily}
+                                    items={dailyCounts.map((d) => ({ key: d.date, value: d.message_count, date: d.date }))}
+                                    formatTooltip={(item) => `${item.date}: ${item.value}`}
+                                />
                             )}
                         </section>
 
@@ -243,18 +243,13 @@ export default function AnalyticsDashboardPanel({ courseId }) {
                                             promedio sobre {quizDist.total_attempts} intento{quizDist.total_attempts === 1 ? "" : "s"}
                                         </span>
                                     </div>
-                                    <div className="nexusai-analytics__bars nexusai-analytics__bars--buckets">
-                                        {quizDist.buckets.map((b) => (
-                                            <div key={b.range} className="nexusai-analytics__bucket-col">
-                                                <div
-                                                    className="nexusai-analytics__bar nexusai-analytics__bar--bucket"
-                                                    style={{ height: `${Math.round((b.count / maxBucket) * 100)}%` }}
-                                                    title={`${b.range}: ${b.count}`}
-                                                />
-                                                <span className="nexusai-analytics__bucket-label">{b.range}</span>
-                                            </div>
-                                        ))}
-                                    </div>
+                                    <BarChart
+                                        variant="buckets"
+                                        maxValue={maxBucket}
+                                        items={quizDist.buckets.map((b) => ({ key: b.range, value: b.count, range: b.range }))}
+                                        formatTooltip={(item) => `${item.range}: ${item.value}`}
+                                        formatLabel={(item) => item.range}
+                                    />
                                 </>
                             )}
                         </section>
