@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026090803;        // feat: webhook externo para el digest del foro (FOR-07 / #378).
-$plugin->release   = '0.17.7';
+$plugin->version   = 2026090804;        // feat: entrada de voz en el chat (VOICE-01 / #314).
+$plugin->release   = '0.17.8';
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

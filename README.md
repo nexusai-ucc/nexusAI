@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status: Post-MVP en desarrollo](https://img.shields.io/badge/status-Post--MVP%20en%20desarrollo-orange)]()
-[![Version: 0.10.6](https://img.shields.io/badge/version-0.10.6-blue)]()
+[![Version: 0.17.8](https://img.shields.io/badge/version-0.17.8-blue)]()
 [![Moodle: 4.1–4.5](https://img.shields.io/badge/Moodle-4.1--4.5-blue)]()
 [![Python: 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)]()
 [![React: 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)]()
@@ -28,7 +28,7 @@ A diferencia de otros plugins de IA para Moodle, **NexusAI implementa RAG autén
 - **API key del proveedor LLM nunca llega al navegador.** Patrón Hybrid PHP Proxy con HMAC PHP↔Python.
 - **Self-hosted.** Una sola base de datos (PostgreSQL + pgvector) — los datos académicos nunca salen del servidor de la institución.
 - **Agnóstico de proveedor LLM.** Gemini en MVP (gratuito), GPT-4o-mini en producción. Cambio de proveedor solo con variables de entorno.
-- **Open source.** Distribuido bajo licencia MIT.
+- **Open source.** Backend bajo licencia MIT; el plugin de Moodle, bajo GPL v3 (requerido para publicación en moodle.org).
 - **Fallback honesto.** Si la pregunta no se puede responder con el material, lo admite.
 
 ---
@@ -247,7 +247,11 @@ Por ahora el desarrollo está restringido al equipo del proyecto. Convenciones d
 
 ## Licencia
 
-[MIT](LICENSE) © 2026 — Equipo NexusAI.
+[MIT](LICENSE) © 2026 — Equipo NexusAI, para el backend y el resto del
+repositorio. El plugin de Moodle (`NexusAI/plugin/local/nexusai/`) se
+distribuye bajo [GPL v3 o posterior](NexusAI/plugin/local/nexusai/LICENSE),
+requerido para su publicación en el directorio oficial de Moodle.org — mismo
+esquema de licencia que el propio Moodle core.
 
 ---
 
@@ -258,4 +262,4 @@ Este proyecto se desarrolla en el marco de:
 - **Proyecto Integrador de Ingeniería en Sistemas** — Universidad Católica de Córdoba (UCC), 2026.
 - **Administración de Proyectos de Software** — UCC, 2026.
 
-NexusAI no es un producto comercial sino un trabajo académico, distribuido como software libre bajo licencia MIT para que pueda ser estudiado, adaptado y extendido por otros equipos universitarios.
+NexusAI no es un producto comercial sino un trabajo académico, distribuido como software libre para que pueda ser estudiado, adaptado y extendido por otros equipos universitarios.

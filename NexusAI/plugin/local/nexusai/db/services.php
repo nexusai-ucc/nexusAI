@@ -37,6 +37,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // VOICE-01 (#314): transcribe un audio corto a texto para el composer del chat.
+    'local_nexusai_chat_voice_transcribe' => [
+        'classname'     => '\local_nexusai\external\chat_voice_transcribe',
+        'methodname'    => 'execute',
+        'description'   => 'Transcribe a short recorded question to text for the chat composer.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Feedback 👍/👎 del alumno sobre una respuesta puntual del chat (ASIST-01).
     'local_nexusai_chat_message_feedback' => [
         'classname'     => '\local_nexusai\external\chat_message_feedback',
