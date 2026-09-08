@@ -696,6 +696,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                 isTeacher={false}
                                 lang={lang}
                                 scopeOverride={multiCourse}
+                                onGoToChat={() => setActiveTab("chat")}
                             />
                         </div>
                     )}
