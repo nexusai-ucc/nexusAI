@@ -25,8 +25,70 @@ import {
     generateQuiz, evaluateOpenAnswer, recordQuizErrors, saveQuizAttempt, listQuizAttempts, suggestDifficulty,
     getFlashcardsSummary, getDueFlashcards, submitFlashcardReviews,
 } from "../api/quiz.js";
-import { IconBook, IconCheck, IconChevronRight, IconClock, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
+import { IconBook, IconCheck, IconChevronRight, IconClock, IconDownload, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 import { getFriendlyErrorMessage } from "./errors.js";
+
+// SP-17 (#363): "Exportar a PDF" — client-side, mismo criterio que gift.js
+// (sin round-trip al backend). A diferencia de GIFT (texto plano, Blob +
+// <a download>), un PDF real necesitaría una librería (jsPDF, ~200KB+) —
+// el bundle de este widget (chatwidget-lazy) ya está por encima del límite
+// de tamaño recomendado, sin margen para sumar una. En cambio, se abre una
+// ventana nueva con HTML formateado para impresión y se dispara
+// window.print() — el diálogo nativo del navegador ya ofrece "Guardar como
+// PDF", sin agregar ni un byte al bundle.
+//
+// Genera desde `quiz.questions` (las preguntas tal como las devolvió el
+// generador), NUNCA desde `answersRef`/el estado de "review" — ese sí
+// revela cuál era la opción correcta, y el criterio de aceptación pide
+// explícitamente que el PDF no revele las respuestas.
+export function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = String(text ?? "");
+    return div.innerHTML;
+}
+
+export function printQuizAsPdf(quiz, topic, lang) {
+    const win = window.open("", "_blank");
+    if (!win) return; // popup bloqueado por el navegador — sin fallback, no hay mucho más que hacer
+
+    const title = (topic && topic.trim()) || (lang === "es" ? "Quiz de práctica" : "Practice quiz");
+    const answerSpaceLabel = lang === "es" ? "Respuesta:" : "Answer:";
+
+    const questionsHtml = quiz.questions.map((q, i) => {
+        const stem = `<p class="q-stem"><strong>${i + 1}.</strong> ${escapeHtml(q.question)}</p>`;
+        const hasOptions = Array.isArray(q.options) && q.options.length > 0 && q.question_type !== "open";
+        const body = hasOptions
+            ? `<ol class="q-options">${q.options.map((opt) => `<li>${escapeHtml(opt)}</li>`).join("")}</ol>`
+            : `<p class="q-answer-label">${answerSpaceLabel}</p><div class="q-answer-space"></div>`;
+        return `<div class="question">${stem}${body}</div>`;
+    }).join("");
+
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(title)}</title>
+<style>
+    body { font-family: -apple-system, Arial, sans-serif; color: #1e293b; padding: 24px; max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 18px; margin-bottom: 20px; }
+    .question { margin-bottom: 20px; page-break-inside: avoid; }
+    .q-stem { margin: 0 0 6px; line-height: 1.5; }
+    .q-options { margin: 0 0 0 22px; padding: 0; }
+    .q-options li { margin-bottom: 4px; }
+    .q-answer-label { margin: 0 0 4px; font-size: 12px; color: #64748b; }
+    .q-answer-space { border-bottom: 1px solid #cbd5e1; height: 46px; }
+    @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+<h1>${escapeHtml(title)}</h1>
+${questionsHtml}
+</body>
+</html>`);
+    win.document.close();
+    win.focus();
+    win.print();
+}
 
 // ── Persistencia de errores del quiz en el backend (SP-10) ──
 // Best-effort: si falla, no bloquea el flujo del quiz (el alumno ya vio su
@@ -143,6 +205,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         historyDiffMedium:  "Media",
         historyDiffHard:    "Difícil",
         reviewAnswers:      "Revisar respuestas",
+        exportPdf:          "Exportar a PDF",
         reviewTitle:        "Repaso del intento",
         reviewYourAnswer:   "Tu respuesta",
         reviewCorrectAnswer: "Respuesta correcta",
@@ -206,6 +269,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         historyDiffMedium:  "Medium",
         historyDiffHard:    "Hard",
         reviewAnswers:      "Review answers",
+        exportPdf:          "Export to PDF",
         reviewTitle:        "Attempt review",
         reviewYourAnswer:   "Your answer",
         reviewCorrectAnswer: "Correct answer",
@@ -893,6 +957,13 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
                     <button type="button" className="nexusai-quiz__secondary" onClick={() => setStage("review")}>
                         {L.reviewAnswers}
+                    </button>
+                    <button
+                        type="button"
+                        className="nexusai-quiz__secondary"
+                        onClick={() => printQuizAsPdf(quiz, topic, lang)}
+                    >
+                        <IconDownload size={13} /> {L.exportPdf}
                     </button>
                     <button type="button" className="nexusai-quiz__primary" onClick={resetAll}>
                         {L.again}
