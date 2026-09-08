@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026090802;        // feat: resumen semanal del foro + urgencia de hilos (FOR-06 / #367, FOR-05 / #366).
-$plugin->release   = '0.17.6';
+$plugin->version   = 2026090803;        // feat: webhook externo para el digest del foro (FOR-07 / #378).
+$plugin->release   = '0.17.7';
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

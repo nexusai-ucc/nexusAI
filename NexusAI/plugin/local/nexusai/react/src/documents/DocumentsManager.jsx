@@ -294,7 +294,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                     lang={lang}
                 />
             ) : activeTab === "analytics" ? (
-                <AnalyticsDashboardPanel courseId={courseid} />
+                <AnalyticsDashboardPanel courseId={courseid} courseName={courseFullname} />
             ) : activeTab === "exam" ? (
                 <ExamGeneratorPanel courseId={courseid} />
             ) : activeTab === "help" ? (

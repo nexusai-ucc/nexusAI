@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import ForumDigestPanel from "./ForumDigestPanel.jsx";
 
 vi.mock("../api/forumDigest.js", () => ({
     getWeeklyDigest: vi.fn(),
+    getForumWebhook: vi.fn(),
+    saveForumWebhook: vi.fn(),
 }));
 
-import { getWeeklyDigest } from "../api/forumDigest.js";
+import { getWeeklyDigest, getForumWebhook, saveForumWebhook } from "../api/forumDigest.js";
 
 const DIGEST_WITH_ACTIVITY = {
     course_id: 5,
@@ -41,6 +44,8 @@ const DIGEST_EMPTY = {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    getForumWebhook.mockResolvedValue(null);
+    saveForumWebhook.mockResolvedValue(null);
 });
 
 describe("ForumDigestPanel — resumen semanal (FOR-06, #367)", () => {
@@ -116,5 +121,61 @@ describe("ForumDigestPanel — resumen semanal (FOR-06, #367)", () => {
 
         await screen.findByText("No entiendo nada del parcial");
         expect(screen.queryByRole("link", { name: "Ver hilo" })).not.toBeInTheDocument();
+    });
+});
+
+describe("ForumDigestPanel — webhook externo (FOR-07, #378)", () => {
+    beforeEach(() => {
+        getWeeklyDigest.mockResolvedValue(DIGEST_EMPTY);
+    });
+
+    it("preloads the saved webhook URL on mount", async () => {
+        getForumWebhook.mockResolvedValue("https://hooks.slack.com/services/xxx");
+
+        render(<ForumDigestPanel courseId={5} />);
+
+        await waitFor(() => expect(getForumWebhook).toHaveBeenCalledWith(5));
+        expect(await screen.findByDisplayValue("https://hooks.slack.com/services/xxx")).toBeInTheDocument();
+    });
+
+    it("saves the URL and shows a confirmation", async () => {
+        const user = userEvent.setup();
+        saveForumWebhook.mockResolvedValue("https://hooks.slack.com/services/yyy");
+
+        render(<ForumDigestPanel courseId={5} />);
+        await waitFor(() => expect(getForumWebhook).toHaveBeenCalled());
+
+        const input = screen.getByPlaceholderText("https://hooks.slack.com/services/...");
+        await user.type(input, "https://hooks.slack.com/services/yyy");
+        await user.click(screen.getByRole("button", { name: "Guardar" }));
+
+        await waitFor(() => expect(saveForumWebhook).toHaveBeenCalledWith(5, "https://hooks.slack.com/services/yyy"));
+        expect(await screen.findByText("Guardado")).toBeInTheDocument();
+    });
+
+    it("shows an error and does not break the rest of the panel when saving fails", async () => {
+        const user = userEvent.setup();
+        getWeeklyDigest.mockResolvedValue(DIGEST_WITH_ACTIVITY);
+        saveForumWebhook.mockRejectedValue(new Error("network down"));
+
+        render(<ForumDigestPanel courseId={5} />);
+        await waitFor(() => expect(getForumWebhook).toHaveBeenCalled());
+
+        const input = screen.getByPlaceholderText("https://hooks.slack.com/services/...");
+        await user.type(input, "https://hooks.slack.com/services/zzz");
+        await user.click(screen.getByRole("button", { name: "Guardar" }));
+
+        expect(await screen.findByText("No se pudo guardar la URL del webhook.")).toBeInTheDocument();
+        // El resto del panel sigue andando — el resumen del digest se ve igual.
+        expect(await screen.findByText("Resumen de la semana con un hilo urgente.")).toBeInTheDocument();
+    });
+
+    it("disables the save button while the input matches the already-saved value", async () => {
+        getForumWebhook.mockResolvedValue("https://hooks.slack.com/services/xxx");
+
+        render(<ForumDigestPanel courseId={5} />);
+
+        await screen.findByDisplayValue("https://hooks.slack.com/services/xxx");
+        expect(screen.getByRole("button", { name: "Guardar" })).toBeDisabled();
     });
 });
