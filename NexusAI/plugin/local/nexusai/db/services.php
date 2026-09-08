@@ -37,6 +37,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // VOICE-01 (#314): transcribe un audio corto a texto para el composer del chat.
+    'local_nexusai_chat_voice_transcribe' => [
+        'classname'     => '\local_nexusai\external\chat_voice_transcribe',
+        'methodname'    => 'execute',
+        'description'   => 'Transcribe a short recorded question to text for the chat composer.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Feedback 👍/👎 del alumno sobre una respuesta puntual del chat (ASIST-01).
     'local_nexusai_chat_message_feedback' => [
         'classname'     => '\local_nexusai\external\chat_message_feedback',
@@ -473,6 +484,26 @@ $functions = [
         'classname'     => '\local_nexusai\external\forum_weekly_digest',
         'methodname'    => 'execute',
         'description'   => 'Get a weekly digest of forum activity across the course, with per-thread urgency flags.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    'local_nexusai_forum_webhook_save' => [
+        'classname'     => '\local_nexusai\external\forum_webhook_save',
+        'methodname'    => 'execute',
+        'description'   => 'Save (or clear, with an empty URL) the course webhook URL for the weekly forum digest.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    'local_nexusai_forum_webhook_get' => [
+        'classname'     => '\local_nexusai\external\forum_webhook_get',
+        'methodname'    => 'execute',
+        'description'   => 'Get the currently configured course webhook URL for the weekly forum digest.',
         'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:manage',

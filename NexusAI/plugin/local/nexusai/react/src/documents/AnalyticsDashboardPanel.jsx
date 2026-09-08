@@ -13,14 +13,117 @@
  * componente propio (`BarChart`, ANALYTICS-04 #371) con tooltip real al
  * hover/foco y scroll horizontal para que no se aplasten con muchos puntos
  * de datos (365 días).
+ *
+ * ANALYTICS-03 (#316): "Exportar a PDF" reusa el mismo criterio sin
+ * dependencias que SP-17 (`printQuizAsPdf` en QuizPanel.jsx) — abre una
+ * ventana en blanco con HTML/CSS autocontenido y dispara window.print(),
+ * en vez de agregar una librería de generación de PDF. El HTML impreso
+ * arma sus propias barras estáticas (no reusa <BarChart>, cuyo tooltip
+ * depende de estado de hover/foco — no tiene sentido en un documento).
  */
 
 import { useEffect, useState } from "react";
 import { getAnalyticsDashboard } from "./api.js";
-import { IconBarChart, IconClipboardList, IconHelpCircle, IconTarget, IconThumbsUp } from "../components/icons.jsx";
+import { IconBarChart, IconClipboardList, IconDownload, IconHelpCircle, IconTarget, IconThumbsUp } from "../components/icons.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
 import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
 import BarChart from "./BarChart.jsx";
+
+const DAYS_LABELS = {
+    7: "Últimos 7 días",
+    30: "Último mes",
+    90: "Últimos 3 meses",
+    365: "Último año",
+};
+
+export function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = String(text ?? "");
+    return div.innerHTML;
+}
+
+function staticBarsHtml(items, maxValue) {
+    return items
+        .map((item) => {
+            const pct = Math.max(0, Math.min(100, Math.round((item.value / maxValue) * 100)));
+            return `<div class="bar-col"><div class="bar" style="height:${pct}%"></div><span class="bar-val">${item.value}</span><span class="bar-label">${escapeHtml(item.label)}</span></div>`;
+        })
+        .join("");
+}
+
+export function printAnalyticsAsPdf(report) {
+    const win = window.open("", "_blank");
+    if (!win) return; // popup bloqueado por el navegador
+
+    const { courseName, days, topQueries, dailyCounts, maxDaily, quizDist, maxBucket, ratioPct, gapsRatio, feedbackRatio } = report;
+    const daysLabel = DAYS_LABELS[days] || `${days} días`;
+
+    const dailyItems = dailyCounts.map((d) => ({ value: d.message_count, label: d.date }));
+    const bucketItems = quizDist.buckets.map((b) => ({ value: b.count, label: b.range }));
+
+    const topQueriesHtml = topQueries.length
+        ? `<ul>${topQueries.map((q) => `<li>${escapeHtml(q.question)} <strong>×${q.count}</strong></li>`).join("")}</ul>`
+        : `<p class="empty">Sin preguntas registradas en este período.</p>`;
+
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(courseName || "Reporte de Analytics")}</title>
+<style>
+    body { font-family: -apple-system, Arial, sans-serif; color: #1e293b; padding: 24px; max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 18px; margin-bottom: 2px; }
+    h2 { font-size: 13px; margin: 24px 0 8px; }
+    .sub { font-size: 12px; color: #64748b; margin: 0 0 20px; }
+    .section { page-break-inside: avoid; margin-bottom: 16px; }
+    .empty { font-size: 12px; color: #64748b; }
+    ul { margin: 0; padding-left: 20px; font-size: 13px; }
+    li { margin-bottom: 4px; }
+    .bars { display: flex; align-items: flex-end; gap: 4px; height: 90px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; font-size: 9px; }
+    .bar { width: 100%; min-height: 2px; background: #6366f1; }
+    .bar-val { margin-top: 2px; }
+    .bar-label { color: #64748b; white-space: nowrap; }
+    .stat { font-size: 13px; margin: 4px 0; }
+    @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+<h1>${escapeHtml(courseName || "Reporte de Analytics")}</h1>
+<p class="sub">Período: ${escapeHtml(daysLabel)}</p>
+
+<div class="section">
+    <h2>Preguntas más frecuentes</h2>
+    ${topQueriesHtml}
+</div>
+
+<div class="section">
+    <h2>Uso diario</h2>
+    ${dailyItems.length ? `<div class="bars">${staticBarsHtml(dailyItems, maxDaily)}</div>` : `<p class="empty">Sin actividad registrada en este período.</p>`}
+</div>
+
+<div class="section">
+    <h2>Distribución de puntajes de quiz</h2>
+    ${quizDist.total_attempts > 0
+        ? `<p class="stat">Promedio: ${quizDist.average_score.toFixed(1)} sobre ${quizDist.total_attempts} intento${quizDist.total_attempts === 1 ? "" : "s"}</p><div class="bars">${staticBarsHtml(bucketItems, maxBucket)}</div>`
+        : `<p class="empty">Todavía no hay intentos de quiz registrados.</p>`}
+</div>
+
+<div class="section">
+    <h2>Vacíos de contenido</h2>
+    <p class="stat">${gapsRatio.gaps_detected + gapsRatio.questions_answered > 0 ? `${ratioPct}% — ${gapsRatio.gaps_detected} de ${gapsRatio.gaps_detected + gapsRatio.questions_answered} preguntas sin responder bien` : "Sin datos suficientes en este período."}</p>
+</div>
+
+<div class="section">
+    <h2>Respuestas útiles</h2>
+    <p class="stat">${feedbackRatio.total_rated > 0 ? `${feedbackRatio.useful_pct}% (${feedbackRatio.total_rated} votos)` : "Sin votos registrados."}</p>
+</div>
+</body>
+</html>`);
+    win.document.close();
+    win.focus();
+    win.print();
+}
 
 // UX-12 (#370): silueta de carga — fila de cards de métricas + dos
 // secciones con barras, aproximando el layout real de abajo.
@@ -52,7 +155,7 @@ function AnalyticsSkeleton() {
     );
 }
 
-export default function AnalyticsDashboardPanel({ courseId }) {
+export default function AnalyticsDashboardPanel({ courseId, courseName }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -125,6 +228,18 @@ export default function AnalyticsDashboardPanel({ courseId }) {
                         {d === 365 && "Último año"}
                     </button>
                 ))}
+                {!loading && !error && !isEmpty && (
+                    <button
+                        type="button"
+                        className="nexusai-btn"
+                        onClick={() => printAnalyticsAsPdf({
+                            courseName, days, topQueries, dailyCounts, maxDaily,
+                            quizDist, maxBucket, ratioPct, gapsRatio, feedbackRatio,
+                        })}
+                    >
+                        <IconDownload size={13} /> Exportar a PDF
+                    </button>
+                )}
             </div>
 
             {loading && <AnalyticsSkeleton />}

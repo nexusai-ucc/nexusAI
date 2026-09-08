@@ -808,6 +808,23 @@ class backend_client {
     }
 
     /**
+     * Transcribe un audio corto (pregunta hablada) a texto (VOICE-01, #314).
+     *
+     * @return array {text}
+     */
+    public function transcribe_audio(string $mimetype, string $audiobytes): array {
+        $payload = [
+            'mime_type'   => $mimetype,
+            'content_b64' => base64_encode($audiobytes),
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/voice/transcribe', $body);
+    }
+
+    /**
      * CONT-07 (#356): reemplaza el archivo de un documento existente sin
      * cambiar su document_id (las citas viejas del chat siguen apuntando al
      * mismo id).
@@ -959,6 +976,34 @@ class backend_client {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
         return $this->post('/api/v1/forums/weekly-digest', $body);
+    }
+
+    /**
+     * Guarda (o borra, con $url = '') la URL de webhook del curso para el
+     * digest semanal del foro (FOR-07, #378).
+     *
+     * @return array {webhook_url}
+     */
+    public function save_forum_webhook(int $courseid, string $url): array {
+        $payload = ['course_id' => $courseid, 'webhook_url' => $url];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/webhook-config/save', $body);
+    }
+
+    /**
+     * Lee la URL de webhook configurada para el curso (FOR-07, #378).
+     *
+     * @return array {webhook_url}
+     */
+    public function get_forum_webhook(int $courseid): array {
+        $body = json_encode(['course_id' => $courseid], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/webhook-config/get', $body);
     }
 
     /**

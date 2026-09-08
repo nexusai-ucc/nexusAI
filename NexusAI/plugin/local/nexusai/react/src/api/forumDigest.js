@@ -63,3 +63,48 @@ export async function getWeeklyDigest(courseId, days = 7) {
 
     return response;
 }
+
+// FOR-07 (#378): URL de webhook (Slack/Discord/Teams) configurada por el
+// docente para recibir el digest semanal también fuera de Moodle.
+
+let _mockWebhookUrl = null;
+
+/**
+ * @param {number} courseId
+ * @returns {Promise<string|null>}
+ */
+export async function getForumWebhook(courseId) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 200));
+        return _mockWebhookUrl;
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_forum_webhook_get",
+        args: { courseid: courseId },
+    }]);
+
+    return response.webhook_url ?? null;
+}
+
+/**
+ * @param {number} courseId
+ * @param {string} url URL vacía borra la configuración.
+ * @returns {Promise<string|null>}
+ */
+export async function saveForumWebhook(courseId, url) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 200));
+        _mockWebhookUrl = url || null;
+        return _mockWebhookUrl;
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_forum_webhook_save",
+        args: { courseid: courseId, webhookurl: url },
+    }]);
+
+    return response.webhook_url ?? null;
+}
