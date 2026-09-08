@@ -21,14 +21,30 @@
     --nexusai-primary-dark:   #3b5bdb;
     --nexusai-primary-light:  rgba(99, 102, 241, 0.1);
     --nexusai-primary-ring:   rgba(99, 102, 241, 0.2);
+    --nexusai-primary-subtle:  #e6edfb;
     --nexusai-bg:             #ffffff;
     --nexusai-bg-muted:       #f8fafc;
     --nexusai-bg-subtle:      #f1f5f9;
+    --nexusai-surface:        #f7f8fc;
     --nexusai-border:         #e2e8f0;
     --nexusai-border-strong:  #cbd5e1;
+    --nexusai-border-hover:   #c6d4f0;
     --nexusai-fg:             #0f172a;
     --nexusai-fg-muted:       #64748b;
     --nexusai-fg-subtle:      #94a3b8;
+    --nexusai-success-bg:     #f0fdf4;
+    --nexusai-success-fg:     #166534;
+    --nexusai-success-border: #bbf7d0;
+    --nexusai-danger-bg:      #fef2f2;
+    --nexusai-danger-fg:      #991b1b;
+    --nexusai-danger-border:  #fecaca;
+    --nexusai-danger-solid:   #dc2626;
+    --nexusai-warning-bg:     #fef3c7;
+    --nexusai-warning-fg:     #92400e;
+    --nexusai-warning-border: #fde68a;
+    --nexusai-info-bg:        #eff6ff;
+    --nexusai-info-fg:        #1e40af;
+    --nexusai-info-border:    #bfdbfe;
     --nexusai-radius-sm:      4px;
     --nexusai-radius:         8px;
     --nexusai-radius-md:      10px;
@@ -98,7 +114,7 @@
     color: var(--nexusai-fg, #1e293b);
 }
 .nexusai-doc-nav__item--active {
-    background: #e6edfb;
+    background: var(--nexusai-primary-subtle);
     color: var(--nexusai-primary, #6366f1);
 }
 .nexusai-doc-nav__item span:first-of-type {
@@ -148,7 +164,7 @@
 .nexusai-doc-card .nexusai-documents__heading:first-child { margin-top: 0; }
 
 .nexusai-documents__intro {
-    color: #475569;
+    color: var(--nexusai-fg-muted);
     font-size: 13.5px;
     line-height: 1.6;
     margin-bottom: 20px;
@@ -197,17 +213,17 @@
     font-size: 12.5px;
     font-weight: 600;
     color: var(--nexusai-primary, #6366f1);
-    background: #f7f8fc;
-    border: 1px solid #e2e8f0;
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all .12s;
 }
 .nexusai-documents__load-more:hover {
-    border-color: #c6d4f0;
+    border-color: var(--nexusai-border-hover);
 }
 .nexusai-documents__load-more:disabled {
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     cursor: default;
 }
 
@@ -479,12 +495,12 @@
     max-height: 180px;
     overflow: auto;
     padding: 10px 12px;
-    background: #fff;
+    background: var(--nexusai-bg);
     border: 1px solid var(--nexusai-border, #e2e8f0);
     border-radius: 6px;
     font-size: 12px;
     line-height: 1.55;
-    color: #334155;
+    color: var(--nexusai-fg-muted);
     white-space: pre-wrap;
     word-break: break-word;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -551,11 +567,11 @@
     50%       { opacity: 1;   transform: scale(1); }
 }
 /* Specificity bumped a nivel de tabla para ganarle a los resets del tema Boost. */
-.nexusai-table .nexusai-badge--pending  { background: #f1f5f9 !important; color: #64748b !important; }
+.nexusai-table .nexusai-badge--pending  { background: var(--nexusai-bg-subtle) !important; color: #64748b !important; }
 .nexusai-table .nexusai-badge--indexing { background: #dbeafe !important; color: #1e40af !important; }
 .nexusai-table .nexusai-badge--indexed  { background: #d1fae5 !important; color: #065f46 !important; }
 .nexusai-table .nexusai-badge--error    { background: #fee2e2 !important; color: #991b1b !important; cursor: help; }
-.nexusai-table .nexusai-badge--unknown  { background: #f8fafc !important; color: #475569 !important; }
+.nexusai-table .nexusai-badge--unknown  { background: var(--nexusai-bg-muted) !important; color: #475569 !important; }
 
 /* ============================================================
    Buttons / links
@@ -756,7 +772,7 @@
 }
 .nexusai-gaps__filter-label {
     font-size: 13px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     margin-right: 4px;
 }
 
@@ -770,14 +786,14 @@
 }
 .nexusai-documents__section-picker label {
     font-size: 13px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
 }
 .nexusai-documents__section-select {
     padding: 6px 10px;
     font-size: 13px;
-    color: #1e293b;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    color: var(--nexusai-fg);
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     cursor: pointer;
 }
@@ -788,15 +804,15 @@
 .nexusai-gaps__filter-btn {
     padding: 5px 10px;
     font-size: 12.5px;
-    color: #64748b;
-    background: #f7f8fc;
-    border: 1px solid #e2e8f0;
+    color: var(--nexusai-fg-muted);
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all .12s;
 }
 .nexusai-gaps__filter-btn:hover {
-    border-color: #c6d4f0;
+    border-color: var(--nexusai-border-hover);
     color: var(--nexusai-primary, #6366f1);
 }
 .nexusai-gaps__filter-btn--active {
@@ -854,8 +870,8 @@
     margin: 0;
 }
 .nexusai-gap-item {
-    background: #fff;
-    border: 1px solid #e8edf5;
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-border);
     border-left: 3px solid var(--nexusai-primary, #6366f1);
     border-radius: 6px;
     padding: 10px 14px;
@@ -877,14 +893,14 @@
     font-size: 12px;
     font-weight: 700;
     color: var(--nexusai-primary, #6366f1);
-    background: #e6edfb;
+    background: var(--nexusai-primary-subtle);
     padding: 2px 8px;
     border-radius: 12px;
     flex-shrink: 0;
 }
 .nexusai-gap-item__meta {
     font-size: 11.5px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
@@ -906,7 +922,7 @@
     align-items: center;
     gap: 5px;
     font-size: 12.5px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     cursor: pointer;
     margin-left: auto;
 }
@@ -922,9 +938,9 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    color: #64748b;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    color: var(--nexusai-fg-muted);
+    background: var(--nexusai-bg-subtle);
+    border: 1px solid var(--nexusai-border);
     border-radius: 999px;
     padding: 1px 7px;
     margin-left: 8px;
@@ -938,17 +954,17 @@
     font-size: 12.5px;
     font-weight: 600;
     color: var(--nexusai-primary, #6366f1);
-    background: #f7f8fc;
-    border: 1px solid #e2e8f0;
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all .12s;
 }
 .nexusai-gaps__load-more:hover {
-    border-color: #c6d4f0;
+    border-color: var(--nexusai-border-hover);
 }
 .nexusai-gaps__load-more:disabled {
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     cursor: default;
 }
 
@@ -968,7 +984,7 @@
     text-decoration: underline;
 }
 .nexusai-gap-item__archive-btn:disabled {
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     cursor: default;
     text-decoration: none;
 }
@@ -982,8 +998,8 @@
     gap: 8px;
 }
 .nexusai-faq-topic {
-    background: #fff;
-    border: 1px solid #e8edf5;
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-border);
     border-left: 3px solid var(--nexusai-primary, #6366f1);
     border-radius: 6px;
     padding: 10px 14px;
@@ -1005,7 +1021,7 @@
     font-size: 12px;
     font-weight: 700;
     color: var(--nexusai-primary, #6366f1);
-    background: #e6edfb;
+    background: var(--nexusai-primary-subtle);
     padding: 2px 8px;
     border-radius: 12px;
     flex-shrink: 0;
@@ -1014,7 +1030,7 @@
     margin: 6px 0 0;
     padding-left: 18px;
     font-size: 12px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     line-height: 1.5;
 }
 
@@ -1056,7 +1072,7 @@
     font-size: 12px;
     font-weight: 700;
     color: var(--nexusai-primary, #6366f1);
-    background: #e6edfb;
+    background: var(--nexusai-primary-subtle);
     padding: 2px 8px;
     border-radius: var(--nexusai-radius-full, 9999px);
     flex-shrink: 0;
@@ -1194,8 +1210,8 @@
     }
 }
 .nexusai-analytics__section {
-    background: #fff;
-    border: 1px solid #e8edf5;
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-border);
     border-radius: 8px;
     padding: 14px 16px;
     /* UX-16: sin esto, el tamaño mínimo automático del grid item se calcula
@@ -1206,7 +1222,7 @@
 }
 .nexusai-analytics__section-empty {
     font-size: 13px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     margin: 4px 0 0;
 }
 .nexusai-analytics__query-list {
@@ -1256,18 +1272,43 @@
     height: 100%;
 }
 .nexusai-analytics__bar {
+    position: relative;
     width: 100%;
     min-height: 3px;
     background: var(--nexusai-primary, #6366f1);
     border-radius: 3px 3px 0 0;
     opacity: 0.85;
+    cursor: default;
+}
+.nexusai-analytics__bar:hover,
+.nexusai-analytics__bar:focus-visible {
+    opacity: 1;
+    outline: none;
 }
 .nexusai-analytics__bar--bucket {
     opacity: 1;
 }
+/* ANALYTICS-04 (#371): tooltip real (accesible por teclado vía foco), en
+   vez del `title` nativo del navegador — aparece al instante y se puede
+   estilar consistente con el resto del plugin. */
+.nexusai-analytics__bar-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 6px;
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: var(--nexusai-fg, #1e293b);
+    color: #fff;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
+}
 .nexusai-analytics__bucket-label {
     font-size: 10px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     margin-top: 6px;
     white-space: nowrap;
 }
@@ -1286,7 +1327,7 @@
 }
 .nexusai-analytics__score-sub {
     font-size: 12px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
 }
 
 /* Ratio de gaps */
@@ -1304,7 +1345,7 @@
 }
 .nexusai-analytics__gaps-ratio-sub {
     font-size: 12px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
 }
 .nexusai-analytics__gaps-ratio--low {
     background: #f0fdf4;
@@ -1368,9 +1409,9 @@
 .nexusai-analytics__health {
     margin-top: 12px;
     padding: 14px 16px;
-    border: 1px solid #e8edf5;
+    border: 1px solid var(--nexusai-border);
     border-radius: 8px;
-    background: #fff;
+    background: var(--nexusai-bg);
 }
 .nexusai-analytics__health-head {
     display: flex;
@@ -1388,7 +1429,7 @@
 }
 .nexusai-analytics__health-bar {
     height: 8px;
-    background: #f1f5f9;
+    background: var(--nexusai-bg-subtle);
     border-radius: 4px;
     overflow: hidden;
     margin-top: 8px;
@@ -1401,7 +1442,7 @@
 .nexusai-analytics__health-sub {
     display: block;
     font-size: 12px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     margin-top: 6px;
 }
 .nexusai-analytics__health--low .nexusai-analytics__health-pct {
@@ -1683,8 +1724,205 @@
 .nexusai-questions__modebtn:hover { color: var(--nexusai-fg, #1e293b); }
 .nexusai-questions__modebtn--active {
     color: var(--nexusai-primary, #6366f1);
-    background: #e6edfb;
+    background: var(--nexusai-primary-subtle);
     border-color: var(--nexusai-primary-ring, rgba(99,102,241,0.2));
+}
+
+/* ============================================================
+   Modo oscuro (UX-11, #369) — panel docente
+   Espejo del bloque de styles.css: redefine los tokens --nexusai-* y
+   ajusta los colores semánticos aún no tokenizados de las 5 tabs
+   (Material, Preguntas, Analytics, Examen, Buscar). Contraste de texto
+   sobre fondo de color verificado, no invertido mecánicamente.
+============================================================ */
+@media (prefers-color-scheme: dark) {
+    .nexusai-documents {
+        --nexusai-primary:        #818cf8;
+        --nexusai-primary-hover:  #a5b4fc;
+        --nexusai-primary-dark:   #a5b4fc;
+        --nexusai-primary-light:  rgba(129, 140, 248, 0.16);
+        --nexusai-primary-ring:   rgba(129, 140, 248, 0.36);
+        --nexusai-primary-subtle: #24304d;
+
+        --nexusai-bg:             #0f172a;
+        --nexusai-bg-muted:       #1e293b;
+        --nexusai-bg-subtle:      #283548;
+        --nexusai-surface:        #172131;
+
+        --nexusai-border:         #334155;
+        --nexusai-border-strong:  #475569;
+        --nexusai-border-hover:   #4c5a80;
+
+        --nexusai-fg:             #e2e8f0;
+        --nexusai-fg-muted:       #94a3b8;
+        --nexusai-fg-subtle:      #64748b;
+
+        --nexusai-success-bg:     #0f2a1c;
+        --nexusai-success-fg:     #4ade80;
+        --nexusai-success-border: #1f5e3f;
+        --nexusai-danger-bg:      #2c1517;
+        --nexusai-danger-fg:      #f87171;
+        --nexusai-danger-border:  #7f2a2a;
+        --nexusai-danger-solid:   #ef4444;
+        --nexusai-warning-bg:     #2e2410;
+        --nexusai-warning-fg:     #fbbf24;
+        --nexusai-warning-border: #6b5417;
+        --nexusai-info-bg:        #16233d;
+        --nexusai-info-fg:        #93c5fd;
+        --nexusai-info-border:    #2f4a7a;
+
+        --nexusai-shadow-sm:      0 1px 2px 0 rgba(0,0,0,0.4);
+        --nexusai-shadow:         0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.4);
+        --nexusai-shadow-md:      0 10px 15px -3px rgba(0,0,0,0.55), 0 4px 6px -2px rgba(0,0,0,0.4);
+    }
+
+    /* ---- Sidebar ---- */
+    .nexusai-documents .nexusai-doc-sidebar__status {
+        color: var(--nexusai-success-fg);
+        background: var(--nexusai-success-bg);
+        border-color: var(--nexusai-success-border);
+    }
+
+    /* ---- Cola de uploads / preview ---- */
+    .nexusai-documents .nexusai-upload-queue__item--error {
+        background: var(--nexusai-danger-bg);
+        border-color: var(--nexusai-danger-border);
+    }
+    .nexusai-documents .nexusai-upload-queue__item--error .nexusai-upload-queue__status,
+    .nexusai-documents .nexusai-upload-queue__dismiss,
+    .nexusai-documents .nexusai-preview__status--error,
+    .nexusai-documents .nexusai-alert--error,
+    .nexusai-documents .nexusai-modal__title--error { color: var(--nexusai-danger-fg); }
+
+    /* ---- Filas de tabla con estado ---- */
+    .nexusai-documents .nexusai-table__row--error td { background: rgba(239, 68, 68, 0.08); }
+    .nexusai-documents .nexusai-table__row--error:hover td { background: rgba(239, 68, 68, 0.14) !important; }
+    .nexusai-documents .nexusai-table__row--indexing td { background: rgba(129, 140, 248, 0.08); }
+    .nexusai-documents .nexusai-table__row--indexing:hover td { background: rgba(129, 140, 248, 0.14) !important; }
+
+    /* ---- Badges de estado (incluye los overrides !important a nivel tabla) ---- */
+    .nexusai-documents .nexusai-badge--indexing {
+        background: var(--nexusai-info-bg);
+        color: var(--nexusai-info-fg);
+        border-color: var(--nexusai-info-border);
+    }
+    .nexusai-documents .nexusai-badge--indexed {
+        background: var(--nexusai-success-bg);
+        color: var(--nexusai-success-fg);
+        border-color: var(--nexusai-success-border);
+    }
+    .nexusai-documents .nexusai-badge--error {
+        background: var(--nexusai-danger-bg);
+        color: var(--nexusai-danger-fg);
+        border-color: var(--nexusai-danger-border);
+    }
+    .nexusai-documents .nexusai-table .nexusai-badge--pending  { background: var(--nexusai-bg-subtle) !important; color: var(--nexusai-fg-muted) !important; }
+    .nexusai-documents .nexusai-table .nexusai-badge--indexing { background: var(--nexusai-info-bg) !important;    color: var(--nexusai-info-fg) !important; }
+    .nexusai-documents .nexusai-table .nexusai-badge--indexed  { background: var(--nexusai-success-bg) !important; color: var(--nexusai-success-fg) !important; }
+    .nexusai-documents .nexusai-table .nexusai-badge--error    { background: var(--nexusai-danger-bg) !important;  color: var(--nexusai-danger-fg) !important; }
+    .nexusai-documents .nexusai-table .nexusai-badge--unknown  { background: var(--nexusai-bg-muted) !important;   color: var(--nexusai-fg-muted) !important; }
+    .nexusai-documents .nexusai-badge--indexing::before { background: var(--nexusai-info-fg); }
+
+    /* ---- Modal de error ---- */
+    .nexusai-documents .nexusai-modal__body--error {
+        color: var(--nexusai-danger-fg);
+        background: var(--nexusai-danger-bg);
+        border-color: var(--nexusai-danger-border);
+    }
+    .nexusai-documents .nexusai-alert--error {
+        background: var(--nexusai-danger-bg);
+        border-color: var(--nexusai-danger-border);
+    }
+
+    /* ---- Botones link ---- */
+    .nexusai-documents .nexusai-link-btn--danger { color: var(--nexusai-danger-solid); }
+    .nexusai-documents .nexusai-link-btn--danger:hover { background: var(--nexusai-danger-bg); color: var(--nexusai-danger-fg); }
+
+    /* ---- Toast ---- */
+    .nexusai-documents .nexusai-toast--warning {
+        background: var(--nexusai-warning-bg);
+        color: var(--nexusai-warning-fg) !important;
+        border-color: var(--nexusai-warning-border);
+    }
+
+    /* ---- Gaps ---- */
+    .nexusai-documents .nexusai-gaps__empty-icon {
+        background: var(--nexusai-success-bg);
+        color: var(--nexusai-success-fg);
+    }
+    .nexusai-documents .nexusai-gap-item__similarity--low  { color: #a3e635; }
+    .nexusai-documents .nexusai-gap-item__similarity--mid  { color: var(--nexusai-warning-fg); }
+    .nexusai-documents .nexusai-gap-item__similarity--high { color: var(--nexusai-danger-fg); }
+    .nexusai-documents .nexusai-gap-item__archived-badge {
+        color: var(--nexusai-fg-muted);
+        background: var(--nexusai-bg-subtle);
+        border-color: var(--nexusai-border);
+    }
+    .nexusai-documents .nexusai-gap-item__sep { color: var(--nexusai-border-strong); }
+
+    /* ---- Analytics: ratio de gaps y salud del contenido ---- */
+    .nexusai-documents .nexusai-analytics__gaps-ratio--low  { background: var(--nexusai-success-bg); }
+    .nexusai-documents .nexusai-analytics__gaps-ratio--low .nexusai-analytics__gaps-ratio-pct  { color: var(--nexusai-success-fg); }
+    .nexusai-documents .nexusai-analytics__gaps-ratio--mid  { background: var(--nexusai-warning-bg); }
+    .nexusai-documents .nexusai-analytics__gaps-ratio--mid .nexusai-analytics__gaps-ratio-pct  { color: var(--nexusai-warning-fg); }
+    .nexusai-documents .nexusai-analytics__gaps-ratio--high { background: var(--nexusai-danger-bg); }
+    .nexusai-documents .nexusai-analytics__gaps-ratio--high .nexusai-analytics__gaps-ratio-pct { color: var(--nexusai-danger-fg); }
+    .nexusai-documents .nexusai-analytics__health--low .nexusai-analytics__health-pct  { color: var(--nexusai-success-fg); }
+    .nexusai-documents .nexusai-analytics__health--mid .nexusai-analytics__health-pct  { color: var(--nexusai-warning-fg); }
+    .nexusai-documents .nexusai-analytics__health--high .nexusai-analytics__health-pct { color: var(--nexusai-danger-fg); }
+    .nexusai-documents .nexusai-analytics__health-bar { background: var(--nexusai-bg-subtle); }
+
+    /* ---- Examen: badges de foco (gap/faq) ---- */
+    .nexusai-documents .nexusai-exam__focus-badge--gap {
+        color: var(--nexusai-warning-fg);
+        background: var(--nexusai-warning-bg);
+    }
+    .nexusai-documents .nexusai-exam__focus-badge--faq {
+        color: var(--nexusai-info-fg);
+        background: var(--nexusai-info-bg);
+    }
+    .nexusai-documents .nexusai-exam__remove:hover { color: var(--nexusai-danger-fg); }
+
+    /* ---- Botón secundario de modal ---- */
+    .nexusai-documents .nexusai-btn--danger { background: var(--nexusai-danger-solid); }
+}
+
+/* ============================================================
+   Accesibilidad — foco visible por teclado (UX-10, #368)
+
+   Mismo estado de foco que el widget del chat (styles.css),
+   reutilizando los tokens --nexusai-primary / -ring del root
+   .nexusai-documents. :focus-visible para no molestar al click.
+============================================================ */
+.nexusai-documents a:focus-visible,
+.nexusai-documents button:focus-visible,
+.nexusai-documents input:focus-visible,
+.nexusai-documents select:focus-visible,
+.nexusai-documents textarea:focus-visible,
+.nexusai-documents [tabindex]:focus-visible,
+.nexusai-documents summary:focus-visible {
+    outline: 2px solid var(--nexusai-primary, #6366f1);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--nexusai-primary-ring, rgba(99,102,241,0.2));
+}
+
+/* Botones sobre fondo índigo: halo claro hacia adentro + outline oscuro. */
+.nexusai-documents .nexusai-btn--primary:focus-visible {
+    outline: 2px solid var(--nexusai-primary-hover, #4f46e5);
+    outline-offset: 2px;
+    box-shadow: inset 0 0 0 2px #fff, 0 0 0 4px var(--nexusai-primary-ring, rgba(99,102,241,0.2));
+}
+
+@media (forced-colors: active) {
+    .nexusai-documents a:focus-visible,
+    .nexusai-documents button:focus-visible,
+    .nexusai-documents input:focus-visible,
+    .nexusai-documents select:focus-visible,
+    .nexusai-documents textarea:focus-visible,
+    .nexusai-documents [tabindex]:focus-visible {
+        outline: 2px solid CanvasText;
+        box-shadow: none;
+    }
 }
 
 /* ============================================================

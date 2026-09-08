@@ -101,7 +101,7 @@ describe("StudyPlanPanel — temas del plan", () => {
         render(<StudyPlanPanel courseId={5} onPracticeTopic={onPracticeTopic} />);
         await screen.findByText("Derivadas trigonométricas");
 
-        await user.click(screen.getByRole("button", { name: "Practicar este tema" }));
+        await user.click(screen.getByRole("button", { name: /^Practicar este tema/ }));
 
         expect(onPracticeTopic).toHaveBeenCalledWith("derivadas trigonométricas");
     });
@@ -115,7 +115,7 @@ describe("StudyPlanPanel — temas del plan", () => {
         render(<StudyPlanPanel courseId={5} />);
         await screen.findByText("Derivadas trigonométricas");
 
-        await user.click(screen.getByRole("button", { name: "Ya lo entendí" }));
+        await user.click(screen.getByRole("button", { name: /^Ya lo entendí/ }));
 
         expect(dismissStudyPlanTopic).toHaveBeenCalledWith(5, ["qe-1", "qe-2", "qe-3"], ["gq-1"]);
         await waitFor(() => expect(screen.queryByText("Derivadas trigonométricas")).not.toBeInTheDocument());
@@ -130,9 +130,9 @@ describe("StudyPlanPanel — temas del plan", () => {
         render(<StudyPlanPanel courseId={5} />);
         await screen.findByText("Derivadas trigonométricas");
 
-        await user.click(screen.getByRole("button", { name: "Ya lo entendí" }));
+        await user.click(screen.getByRole("button", { name: /^Ya lo entendí/ }));
 
-        await waitFor(() => expect(screen.getByRole("button", { name: "Ya lo entendí" })).toBeEnabled());
+        await waitFor(() => expect(screen.getByRole("button", { name: /^Ya lo entendí/ })).toBeEnabled());
         expect(screen.getByText("Derivadas trigonométricas")).toBeInTheDocument();
     });
 });

@@ -118,4 +118,24 @@ describe("AnalyticsDashboardPanel — with data", () => {
 
         await waitFor(() => expect(getAnalyticsDashboard).toHaveBeenCalledWith(3, 7));
     });
+
+    // ANALYTICS-04 (#371): con days=365 el gráfico de uso diario tiene un
+    // punto por día — todas las columnas deben renderizarse (el scroll
+    // horizontal, no el aplastamiento, es lo que las mantiene legibles).
+    it("renders one bar per day even with a full year of daily data", async () => {
+        const manyDays = {
+            ...FULL_DATA,
+            daily_message_counts: Array.from({ length: 365 }, (_, i) => ({
+                date: `2026-${String((i % 12) + 1).padStart(2, "0")}-01`,
+                message_count: i % 15,
+            })),
+        };
+        getAnalyticsDashboard.mockResolvedValue(manyDays);
+
+        render(<AnalyticsDashboardPanel courseId={3} />);
+
+        await screen.findByText("Uso diario");
+        const bars = document.querySelectorAll(".nexusai-analytics__bars--daily .nexusai-analytics__bar");
+        expect(bars).toHaveLength(365);
+    });
 });

@@ -326,7 +326,11 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                 </div>
             )}
 
-            <div className="nexusai-calendar__rangebtns">
+            <div
+                className="nexusai-calendar__rangebtns"
+                role="group"
+                aria-label={lang === "es" ? "Rango del calendario" : "Calendar range"}
+            >
                 <span className="nexusai-quiz__label">{L.rangeLabel}</span>
                 {[30, 90].map((d) => (
                     <button
@@ -334,6 +338,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                         type="button"
                         className={`nexusai-calendar__rangebtn ${days === d ? "nexusai-calendar__rangebtn--active" : ""}`}
                         onClick={() => setDays(d)}
+                        aria-pressed={days === d}
                     >
                         {d === 30 ? L.range30 : L.range90}
                     </button>
@@ -341,7 +346,11 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
             </div>
 
             {loading && (
-                <div className="nexusai-quiz nexusai-quiz--center">
+                <div
+                    className="nexusai-quiz nexusai-quiz--center"
+                    role="status"
+                    aria-label={lang === "es" ? "Cargando calendario" : "Loading calendar"}
+                >
                     <div className="nexusai-quiz__spinner" />
                 </div>
             )}
@@ -389,6 +398,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title={L.openInMoodle}
+                                aria-label={`${e.name} — ${eventTypeLabel(e.component, lang)}, ${formatDate(e.timesort)}. ${L.openInMoodle}`}
                             >
                                 <div className="nexusai-calendar-item__icon">
                                     <IconCalendar size={16} />
@@ -513,9 +523,15 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
 
                     {feedOpen && (
                         <div className="nexusai-calendar__feed-body">
-                            {feedLoading && <p className="nexusai-calendar__feed-status">…</p>}
+                            {feedLoading && (
+                                <p
+                                    className="nexusai-calendar__feed-status"
+                                    role="status"
+                                    aria-label={lang === "es" ? "Generando URL del feed" : "Generating feed URL"}
+                                >…</p>
+                            )}
                             {feedError && (
-                                <p className="nexusai-calendar__feed-status nexusai-calendar__feed-status--error">
+                                <p className="nexusai-calendar__feed-status nexusai-calendar__feed-status--error" role="alert">
                                     {feedError}
                                 </p>
                             )}
@@ -529,11 +545,13 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                                             value={feedUrl}
                                             readOnly
                                             onFocus={(e) => e.target.select()}
+                                            aria-label={lang === "es" ? "URL del feed de calendario" : "Calendar feed URL"}
                                         />
                                         <button
                                             type="button"
                                             className="nexusai-calendar__feed-copy"
                                             onClick={copyFeed}
+                                            aria-live="polite"
                                         >
                                             {feedCopied ? L.feedCopied : L.feedCopy}
                                         </button>

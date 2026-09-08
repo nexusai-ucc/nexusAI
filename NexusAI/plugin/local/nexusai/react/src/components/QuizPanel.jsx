@@ -25,8 +25,70 @@ import {
     generateQuiz, evaluateOpenAnswer, recordQuizErrors, saveQuizAttempt, listQuizAttempts, suggestDifficulty,
     getFlashcardsSummary, getDueFlashcards, submitFlashcardReviews,
 } from "../api/quiz.js";
-import { IconBook, IconCheck, IconChevronRight, IconClock, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
+import { IconBook, IconCheck, IconChevronRight, IconClock, IconDownload, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 import { getFriendlyErrorMessage } from "./errors.js";
+
+// SP-17 (#363): "Exportar a PDF" — client-side, mismo criterio que gift.js
+// (sin round-trip al backend). A diferencia de GIFT (texto plano, Blob +
+// <a download>), un PDF real necesitaría una librería (jsPDF, ~200KB+) —
+// el bundle de este widget (chatwidget-lazy) ya está por encima del límite
+// de tamaño recomendado, sin margen para sumar una. En cambio, se abre una
+// ventana nueva con HTML formateado para impresión y se dispara
+// window.print() — el diálogo nativo del navegador ya ofrece "Guardar como
+// PDF", sin agregar ni un byte al bundle.
+//
+// Genera desde `quiz.questions` (las preguntas tal como las devolvió el
+// generador), NUNCA desde `answersRef`/el estado de "review" — ese sí
+// revela cuál era la opción correcta, y el criterio de aceptación pide
+// explícitamente que el PDF no revele las respuestas.
+export function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = String(text ?? "");
+    return div.innerHTML;
+}
+
+export function printQuizAsPdf(quiz, topic, lang) {
+    const win = window.open("", "_blank");
+    if (!win) return; // popup bloqueado por el navegador — sin fallback, no hay mucho más que hacer
+
+    const title = (topic && topic.trim()) || (lang === "es" ? "Quiz de práctica" : "Practice quiz");
+    const answerSpaceLabel = lang === "es" ? "Respuesta:" : "Answer:";
+
+    const questionsHtml = quiz.questions.map((q, i) => {
+        const stem = `<p class="q-stem"><strong>${i + 1}.</strong> ${escapeHtml(q.question)}</p>`;
+        const hasOptions = Array.isArray(q.options) && q.options.length > 0 && q.question_type !== "open";
+        const body = hasOptions
+            ? `<ol class="q-options">${q.options.map((opt) => `<li>${escapeHtml(opt)}</li>`).join("")}</ol>`
+            : `<p class="q-answer-label">${answerSpaceLabel}</p><div class="q-answer-space"></div>`;
+        return `<div class="question">${stem}${body}</div>`;
+    }).join("");
+
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${escapeHtml(title)}</title>
+<style>
+    body { font-family: -apple-system, Arial, sans-serif; color: #1e293b; padding: 24px; max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 18px; margin-bottom: 20px; }
+    .question { margin-bottom: 20px; page-break-inside: avoid; }
+    .q-stem { margin: 0 0 6px; line-height: 1.5; }
+    .q-options { margin: 0 0 0 22px; padding: 0; }
+    .q-options li { margin-bottom: 4px; }
+    .q-answer-label { margin: 0 0 4px; font-size: 12px; color: #64748b; }
+    .q-answer-space { border-bottom: 1px solid #cbd5e1; height: 46px; }
+    @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+<h1>${escapeHtml(title)}</h1>
+${questionsHtml}
+</body>
+</html>`);
+    win.document.close();
+    win.focus();
+    win.print();
+}
 
 // ── Persistencia de errores del quiz en el backend (SP-10) ──
 // Best-effort: si falla, no bloquea el flujo del quiz (el alumno ya vio su
@@ -143,6 +205,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         historyDiffMedium:  "Media",
         historyDiffHard:    "Difícil",
         reviewAnswers:      "Revisar respuestas",
+        exportPdf:          "Exportar a PDF",
         reviewTitle:        "Repaso del intento",
         reviewYourAnswer:   "Tu respuesta",
         reviewCorrectAnswer: "Respuesta correcta",
@@ -206,6 +269,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         historyDiffMedium:  "Medium",
         historyDiffHard:    "Hard",
         reviewAnswers:      "Review answers",
+        exportPdf:          "Export to PDF",
         reviewTitle:        "Attempt review",
         reviewYourAnswer:   "Your answer",
         reviewCorrectAnswer: "Correct answer",
@@ -525,28 +589,32 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     <p className="nexusai-quiz__intro-text">{L.introText}</p>
                 </div>
                 <div className="nexusai-quiz__field">
-                    <label className="nexusai-quiz__label">{L.topicLabel}</label>
+                    <label className="nexusai-quiz__label" htmlFor="nexusai-quiz-topic">{L.topicLabel}</label>
                     <input
+                        id="nexusai-quiz-topic"
                         type="text"
                         className={`nexusai-quiz__input${topicError ? " nexusai-quiz__input--error" : ""}`}
                         placeholder={L.topicPlaceholder}
                         value={topic}
                         onChange={(e) => { setTopic(e.target.value); setTopicError(null); }}
                         maxLength={200}
+                        aria-invalid={!!topicError}
+                        aria-describedby={topicError ? "nexusai-quiz-topic-error" : undefined}
                     />
                     {topicError && (
-                        <p className="nexusai-quiz__topic-error">{topicError}</p>
+                        <p className="nexusai-quiz__topic-error" id="nexusai-quiz-topic-error" role="alert">{topicError}</p>
                     )}
                 </div>
                 <div className="nexusai-quiz__field">
-                    <label className="nexusai-quiz__label">{L.typeLabel}</label>
-                    <div className="nexusai-quiz__typebtns">
+                    <span className="nexusai-quiz__label" id="nexusai-quiz-type-label">{L.typeLabel}</span>
+                    <div className="nexusai-quiz__typebtns" role="group" aria-labelledby="nexusai-quiz-type-label">
                         {typeOptions.map(({ key, label }) => (
                             <button
                                 key={key}
                                 type="button"
                                 className={`nexusai-quiz__typebtn ${questionType === key ? "nexusai-quiz__typebtn--active" : ""}`}
                                 onClick={() => setQuestionType(key)}
+                                aria-pressed={questionType === key}
                             >
                                 {label}
                             </button>
@@ -559,14 +627,15 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     )}
                 </div>
                 <div className="nexusai-quiz__field">
-                    <label className="nexusai-quiz__label">{L.nQuestions}</label>
-                    <div className="nexusai-quiz__numbtns">
+                    <span className="nexusai-quiz__label" id="nexusai-quiz-num-label">{L.nQuestions}</span>
+                    <div className="nexusai-quiz__numbtns" role="group" aria-labelledby="nexusai-quiz-num-label">
                         {[3, 5, 7, 10].map((n) => (
                             <button
                                 key={n}
                                 type="button"
                                 className={`nexusai-quiz__numbtn ${numQuestions === n ? "nexusai-quiz__numbtn--active" : ""}`}
                                 onClick={() => setNumQuestions(n)}
+                                aria-pressed={numQuestions === n}
                             >
                                 {n}
                             </button>
@@ -574,17 +643,18 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     </div>
                 </div>
                 <div className="nexusai-quiz__field">
-                    <label className="nexusai-quiz__label">{L.difficultyLabel}</label>
+                    <span className="nexusai-quiz__label" id="nexusai-quiz-diff-label">{L.difficultyLabel}</span>
                     {difficultySuggestion?.reason && (
                         <p className="nexusai-quiz__diff-suggestion">{difficultySuggestion.reason}</p>
                     )}
-                    <div className="nexusai-quiz__diffbtns">
+                    <div className="nexusai-quiz__diffbtns" role="group" aria-labelledby="nexusai-quiz-diff-label">
                         {difficultyOptions.map(({ key, label }) => (
                             <button
                                 key={key}
                                 type="button"
                                 className={`nexusai-quiz__diffbtn ${difficulty === key ? "nexusai-quiz__diffbtn--active" : ""}`}
                                 onClick={() => setDifficulty(key)}
+                                aria-pressed={difficulty === key}
                             >
                                 {label}
                             </button>
@@ -630,7 +700,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     // ─── LOADING ───
     if (stage === "loading") {
         return (
-            <div className="nexusai-quiz nexusai-quiz--center">
+            <div className="nexusai-quiz nexusai-quiz--center" role="status">
                 <div className="nexusai-quiz__spinner" />
                 <p className="nexusai-quiz__loading-text">{L.generating}</p>
             </div>
@@ -641,7 +711,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     if (stage === "error") {
         return (
             <div className="nexusai-quiz nexusai-quiz--center">
-                <p className="nexusai-error__text">{error || L.errorGeneric}</p>
+                <p className="nexusai-error__text" role="alert">{error || L.errorGeneric}</p>
                 <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
                     <button type="button" className="nexusai-quiz__primary" onClick={start}>
                         {L.retry}
@@ -723,6 +793,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                                     className={cls}
                                     onClick={() => !reveal && setSelectedIdx(i)}
                                     disabled={reveal}
+                                    aria-pressed={isSelected}
                                 >
                                     <span className="nexusai-quiz__option-letter">{letter}</span>
                                     <span className="nexusai-quiz__option-text">{opt}</span>
@@ -778,7 +849,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
 
                 {/* ── Feedback después de verificar ── */}
                 {reveal && !isFlashcard && (
-                    <div className={`nexusai-quiz__feedback ${
+                    <div role="status" className={`nexusai-quiz__feedback ${
                         (isOpen || isFillBlank)
                             ? (evaluation?.correct ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong")
                             : (selectedIdx === q.correct_index ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong")
@@ -887,6 +958,13 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     <button type="button" className="nexusai-quiz__secondary" onClick={() => setStage("review")}>
                         {L.reviewAnswers}
                     </button>
+                    <button
+                        type="button"
+                        className="nexusai-quiz__secondary"
+                        onClick={() => printQuizAsPdf(quiz, topic, lang)}
+                    >
+                        <IconDownload size={13} /> {L.exportPdf}
+                    </button>
                     <button type="button" className="nexusai-quiz__primary" onClick={resetAll}>
                         {L.again}
                     </button>
@@ -982,7 +1060,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 </div>
 
                 {historyLoading && (
-                    <div className="nexusai-quiz nexusai-quiz--center">
+                    <div className="nexusai-quiz nexusai-quiz--center" role="status">
                         <div className="nexusai-quiz__spinner" />
                         <p className="nexusai-quiz__loading-text">{L.historyLoading}</p>
                     </div>
