@@ -479,6 +479,26 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    'local_nexusai_forum_webhook_save' => [
+        'classname'     => '\local_nexusai\external\forum_webhook_save',
+        'methodname'    => 'execute',
+        'description'   => 'Save (or clear, with an empty URL) the course webhook URL for the weekly forum digest.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    'local_nexusai_forum_webhook_get' => [
+        'classname'     => '\local_nexusai\external\forum_webhook_get',
+        'methodname'    => 'execute',
+        'description'   => 'Get the currently configured course webhook URL for the weekly forum digest.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.
