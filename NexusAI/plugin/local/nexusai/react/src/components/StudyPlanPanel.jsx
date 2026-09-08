@@ -36,7 +36,7 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
 
     const [sections, setSections] = useState([]);
     const [selectedSection, setSelectedSection] = useState("");
-    const [dismissingIdx, setDismissingIdx] = useState(null);
+    const [dismissingKey, setDismissingKey] = useState(null);
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [summaryError, setSummaryError] = useState(null);
     const [summary, setSummary] = useState(null);
@@ -79,15 +79,22 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
         sourcesLabel:   (n) => `Based on ${n} document${n === 1 ? "" : "s"}`,
     };
 
-    const handleDismissTopic = async (t, idx) => {
-        setDismissingIdx(idx);
+    // `topic` es texto generado por el LLM en cada llamada, no una clave
+    // estable (ver StudyPlanTopic en app/quiz/router.py) — identificamos cada
+    // tema por los IDs reales que lo sustentan, no por su posición en la
+    // lista, así dos dismissals concurrentes no se pisan entre sí.
+    const topicKey = (t) => `${(t.quiz_error_ids || []).join(",")}|${(t.gap_question_ids || []).join(",")}`;
+
+    const handleDismissTopic = async (t) => {
+        const key = topicKey(t);
+        setDismissingKey(key);
         try {
             await dismissStudyPlanTopic(courseId, t.quiz_error_ids || [], t.gap_question_ids || []);
-            setTopics((prev) => prev.filter((_, i) => i !== idx));
+            setTopics((prev) => prev.filter((topic) => topicKey(topic) !== key));
         } catch {
             // Falla silenciosa: el tema queda visible, el alumno puede reintentar.
         } finally {
-            setDismissingIdx(null);
+            setDismissingKey(null);
         }
     };
 
@@ -234,8 +241,10 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
                 </div>
             ) : (
                 <div className="nexusai-studyplan__list">
-                    {topics.map((t, i) => (
-                        <div key={i} className="nexusai-studyplan__card">
+                    {topics.map((t) => {
+                        const key = topicKey(t);
+                        return (
+                        <div key={key} className="nexusai-studyplan__card">
                             <div className="nexusai-studyplan__card-top">
                                 <IconTarget size={16} />
                                 <span className="nexusai-studyplan__card-topic">{t.topic}</span>
@@ -257,15 +266,16 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
                                 <button
                                     type="button"
                                     className="nexusai-studyplan__card-btn nexusai-studyplan__card-btn--ghost"
-                                    onClick={() => handleDismissTopic(t, i)}
-                                    disabled={dismissingIdx === i}
+                                    onClick={() => handleDismissTopic(t)}
+                                    disabled={dismissingKey === key}
                                     aria-label={`${L.dismiss}: ${t.topic}`}
                                 >
-                                    {dismissingIdx === i ? L.dismissing : L.dismiss}
+                                    {dismissingKey === key ? L.dismissing : L.dismiss}
                                 </button>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

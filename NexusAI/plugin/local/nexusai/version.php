@@ -22,8 +22,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026090804;        // feat: entrada de voz en el chat (VOICE-01 / #314).
-$plugin->release   = '0.17.8';
+$plugin->version   = 2026090805;        // fix: document_replace valida course_id + error_message NULL_ALLOWED; onboarding_hint reusa onboarding_state_get.
+$plugin->release   = '0.17.9';
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

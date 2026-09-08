@@ -208,7 +208,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         try {
             setFeedUrl(await getCalendarFeedUrl(courseId));
         } catch (err) {
-            setFeedError(err.message || L.feedLoadErr);
+            setFeedError(getFriendlyErrorMessage(err, L.feedLoadErr, lang));
         } finally {
             setFeedLoading(false);
         }
@@ -231,7 +231,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
             setFeedUrl(await revokeCalendarFeed(courseId));
             setConfirmRevoke(false);
         } catch (err) {
-            setFeedError(err.message || L.feedLoadErr);
+            setFeedError(getFriendlyErrorMessage(err, L.feedLoadErr, lang));
         } finally {
             setRevoking(false);
         }
@@ -248,7 +248,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
             if (!feedUrl) setFeedUrl(url);
             window.open(`${url}&download=1`, "_blank", "noopener,noreferrer");
         } catch (err) {
-            setExportError(err.message || L.feedLoadErr);
+            setExportError(getFriendlyErrorMessage(err, L.feedLoadErr, lang));
         } finally {
             setExporting(false);
         }
