@@ -11,18 +11,32 @@
  * QuizPanel el tema elegido desde el Plan cuando corresponde.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import QuizPanel from "./QuizPanel.jsx";
 import ReviewPanel from "./ReviewPanel.jsx";
 import StudyPlanPanel from "./StudyPlanPanel.jsx";
+import { getStudyStreak } from "../api/quiz.js";
+import { IconFlame } from "./icons.jsx";
 
 export default function StudyPanel({ courseId, sesskey, lang = "es" }) {
     const [mode, setMode] = useState("plan"); // "plan" | "practice" | "review"
     const [plannedTopic, setPlannedTopic] = useState("");
+    // SP-16 (#354): racha visible en las 3 tabs (Plan/Practicar/Repaso) — la
+    // actividad de quiz pasa en "Practicar", no solo en "Plan", así que vive
+    // en el wrapper persistente y no adentro de StudyPlanPanel.
+    const [streak, setStreak] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getStudyStreak(courseId)
+            .then((data) => { if (!cancelled) setStreak(data); })
+            .catch(() => { /* sin racha visible: no bloquea el resto del panel */ });
+        return () => { cancelled = true; };
+    }, [courseId]);
 
     const L = lang === "es"
-        ? { plan: "Plan", practice: "Practicar", review: "Repaso" }
-        : { plan: "Plan", practice: "Practice", review: "Review" };
+        ? { plan: "Plan", practice: "Practicar", review: "Repaso", streak: (n) => (n === 1 ? "1 día seguido" : `${n} días seguidos`) }
+        : { plan: "Plan", practice: "Practice", review: "Review", streak: (n) => `${n} day${n === 1 ? "" : "s"} in a row` };
 
     const practiceTopic = (topic) => {
         setPlannedTopic(topic);
@@ -31,6 +45,12 @@ export default function StudyPanel({ courseId, sesskey, lang = "es" }) {
 
     return (
         <div className="nexusai-study">
+            {streak?.current_streak > 0 && (
+                <div className="nexusai-study__streak">
+                    <IconFlame size={15} />
+                    <span>{L.streak(streak.current_streak)}</span>
+                </div>
+            )}
             <div className="nexusai-study__modebtns">
                 <button
                     type="button"

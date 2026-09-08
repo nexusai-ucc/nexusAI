@@ -334,6 +334,43 @@
 }
 
 /* ============================================================
+   Acciones en lote sobre documentos (CONT-09, #358)
+============================================================ */
+.nexusai-bulkbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background: var(--nexusai-primary-light, rgba(99,102,241,0.07));
+    border: 1px solid var(--nexusai-primary-ring, rgba(99,102,241,0.2));
+    border-radius: var(--nexusai-radius, 8px);
+    font-size: 13px;
+}
+.nexusai-bulkbar__count {
+    font-weight: 600;
+    color: var(--nexusai-fg, #1e293b);
+}
+.nexusai-bulkbar__cancel {
+    margin-left: auto;
+    border: none;
+    background: transparent;
+    color: var(--nexusai-fg-muted, #64748b);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.nexusai-bulkbar__cancel:disabled,
+.nexusai-bulkbar .nexusai-link-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.nexusai-table__checkbox-col {
+    width: 36px;
+    padding-right: 0 !important;
+}
+
+/* ============================================================
    Tabla
 ============================================================ */
 .nexusai-table-wrap {

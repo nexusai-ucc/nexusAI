@@ -180,6 +180,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Racha de días consecutivos de actividad del alumno en el curso (SP-16).
+    'local_nexusai_quiz_streak' => [
+        'classname'     => '\local_nexusai\external\quiz_streak',
+        'methodname'    => 'execute',
+        'description'   => 'Get the student\'s current study streak (consecutive days with quiz or chat activity) in a course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Quiz evaluator — evalúa respuestas abiertas con IA (SP-05).
     'local_nexusai_quiz_evaluate' => [
         'classname'     => '\local_nexusai\external\quiz_evaluate',
@@ -497,6 +508,17 @@ $functions = [
         'classname'     => '\local_nexusai\external\document_delete',
         'methodname'    => 'execute',
         'description'   => 'Delete a NexusAI-indexed document and all its chunks.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
+    // Reindexar un documento ya subido, sin pedir un archivo nuevo (CONT-09).
+    'local_nexusai_document_reindex' => [
+        'classname'     => '\local_nexusai\external\document_reindex',
+        'methodname'    => 'execute',
+        'description'   => 'Re-run indexing for an already-uploaded document, reusing the stored file.',
         'type'          => 'write',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:manage',

@@ -583,6 +583,26 @@ class backend_client {
     }
 
     /**
+     * SP-16 (#354): racha de días consecutivos de actividad del alumno en
+     * el curso (quiz_attempts + mensajes de chat, sin tabla nueva).
+     *
+     * @param int $courseid ID del curso.
+     * @param int $userid   $USER->id real del alumno.
+     * @return array{current_streak:int, practiced_today:bool}
+     */
+    public function get_streak(int $courseid, int $userid): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/streak', $body);
+    }
+
+    /**
      * SP-13 (#323): descarta un tema puntual del plan de estudio del alumno
      * (opera sobre IDs reales de fila, no sobre el texto del topic).
      *
@@ -1032,6 +1052,18 @@ class backend_client {
      */
     public function delete_document(string $documentid): void {
         $this->delete('/api/v1/documents/' . $documentid);
+    }
+
+    /**
+     * Re-corre la indexación de un documento ya subido, sin recibir contenido
+     * nuevo — el backend lee el archivo que ya tiene guardado en disco desde
+     * el upload original (CONT-09, #358).
+     *
+     * @param string $documentid UUID del documento.
+     * @return array Document state (mismo shape que upload/replace).
+     */
+    public function reindex_document(string $documentid): array {
+        return $this->post('/api/v1/documents/' . $documentid . '/reindex', '{}');
     }
 
     // ----------------------------------------------------------------
