@@ -225,6 +225,13 @@ export const IconChevronRight = ({ size = 12 }) => (
     </svg>
 );
 
+// ── Chevron left (CAL-05: navegación de mes) ───────────────────────────────
+export const IconChevronLeft = ({ size = 12 }) => (
+    <svg {...baseProps(size)}>
+        <polyline points="15 18 9 12 15 6" />
+    </svg>
+);
+
 // ── ArrowUpRight (links externos) ──────────────────────────────────────────
 export const IconArrowUpRight = ({ size = 14 }) => (
     <svg {...baseProps(size)}>

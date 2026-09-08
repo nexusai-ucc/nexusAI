@@ -19,7 +19,7 @@ import {
     getCalendarFeedUrl,
     revokeCalendarFeed,
 } from "../api/calendarAlerts.js";
-import { IconCalendar, IconCheck } from "./icons.jsx";
+import { IconCalendar, IconCheck, IconChevronLeft, IconChevronRight, IconDownload } from "./icons.jsx";
 import { useToast } from "./Toast.jsx";
 import { getFriendlyErrorMessage } from "./errors.js";
 
@@ -45,6 +45,54 @@ function formatDate(timestampSec) {
     }
 }
 
+// CAL-05 (#364): grilla de mes, alternativa a la lista. Helper puro
+// (testeable sin DOM) — agrupa los MISMOS `events` ya cargados por día
+// calendario, sin pedir nada nuevo al backend (no hay forma de pedirle a
+// getUpcomingEvents un mes arbitrario; el criterio de aceptación pide
+// los mismos eventos en ambas vistas, no un rango de datos distinto).
+const WEEKDAY_LABELS = {
+    es: ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"],
+    en: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+};
+
+function dayKey(date) {
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+export function buildMonthGrid(year, month, events) {
+    const eventsByDay = {};
+    for (const e of events) {
+        const key = dayKey(new Date(e.timesort * 1000));
+        if (!eventsByDay[key]) eventsByDay[key] = [];
+        eventsByDay[key].push(e);
+    }
+
+    // Lunes como primer día de la semana: getDay() da 0=domingo..6=sábado,
+    // se rota para que 0=lunes..6=domingo.
+    const firstOfMonth = new Date(year, month, 1);
+    const firstWeekday = (firstOfMonth.getDay() + 6) % 7;
+
+    const todayKey = dayKey(new Date());
+    const cursor = new Date(year, month, 1 - firstWeekday);
+
+    const weeks = [];
+    for (let w = 0; w < 6; w++) {
+        const week = [];
+        for (let d = 0; d < 7; d++) {
+            const key = dayKey(cursor);
+            week.push({
+                date: new Date(cursor),
+                inMonth: cursor.getMonth() === month,
+                isToday: key === todayKey,
+                events: eventsByDay[key] || [],
+            });
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        weeks.push(week);
+    }
+    return weeks;
+}
+
 export default function CalendarPanel({ courseId, lang = "es" }) {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -62,6 +110,18 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
     const [feedCopied, setFeedCopied] = useState(false);
     const [confirmRevoke, setConfirmRevoke] = useState(false);
     const [revoking, setRevoking] = useState(false);
+
+    // CAL-06 (#365): descarga puntual del mismo feed (?download=1 — ya
+    // soportado por calendar_feed.php desde el PR #437, pensado para esto).
+    const [exporting, setExporting] = useState(false);
+    const [exportError, setExportError] = useState(null);
+
+    // CAL-05 (#364): toggle lista/grilla + mes mostrado en la grilla.
+    const [view, setView] = useState("list"); // "list" | "grid"
+    const [gridMonth, setGridMonth] = useState(() => {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), 1);
+    });
 
     const userId = window.M?.cfg?.userId ?? 1;
     const { showSuccess, showError } = useToast();
@@ -95,6 +155,12 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         feedRevokeConfirm: "Confirmar",
         feedCancel:   "Cancelar",
         feedRevoking: "Generando...",
+        exportIcs:    "Exportar a .ics",
+        exporting:    "Generando...",
+        viewList:     "Lista",
+        viewGrid:     "Mes",
+        prevMonth:    "Mes anterior",
+        nextMonth:    "Mes siguiente",
     } : {
         title:        "Upcoming deadlines",
         rangeLabel:   "Show:",
@@ -124,6 +190,12 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         feedRevokeConfirm: "Confirm",
         feedCancel:   "Cancel",
         feedRevoking: "Generating...",
+        exportIcs:    "Export to .ics",
+        exporting:    "Generating...",
+        viewList:     "List",
+        viewGrid:     "Month",
+        prevMonth:    "Previous month",
+        nextMonth:    "Next month",
     };
 
     const openFeed = async () => {
@@ -163,6 +235,27 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         } finally {
             setRevoking(false);
         }
+    };
+
+    // CAL-06 (#365): descarga puntual — reusa la misma URL de feed que
+    // "Suscribirme" (la cachea en feedUrl si todavía no se pidió, para no
+    // duplicar la llamada si el alumno después abre esa sección).
+    const exportIcs = async () => {
+        setExporting(true);
+        setExportError(null);
+        try {
+            const url = feedUrl || await getCalendarFeedUrl(courseId);
+            if (!feedUrl) setFeedUrl(url);
+            window.open(`${url}&download=1`, "_blank", "noopener,noreferrer");
+        } catch (err) {
+            setExportError(err.message || L.feedLoadErr);
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    const changeMonth = (delta) => {
+        setGridMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
     };
 
     useEffect(() => {
@@ -268,7 +361,26 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                 </div>
             )}
 
-            {!loading && !error && events.length === 0 && (
+            {!loading && !error && (
+                <div className="nexusai-calendar__viewbtns">
+                    <button
+                        type="button"
+                        className={`nexusai-calendar__rangebtn ${view === "list" ? "nexusai-calendar__rangebtn--active" : ""}`}
+                        onClick={() => setView("list")}
+                    >
+                        {L.viewList}
+                    </button>
+                    <button
+                        type="button"
+                        className={`nexusai-calendar__rangebtn ${view === "grid" ? "nexusai-calendar__rangebtn--active" : ""}`}
+                        onClick={() => setView("grid")}
+                    >
+                        {L.viewGrid}
+                    </button>
+                </div>
+            )}
+
+            {!loading && !error && view === "list" && events.length === 0 && (
                 <div className="nexusai-calendar__empty">
                     <IconCheck size={20} />
                     <p>{L.empty}</p>
@@ -276,7 +388,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                 </div>
             )}
 
-            {!loading && !error && events.length > 0 && (
+            {!loading && !error && view === "list" && events.length > 0 && (
                 <div className="nexusai-calendar__list">
                     {events.map((e) => (
                         <div key={e.id} className="nexusai-calendar-item-wrapper">
@@ -326,16 +438,88 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                 </div>
             )}
 
+            {!loading && !error && view === "grid" && (
+                <div className="nexusai-calendar__grid-wrap">
+                    <div className="nexusai-calendar__grid-nav">
+                        <button
+                            type="button"
+                            className="nexusai-calendar__grid-navbtn"
+                            onClick={() => changeMonth(-1)}
+                            aria-label={L.prevMonth}
+                        >
+                            <IconChevronLeft size={14} />
+                        </button>
+                        <span className="nexusai-calendar__grid-monthlabel">
+                            {gridMonth.toLocaleDateString(lang === "es" ? "es-AR" : "en-US", { month: "long", year: "numeric" })}
+                        </span>
+                        <button
+                            type="button"
+                            className="nexusai-calendar__grid-navbtn"
+                            onClick={() => changeMonth(1)}
+                            aria-label={L.nextMonth}
+                        >
+                            <IconChevronRight size={14} />
+                        </button>
+                    </div>
+                    <div className="nexusai-calendar__grid">
+                        {WEEKDAY_LABELS[lang === "es" ? "es" : "en"].map((wd, i) => (
+                            <span key={i} className="nexusai-calendar__grid-weekday">{wd}</span>
+                        ))}
+                        {buildMonthGrid(gridMonth.getFullYear(), gridMonth.getMonth(), events).flat().map((cell, i) => (
+                            <div
+                                key={i}
+                                className={[
+                                    "nexusai-calendar__grid-cell",
+                                    !cell.inMonth ? "nexusai-calendar__grid-cell--outside" : "",
+                                    cell.isToday ? "nexusai-calendar__grid-cell--today" : "",
+                                ].filter(Boolean).join(" ")}
+                                title={cell.events.length ? cell.events.map((e) => e.name).join(", ") : undefined}
+                            >
+                                <span className="nexusai-calendar__grid-daynum">{cell.date.getDate()}</span>
+                                {cell.events.length > 0 && (
+                                    <div className="nexusai-calendar__grid-dots">
+                                        {cell.events.slice(0, 3).map((e, di) => (
+                                            <span
+                                                key={di}
+                                                className={`nexusai-calendar__grid-dot nexusai-calendar__grid-dot--${e.component || "default"}`}
+                                            />
+                                        ))}
+                                        {cell.events.length > 3 && (
+                                            <span className="nexusai-calendar__grid-more">+{cell.events.length - 3}</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {!loading && !error && (
                 <div className="nexusai-calendar__feed">
-                    <button
-                        type="button"
-                        className="nexusai-calendar__feed-toggle"
-                        onClick={openFeed}
-                        aria-expanded={feedOpen}
-                    >
-                        {feedOpen ? L.feedHide : L.feedToggle}
-                    </button>
+                    <div className="nexusai-calendar__feed-actions">
+                        <button
+                            type="button"
+                            className="nexusai-calendar__feed-toggle"
+                            onClick={openFeed}
+                            aria-expanded={feedOpen}
+                        >
+                            {feedOpen ? L.feedHide : L.feedToggle}
+                        </button>
+                        <button
+                            type="button"
+                            className="nexusai-calendar__export-btn"
+                            onClick={exportIcs}
+                            disabled={exporting}
+                        >
+                            <IconDownload size={13} /> {exporting ? L.exporting : L.exportIcs}
+                        </button>
+                    </div>
+                    {exportError && (
+                        <p className="nexusai-calendar__feed-status nexusai-calendar__feed-status--error">
+                            {exportError}
+                        </p>
+                    )}
 
                     {feedOpen && (
                         <div className="nexusai-calendar__feed-body">
