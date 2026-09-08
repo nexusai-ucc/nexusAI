@@ -1686,3 +1686,129 @@
     background: #e6edfb;
     border-color: var(--nexusai-primary-ring, rgba(99,102,241,0.2));
 }
+
+/* ============================================================
+   Skeletons de carga — UX-12 (#370)
+   Silueta aproximada del contenido mientras carga, en vez del
+   spinner centrado genérico (.nexusai-loading). Componente en
+   components/Skeleton.jsx.
+============================================================ */
+@keyframes nexusai-skeleton-shimmer {
+    from { background-position: -320px 0; }
+    to   { background-position: 320px 0; }
+}
+.nexusai-skeleton {
+    display: block;
+    min-height: 8px;
+    border-radius: var(--nexusai-radius, 8px);
+    background-color: var(--nexusai-bg-subtle, #f1f5f9);
+    background-image: linear-gradient(
+        90deg,
+        var(--nexusai-bg-subtle, #f1f5f9) 0%,
+        var(--nexusai-bg-muted, #f8fafc) 40%,
+        var(--nexusai-border, #e2e8f0) 50%,
+        var(--nexusai-bg-muted, #f8fafc) 60%,
+        var(--nexusai-bg-subtle, #f1f5f9) 100%
+    );
+    background-size: 640px 100%;
+    background-repeat: no-repeat;
+    animation: nexusai-skeleton-shimmer 1.3s ease-in-out infinite;
+}
+.nexusai-skeleton-text {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nexusai-skeleton-screen {
+    padding: 4px 0 8px;
+}
+.nexusai-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Material — filas de la tabla de documentos */
+.nexusai-skeleton-doc__intro { margin-bottom: 20px; }
+.nexusai-skeleton-doc__zone {
+    height: 96px;
+    margin-bottom: 20px;
+    border-radius: var(--nexusai-radius, 8px);
+}
+.nexusai-skeleton-doc__rows {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius, 8px);
+    overflow: hidden;
+}
+.nexusai-skeleton-doc__row {
+    display: grid;
+    grid-template-columns: 24px 1fr 90px 70px 60px;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--nexusai-border, #e2e8f0);
+}
+.nexusai-skeleton-doc__row:last-child { border-bottom: 0; }
+
+/* Analytics — cards de métricas + secciones de barras */
+.nexusai-skeleton-analytics__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.nexusai-skeleton-analytics__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius, 8px);
+}
+.nexusai-skeleton-analytics__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+}
+.nexusai-skeleton-analytics__section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius, 8px);
+}
+.nexusai-skeleton-analytics__bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 90px;
+}
+.nexusai-skeleton-analytics__bars .nexusai-skeleton { flex: 1; }
+
+/* FAQ — cards de tema */
+.nexusai-skeleton-faq__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+}
+.nexusai-skeleton-faq__card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--nexusai-border, #e2e8f0);
+    border-radius: var(--nexusai-radius, 8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nexusai-skeleton { animation-duration: 2.4s; }
+}

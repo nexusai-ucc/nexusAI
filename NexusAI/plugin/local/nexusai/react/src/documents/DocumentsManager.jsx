@@ -27,6 +27,30 @@ import Tooltip from "../components/Tooltip.jsx";
 import { IconBarChart, IconBookOpen, IconCheck, IconClipboardList, IconHelpCircle, IconInfo, IconSearch } from "../components/icons.jsx";
 import { ToastProvider, useToast } from "../components/Toast.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
+import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
+
+// UX-12 (#370): silueta de carga de la pestaña Material — párrafo de intro,
+// zona de subida y filas de la tabla de documentos indexados.
+function MaterialSkeleton() {
+    return (
+        <SkeletonScreen label="Cargando documentos...">
+            <Skeleton className="nexusai-skeleton-doc__intro" height={32} />
+            <Skeleton className="nexusai-skeleton-doc__zone" />
+            <Skeleton width="45%" height={15} style={{ marginBottom: 12 }} />
+            <div className="nexusai-skeleton-doc__rows">
+                {Array.from({ length: 5 }, (_, i) => (
+                    <div key={i} className="nexusai-skeleton-doc__row">
+                        <Skeleton width={16} height={16} radius={4} />
+                        <Skeleton width={`${55 + ((i * 13) % 35)}%`} height={12} />
+                        <Skeleton height={10} />
+                        <Skeleton height={10} />
+                        <Skeleton width={16} height={16} radius={4} />
+                    </div>
+                ))}
+            </div>
+        </SkeletonScreen>
+    );
+}
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
@@ -277,7 +301,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                 <HelpPanel lang={lang} />
             ) : activeTab === "material" ? (
                 loading ? (
-                    <div className="nexusai-loading">Cargando documentos...</div>
+                    <MaterialSkeleton />
                 ) : (
                     <>
                         <p className="nexusai-documents__intro">

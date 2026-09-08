@@ -12,6 +12,29 @@ import { getFaqTopics } from "./api.js";
 import { downloadCsvFile } from "./csv.js";
 import { IconHelpCircle, IconDownload } from "../components/icons.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
+import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
+
+// UX-12 (#370): silueta de carga — grilla de cards de tema, cada una con
+// título + un par de líneas de preguntas de ejemplo.
+function FaqSkeleton() {
+    return (
+        <SkeletonScreen label="Cargando preguntas frecuentes...">
+            <div className="nexusai-skeleton-faq__grid">
+                {Array.from({ length: 6 }, (_, i) => (
+                    <div key={i} className="nexusai-skeleton-faq__card">
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <Skeleton width={14} height={14} radius="50%" />
+                            <Skeleton width="55%" height={13} />
+                            <Skeleton width={28} height={13} style={{ marginLeft: "auto" }} />
+                        </div>
+                        <Skeleton width="90%" height={10} />
+                        <Skeleton width="70%" height={10} />
+                    </div>
+                ))}
+            </div>
+        </SkeletonScreen>
+    );
+}
 
 export default function FaqDashboardPanel({ courseId }) {
     const [topics, setTopics] = useState([]);
@@ -74,7 +97,7 @@ export default function FaqDashboardPanel({ courseId }) {
                 ))}
             </div>
 
-            {loading && <div className="nexusai-loading">Cargando preguntas frecuentes...</div>}
+            {loading && <FaqSkeleton />}
 
             {error && (
                 <div className="nexusai-alert nexusai-alert--error" role="alert">
