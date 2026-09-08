@@ -33,18 +33,20 @@ from pathlib import Path
 from typing import Annotated, Optional
 from uuid import UUID
 
+import redis.asyncio as redis_async
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.hmac import verify_hmac
-from app.db.models import Document
+from app.db.models import Chunk, Document
 from app.db.session import get_db, get_session_factory
 from app.documents.extractor import SUPPORTED_MIME_TYPES
 from app.documents.pipeline import index_document
 from app.documents.summarizer import summarize_document, summarize_pre_exam
+from app.infrastructure.redis_client import get_redis
 from app.providers.embeddings import EmbeddingProvider, get_embedding_provider
 from app.providers.llm import LLMProvider, get_llm_provider
 
@@ -142,6 +144,54 @@ class DocumentListResponse(BaseModel):
 
 
 # ============================================================
+# Validación de archivo — compartida entre upload_document y replace_document
+# ============================================================
+
+def _decode_and_validate_file(mime_type: str, content_b64: str) -> bytes:
+    """Decodea y valida un archivo en base64: mime-type soportado, base64
+    válido, no vacío, dentro del tamaño máximo y con magic bytes coherentes
+    con el mime-type declarado. Lanza HTTPException si algo no cumple.
+    """
+    if mime_type not in SUPPORTED_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=(
+                f"Tipo de archivo no soportado: {mime_type!r}. "
+                f"Tipos aceptados: {sorted(SUPPORTED_MIME_TYPES)}"
+            ),
+        )
+
+    try:
+        file_bytes = base64.b64decode(content_b64, validate=True)
+    except (ValueError, base64.binascii.Error) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid base64 content: {exc}",
+        )
+
+    if not file_bytes:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File is empty")
+
+    if len(file_bytes) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large: {len(file_bytes)} bytes (max {MAX_UPLOAD_BYTES})",
+        )
+
+    expected_magic = _MAGIC_BYTES.get(mime_type)
+    if expected_magic is not None and not file_bytes.startswith(expected_magic):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"El archivo no parece ser del tipo declarado ({mime_type!r}): "
+                "los primeros bytes no coinciden con el formato esperado."
+            ),
+        )
+
+    return file_bytes
+
+
+# ============================================================
 # Background task wrapper
 # ============================================================
 
@@ -205,7 +255,7 @@ async def upload_document(
             ),
         )
 
-    # CONT-04: calcular hash antes de decodificar para early-return barato.
+    # CONT-04: calcular hash antes de decodificar/validar para early-return barato.
     file_hash = hashlib.sha256(payload.content_b64.encode()).hexdigest()
 
     # Si ya existe un documento indexado con el mismo contenido, devolverlo sin re-indexar.
@@ -241,37 +291,7 @@ async def upload_document(
             ),
         )
 
-    try:
-        file_bytes = base64.b64decode(payload.content_b64, validate=True)
-    except (ValueError, base64.binascii.Error) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid base64 content: {exc}",
-        )
-
-    if not file_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File is empty",
-        )
-
-    if len(file_bytes) > MAX_UPLOAD_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File too large: {len(file_bytes)} bytes (max {MAX_UPLOAD_BYTES})",
-        )
-
-    # Verificación de magic bytes por tipo de archivo.
-    # TXT no tiene magic bytes → None = skip check.
-    expected_magic = _MAGIC_BYTES.get(payload.mime_type)
-    if expected_magic is not None and not file_bytes.startswith(expected_magic):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                f"El archivo no parece ser del tipo declarado ({payload.mime_type!r}): "
-                "los primeros bytes no coinciden con el formato esperado."
-            ),
-        )
+    file_bytes = _decode_and_validate_file(payload.mime_type, payload.content_b64)
 
     document = Document(
         course_id=payload.course_id,
@@ -311,6 +331,149 @@ async def upload_document(
             embeddings=embeddings,
         )
     )
+
+    return doc_data
+
+
+class DocumentReplaceRequest(BaseModel):
+    """CONT-07: reemplaza el contenido de un documento existente, manteniendo
+    su document_id (las citas viejas del chat siguen apuntando al mismo id)."""
+
+    filename: str = Field(min_length=1, max_length=255)
+    mime_type: str = Field(default="application/pdf")
+    content_b64: str = Field(min_length=1)
+
+
+@router.post("/{document_id}/replace", response_model=DocumentOut, status_code=status.HTTP_202_ACCEPTED)
+async def replace_document(
+    document_id: UUID,
+    payload: DocumentReplaceRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+    embeddings: EmbeddingProvider = Depends(get_embedding_provider),
+) -> DocumentOut:
+    """Reemplaza el archivo de un documento existente sin cambiar su id.
+
+    A diferencia de POST "", no valida colisión de nombre (es una actualización
+    de la propia fila, no un documento nuevo). Borra los chunks viejos y hace
+    commit ANTES de disparar la re-indexación: `index_document()` tiene un
+    guard (CONT-04) que salta la indexación si el documento ya tiene chunks
+    persistidos — si no se borran primero, el archivo nuevo nunca se indexa.
+    """
+    result = await db.execute(select(Document).where(Document.id == document_id))
+    document = result.scalar_one_or_none()
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    file_bytes = _decode_and_validate_file(payload.mime_type, payload.content_b64)
+
+    # Borrar chunks viejos ANTES de tocar el documento — ver docstring (CONT-04).
+    await db.execute(delete(Chunk).where(Chunk.document_id == document_id))
+    await db.commit()
+
+    file_hash = hashlib.sha256(payload.content_b64.encode()).hexdigest()
+    old_storage_path = document.storage_path
+    old_filename = document.filename
+
+    document.filename = payload.filename
+    document.mime_type = payload.mime_type
+    document.file_hash = file_hash
+    document.status = "pending"
+    document.error_message = None
+    await db.commit()
+
+    # Guardar el archivo nuevo en disco. Si el nombre cambió, el storage_name
+    # también cambia (incluye el filename) — borrar el archivo viejo para no
+    # dejar basura huérfana.
+    safe_name = Path(payload.filename).name or "file"
+    storage_name = f"{document.id}_{safe_name}"
+    try:
+        UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+        (UPLOADS_DIR / storage_name).write_bytes(file_bytes)
+        document.storage_path = storage_name
+        await db.commit()
+        if old_storage_path and old_storage_path != storage_name:
+            (UPLOADS_DIR / old_storage_path).unlink(missing_ok=True)
+    except Exception as exc:
+        logger.warning(
+            "Could not save replacement file to disk for document %s: %s",
+            document.id, exc,
+        )
+
+    await db.refresh(document)
+    doc_data = DocumentOut.from_orm(document)
+
+    asyncio.create_task(
+        _index_document_task(
+            document_id=document.id,
+            file_bytes=file_bytes,
+            embeddings=embeddings,
+        )
+    )
+
+    logger.info(
+        "Document %s replaced: %r -> %r",
+        document.id, old_filename, payload.filename,
+    )
+
+    return doc_data
+
+
+@router.post("/{document_id}/reindex", response_model=DocumentOut, status_code=status.HTTP_202_ACCEPTED)
+async def reindex_document(
+    document_id: UUID,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+    embeddings: EmbeddingProvider = Depends(get_embedding_provider),
+) -> DocumentOut:
+    """Re-corre la indexación de un documento ya subido, sin pedir un archivo
+    nuevo (CONT-09, #358) — a diferencia de `replace_document`, lee los bytes
+    ya guardados en disco (`Document.storage_path`, poblado desde el upload
+    original) en vez de recibir contenido en el body.
+
+    Pensado para el caso "el docente edita el archivo en Moodle nativo, o
+    simplemente quiere forzar un re-index" sin tener que re-subir nada.
+    """
+    result = await db.execute(select(Document).where(Document.id == document_id))
+    document = result.scalar_one_or_none()
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    if not document.storage_path:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este documento no tiene un archivo guardado para reindexar. Usá 'Reemplazar' para subir uno nuevo.",
+        )
+
+    file_path = UPLOADS_DIR / document.storage_path
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El archivo original ya no está disponible en el servidor. Usá 'Reemplazar' para subir uno nuevo.",
+        )
+    file_bytes = file_path.read_bytes()
+
+    # Borrar chunks viejos ANTES de tocar el documento — mismo guard CONT-04
+    # que replace_document(): index_document() salta la indexación si el
+    # documento ya tiene chunks persistidos.
+    await db.execute(delete(Chunk).where(Chunk.document_id == document_id))
+    await db.commit()
+
+    document.status = "pending"
+    document.error_message = None
+    await db.commit()
+    await db.refresh(document)
+    doc_data = DocumentOut.from_orm(document)
+
+    asyncio.create_task(
+        _index_document_task(
+            document_id=document.id,
+            file_bytes=file_bytes,
+            embeddings=embeddings,
+        )
+    )
+
+    logger.info("Document %s reindexed", document.id)
 
     return doc_data
 
@@ -371,6 +534,67 @@ async def list_documents_by_course(
     )
 
 
+# CONT-08 (#357): cantidad de caracteres del texto extraído que se le muestra
+# al docente para que confirme de un vistazo que la extracción capturó
+# contenido real (y no, p. ej., un PDF escaneado sin OCR aprovechable).
+_PREVIEW_CHARS = 600
+
+
+class DocumentPreviewResponse(BaseModel):
+    document_id: str
+    filename: str
+    course_id: int
+    status: str
+    # None mientras el documento no esté indexado o si no se pudo extraer texto.
+    preview: Optional[str] = None
+    char_count: int = 0
+    truncated: bool = False
+
+
+@router.get("/{document_id}/preview", response_model=DocumentPreviewResponse)
+async def get_document_preview(
+    document_id: UUID,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> DocumentPreviewResponse:
+    """Primeros caracteres del texto extraído de un documento (CONT-08 / #357).
+
+    Toma el contenido del primer chunk indexado — o sea, exactamente lo que
+    el asistente "ve" de ese material — y lo recorta a `_PREVIEW_CHARS`. Sirve
+    para que el docente confirme que la extracción funcionó sin tener que
+    preguntarle algo al chat.
+    """
+    result = await db.execute(select(Document).where(Document.id == document_id))
+    document = result.scalar_one_or_none()
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    first_chunk = await db.scalar(
+        select(Chunk.content)
+        .where(Chunk.document_id == document_id, Chunk.chunk_index == 0)
+    )
+
+    if not first_chunk:
+        return DocumentPreviewResponse(
+            document_id=str(document.id),
+            filename=document.filename,
+            course_id=document.course_id,
+            status=document.status,
+        )
+
+    text = first_chunk.strip()
+    preview = text[:_PREVIEW_CHARS]
+    return DocumentPreviewResponse(
+        document_id=str(document.id),
+        filename=document.filename,
+        course_id=document.course_id,
+        status=document.status,
+        preview=preview,
+        char_count=len(preview),
+        truncated=len(text) > _PREVIEW_CHARS,
+    )
+
+
 @router.get("/{document_id}/download")
 async def download_document(
     document_id: UUID,
@@ -422,11 +646,15 @@ async def summarize_document_endpoint(
     _body: Annotated[bytes, Depends(verify_hmac)],
     db: AsyncSession = Depends(get_db),
     llm: LLMProvider = Depends(get_llm_provider),
+    redis: redis_async.Redis = Depends(get_redis),
 ) -> SummarizeResponse:
     """Genera un resumen del documento usando el LLM (BUS-03).
 
     Recupera todos los chunks del documento en orden y los envía al LLM.
     El documento debe pertenecer al course_id recibido (aislamiento multi-curso).
+
+    PERF-02: el resultado se cachea en Redis por versión del archivo, así que
+    volver a pedir el resumen del mismo documento es instantáneo.
     """
     try:
         result = await summarize_document(
@@ -434,6 +662,7 @@ async def summarize_document_endpoint(
             course_id=payload.course_id,
             db=db,
             llm=llm,
+            cache=redis,
         )
     except LookupError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
@@ -469,13 +698,17 @@ async def pre_exam_summary_endpoint(
     _body: Annotated[bytes, Depends(verify_hmac)],
     db: AsyncSession = Depends(get_db),
     llm: LLMProvider = Depends(get_llm_provider),
+    redis: redis_async.Redis = Depends(get_redis),
 ) -> PreExamSummaryResponse:
     """Resumen de repaso combinando todo el material indexado relevante para
     un próximo examen (BUS-04). Opcionalmente acotado a una unidad/sección.
 
-    Reusa summarize_document por cada documento y hace una única síntesis
-    final. Si no hay documentos indexados (para el curso o la sección
-    elegida), devuelve summary="" sin llamar al LLM.
+    Resume cada documento y hace una única síntesis final. Si no hay
+    documentos indexados (para el curso o la sección elegida), devuelve
+    summary="" sin llamar al LLM.
+
+    PERF-02: los resúmenes por documento se piden en paralelo y se cachean en
+    Redis, así que el segundo pedido del mismo curso solo paga la síntesis.
     """
     try:
         result = await summarize_pre_exam(
@@ -483,6 +716,7 @@ async def pre_exam_summary_endpoint(
             db=db,
             llm=llm,
             section=payload.section,
+            cache=redis,
         )
     except RuntimeError as exc:
         raise HTTPException(

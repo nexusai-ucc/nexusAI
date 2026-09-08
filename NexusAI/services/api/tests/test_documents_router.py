@@ -1,5 +1,5 @@
 """
-Tests del router de documentos (POST, GET, DELETE).
+Tests del router de documentos (POST, GET, DELETE, POST /replace).
 
 Estrategia de aislamiento:
   - Mini FastAPI solo con el documents router (sin lifespan de main.py).
@@ -56,6 +56,7 @@ def _make_doc(**kwargs) -> SimpleNamespace:
         status="pending",
         error_message=None,
         file_hash=_PDF_HASH,
+        storage_path=None,
         created_at=now,
         updated_at=now,
     )
@@ -288,6 +289,59 @@ async def test_get_document_status_not_found(client, mock_db):
 
 
 # ============================================================
+# GET /api/v1/documents/{id}/preview — CONT-08 (#357)
+# ============================================================
+
+async def test_document_preview_returns_extracted_text(client, mock_db):
+    doc = _make_doc(status="indexed")
+    mock_db.execute.return_value = _exec_result(scalar=doc)
+    mock_db.scalar.return_value = "  Este es el texto extraído del PDF.  "
+
+    response = await client.get(f"/api/v1/documents/{doc.id}/preview")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["preview"] == "Este es el texto extraído del PDF."
+    assert body["char_count"] == len("Este es el texto extraído del PDF.")
+    assert body["truncated"] is False
+    assert body["status"] == "indexed"
+
+
+async def test_document_preview_truncates_long_text(client, mock_db):
+    doc = _make_doc(status="indexed")
+    mock_db.execute.return_value = _exec_result(scalar=doc)
+    mock_db.scalar.return_value = "x" * 5000
+
+    response = await client.get(f"/api/v1/documents/{doc.id}/preview")
+
+    body = response.json()
+    assert body["char_count"] == 600
+    assert body["truncated"] is True
+
+
+async def test_document_preview_no_chunks_yet(client, mock_db):
+    """Documento sin chunks todavía (indexando o error) → preview None, sin 500."""
+    doc = _make_doc(status="indexing")
+    mock_db.execute.return_value = _exec_result(scalar=doc)
+    mock_db.scalar.return_value = None
+
+    response = await client.get(f"/api/v1/documents/{doc.id}/preview")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["preview"] is None
+    assert body["char_count"] == 0
+
+
+async def test_document_preview_not_found(client, mock_db):
+    mock_db.execute.return_value = _exec_result(scalar=None)
+
+    response = await client.get(f"/api/v1/documents/{uuid4()}/preview")
+
+    assert response.status_code == 404
+
+
+# ============================================================
 # DELETE /api/v1/documents/{id}
 # ============================================================
 
@@ -309,3 +363,128 @@ async def test_delete_document_not_found(client, mock_db):
 
     assert response.status_code == 404
     mock_db.delete.assert_not_called()
+
+
+# ============================================================
+# POST /api/v1/documents/{id}/replace — CONT-07 (#356)
+# ============================================================
+
+_REPLACE_PAYLOAD: dict = {
+    "filename": "apuntes-v2.pdf",
+    "mime_type": "application/pdf",
+    "content_b64": _PDF_B64,
+}
+
+
+async def test_replace_document_not_found(client, mock_db):
+    mock_db.execute.return_value = _exec_result(scalar=None)
+
+    response = await client.post(f"/api/v1/documents/{uuid4()}/replace", json=_REPLACE_PAYLOAD)
+
+    assert response.status_code == 404
+
+
+async def test_replace_document_rejects_unsupported_mime_type(client, mock_db):
+    doc = _make_doc(status="indexed")
+    mock_db.execute.return_value = _exec_result(scalar=doc)
+
+    payload = {**_REPLACE_PAYLOAD, "mime_type": "image/png"}
+    response = await client.post(f"/api/v1/documents/{doc.id}/replace", json=payload)
+
+    assert response.status_code == 415
+
+
+async def test_replace_document_rejects_invalid_base64(client, mock_db):
+    doc = _make_doc(status="indexed")
+    mock_db.execute.return_value = _exec_result(scalar=doc)
+
+    payload = {**_REPLACE_PAYLOAD, "content_b64": "!!!esto-no-es-base64!!!"}
+    response = await client.post(f"/api/v1/documents/{doc.id}/replace", json=payload)
+
+    assert response.status_code == 400
+
+
+async def test_replace_document_keeps_same_id_and_resets_status(client, mock_db):
+    """El id no cambia — las citas viejas del chat siguen apuntando al mismo documento."""
+    doc = _make_doc(status="error", error_message="algo falló antes")
+    mock_db.execute.return_value = _exec_result(scalar=doc)
+
+    response = await client.post(f"/api/v1/documents/{doc.id}/replace", json=_REPLACE_PAYLOAD)
+
+    assert response.status_code == 202
+    data = response.json()
+    assert data["id"] == str(doc.id)
+    assert data["filename"] == "apuntes-v2.pdf"
+    assert data["status"] == "pending"
+    assert data["error_message"] is None
+
+
+async def test_replace_document_deletes_old_chunks_before_reindexing(client, mock_db):
+    """CONT-04 guard: index_document() salta la indexación si ya hay chunks
+    persistidos — hay que borrarlos (y hacer commit) antes de disparar la
+    re-indexación, si no el archivo nuevo nunca se indexa."""
+    doc = _make_doc(status="indexed")
+    mock_db.execute.return_value = _exec_result(scalar=doc)
+
+    await client.post(f"/api/v1/documents/{doc.id}/replace", json=_REPLACE_PAYLOAD)
+
+    # Dos execute(): el SELECT del documento y el DELETE de chunks viejos.
+    assert mock_db.execute.call_count == 2
+    delete_call_sql = str(mock_db.execute.call_args_list[1].args[0]).lower()
+    assert "chunk" in delete_call_sql
+
+
+# ============================================================
+# POST /{document_id}/reindex — CONT-09 (#358)
+# ============================================================
+
+async def test_reindex_document_not_found(client, mock_db):
+    mock_db.execute.return_value = _exec_result(scalar=None)
+
+    response = await client.post(f"/api/v1/documents/{uuid4()}/reindex")
+
+    assert response.status_code == 404
+
+
+async def test_reindex_document_without_storage_path_returns_409(client, mock_db):
+    doc = _make_doc(status="indexed", storage_path=None)
+    mock_db.execute.return_value = _exec_result(scalar=doc)
+
+    response = await client.post(f"/api/v1/documents/{doc.id}/reindex")
+
+    assert response.status_code == 409
+
+
+async def test_reindex_document_missing_file_on_disk_returns_409(client, mock_db, tmp_path, monkeypatch):
+    """storage_path apunta a un archivo, pero ya no está en disco (borrado a
+    mano, migración de servidor, etc.) — mismo 409 que sin storage_path."""
+    doc = _make_doc(status="indexed", storage_path="does-not-exist.pdf")
+    mock_db.execute.return_value = _exec_result(scalar=doc)
+    monkeypatch.setattr("app.documents.router.UPLOADS_DIR", tmp_path)
+
+    response = await client.post(f"/api/v1/documents/{doc.id}/reindex")
+
+    assert response.status_code == 409
+
+
+async def test_reindex_document_success_resets_status_and_deletes_old_chunks(client, mock_db, tmp_path, monkeypatch):
+    """Reindexar lee el archivo YA guardado en disco (no recibe contenido
+    nuevo) — borra los chunks viejos (guard CONT-04), vuelve el status a
+    'pending' y limpia error_message previo, y dispara la re-indexación."""
+    doc = _make_doc(status="error", error_message="algo falló antes", storage_path="stored.pdf")
+    mock_db.execute.return_value = _exec_result(scalar=doc)
+    monkeypatch.setattr("app.documents.router.UPLOADS_DIR", tmp_path)
+    (tmp_path / "stored.pdf").write_bytes(_PDF_BYTES)
+
+    response = await client.post(f"/api/v1/documents/{doc.id}/reindex")
+
+    assert response.status_code == 202
+    data = response.json()
+    assert data["id"] == str(doc.id)
+    assert data["status"] == "pending"
+    assert data["error_message"] is None
+
+    # Dos execute(): el SELECT del documento y el DELETE de chunks viejos.
+    assert mock_db.execute.call_count == 2
+    delete_call_sql = str(mock_db.execute.call_args_list[1].args[0]).lower()
+    assert "chunk" in delete_call_sql

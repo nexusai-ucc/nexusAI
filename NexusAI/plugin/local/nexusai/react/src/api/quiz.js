@@ -360,6 +360,8 @@ export async function getStudyPlan(courseId, days = 30) {
                     gap_count: 1,
                     reason: "Fallaste 3 preguntas de práctica y preguntaste esto una vez en el chat sin buena respuesta.",
                     suggested_quiz_topic: "derivadas trigonométricas",
+                    quiz_error_ids: ["mock-qe-1", "mock-qe-2", "mock-qe-3"],
+                    gap_question_ids: ["mock-gq-1"],
                 },
             ],
         };
@@ -371,4 +373,161 @@ export async function getStudyPlan(courseId, days = 30) {
     }]);
 
     return response;
+}
+
+/**
+ * Descarta un tema puntual del plan de estudio (SP-13 / #323) — sin borrar
+ * el historial subyacente de quiz_errors/unanswered_questions. Opera sobre
+ * los IDs reales de fila (`StudyPlanTopic.quiz_error_ids`/`gap_question_ids`),
+ * no sobre el texto del topic (lo genera el LLM en cada llamada, no es una
+ * clave estable).
+ *
+ * @param {number} courseId
+ * @param {string[]} quizErrorIds
+ * @param {string[]} gapQuestionIds
+ * @returns {Promise<{affected:number}>}
+ */
+export async function dismissStudyPlanTopic(courseId, quizErrorIds = [], gapQuestionIds = []) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 200));
+        return { affected: quizErrorIds.length + gapQuestionIds.length };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_study_plan_dismiss",
+        args: {
+            courseid: courseId,
+            quizerrorids: quizErrorIds,
+            gapquestionids: gapQuestionIds,
+        },
+    }]);
+
+    return response;
+}
+
+/**
+ * Sugiere una dificultad de partida para el generador de quiz, basada en el
+ * historial de intentos del alumno (SP-12 / #322). Es solo una sugerencia —
+ * el alumno siempre puede elegir otra dificultad a mano.
+ *
+ * @param {number} courseId
+ * @param {string} [topic] Tema elegido; vacío = historial general del curso.
+ * @returns {Promise<{difficulty:?string, reason:?string, based_on_attempts:number, accuracy_pct:?number}>}
+ */
+export async function suggestDifficulty(courseId, topic = "") {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 150));
+        return { difficulty: null, reason: null, based_on_attempts: 0, accuracy_pct: null };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_suggest_difficulty",
+        args: { courseid: courseId, topic },
+    }]);
+
+    return {
+        difficulty: response.difficulty ?? null,
+        reason: response.reason ?? null,
+        based_on_attempts: response.basedonattempts ?? 0,
+        accuracy_pct: response.accuracypct ?? null,
+    };
+}
+
+/**
+ * Repetición espaciada de flashcards (SM-2) — SP-11 / #315.
+ *
+ * Cuántas flashcards ya generadas "tocan hoy" vs. el total generado hasta
+ * ahora en el curso (persistidas por generateQuiz cuando questionType es
+ * "flashcard").
+ *
+ * @param {number} courseId
+ * @param {string} [topic]
+ * @returns {Promise<{due_count:number, total_count:number}>}
+ */
+export async function getFlashcardsSummary(courseId, topic = "") {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        await new Promise((r) => setTimeout(r, 150));
+        return { due_count: 0, total_count: 0 };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_flashcards_summary",
+        args: { courseid: courseId, topic },
+    }]);
+
+    return {
+        due_count: response.duecount ?? 0,
+        total_count: response.totalcount ?? 0,
+    };
+}
+
+/**
+ * Flashcards ya generadas que "tocan hoy" (más vencidas primero), del banco
+ * persistido — sin llamar al LLM (SP-11 / #315).
+ *
+ * @param {number} courseId
+ * @param {string} [topic]
+ * @param {number} [limit=10]
+ * @returns {Promise<{course_id:number, questions:Array}>}
+ */
+export async function getDueFlashcards(courseId, topic = "", limit = 10) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { course_id: courseId, questions: [] };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_flashcards_due",
+        args: { courseid: courseId, topic, limit },
+    }]);
+
+    return response;
+}
+
+/**
+ * Aplica repetición espaciada (SM-2) sobre el resultado de autoevaluación de
+ * una sesión de flashcards. Se llama UNA vez al final de la sesión (SP-11 /
+ * #315), no por-tarjeta. Best-effort: no debe bloquear el flujo si falla.
+ *
+ * @param {number} courseId
+ * @param {Array<{flashcardId:string, knewIt:boolean}>} reviews
+ * @returns {Promise<{updated:number}>}
+ */
+export async function submitFlashcardReviews(courseId, reviews) {
+    if (!reviews?.length) return { updated: 0 };
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { updated: 0 };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_flashcards_review_batch",
+        args: {
+            courseid: courseId,
+            reviews: reviews.map((r) => ({ flashcardid: r.flashcardId, knewit: r.knewIt })),
+        },
+    }]);
+
+    return response;
+}
+
+/**
+ * Racha de días consecutivos de actividad del alumno en el curso (intentos
+ * de quiz o preguntas al chat) — SP-16 / #354.
+ *
+ * @param {number} courseId
+ * @returns {Promise<{current_streak:number, practiced_today:boolean}>}
+ */
+export async function getStudyStreak(courseId) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { current_streak: 0, practiced_today: false };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_streak",
+        args: { courseid: courseId },
+    }]);
+
+    return {
+        current_streak: response.currentstreak ?? 0,
+        practiced_today: response.practicedtoday ?? false,
+    };
 }

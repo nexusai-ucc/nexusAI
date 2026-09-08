@@ -1,5 +1,13 @@
 # Diagrama de despliegue
 
+> **Nota (2026-09-07):** este documento describe la **arquitectura objetivo**
+> sobre infraestructura de UCC, proyectada en mayo de 2026. Los hostings que
+> menciona (Railway, Hetzner) **no son el deploy vigente**: hoy el backend corre
+> self-hosted en dos VMs de Oracle Cloud. Para el deploy real y operativo, ver
+> [`../DEPLOY_ORACLE.md`](../DEPLOY_ORACLE.md) y
+> [ADR-011](../adr/011-deploy-self-hosted-oracle.md). Las tablas de costos de
+> más abajo siguen siendo la proyección válida para el escenario UCC.
+
 Cómo y dónde corre cada componente. Hay dos escenarios: **MVP** (con Gemini gratuito) y **producción** (con OpenAI).
 
 ## MVP (demo al jurado, piloto con docentes)

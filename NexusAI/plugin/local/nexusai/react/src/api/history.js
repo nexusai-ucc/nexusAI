@@ -4,6 +4,7 @@
  * Llama a las external functions:
  *   - local_nexusai_chat_sessions_list  → listado del sidebar
  *   - local_nexusai_chat_session_messages → mensajes para retomar conversación
+ *   - local_nexusai_chat_session_delete → borrar una sesión puntual (ASIST-02)
  */
 
 async function getMoodleAjax() {
@@ -83,6 +84,28 @@ export async function getSessionMessages({ courseId, sessionId }) {
 
     const [response] = await ajax.call([{
         methodname: "local_nexusai_chat_session_messages",
+        args: { courseid: courseId, sessionid: sessionId },
+    }]);
+
+    return response;
+}
+
+/**
+ * Borra una sesión puntual del historial (ASIST-02, #350).
+ *
+ * @param {Object} params
+ * @param {number} params.courseId
+ * @param {string} params.sessionId
+ */
+export async function deleteSession({ courseId, sessionId }) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) {
+        // Mock fuera de Moodle.
+        return { success: true };
+    }
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_chat_session_delete",
         args: { courseid: courseId, sessionid: sessionId },
     }]);
 

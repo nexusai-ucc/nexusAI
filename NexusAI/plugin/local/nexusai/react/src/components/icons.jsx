@@ -70,6 +70,24 @@ export const IconHistory = ({ size = 15 }) => (
     </svg>
 );
 
+// ── Clock (modo cronometrado, SP-15) ───────────────────────────────────────
+export const IconClock = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <circle cx="12" cy="12" r="9" />
+        <polyline points="12 7 12 12 15.5 14" />
+    </svg>
+);
+
+// ── RefreshCw (regenerar respuesta — ASIST-03) ──────────────────────────────
+export const IconRefreshCw = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <polyline points="23 4 23 10 17 10" />
+        <polyline points="1 20 1 14 7 14" />
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" />
+        <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+    </svg>
+);
+
 // ── Target (gaps detectados) ───────────────────────────────────────────────
 export const IconTarget = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
@@ -95,6 +113,15 @@ export const IconHelpCircle = ({ size = 14 }) => (
         <circle cx="12" cy="12" r="10" />
         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
         <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+);
+
+// ── Info (pestaña Ayuda, ONB-07 — círculo con "i", distinto del "?" de HelpCircle) ──
+export const IconInfo = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="11.5" />
+        <line x1="12" y1="8" x2="12.01" y2="8" />
     </svg>
 );
 
@@ -150,6 +177,21 @@ export const IconThumbsUp = ({ size = 22 }) => (
     </svg>
 );
 
+// ── Flame (SP-16: racha de estudio) ────────────────────────────────────────
+export const IconFlame = ({ size = 16 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2 1.5z" />
+    </svg>
+);
+
+// ── ThumbsDown (ASIST-01: feedback negativo sobre una respuesta) ───────────
+export const IconThumbsDown = ({ size = 22 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M17 14V2" />
+        <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H17v12l-4 9a3 3 0 0 1-3-3z" />
+    </svg>
+);
+
 // ── Book (score bajo, "a estudiar") ────────────────────────────────────────
 export const IconBook = ({ size = 22 }) => (
     <svg {...baseProps(size)}>
@@ -180,6 +222,13 @@ export const IconGrid = ({ size = 16 }) => (
 export const IconChevronRight = ({ size = 12 }) => (
     <svg {...baseProps(size)}>
         <polyline points="9 18 15 12 9 6" />
+    </svg>
+);
+
+// ── Chevron left (CAL-05: navegación de mes) ───────────────────────────────
+export const IconChevronLeft = ({ size = 12 }) => (
+    <svg {...baseProps(size)}>
+        <polyline points="15 18 9 12 15 6" />
     </svg>
 );
 
@@ -226,5 +275,31 @@ export const IconBarChart = ({ size = 14 }) => (
         <line x1="12" y1="20" x2="12" y2="10" />
         <line x1="18" y1="20" x2="18" y2="4" />
         <line x1="6" y1="20" x2="6" y2="16" />
+    </svg>
+);
+
+// ── AlertTriangle (FOR-05: hilo de foro urgente/frustrado) ─────────────────
+export const IconAlertTriangle = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+);
+
+// ── MessageSquare (FOR-06: hilo de foro en el digest semanal) ──────────────
+export const IconMessageSquare = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+);
+
+// ── Mic (VOICE-01: entrada de voz en el composer del chat) ─────────────────
+export const IconMic = ({ size = 16 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" y1="19" x2="12" y2="23" />
+        <line x1="8" y1="23" x2="16" y2="23" />
     </svg>
 );

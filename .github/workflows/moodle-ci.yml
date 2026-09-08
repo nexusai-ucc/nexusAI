@@ -1,18 +1,25 @@
 name: Moodle Plugin CI
+#
+# PUB-01 (issue #309): este archivo vivía en NexusAI/.github/workflows/,
+# no en la raíz real del repo git (que es un nivel arriba de NexusAI/) —
+# GitHub Actions solo descubre workflows en la raíz real, así que nunca
+# corrió ni una sola vez. Se movió acá y se agregó el prefijo `NexusAI/`
+# a todas las rutas que antes asumían que la raíz del checkout YA era la
+# carpeta del proyecto.
 
 on:
   push:
     branches: [main]
     paths:
-      - 'plugin/local/nexusai/**'
-      - '!plugin/local/nexusai/react/**'
-      - '!plugin/local/nexusai/amd/build/**'
+      - 'NexusAI/plugin/local/nexusai/**'
+      - '!NexusAI/plugin/local/nexusai/react/**'
+      - '!NexusAI/plugin/local/nexusai/amd/build/**'
       - '.github/workflows/moodle-ci.yml'
   pull_request:
     paths:
-      - 'plugin/local/nexusai/**'
-      - '!plugin/local/nexusai/react/**'
-      - '!plugin/local/nexusai/amd/build/**'
+      - 'NexusAI/plugin/local/nexusai/**'
+      - '!NexusAI/plugin/local/nexusai/react/**'
+      - '!NexusAI/plugin/local/nexusai/amd/build/**'
       - '.github/workflows/moodle-ci.yml'
 
 concurrency:
@@ -55,7 +62,7 @@ jobs:
       - name: Skip si plugin/local/nexusai/version.php no existe todavía
         id: check
         run: |
-          if [ ! -f plugin/local/nexusai/version.php ]; then
+          if [ ! -f NexusAI/plugin/local/nexusai/version.php ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
             echo "::warning::plugin/local/nexusai/version.php no existe todavía. Saltando Moodle CI."
           else
@@ -94,7 +101,7 @@ jobs:
 
       - name: Install Moodle + dependencias del plugin
         if: steps.check.outputs.skip == 'false'
-        run: moodle-plugin-ci install --plugin ./plugin/plugin/local/nexusai --db-host=127.0.0.1
+        run: moodle-plugin-ci install --plugin ./plugin/NexusAI/plugin/local/nexusai --db-host=127.0.0.1
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}

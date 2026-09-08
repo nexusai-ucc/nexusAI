@@ -10,9 +10,10 @@ Misma estrategia de aislamiento que test_forums_router.py:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
+from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
@@ -100,6 +101,11 @@ def mock_db():
             filename="apunte1.pdf",
             content="El teorema de Bayes relaciona probabilidades condicionales.",
             id="00000000-0000-0000-0000-000000000001",
+            # SP-11 (#315): mismo mock genérico reusado por el upsert de
+            # flashcards (_persist_flashcards) — content_hash no matchea el
+            # real así que el id de la flashcard queda None, pero no rompe
+            # el shape de la respuesta (los tests de flashcards no lo assertan).
+            content_hash="dummy-hash",
         )
     ]
     return db
@@ -177,11 +183,82 @@ async def test_generate_rejects_invalid_difficulty_at_http_level(client):
 
 
 # ─────────────────────────────────────────────────────────────
+# POST /suggest-difficulty (SP-12 / #322)
+# ─────────────────────────────────────────────────────────────
+
+def _attempt_row(**kwargs):
+    defaults = dict(topic="derivadas", score=0.5, created_at=datetime.now(timezone.utc))
+    defaults.update(kwargs)
+    return SimpleNamespace(**defaults)
+
+
+_SUGGEST_PAYLOAD = {"course_id": 1, "user_id": 1}
+
+
+async def test_suggest_difficulty_no_history_returns_null(client, mock_db):
+    mock_db.execute.return_value = _mock_quiz_result([])
+
+    response = await client.post("/api/v1/quiz/suggest-difficulty", json=_SUGGEST_PAYLOAD)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["difficulty"] is None
+    assert data["based_on_attempts"] == 0
+
+
+async def test_suggest_difficulty_high_scores_suggest_hard(client, mock_db):
+    mock_db.execute.return_value = _mock_quiz_result([
+        _attempt_row(score=0.9), _attempt_row(score=1.0), _attempt_row(score=0.85),
+    ])
+
+    response = await client.post("/api/v1/quiz/suggest-difficulty", json=_SUGGEST_PAYLOAD)
+
+    data = response.json()
+    assert data["difficulty"] == "hard"
+    assert data["based_on_attempts"] == 3
+    assert "difícil" in data["reason"]
+
+
+async def test_suggest_difficulty_low_scores_suggest_easy(client, mock_db):
+    mock_db.execute.return_value = _mock_quiz_result([
+        _attempt_row(score=0.2), _attempt_row(score=0.3),
+    ])
+
+    response = await client.post("/api/v1/quiz/suggest-difficulty", json=_SUGGEST_PAYLOAD)
+
+    data = response.json()
+    assert data["difficulty"] == "easy"
+
+
+async def test_suggest_difficulty_mid_scores_suggest_medium(client, mock_db):
+    mock_db.execute.return_value = _mock_quiz_result([_attempt_row(score=0.6)])
+
+    response = await client.post("/api/v1/quiz/suggest-difficulty", json=_SUGGEST_PAYLOAD)
+
+    assert response.json()["difficulty"] == "medium"
+
+
+async def test_suggest_difficulty_filters_by_topic_case_insensitive(client, mock_db):
+    """El mock no valida la query en sí — esto confirma que el payload con
+    topic llega bien al endpoint y no rompe nada (el filtro real se prueba
+    end-to-end contra una DB real, fuera del alcance de este entorno)."""
+    mock_db.execute.return_value = _mock_quiz_result([_attempt_row(topic="Derivadas", score=0.9)])
+
+    response = await client.post("/api/v1/quiz/suggest-difficulty", json={
+        **_SUGGEST_PAYLOAD, "topic": "derivadas",
+    })
+
+    assert response.status_code == 200
+    assert response.json()["difficulty"] == "hard"
+
+
+# ─────────────────────────────────────────────────────────────
 # POST /study-plan — combina QuizError + UnansweredQuestion
 # ─────────────────────────────────────────────────────────────
 
 def _quiz_error_row(**kwargs):
     defaults = dict(
+        id=uuid4(),
         source_filename="apunte1.pdf",
         question="¿Cuál es la derivada de x^2?",
         explanation="2x",
@@ -196,6 +273,7 @@ def _gap_row(**kwargs):
         question="que es una integral impropia",
         count=3,
         last_asked_at=datetime.now(timezone.utc),
+        ids=[uuid4(), uuid4(), uuid4()],
     )
     defaults.update(kwargs)
     return SimpleNamespace(**defaults)
@@ -310,6 +388,93 @@ async def test_study_plan_ignores_out_of_range_group_indices(client, mock_db, mo
     # "Tema inventado" no cita ningún grupo válido -> queda afuera.
     assert len(data["topics"]) == 1
     assert data["topics"][0]["topic"] == "Derivadas"
+
+
+# ─────────────────────────────────────────────────────────────
+# POST /study-plan — quiz_error_ids/gap_question_ids (SP-13 / #323)
+# ─────────────────────────────────────────────────────────────
+
+async def test_study_plan_topic_exposes_underlying_row_ids(client, mock_db, mock_llm):
+    """El topic es texto del LLM, no una clave estable — el descarte (SP-13)
+    opera sobre estos IDs reales, no sobre el texto."""
+    quiz_row = _quiz_error_row()
+    gap_row = _gap_row()
+    mock_db.execute.side_effect = [
+        _mock_quiz_result([quiz_row]),
+        _mock_gap_result([gap_row]),
+    ]
+    llm_response = {
+        "topics": [
+            {"topic": "Derivadas", "quiz_groups": [0], "gap_groups": [0]},
+        ]
+    }
+    mock_llm.chat_completion.return_value = MagicMock(text=json.dumps(llm_response))
+
+    response = await client.post("/api/v1/quiz/study-plan", json=_STUDY_PLAN_PAYLOAD)
+
+    data = response.json()
+    topic = data["topics"][0]
+    assert topic["quiz_error_ids"] == [str(quiz_row.id)]
+    assert set(topic["gap_question_ids"]) == {str(i) for i in gap_row.ids}
+
+
+# ─────────────────────────────────────────────────────────────
+# POST /study-plan/dismiss (SP-13 / #323)
+# ─────────────────────────────────────────────────────────────
+
+_DISMISS_ID_1 = str(uuid4())
+_DISMISS_ID_2 = str(uuid4())
+
+
+async def test_study_plan_dismiss_updates_quiz_errors_only(client, mock_db):
+    mock_db.execute.return_value = MagicMock(rowcount=2)
+
+    response = await client.post("/api/v1/quiz/study-plan/dismiss", json={
+        "course_id": 1,
+        "user_id": 1,
+        "quiz_error_ids": [_DISMISS_ID_1, _DISMISS_ID_2],
+        "gap_question_ids": [],
+    })
+
+    assert response.status_code == 200
+    assert response.json()["affected"] == 2
+    # Un solo UPDATE (quiz_error_ids) — gap_question_ids vacío no dispara
+    # una segunda query con un IN () vacío.
+    mock_db.execute.assert_called_once()
+    stmt_sql = str(mock_db.execute.call_args.args[0]).lower()
+    assert "quiz_errors" in stmt_sql
+    assert "dismissed_at" in stmt_sql
+
+
+async def test_study_plan_dismiss_updates_both_tables(client, mock_db):
+    mock_db.execute.return_value = MagicMock(rowcount=1)
+
+    response = await client.post("/api/v1/quiz/study-plan/dismiss", json={
+        "course_id": 1,
+        "user_id": 1,
+        "quiz_error_ids": [_DISMISS_ID_1],
+        "gap_question_ids": [_DISMISS_ID_2],
+    })
+
+    assert response.status_code == 200
+    assert response.json()["affected"] == 2  # 1 + 1
+    assert mock_db.execute.call_count == 2
+    second_stmt_sql = str(mock_db.execute.call_args_list[1].args[0]).lower()
+    assert "unanswered_questions" in second_stmt_sql
+    assert "student_dismissed_at" in second_stmt_sql
+
+
+async def test_study_plan_dismiss_noop_without_ids(client, mock_db):
+    response = await client.post("/api/v1/quiz/study-plan/dismiss", json={
+        "course_id": 1,
+        "user_id": 1,
+        "quiz_error_ids": [],
+        "gap_question_ids": [],
+    })
+
+    assert response.status_code == 200
+    assert response.json()["affected"] == 0
+    mock_db.execute.assert_not_called()
 
 
 # ─────────────────────────────────────────────────────────────
@@ -634,3 +799,251 @@ async def test_list_quiz_errors_rejects_negative_offset(client):
     assert response.status_code == 422
 
     assert response.status_code == 422
+
+
+# ─────────────────────────────────────────────────────────────
+# Repetición espaciada de flashcards — SP-11 (#315)
+# ─────────────────────────────────────────────────────────────
+
+from app.db.models import FlashcardReview  # noqa: E402
+from app.quiz.router import _apply_sm2, _flashcard_content_hash  # noqa: E402
+
+
+def _new_review(**kwargs):
+    defaults = dict(ease_factor=2.5, interval_days=0, repetitions=0)
+    defaults.update(kwargs)
+    return FlashcardReview(**defaults)
+
+
+def test_sm2_first_correct_review_sets_interval_to_one_day():
+    review = _new_review()
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    _apply_sm2(review, knew_it=True, now=now)
+
+    assert review.repetitions == 1
+    assert review.interval_days == 1
+    assert review.next_review_at == now + timedelta(days=1)
+    assert review.ease_factor > 2.5  # quality=5 sube el ease
+
+
+def test_sm2_second_correct_review_sets_interval_to_six_days():
+    review = _new_review(repetitions=1, interval_days=1)
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    _apply_sm2(review, knew_it=True, now=now)
+
+    assert review.repetitions == 2
+    assert review.interval_days == 6
+
+
+def test_sm2_third_correct_review_multiplies_interval_by_ease_factor():
+    review = _new_review(repetitions=2, interval_days=6, ease_factor=2.5)
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    _apply_sm2(review, knew_it=True, now=now)
+
+    assert review.repetitions == 3
+    assert review.interval_days == round(6 * 2.5)
+
+
+def test_sm2_incorrect_review_resets_to_short_term():
+    review = _new_review(repetitions=5, interval_days=40, ease_factor=2.8)
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    _apply_sm2(review, knew_it=False, now=now)
+
+    assert review.repetitions == 0
+    assert review.interval_days == 1
+    assert review.next_review_at == now + timedelta(days=1)
+    assert review.ease_factor < 2.8  # quality=2 baja el ease
+
+
+def test_sm2_ease_factor_never_drops_below_minimum():
+    review = _new_review(ease_factor=1.3)
+    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+    _apply_sm2(review, knew_it=False, now=now)
+
+    assert review.ease_factor == 1.3
+
+
+def test_flashcard_content_hash_is_stable_and_order_sensitive():
+    h1 = _flashcard_content_hash("¿Qué es una derivada?", "La tasa de cambio.")
+    h2 = _flashcard_content_hash("¿Qué es una derivada?", "La tasa de cambio.")
+    h3 = _flashcard_content_hash("otra pregunta", "otra respuesta")
+
+    assert h1 == h2
+    assert h1 != h3
+
+
+async def test_flashcards_summary_returns_due_and_total_counts(client, mock_db):
+    mock_db.scalar.side_effect = [7, 3]  # total_count, due_count
+
+    response = await client.post(
+        "/api/v1/quiz/flashcards/summary", json={"course_id": 1, "user_id": 1}
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"due_count": 3, "total_count": 7}
+
+
+async def test_flashcards_due_returns_questions_shaped_like_generate(client, mock_db):
+    fc_id = uuid4()
+    fc = SimpleNamespace(
+        id=fc_id,
+        question="Teorema de Bayes",
+        explanation="Relaciona P(A|B) con P(B|A).",
+        source_filename="apunte1.pdf",
+        source_document_id=None,
+    )
+    due_result = MagicMock()
+    due_result.all.return_value = [(fc, None)]
+    mock_db.execute.return_value = due_result
+
+    response = await client.post(
+        "/api/v1/quiz/flashcards/due",
+        json={"course_id": 1, "user_id": 1, "limit": 5},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["questions"]) == 1
+    q = data["questions"][0]
+    assert q["id"] == str(fc_id)
+    assert q["question_type"] == "flashcard"
+    assert q["question"] == "Teorema de Bayes"
+    assert q["options"] == []
+    assert q["correct_index"] == -1
+
+
+async def test_flashcards_review_batch_creates_new_review_and_applies_sm2(client, mock_db):
+    flashcard_id = uuid4()
+
+    valid_ids_result = MagicMock()
+    valid_ids_result.all.return_value = [SimpleNamespace(id=flashcard_id)]
+
+    existing_reviews_result = MagicMock()
+    existing_reviews_result.scalars.return_value.all.return_value = []
+
+    mock_db.execute.side_effect = [valid_ids_result, existing_reviews_result, MagicMock()]
+
+    response = await client.post(
+        "/api/v1/quiz/flashcards/review-batch",
+        json={
+            "course_id": 1,
+            "user_id": 1,
+            "reviews": [{"flashcard_id": str(flashcard_id), "knew_it": True}],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"updated": 1}
+    # El review nuevo se persiste vía upsert (ON CONFLICT DO UPDATE), no
+    # db.add() — evita la race condition de un SELECT-luego-INSERT contra
+    # uq_flashcard_reviews_flashcard_user.
+    upsert_stmt = mock_db.execute.call_args_list[-1][0][0]
+    params = upsert_stmt.compile().params
+    assert params["flashcard_id"] == flashcard_id
+    assert params["user_id"] == 1
+    assert params["repetitions"] == 1
+    assert params["interval_days"] == 1
+
+
+async def test_flashcards_review_batch_skips_flashcard_not_in_course(client, mock_db):
+    """flashcard_id que no pertenece a este course_id se ignora — no confiamos
+    ciegamente en un id mandado por el cliente."""
+    flashcard_id = uuid4()
+    other_course_flashcard_id = uuid4()
+
+    valid_ids_result = MagicMock()
+    valid_ids_result.all.return_value = [SimpleNamespace(id=other_course_flashcard_id)]
+    existing_reviews_result = MagicMock()
+    existing_reviews_result.scalars.return_value.all.return_value = []
+    mock_db.execute.side_effect = [valid_ids_result, existing_reviews_result]
+
+    response = await client.post(
+        "/api/v1/quiz/flashcards/review-batch",
+        json={
+            "course_id": 1,
+            "user_id": 1,
+            "reviews": [{"flashcard_id": str(flashcard_id), "knew_it": True}],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"updated": 0}
+    mock_db.add.assert_not_called()
+
+
+# ─────────────────────────────────────────────────────────────
+# Racha de estudio — SP-16 (#354)
+# ─────────────────────────────────────────────────────────────
+
+from datetime import date  # noqa: E402
+from app.quiz.router import _compute_streak  # noqa: E402
+
+
+def _day_row(dt):
+    return SimpleNamespace(day=dt)
+
+
+def _days_result(rows):
+    result = MagicMock()
+    result.all.return_value = rows
+    return result
+
+
+def test_compute_streak_empty_history_is_zero():
+    today = date(2026, 9, 8)
+    assert _compute_streak(set(), today) == 0
+
+
+def test_compute_streak_counts_consecutive_days_ending_today():
+    today = date(2026, 9, 8)
+    active = {date(2026, 9, 8), date(2026, 9, 7), date(2026, 9, 6)}
+    assert _compute_streak(active, today) == 3
+
+
+def test_compute_streak_stays_alive_if_last_activity_was_yesterday():
+    today = date(2026, 9, 8)
+    active = {date(2026, 9, 7), date(2026, 9, 6)}
+    assert _compute_streak(active, today) == 2
+
+
+def test_compute_streak_resets_after_a_two_day_gap():
+    today = date(2026, 9, 8)
+    active = {date(2026, 9, 5), date(2026, 9, 4)}  # última actividad hace 3 días
+    assert _compute_streak(active, today) == 0
+
+
+def test_compute_streak_ignores_non_consecutive_older_days():
+    today = date(2026, 9, 8)
+    active = {date(2026, 9, 8), date(2026, 9, 7), date(2026, 9, 4)}  # hueco el 9/5-9/6
+    assert _compute_streak(active, today) == 2
+
+
+async def test_streak_endpoint_combines_quiz_and_chat_activity(client, mock_db):
+    # Relativo a "ahora" (no una fecha hardcodeada) para no depender de en
+    # qué día real corra la suite — el endpoint usa datetime.now() interno.
+    now = datetime.now(timezone.utc)
+    mock_db.execute.side_effect = [
+        _days_result([_day_row(now)]),                       # quiz: hoy
+        _days_result([_day_row(now - timedelta(days=1))]),   # chat: ayer
+    ]
+
+    response = await client.post("/api/v1/quiz/streak", json={"course_id": 1, "user_id": 1})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["current_streak"] == 2
+    assert data["practiced_today"] is True
+
+
+async def test_streak_endpoint_no_activity_returns_zero(client, mock_db):
+    mock_db.execute.side_effect = [_days_result([]), _days_result([])]
+
+    response = await client.post("/api/v1/quiz/streak", json={"course_id": 1, "user_id": 1})
+
+    assert response.status_code == 200
+    assert response.json() == {"current_streak": 0, "practiced_today": False}

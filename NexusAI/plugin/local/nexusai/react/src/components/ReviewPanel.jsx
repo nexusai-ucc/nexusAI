@@ -14,6 +14,8 @@
 import { useEffect, useState } from "react";
 import { listQuizErrors, clearQuizErrors, getReviewSuggestions } from "../api/quiz.js";
 import { IconBook, IconCheck, IconFile, IconTarget, IconX } from "./icons.jsx";
+import { getFriendlyErrorMessage } from "./errors.js";
+import ConfirmModal from "./ConfirmModal.jsx";
 
 function formatDate(iso) {
     try {
@@ -34,6 +36,8 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
     const [suggestionsLoading, setSuggestionsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expanded, setExpanded] = useState({});
+    const [confirmClear, setConfirmClear] = useState(false);
+    const [clearing, setClearing] = useState(false);
 
     const L = lang === "es" ? {
         title:          "Repaso de errores",
@@ -41,6 +45,10 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         empty:          "¡Sin errores recientes!",
         emptyHint:      "Completá un quiz para que tus respuestas incorrectas aparezcan aquí.",
         clear:          "Borrar historial",
+        clearConfirmTitle: "Borrar historial de errores",
+        clearConfirmBody:  "Se van a borrar todas las preguntas que respondiste mal y las sugerencias de repaso. Esta acción no se puede deshacer.",
+        clearConfirmYes:   "Borrar todo",
+        cancel:            "Cancelar",
         yourAnswer:     "Tu respuesta",
         correctAnswer:  "Respuesta correcta",
         explanation:    "Explicación",
@@ -68,6 +76,10 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
         empty:          "No recent errors!",
         emptyHint:      "Complete a quiz to see your incorrect answers here.",
         clear:          "Clear history",
+        clearConfirmTitle: "Clear error history",
+        clearConfirmBody:  "This will delete every question you answered incorrectly and the review suggestions. This action cannot be undone.",
+        clearConfirmYes:   "Delete all",
+        cancel:            "Cancel",
         yourAnswer:     "Your answer",
         correctAnswer:  "Correct answer",
         explanation:    "Explanation",
@@ -108,7 +120,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                 setErrors(data?.items || []);
                 setTotal(data?.total ?? 0);
             })
-            .catch((err) => { if (!cancelled) setError(err.message || L.loadError); })
+            .catch((err) => { if (!cancelled) setError(getFriendlyErrorMessage(err, L.loadError, lang)); })
             .finally(() => { if (!cancelled) setLoading(false); });
 
         setSuggestionsLoading(true);
@@ -122,10 +134,19 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
     }, [courseId]);
 
     const clearAll = async () => {
-        setErrors([]);
-        setTotal(0);
-        setSuggestions([]);
-        try { await clearQuizErrors(courseId); } catch { /* best-effort */ }
+        setClearing(true);
+        try {
+            await clearQuizErrors(courseId);
+            setErrors([]);
+            setTotal(0);
+            setSuggestions([]);
+            setConfirmClear(false);
+        } catch (err) {
+            setError(err.message || L.loadError);
+            setConfirmClear(false);
+        } finally {
+            setClearing(false);
+        }
     };
 
     const hasMore = errors.length < total;
@@ -137,7 +158,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
             setErrors((prev) => [...prev, ...(data?.items || [])]);
             setTotal(data?.total ?? total);
         } catch (err) {
-            setError(err.message || L.loadError);
+            setError(getFriendlyErrorMessage(err, L.loadError, lang));
         } finally {
             setLoadingMore(false);
         }
@@ -161,7 +182,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
     // ── Loading state (primer fetch) ──
     if (loading) {
         return (
-            <div className="nexusai-review nexusai-review--empty">
+            <div className="nexusai-review nexusai-review--empty" role="status" aria-label={lang === "es" ? "Cargando repaso de errores" : "Loading error review"}>
                 <div className="nexusai-quiz__spinner" />
             </div>
         );
@@ -202,7 +223,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                 </div>
 
                 {suggestionsLoading && (
-                    <div className="nexusai-review__suggestions-loading">
+                    <div className="nexusai-review__suggestions-loading" role="status">
                         <div className="nexusai-quiz__spinner" />
                         <span>{L.suggLoading}</span>
                     </div>
@@ -255,12 +276,25 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                 <button
                     type="button"
                     className="nexusai-review__clear-btn"
-                    onClick={clearAll}
+                    onClick={() => setConfirmClear(true)}
                     title={L.clear}
                 >
                     {L.clear}
                 </button>
             </div>
+
+            {confirmClear && (
+                <ConfirmModal
+                    title={L.clearConfirmTitle}
+                    confirmLabel={L.clearConfirmYes}
+                    cancelLabel={L.cancel}
+                    onConfirm={clearAll}
+                    onCancel={() => setConfirmClear(false)}
+                    busy={clearing}
+                >
+                    {L.clearConfirmBody}
+                </ConfirmModal>
+            )}
 
             {/* Error cards */}
             <div className="nexusai-review__list">
@@ -319,6 +353,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                                 type="button"
                                 className="nexusai-review__toggle"
                                 onClick={() => toggleExpand(err.id)}
+                                aria-expanded={!!exp}
                             >
                                 {exp ? L.showLess : L.showMore}
                             </button>

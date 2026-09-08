@@ -8,10 +8,10 @@
 
 define([
     'core/ajax',
-    'core/modal',
+    'core/modal_save_cancel',
     'core/str',
     'core/notification',
-], function(Ajax, Modal, Str, Notification) {
+], function(Ajax, ModalSaveCancel, Str, Notification) {
 
     /**
      * Muestra el modal de confirmación para un archivo pendiente.
@@ -37,9 +37,7 @@ define([
             var msgOk  = strings[4];
             var msgErr = strings[5];
 
-            // core/modal reemplaza a core/modal_factory en Moodle 4.3+/5.x.
-            return Modal.create({
-                type: Modal.types.SAVE_CANCEL,
+            return ModalSaveCancel.create({
                 title: title,
                 body: body,
                 buttons: {
@@ -76,7 +74,7 @@ define([
                     resolve();
                 });
 
-                modal.getRoot().on('hidden.bs.modal', function() {
+                modal.getRoot().on('modal:hidden', function() {
                     resolve();
                 });
             });

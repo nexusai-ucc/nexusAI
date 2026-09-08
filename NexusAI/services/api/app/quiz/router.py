@@ -31,25 +31,38 @@ Uso del LLM:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import random
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Annotated, Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, ValidationError, field_validator
-from sqlalchemy import delete, desc, func, select
+from sqlalchemy import delete, desc, func, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.hmac import verify_hmac
-from app.db.models import Chunk, Document, QuizAttempt, QuizError, UnansweredQuestion
+from app.db.models import (
+    ChatSession,
+    Chunk,
+    Document,
+    Flashcard,
+    FlashcardReview,
+    Message,
+    QuizAttempt,
+    QuizError,
+    UnansweredQuestion,
+)
 from app.db.session import get_db
 from app.documents.retriever import retrieve_context
 from app.gaps.recorder import WEAK_MATCH_THRESHOLD
 from app.providers.embeddings import EmbeddingProvider, get_embedding_provider
 from app.providers.llm import LLMProvider, get_llm_provider
+from app.shared.config import get_settings
 
 logger = logging.getLogger("nexusai.quiz")
 
@@ -91,6 +104,10 @@ class QuizRequest(BaseModel):
 
 
 class QuizQuestion(BaseModel):
+    # SP-11 (#315): id real de `flashcards`, solo poblado cuando
+    # question_type='flashcard' (persistidas para poder aplicar repetición
+    # espaciada). None para el resto de los tipos, que siguen siendo efímeros.
+    id: Optional[str] = Field(default=None)
     question_type: str = Field(default="multiple_choice")
     question: str = Field(min_length=1, max_length=500)
     options: List[str] = Field(default=[])   # 4 for MC, 2 for T/F, [] for open
@@ -310,6 +327,26 @@ class AttemptsListResponse(BaseModel):
     items: List[AttemptItem]
 
 
+class SuggestDifficultyRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    # Sin topic: sugerencia sobre el historial general del curso (alumno
+    # practicando "de lo que sea"). Con topic: solo cuenta el historial de
+    # ESE tema — sin match ahí, no hay sugerencia (SP-12, ver criterio de
+    # aceptación: "sin historial previo en ese tema, comportamiento actual").
+    topic: Optional[str] = Field(default=None, max_length=200)
+
+
+class SuggestDifficultyResponse(BaseModel):
+    difficulty: Optional[str] = None
+    reason: Optional[str] = None
+    based_on_attempts: int = 0
+    # % de aciertos redondeado — se manda aparte (además de embebido en
+    # `reason`, que está fijo en español) para que el front arme el texto en
+    # inglés sin tener que parsear el string.
+    accuracy_pct: Optional[int] = None
+
+
 class StudyPlanRequest(BaseModel):
     course_id: int = Field(gt=0)
     user_id: int = Field(gt=0)
@@ -322,6 +359,12 @@ class StudyPlanTopic(BaseModel):
     gap_count: int
     reason: str
     suggested_quiz_topic: str
+    # SP-13 (#323): IDs reales de fila que sustentan este tema — el `topic`
+    # es texto generado por el LLM en cada llamada, no una clave estable, así
+    # que "descartar este tema" opera sobre estos IDs (mismo patrón que
+    # `question_ids` en app/gaps/router.py::GapItem).
+    quiz_error_ids: List[str] = Field(default_factory=list)
+    gap_question_ids: List[str] = Field(default_factory=list)
 
 
 class StudyPlanResponse(BaseModel):
@@ -329,9 +372,141 @@ class StudyPlanResponse(BaseModel):
     topics: List[StudyPlanTopic]
 
 
+class StudyPlanDismissRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    quiz_error_ids: List[str] = Field(default_factory=list)
+    gap_question_ids: List[str] = Field(default_factory=list)
+
+
+class StudyPlanDismissResponse(BaseModel):
+    affected: int
+
+
+class FlashcardsSummaryRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    topic: Optional[str] = Field(default=None, max_length=200)
+
+
+class FlashcardsSummaryResponse(BaseModel):
+    due_count: int
+    total_count: int
+
+
+class FlashcardsDueRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    topic: Optional[str] = Field(default=None, max_length=200)
+    limit: int = Field(default=10, ge=1, le=50)
+
+
+class FlashcardsDueResponse(BaseModel):
+    course_id: int
+    questions: List[QuizQuestion]
+
+
+class FlashcardReviewItem(BaseModel):
+    flashcard_id: str
+    knew_it: bool
+
+
+class FlashcardsReviewBatchRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    reviews: List[FlashcardReviewItem] = Field(min_length=1, max_length=50)
+
+
+class FlashcardsReviewBatchResponse(BaseModel):
+    updated: int
+
+
+class StreakRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+
+
+class StreakResponse(BaseModel):
+    current_streak: int
+    practiced_today: bool
+
+
 # ============================================================
 # Helpers
 # ============================================================
+
+def _flashcard_content_hash(question: str, explanation: str) -> str:
+    return hashlib.sha256(f"{question.strip()}\n{explanation.strip()}".encode()).hexdigest()
+
+
+async def _persist_flashcards(
+    db: AsyncSession,
+    course_id: int,
+    topic: Optional[str],
+    questions: list["QuizQuestion"],
+) -> None:
+    """Upsert de las flashcards generadas en `flashcards`, adjuntando el id real a cada una.
+
+    SP-11 (#315): les da identidad estable para poder aplicar repetición
+    espaciada. Dedup por (course_id, content_hash) vía ON CONFLICT DO NOTHING
+    — regenerar el mismo contenido no crea filas duplicadas.
+    """
+    hashes = [_flashcard_content_hash(q.question, q.explanation) for q in questions]
+    values = [
+        {
+            "id": uuid.uuid4(),
+            "course_id": course_id,
+            "topic": topic,
+            "content_hash": h,
+            "question": q.question,
+            "explanation": q.explanation,
+            "source_filename": q.source_filename or None,
+            "source_document_id": q.source_document_id,
+        }
+        for q, h in zip(questions, hashes)
+    ]
+    stmt = pg_insert(Flashcard).values(values).on_conflict_do_nothing(
+        index_elements=["course_id", "content_hash"]
+    )
+    await db.execute(stmt)
+    await db.commit()
+
+    id_rows = await db.execute(
+        select(Flashcard.id, Flashcard.content_hash).where(
+            Flashcard.course_id == course_id,
+            Flashcard.content_hash.in_(hashes),
+        )
+    )
+    hash_to_id = {row.content_hash: str(row.id) for row in id_rows.all()}
+    for q, h in zip(questions, hashes):
+        q.id = hash_to_id.get(h)
+
+
+# SP-11 (#315): fórmula SM-2 estándar (el algoritmo detrás de Anki),
+# simplificada porque la UI de autoevaluación es binaria ("Sabía"/"No
+# sabía") en vez de una escala 0-5. Mapeo de quality: knew_it=True → 5,
+# knew_it=False → 2 (no 0, para no destruir ease_factor de un solo
+# tropiezo — mismo criterio de apps de repetición espaciada con 2 botones).
+def _apply_sm2(review: FlashcardReview, knew_it: bool, now: datetime) -> None:
+    quality = 5 if knew_it else 2
+    if knew_it:
+        if review.repetitions == 0:
+            review.interval_days = 1
+        elif review.repetitions == 1:
+            review.interval_days = 6
+        else:
+            review.interval_days = max(1, round(review.interval_days * review.ease_factor))
+        review.repetitions += 1
+    else:
+        # Reseteo a corto plazo — criterio de aceptación explícito de SP-11.
+        review.repetitions = 0
+        review.interval_days = 1
+
+    new_ease = review.ease_factor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
+    review.ease_factor = max(1.3, round(new_ease, 4))
+    review.last_reviewed_at = now
+    review.next_review_at = now + timedelta(days=review.interval_days)
+
 
 async def _sample_chunks_for_quiz(
     db: AsyncSession,
@@ -406,6 +581,12 @@ async def _run_quiz_generation(
             messages,
             response_format={"type": "json_object"},
             temperature=0.6,
+            # PERF-01: única llamada del sistema que pisa el default global de
+            # thinking ("none"). Armar distractores plausibles y explicaciones
+            # correctas mejora con algo de razonamiento, y acá el alumno ya
+            # espera una pantalla de carga — no es una respuesta que se
+            # streamee token a token como el chat.
+            reasoning_effort=get_settings().llm_reasoning_effort_generation,
         )
     except Exception as exc:
         logger.error("Quiz LLM call failed: %s: %s", type(exc).__name__, exc, exc_info=True)
@@ -861,6 +1042,13 @@ async def generate_quiz(
         llm=llm,
     )
 
+    # SP-11 (#315): persistir flashcards generadas para darles identidad
+    # estable — habilita repetición espaciada (/flashcards/*). Solo aplica
+    # a este endpoint (el alumno practicando); /generate-exam no admite
+    # question_type='flashcard'.
+    if payload.question_type == "flashcard" and questions:
+        await _persist_flashcards(db, payload.course_id, payload.topic, questions)
+
     return QuizResponse(
         course_id=payload.course_id,
         topic=payload.topic,
@@ -1296,6 +1484,63 @@ async def list_quiz_attempts(
     return AttemptsListResponse(course_id=payload.course_id, total=len(items), items=items)
 
 
+# SP-12 (#322): umbrales de sugerencia — el issue no fija un número exacto,
+# así que quedan documentados acá. >=80% de aciertos sugiere subir a hard,
+# <=40% sugiere bajar a easy; el resto se queda en medium (el default actual).
+_SUGGEST_HARD_THRESHOLD = 0.8
+_SUGGEST_EASY_THRESHOLD = 0.4
+_SUGGEST_ATTEMPT_LIMIT = 10
+
+
+@router.post("/suggest-difficulty", response_model=SuggestDifficultyResponse)
+async def suggest_difficulty(
+    payload: SuggestDifficultyRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> SuggestDifficultyResponse:
+    """Sugiere una dificultad de partida para el generador de quiz (SP-12).
+
+    Solo lectura sobre `quiz_attempts` (ya persistido, SP-09/ANALYTICS-01) —
+    no hay tabla ni migración nueva. Es una SUGERENCIA, nunca una
+    restricción: el alumno siempre puede elegir otra dificultad a mano.
+    """
+    stmt = (
+        select(QuizAttempt)
+        .where(QuizAttempt.course_id == payload.course_id)
+        .where(QuizAttempt.user_id == payload.user_id)
+        .order_by(desc(QuizAttempt.created_at))
+        .limit(_SUGGEST_ATTEMPT_LIMIT)
+    )
+    if payload.topic:
+        stmt = stmt.where(func.lower(QuizAttempt.topic) == payload.topic.strip().lower())
+
+    rows = (await db.execute(stmt)).scalars().all()
+
+    if not rows:
+        return SuggestDifficultyResponse()
+
+    avg_score = sum(r.score for r in rows) / len(rows)
+    if avg_score >= _SUGGEST_HARD_THRESHOLD:
+        difficulty = "hard"
+    elif avg_score <= _SUGGEST_EASY_THRESHOLD:
+        difficulty = "easy"
+    else:
+        difficulty = "medium"
+
+    pct = round(avg_score * 100)
+    difficulty_label = {"easy": "fácil", "medium": "media", "hard": "difícil"}[difficulty]
+    reason = (
+        f"Basado en tus últimos {len(rows)} intento{'s' if len(rows) != 1 else ''} "
+        f"({pct}% de aciertos), te sugerimos dificultad {difficulty_label}."
+    )
+
+    return SuggestDifficultyResponse(
+        difficulty=difficulty,
+        reason=reason,
+        based_on_attempts=len(rows),
+        accuracy_pct=pct,
+    )
+
 
 @router.post("/study-plan", response_model=StudyPlanResponse)
 async def study_plan(
@@ -1324,6 +1569,7 @@ async def study_plan(
         .where(QuizError.course_id == payload.course_id)
         .where(QuizError.user_id == payload.user_id)
         .where(QuizError.created_at >= since)
+        .where(QuizError.dismissed_at.is_(None))  # SP-13: descartado por el alumno
         .order_by(desc(QuizError.created_at))
         .limit(300)
     )
@@ -1335,10 +1581,14 @@ async def study_plan(
             norm_question.label("question"),
             func.count().label("count"),
             func.max(UnansweredQuestion.created_at).label("last_asked_at"),
+            # SP-13: IDs reales detrás del grupo, para poder descartar el tema
+            # sin depender del texto (ver StudyPlanTopic.gap_question_ids).
+            func.array_agg(UnansweredQuestion.id).label("ids"),
         )
         .where(UnansweredQuestion.course_id == payload.course_id)
         .where(UnansweredQuestion.user_id == payload.user_id)
         .where(UnansweredQuestion.created_at >= since)
+        .where(UnansweredQuestion.student_dismissed_at.is_(None))
         .group_by(norm_question)
         .order_by(desc("count"), desc("last_asked_at"))
         .limit(20)
@@ -1352,13 +1602,17 @@ async def study_plan(
     quiz_groups: dict[str, dict[str, Any]] = {}
     for r in quiz_rows:
         key = r.source_filename or "__general__"
-        g = quiz_groups.setdefault(key, {"filename": r.source_filename, "count": 0, "samples": []})
+        g = quiz_groups.setdefault(key, {"filename": r.source_filename, "count": 0, "samples": [], "ids": []})
         g["count"] += 1
+        g["ids"].append(str(r.id))
         if len(g["samples"]) < 3:
             g["samples"].append({"question": r.question, "explanation": r.explanation})
     top_quiz_groups = sorted(quiz_groups.values(), key=lambda g: g["count"], reverse=True)[:5]
 
-    top_gap_groups = [{"question": row.question, "count": int(row.count)} for row in gap_rows]
+    top_gap_groups = [
+        {"question": row.question, "count": int(row.count), "ids": [str(i) for i in row.ids]}
+        for row in gap_rows
+    ]
 
     prompt_blocks = []
     for i, g in enumerate(top_quiz_groups):
@@ -1435,6 +1689,8 @@ async def study_plan(
         gap_count = sum(top_gap_groups[j]["count"] for j in gap_idx)
         if quiz_error_count == 0 and gap_count == 0:
             continue
+        quiz_error_ids = [id_ for i in quiz_idx for id_ in top_quiz_groups[i]["ids"]]
+        gap_question_ids = [id_ for j in gap_idx for id_ in top_gap_groups[j]["ids"]]
         topics.append(
             StudyPlanTopic(
                 topic=str(item["topic"]),
@@ -1442,10 +1698,317 @@ async def study_plan(
                 gap_count=gap_count,
                 reason=str(item.get("reason") or ""),
                 suggested_quiz_topic=str(item.get("suggested_quiz_topic") or item["topic"]),
+                quiz_error_ids=quiz_error_ids,
+                gap_question_ids=gap_question_ids,
             )
         )
 
     topics.sort(key=lambda t: t.quiz_error_count + t.gap_count, reverse=True)
 
     return StudyPlanResponse(course_id=payload.course_id, topics=topics[:6])
+
+
+@router.post("/study-plan/dismiss", response_model=StudyPlanDismissResponse)
+async def study_plan_dismiss(
+    payload: StudyPlanDismissRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> StudyPlanDismissResponse:
+    """Descarta un tema puntual del plan de estudio (SP-13, issue #323).
+
+    Opera sobre los IDs reales de fila (`quiz_error_ids`/`gap_question_ids`,
+    devueltos por /study-plan) — el `topic` que ve el alumno es texto
+    generado por el LLM en cada llamada, no una clave estable. Mismo patrón
+    que app/gaps/router.py::gaps_archive, pero con columnas propias
+    (`QuizError.dismissed_at` / `UnansweredQuestion.student_dismissed_at`)
+    que NO tocan `archived_at` (archivado del docente, DOC-D08) — descartar
+    del lado del alumno no debe cambiar lo que ve el docente en Gaps/Analytics.
+    """
+    affected = 0
+
+    if payload.quiz_error_ids:
+        quiz_ids = [uuid.UUID(i) for i in payload.quiz_error_ids]
+        result = await db.execute(
+            update(QuizError)
+            .where(QuizError.course_id == payload.course_id)
+            .where(QuizError.user_id == payload.user_id)
+            .where(QuizError.id.in_(quiz_ids))
+            .values(dismissed_at=datetime.now(timezone.utc))
+        )
+        affected += result.rowcount
+
+    if payload.gap_question_ids:
+        gap_ids = [uuid.UUID(i) for i in payload.gap_question_ids]
+        result = await db.execute(
+            update(UnansweredQuestion)
+            .where(UnansweredQuestion.course_id == payload.course_id)
+            .where(UnansweredQuestion.user_id == payload.user_id)
+            .where(UnansweredQuestion.id.in_(gap_ids))
+            .values(student_dismissed_at=datetime.now(timezone.utc))
+        )
+        affected += result.rowcount
+
+    await db.commit()
+
+    return StudyPlanDismissResponse(affected=affected)
+
+
+# ============================================================
+# Repetición espaciada de flashcards — SP-11 (#315)
+# ============================================================
+
+def _flashcard_due_filter(user_id: int):
+    """Condición ON del LEFT JOIN + WHERE reusada por summary/due: "toca hoy"
+    significa sin fila de review, o next_review_at NULL, o ya vencido."""
+    join_cond = (
+        (FlashcardReview.flashcard_id == Flashcard.id)
+        & (FlashcardReview.user_id == user_id)
+        & (FlashcardReview.deleted_at.is_(None))
+    )
+    due_cond = (
+        FlashcardReview.id.is_(None)
+        | FlashcardReview.next_review_at.is_(None)
+        | (FlashcardReview.next_review_at <= func.now())
+    )
+    return join_cond, due_cond
+
+
+@router.post("/flashcards/summary", response_model=FlashcardsSummaryResponse)
+async def flashcards_summary(
+    payload: FlashcardsSummaryRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> FlashcardsSummaryResponse:
+    """Cuántas flashcards generadas hasta ahora "tocan hoy" vs. el total (SP-11)."""
+    base_filters = [Flashcard.course_id == payload.course_id]
+    if payload.topic:
+        base_filters.append(func.lower(Flashcard.topic) == payload.topic.strip().lower())
+
+    total_count = await db.scalar(
+        select(func.count()).select_from(Flashcard).where(*base_filters)
+    )
+
+    join_cond, due_cond = _flashcard_due_filter(payload.user_id)
+    due_count = await db.scalar(
+        select(func.count())
+        .select_from(Flashcard)
+        .outerjoin(FlashcardReview, join_cond)
+        .where(*base_filters)
+        .where(due_cond)
+    )
+
+    return FlashcardsSummaryResponse(due_count=due_count or 0, total_count=total_count or 0)
+
+
+@router.post("/flashcards/due", response_model=FlashcardsDueResponse)
+async def flashcards_due(
+    payload: FlashcardsDueRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> FlashcardsDueResponse:
+    """Flashcards ya generadas que "tocan hoy", más vencidas primero (SP-11).
+
+    No llama al LLM — sirve del banco ya persistido por /generate. El
+    frontend completa con generación nueva solo si esto no alcanza para
+    la cantidad pedida (ver QuizPanel.jsx).
+    """
+    join_cond, due_cond = _flashcard_due_filter(payload.user_id)
+    stmt = (
+        select(Flashcard, FlashcardReview.next_review_at)
+        .outerjoin(FlashcardReview, join_cond)
+        .where(Flashcard.course_id == payload.course_id)
+        .where(due_cond)
+    )
+    if payload.topic:
+        stmt = stmt.where(func.lower(Flashcard.topic) == payload.topic.strip().lower())
+    stmt = stmt.order_by(FlashcardReview.next_review_at.asc().nulls_last()).limit(payload.limit)
+
+    rows = (await db.execute(stmt)).all()
+
+    questions = [
+        QuizQuestion(
+            id=str(fc.id),
+            question_type="flashcard",
+            question=fc.question,
+            options=[],
+            correct_index=-1,
+            explanation=fc.explanation,
+            source_filename=fc.source_filename or "",
+            source_document_id=fc.source_document_id,
+        )
+        for fc, _next_review_at in rows
+    ]
+
+    return FlashcardsDueResponse(course_id=payload.course_id, questions=questions)
+
+
+@router.post("/flashcards/review-batch", response_model=FlashcardsReviewBatchResponse)
+async def flashcards_review_batch(
+    payload: FlashcardsReviewBatchRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> FlashcardsReviewBatchResponse:
+    """Aplica SM-2 sobre el resultado de autoevaluación de una sesión de flashcards (SP-11).
+
+    Se llama una sola vez al final de la sesión (mismo patrón que
+    /attempts + /errors), no por-tarjeta.
+    """
+    now = datetime.now(timezone.utc)
+
+    parsed_ids: dict[str, uuid.UUID] = {}
+    for item in payload.reviews:
+        try:
+            parsed_ids[item.flashcard_id] = uuid.UUID(item.flashcard_id)
+        except ValueError:
+            continue
+
+    if not parsed_ids:
+        return FlashcardsReviewBatchResponse(updated=0)
+
+    # Solo se aplica repaso sobre flashcards que realmente pertenecen a este
+    # curso — flashcard_id es dato del cliente, no confiar ciegamente.
+    valid_rows = await db.execute(
+        select(Flashcard.id).where(
+            Flashcard.id.in_(parsed_ids.values()),
+            Flashcard.course_id == payload.course_id,
+        )
+    )
+    valid_ids = {row.id for row in valid_rows.all()}
+
+    # Un solo SELECT en bulk para todos los reviews existentes de este batch,
+    # en vez de uno por item — y la base para el upsert de abajo, que evita la
+    # race condition de un SELECT-luego-INSERT contra uq_flashcard_reviews_flashcard_user
+    # (dos requests idénticas concurrentes -p.ej. un retry- ya no chocan con
+    # un IntegrityError sin capturar).
+    existing_rows = await db.execute(
+        select(FlashcardReview).where(
+            FlashcardReview.flashcard_id.in_(valid_ids),
+            FlashcardReview.user_id == payload.user_id,
+        )
+    )
+    existing_by_flashcard = {r.flashcard_id: r for r in existing_rows.scalars().all()}
+
+    updated = 0
+    for item in payload.reviews:
+        flashcard_id = parsed_ids.get(item.flashcard_id)
+        if flashcard_id is None or flashcard_id not in valid_ids:
+            continue
+
+        review = existing_by_flashcard.get(flashcard_id)
+        if review is None:
+            # Los defaults de mapped_column solo se aplican al hacer INSERT
+            # (flush), no al construir el objeto — _apply_sm2 los necesita
+            # en memoria YA, antes del commit, así que se setean acá a mano
+            # (mismos valores que los defaults declarados en el modelo).
+            review = FlashcardReview(
+                flashcard_id=flashcard_id,
+                user_id=payload.user_id,
+                ease_factor=2.5,
+                interval_days=0,
+                repetitions=0,
+            )
+
+        _apply_sm2(review, item.knew_it, now)
+
+        upsert_values = {
+            "ease_factor": review.ease_factor,
+            "interval_days": review.interval_days,
+            "repetitions": review.repetitions,
+            "last_reviewed_at": review.last_reviewed_at,
+            "next_review_at": review.next_review_at,
+        }
+        stmt = (
+            pg_insert(FlashcardReview)
+            .values(
+                id=uuid.uuid4(),
+                flashcard_id=flashcard_id,
+                user_id=payload.user_id,
+                **upsert_values,
+            )
+            .on_conflict_do_update(
+                constraint="uq_flashcard_reviews_flashcard_user",
+                set_=upsert_values,
+            )
+        )
+        await db.execute(stmt)
+        updated += 1
+
+    await db.commit()
+    return FlashcardsReviewBatchResponse(updated=updated)
+
+
+# ============================================================
+# Racha de estudio — SP-16 (#354)
+# ============================================================
+
+def _compute_streak(active_dates: set[date], today: date) -> int:
+    """Días consecutivos de actividad terminando hoy o ayer.
+
+    Si la actividad más reciente es de hace 2+ días, la racha se considera
+    rota (0) — criterio de aceptación explícito ("se resetea si el alumno
+    deja de usar el asistente un día"). Si hubo actividad hoy o ayer
+    (el alumno puede no haber practicado TODAVÍA hoy y seguir con la racha
+    viva desde ayer), cuenta hacia atrás mientras los días sean consecutivos.
+    """
+    if not active_dates:
+        return 0
+
+    most_recent = max(active_dates)
+    if (today - most_recent).days > 1:
+        return 0
+
+    streak = 0
+    cursor = most_recent
+    while cursor in active_dates:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return streak
+
+
+@router.post("/streak", response_model=StreakResponse)
+async def study_streak(
+    payload: StreakRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> StreakResponse:
+    """Días consecutivos de actividad del alumno en el curso (SP-16, #354).
+
+    Combina dos señales ya persistidas, sin tabla ni migración nueva:
+    - QuizAttempt.user_id/course_id/created_at — anonimizado por PRIV-01
+      cae solo del filtro (user_id queda NULL), mismo criterio que
+      suggest_difficulty/list_quiz_attempts.
+    - Message.created_at (role='user') join ChatSession.user_id/course_id.
+      InteractionLog NO sirve acá: es anónimo por diseño (solo
+      user_id_hash, sin user_id real) — no hay forma de agrupar por
+      alumno. Sesiones multi-curso (ChatSession.course_id == 0, Feature B)
+      se excluyen: no pertenecen a un curso puntual.
+    """
+    quiz_days_stmt = (
+        select(func.date_trunc("day", QuizAttempt.created_at, "UTC").label("day"))
+        .where(
+            QuizAttempt.user_id == payload.user_id,
+            QuizAttempt.course_id == payload.course_id,
+        )
+        .distinct()
+    )
+    chat_days_stmt = (
+        select(func.date_trunc("day", Message.created_at, "UTC").label("day"))
+        .join(ChatSession, Message.session_id == ChatSession.id)
+        .where(
+            ChatSession.user_id == payload.user_id,
+            ChatSession.course_id == payload.course_id,
+            Message.role == "user",
+        )
+        .distinct()
+    )
+
+    quiz_rows = (await db.execute(quiz_days_stmt)).all()
+    chat_rows = (await db.execute(chat_days_stmt)).all()
+
+    active_dates = {row.day.date() for row in quiz_rows} | {row.day.date() for row in chat_rows}
+
+    today = datetime.now(timezone.utc).date()
+    streak = _compute_streak(active_dates, today)
+
+    return StreakResponse(current_streak=streak, practiced_today=today in active_dates)
 
