@@ -11,6 +11,13 @@ name: Frontend CI
 # referenciaba pero nunca existieron. Corregir el path bug los hubiera
 # hecho fallar de verdad por primera vez (`Missing script: "lint"`).
 # Configurar lint/tests del frontend es trabajo aparte, no de esta issue.
+#
+# QA-01 (issue #311) agregó el step de tests (Vitest) más abajo. Nota
+# heredada de DEPLOY-02 (PR #458): este archivo vive en
+# NexusAI/.github/workflows/, no en la raíz real del repo git — GitHub
+# Actions no lo ejecuta hoy. Arreglar esa ruta es un cambio aparte, de
+# mayor alcance (afecta a los otros dos workflows también) — el step de
+# abajo queda listo para cuando eso se resuelva.
 
 on:
   push:
@@ -62,6 +69,11 @@ jobs:
         if: steps.check.outputs.skip == 'false'
         working-directory: plugin/local/nexusai/react
         run: npm audit --audit-level=high
+
+      - name: Tests (Vitest) — QA-01 / issue #311
+        if: steps.check.outputs.skip == 'false'
+        working-directory: plugin/local/nexusai/react
+        run: npm test
 
       - name: Webpack build (production)
         if: steps.check.outputs.skip == 'false'
