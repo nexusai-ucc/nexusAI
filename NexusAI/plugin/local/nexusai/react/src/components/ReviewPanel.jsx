@@ -182,7 +182,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
     // ── Loading state (primer fetch) ──
     if (loading) {
         return (
-            <div className="nexusai-review nexusai-review--empty">
+            <div className="nexusai-review nexusai-review--empty" role="status" aria-label={lang === "es" ? "Cargando repaso de errores" : "Loading error review"}>
                 <div className="nexusai-quiz__spinner" />
             </div>
         );
@@ -223,7 +223,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                 </div>
 
                 {suggestionsLoading && (
-                    <div className="nexusai-review__suggestions-loading">
+                    <div className="nexusai-review__suggestions-loading" role="status">
                         <div className="nexusai-quiz__spinner" />
                         <span>{L.suggLoading}</span>
                     </div>
@@ -353,6 +353,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
                                 type="button"
                                 className="nexusai-review__toggle"
                                 onClick={() => toggleExpand(err.id)}
+                                aria-expanded={!!exp}
                             >
                                 {exp ? L.showLess : L.showMore}
                             </button>

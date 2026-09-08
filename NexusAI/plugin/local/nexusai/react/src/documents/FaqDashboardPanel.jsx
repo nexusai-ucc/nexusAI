@@ -57,7 +57,7 @@ export default function FaqDashboardPanel({ courseId }) {
                 detectar qué conceptos generan más dudas y priorizar el repaso en clase.
             </p>
 
-            <div className="nexusai-gaps__filter">
+            <div className="nexusai-gaps__filter" role="group" aria-label="Filtrar preguntas frecuentes por período">
                 <span className="nexusai-gaps__filter-label">Mostrar:</span>
                 {[7, 30, 90, 365].map((d) => (
                     <button
@@ -65,6 +65,7 @@ export default function FaqDashboardPanel({ courseId }) {
                         type="button"
                         className={`nexusai-gaps__filter-btn ${days === d ? "nexusai-gaps__filter-btn--active" : ""}`}
                         onClick={() => setDays(d)}
+                        aria-pressed={days === d}
                     >
                         {d === 7 && "Últimos 7 días"}
                         {d === 30 && "Último mes"}
@@ -74,7 +75,7 @@ export default function FaqDashboardPanel({ courseId }) {
                 ))}
             </div>
 
-            {loading && <div className="nexusai-loading">Cargando preguntas frecuentes...</div>}
+            {loading && <div className="nexusai-loading" role="status">Cargando preguntas frecuentes...</div>}
 
             {error && (
                 <div className="nexusai-alert nexusai-alert--error" role="alert">
