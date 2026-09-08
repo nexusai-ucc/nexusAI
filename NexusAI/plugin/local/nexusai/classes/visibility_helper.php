@@ -102,7 +102,10 @@ class visibility_helper {
             // se vuelve a mostrar solo — sigue accesible a mano desde el tab
             // "Revisión del curso" del widget normal (ONB-06). Sin esto, esta
             // página caería en el widget normal (ChatApp) para ese curso.
-            if (get_user_preferences('local_nexusai_onb_dismissed_' . $COURSE->id, '0') === '1') {
+            // Se reusa el mismo accessor que la external function, en vez de
+            // reconstruir a mano la key de user_preferences, para que ambos
+            // no puedan divergir si el storage del dismissal cambia.
+            if (\local_nexusai\external\onboarding_state_get::read_state((int) $COURSE->id)['dismissed']) {
                 return null;
             }
 

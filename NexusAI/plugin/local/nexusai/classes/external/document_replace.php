@@ -40,7 +40,7 @@ class document_replace extends \external_api {
             'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
             'section'       => new \external_value(PARAM_INT, 'Sección asignada', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
-            'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si status=error', VALUE_OPTIONAL),
+            'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si status=error', VALUE_OPTIONAL, null, NULL_ALLOWED),
         ]);
     }
 
@@ -105,6 +105,17 @@ class document_replace extends \external_api {
         self::validate_magic_bytes($filebytes, $params['mimetype']);
 
         $client = new backend_client();
+
+        // Defensa: verificar que el documento pertenece al curso antes de
+        // reemplazarlo (mismo criterio que document_reindex/document_delete).
+        $document = $client->get_document($params['documentid']);
+        if (((int) ($document['course_id'] ?? 0)) !== (int) $params['courseid']) {
+            throw new \moodle_exception(
+                'errorbackend', 'local_nexusai', '',
+                'Cannot replace: document does not belong to the requested course'
+            );
+        }
+
         $response = $client->replace_document(
             $params['documentid'],
             $params['filename'],
