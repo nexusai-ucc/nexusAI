@@ -1272,14 +1272,39 @@
     height: 100%;
 }
 .nexusai-analytics__bar {
+    position: relative;
     width: 100%;
     min-height: 3px;
     background: var(--nexusai-primary, #6366f1);
     border-radius: 3px 3px 0 0;
     opacity: 0.85;
+    cursor: default;
+}
+.nexusai-analytics__bar:hover,
+.nexusai-analytics__bar:focus-visible {
+    opacity: 1;
+    outline: none;
 }
 .nexusai-analytics__bar--bucket {
     opacity: 1;
+}
+/* ANALYTICS-04 (#371): tooltip real (accesible por teclado vía foco), en
+   vez del `title` nativo del navegador — aparece al instante y se puede
+   estilar consistente con el resto del plugin. */
+.nexusai-analytics__bar-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 6px;
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: var(--nexusai-fg, #1e293b);
+    color: #fff;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
 }
 .nexusai-analytics__bucket-label {
     font-size: 10px;
