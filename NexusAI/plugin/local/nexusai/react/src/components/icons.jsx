@@ -270,3 +270,19 @@ export const IconBarChart = ({ size = 14 }) => (
         <line x1="6" y1="20" x2="6" y2="16" />
     </svg>
 );
+
+// ── AlertTriangle (FOR-05: hilo de foro urgente/frustrado) ─────────────────
+export const IconAlertTriangle = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+);
+
+// ── MessageSquare (FOR-06: hilo de foro en el digest semanal) ──────────────
+export const IconMessageSquare = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+);

@@ -11,7 +11,7 @@
  * de armado en modo review, sin depender de estar en `course/edit.php`.
  */
 
-import { IconBookOpen, IconCalendar, IconClipboardList, IconSearch, IconSparkles } from "./icons.jsx";
+import { IconBookOpen, IconCalendar, IconClipboardList, IconMessageSquare, IconSearch, IconSparkles } from "./icons.jsx";
 
 const ITEMS = [
     { key: "chat", labelEs: "Chat", labelEn: "Chat", Icon: IconSparkles },
@@ -19,6 +19,7 @@ const ITEMS = [
     { key: "search", labelEs: "Buscar", labelEn: "Search", Icon: IconSearch, studentOnly: true },
     { key: "calendar", labelEs: "Calendario", labelEn: "Calendar", Icon: IconCalendar },
     { key: "review", labelEs: "Revisión del curso", labelEn: "Course review", Icon: IconClipboardList, teacherOnly: true },
+    { key: "forumdigest", labelEs: "Resumen del foro", labelEn: "Forum digest", Icon: IconMessageSquare, teacherOnly: true },
 ];
 
 export default function NavMenu({ open, onClose, activeTab, onSelect, isTeacher = false, lang = "es" }) {

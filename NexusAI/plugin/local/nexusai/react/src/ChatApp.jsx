@@ -26,6 +26,7 @@ import TypingIndicator from "./components/TypingIndicator.jsx";
 import StudyPanel from "./components/StudyPanel.jsx";
 import SearchPanel from "./components/SearchPanel.jsx";
 import CalendarPanel from "./components/CalendarPanel.jsx";
+import ForumDigestPanel from "./components/ForumDigestPanel.jsx";
 import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import NavMenu from "./components/NavMenu.jsx";
 import Tooltip from "./components/Tooltip.jsx";
@@ -45,11 +46,12 @@ function TAB_STORAGE_KEY(courseid) {
 const PERSISTABLE_TABS = new Set(["chat", "study", "calendar", "search"]);
 
 const SECTION_TITLES = {
-    study:    { es: "Modo Estudio",         en: "Study Mode" },
-    search:   { es: "Buscar",               en: "Search" },
-    calendar: { es: "Calendario",           en: "Calendar" },
-    history:  { es: "Historial",            en: "History" },
-    review:   { es: "Revisión del curso",   en: "Course review" },
+    study:       { es: "Modo Estudio",         en: "Study Mode" },
+    search:      { es: "Buscar",               en: "Search" },
+    calendar:    { es: "Calendario",           en: "Calendar" },
+    history:     { es: "Historial",            en: "History" },
+    review:      { es: "Revisión del curso",   en: "Course review" },
+    forumdigest: { es: "Resumen del foro",     en: "Forum digest" },
 };
 
 const STRINGS = {
@@ -687,6 +689,10 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                 onSkip={reviewSkip}
                                 onUnskip={reviewUnskip}
                             />
+                        </div>
+                    ) : activeTab === "forumdigest" ? (
+                        <div className="nexusai-panel__body">
+                            <ForumDigestPanel courseId={courseid} wwwroot={wwwroot} lang={lang} />
                         </div>
                     ) : (
                         <div className="nexusai-panel__body">
