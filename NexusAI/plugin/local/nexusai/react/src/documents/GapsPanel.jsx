@@ -134,7 +134,7 @@ export default function GapsPanel({ courseId }) {
                 Útil para descubrir qué temas pedir o agregar a tus archivos del curso.
             </p>
 
-            <div className="nexusai-gaps__filter">
+            <div className="nexusai-gaps__filter" role="group" aria-label="Filtrar vacíos de contenido por período">
                 <span className="nexusai-gaps__filter-label">Mostrar:</span>
                 {[7, 30, 90, 365].map((d) => (
                     <button
@@ -142,6 +142,7 @@ export default function GapsPanel({ courseId }) {
                         type="button"
                         className={`nexusai-gaps__filter-btn ${days === d ? "nexusai-gaps__filter-btn--active" : ""}`}
                         onClick={() => setDays(d)}
+                        aria-pressed={days === d}
                     >
                         {d === 7 && "Últimos 7 días"}
                         {d === 30 && "Último mes"}
@@ -159,7 +160,7 @@ export default function GapsPanel({ courseId }) {
                 </label>
             </div>
 
-            {loading && <div className="nexusai-loading">Cargando gaps...</div>}
+            {loading && <div className="nexusai-loading" role="status">Cargando gaps...</div>}
 
             {error && (
                 <div className="nexusai-alert nexusai-alert--error" role="alert">
@@ -226,6 +227,7 @@ export default function GapsPanel({ courseId }) {
                                         className="nexusai-gap-item__archive-btn"
                                         onClick={() => handleToggleArchive(g, i)}
                                         disabled={archivingIdx === i}
+                                        aria-label={`${g.is_archived ? "Desarchivar" : "Archivar"} la pregunta: ${g.question}`}
                                     >
                                         <IconArchive size={12} />
                                         {archivingIdx === i
