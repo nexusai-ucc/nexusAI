@@ -18,20 +18,43 @@
     --nexusai-primary-hover:  #4f46e5;
     --nexusai-primary-light:  rgba(99, 102, 241, 0.1);
     --nexusai-primary-ring:   rgba(99, 102, 241, 0.2);
+    --nexusai-primary-subtle:  #e6edfb;   /* tinte de fondo para estado activo/seleccionado */
 
     /* Fondos */
     --nexusai-bg:             #ffffff;
     --nexusai-bg-muted:       #f8fafc;
     --nexusai-bg-subtle:      #f1f5f9;
+    --nexusai-surface:        #f7f8fc;    /* paneles/tarjetas recesados sobre el fondo base */
 
     /* Bordes */
     --nexusai-border:         #e2e8f0;
     --nexusai-border-strong:  #cbd5e1;
+    --nexusai-border-hover:   #c6d4f0;    /* borde con tinte primario en hover */
 
     /* Texto */
     --nexusai-fg:             #0f172a;
     --nexusai-fg-muted:       #64748b;
     --nexusai-fg-subtle:      #94a3b8;
+
+    /* Bloques de código (fondo oscuro también en modo claro) */
+    --nexusai-code-bg:        #1e293b;
+    --nexusai-code-fg:        #e2e8f0;
+
+    /* Colores semánticos de estado — fondo / texto / borde por familia.
+       Se redefinen en el bloque dark más abajo (no se invierten mecánicamente). */
+    --nexusai-success-bg:     #f0fdf4;
+    --nexusai-success-fg:     #166534;
+    --nexusai-success-border: #bbf7d0;
+    --nexusai-danger-bg:      #fef2f2;
+    --nexusai-danger-fg:      #991b1b;
+    --nexusai-danger-border:  #fecaca;
+    --nexusai-danger-solid:   #dc2626;
+    --nexusai-warning-bg:     #fef3c7;
+    --nexusai-warning-fg:     #92400e;
+    --nexusai-warning-border: #fde68a;
+    --nexusai-info-bg:        #eff6ff;
+    --nexusai-info-fg:        #1e40af;
+    --nexusai-info-border:    #bfdbfe;
 
     /* Radios */
     --nexusai-radius-sm:      4px;
@@ -58,6 +81,186 @@
 .nexusai-widget *::before,
 .nexusai-widget *::after {
     box-sizing: border-box;
+}
+
+/* ============================================================
+   Modo oscuro (UX-11, #369)
+   Redefine los tokens --nexusai-* cuando el SO/navegador está en modo
+   oscuro. No es una inversión mecánica: los colores semánticos (éxito,
+   error, advertencia) se recalculan para mantener contraste legible
+   de texto sobre fondo de color.
+   Cubre todo el widget: chat, buscador, modo estudio, calendario y
+   quiz. El panel docente vive en .nexusai-documents (documents.css) y
+   tiene su propio bloque equivalente.
+============================================================ */
+@media (prefers-color-scheme: dark) {
+    .nexusai-widget {
+        --nexusai-primary:        #818cf8;
+        --nexusai-primary-hover:  #a5b4fc;
+        --nexusai-primary-light:  rgba(129, 140, 248, 0.16);
+        --nexusai-primary-ring:   rgba(129, 140, 248, 0.36);
+        --nexusai-primary-subtle: #24304d;
+
+        --nexusai-bg:             #0f172a;
+        --nexusai-bg-muted:       #1e293b;
+        --nexusai-bg-subtle:      #283548;
+        --nexusai-surface:        #172131;
+
+        --nexusai-border:         #334155;
+        --nexusai-border-strong:  #475569;
+        --nexusai-border-hover:   #4c5a80;
+
+        --nexusai-fg:             #e2e8f0;
+        --nexusai-fg-muted:       #94a3b8;
+        --nexusai-fg-subtle:      #64748b;
+
+        --nexusai-code-bg:        #020617;
+        --nexusai-code-fg:        #e2e8f0;
+
+        --nexusai-success-bg:     #0f2a1c;
+        --nexusai-success-fg:     #4ade80;
+        --nexusai-success-border: #1f5e3f;
+        --nexusai-danger-bg:      #2c1517;
+        --nexusai-danger-fg:      #f87171;
+        --nexusai-danger-border:  #7f2a2a;
+        --nexusai-danger-solid:   #ef4444;
+        --nexusai-warning-bg:     #2e2410;
+        --nexusai-warning-fg:     #fbbf24;
+        --nexusai-warning-border: #6b5417;
+        --nexusai-info-bg:        #16233d;
+        --nexusai-info-fg:        #93c5fd;
+        --nexusai-info-border:    #2f4a7a;
+
+        --nexusai-shadow-sm:      0 1px 2px 0 rgba(0,0,0,0.4);
+        --nexusai-shadow:         0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.4);
+        --nexusai-shadow-md:      0 10px 15px -3px rgba(0,0,0,0.55), 0 4px 6px -2px rgba(0,0,0,0.4);
+    }
+
+    /* ---- Ajustes puntuales de superficies/colores aún no tokenizados ---- */
+
+    /* Inline-code en burbuja del asistente: el violeta oscuro no contrasta */
+    .nexusai-widget .nexusai-msg__markdown code { color: #c4b5fd; }
+
+    /* Banner de error del chat */
+    .nexusai-widget .nexusai-error {
+        background: var(--nexusai-danger-bg);
+        border-color: var(--nexusai-danger-border);
+    }
+    .nexusai-widget .nexusai-error__text { color: var(--nexusai-danger-fg); }
+    .nexusai-widget .nexusai-btn--ghost {
+        color: var(--nexusai-danger-fg);
+        border-color: var(--nexusai-danger-border);
+    }
+    .nexusai-widget .nexusai-btn--ghost:hover { background: var(--nexusai-danger-bg); }
+
+    /* Feedback 👍/👎 */
+    .nexusai-widget .nexusai-msg__feedback-btn--active-up   { color: #4ade80; }
+    .nexusai-widget .nexusai-msg__feedback-btn--active-down { color: #f87171; }
+
+    /* Toast de advertencia (los de éxito/error ya son sólidos legibles) */
+    .nexusai-widget .nexusai-toast--warning {
+        background: var(--nexusai-warning-bg);
+        color: var(--nexusai-warning-fg) !important;
+        border-color: var(--nexusai-warning-border);
+    }
+
+    /* Quiz — opciones y feedback */
+    .nexusai-widget .nexusai-quiz__option--correct {
+        border-color: var(--nexusai-success-border);
+        background: var(--nexusai-success-bg);
+        color: var(--nexusai-success-fg);
+    }
+    .nexusai-widget .nexusai-quiz__option--wrong {
+        border-color: var(--nexusai-danger-border);
+        background: var(--nexusai-danger-bg);
+        color: var(--nexusai-danger-fg);
+    }
+    .nexusai-widget .nexusai-quiz__option--selected .nexusai-quiz__option-letter,
+    .nexusai-widget .nexusai-quiz__option--correct .nexusai-quiz__option-letter,
+    .nexusai-widget .nexusai-quiz__option--wrong .nexusai-quiz__option-letter {
+        background: rgba(255, 255, 255, 0.14);
+    }
+    .nexusai-widget .nexusai-quiz__feedback--correct {
+        background: var(--nexusai-success-bg);
+        border-color: var(--nexusai-success-border);
+        color: var(--nexusai-success-fg);
+    }
+    .nexusai-widget .nexusai-quiz__feedback--wrong {
+        background: var(--nexusai-danger-bg);
+        border-color: var(--nexusai-danger-border);
+        color: var(--nexusai-danger-fg);
+    }
+    .nexusai-widget .nexusai-quiz__input--error,
+    .nexusai-widget .nexusai-quiz__topic-error { border-color: #f87171; color: #f87171; }
+    .nexusai-widget .nexusai-quiz__final-icon--high {
+        background: var(--nexusai-success-bg);
+        color: var(--nexusai-success-fg);
+    }
+    .nexusai-widget .nexusai-quiz__history-diff--easy   { background: var(--nexusai-success-bg); color: var(--nexusai-success-fg); }
+    .nexusai-widget .nexusai-quiz__history-diff--medium { background: var(--nexusai-warning-bg); color: var(--nexusai-warning-fg); }
+    .nexusai-widget .nexusai-quiz__history-diff--hard   { background: var(--nexusai-danger-bg);  color: var(--nexusai-danger-fg); }
+    .nexusai-widget .nexusai-quiz__history-pct--good { background: var(--nexusai-success-bg); color: var(--nexusai-success-fg); }
+    .nexusai-widget .nexusai-quiz__history-pct--mid  { background: var(--nexusai-warning-bg); color: var(--nexusai-warning-fg); }
+    .nexusai-widget .nexusai-quiz__history-pct--low  { background: var(--nexusai-danger-bg);  color: var(--nexusai-danger-fg); }
+
+    /* Review / repaso */
+    .nexusai-widget .nexusai-review__clear-btn {
+        color: var(--nexusai-danger-fg);
+        background: var(--nexusai-danger-bg);
+        border-color: var(--nexusai-danger-border);
+    }
+    .nexusai-widget .nexusai-review__clear-btn:hover { background: var(--nexusai-danger-border); }
+    .nexusai-widget .nexusai-review__opt--correct {
+        background: var(--nexusai-success-bg);
+        border-color: var(--nexusai-success-border);
+        color: var(--nexusai-success-fg);
+    }
+    .nexusai-widget .nexusai-review__opt--wrong {
+        background: var(--nexusai-danger-bg);
+        border-color: var(--nexusai-danger-border);
+        color: var(--nexusai-danger-fg);
+    }
+    .nexusai-widget .nexusai-review__opt-letter { background: rgba(255, 255, 255, 0.1); }
+    .nexusai-widget .nexusai-review__badge--true_false { background: var(--nexusai-info-bg); color: var(--nexusai-info-fg); }
+    .nexusai-widget .nexusai-review__badge--open { background: var(--nexusai-success-bg); color: var(--nexusai-success-fg); }
+    .nexusai-widget .nexusai-review__explanation-label,
+    .nexusai-widget .nexusai-review__suggestions-header { color: var(--nexusai-primary-hover); }
+    .nexusai-widget .nexusai-review__suggestion-count {
+        background: var(--nexusai-danger-bg);
+        color: var(--nexusai-danger-fg);
+    }
+
+    /* Calendario — banner y badge de alerta */
+    .nexusai-widget .nexusai-calendar__alert-banner {
+        background: var(--nexusai-warning-bg);
+        border-color: var(--nexusai-warning-border);
+        color: var(--nexusai-warning-fg);
+    }
+    .nexusai-widget .nexusai-calendar__alert-badge {
+        background: var(--nexusai-warning-bg);
+        border-color: var(--nexusai-warning-border);
+        color: var(--nexusai-warning-fg);
+    }
+    .nexusai-widget .nexusai-calendar__feed-status--error,
+    .nexusai-widget .nexusai-search__summary-text--error { color: var(--nexusai-danger-fg); }
+
+    /* Racha de estudio */
+    .nexusai-widget .nexusai-study__streak { color: #fb923c; }
+
+    /* Onboarding docente (checklist) */
+    .nexusai-widget .nexusai-onb__alldone,
+    .nexusai-widget .nexusai-onb__status--done,
+    .nexusai-widget .nexusai-onb__step--done .nexusai-onb__step-marker {
+        background: var(--nexusai-success-bg);
+        color: var(--nexusai-success-fg);
+    }
+    .nexusai-widget .nexusai-onb__status--pending {
+        background: var(--nexusai-warning-bg);
+        color: var(--nexusai-warning-fg);
+    }
+
+    /* Estado "en línea" del header — el verde queda igual, sólo el punto */
+    .nexusai-widget .nexusai-panel__status-dot { background: #4ade80; }
 }
 
 /* ============================================================
@@ -520,8 +723,8 @@
 }
 .nexusai-msg__markdown pre {
     position: relative;
-    background: #1e293b;
-    color: #e2e8f0;
+    background: var(--nexusai-code-bg);
+    color: var(--nexusai-code-fg);
     border-radius: var(--nexusai-radius);
     padding: 10px 12px;
     overflow-x: auto;
@@ -605,7 +808,7 @@
     font-family: inherit;
     font-weight: 500;
     background: rgba(255,255,255,0.1);
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     border: 1px solid rgba(255,255,255,0.15);
     border-radius: var(--nexusai-radius-sm);
     cursor: pointer;
@@ -615,7 +818,7 @@
 }
 .nexusai-copy-btn:hover {
     background: rgba(255,255,255,0.18);
-    color: #e2e8f0;
+    color: var(--nexusai-code-fg);
 }
 .nexusai-copy-btn--copied {
     color: #4ade80 !important;
@@ -661,7 +864,7 @@
     cursor: pointer;
 }
 .nexusai-msg__source-pill--clickable:hover {
-    background: #e6edfb;
+    background: var(--nexusai-primary-subtle);
     border-color: var(--nexusai-primary);
 }
 .nexusai-msg__source-pill--active {
@@ -726,7 +929,7 @@
 /* Panel expandido del fragmento citado */
 .nexusai-msg__source-panel {
     margin-top: 6px;
-    background: #f7f8fc;
+    background: var(--nexusai-surface);
     border: 1px solid var(--nexusai-primary-ring);
     border-radius: 8px;
     padding: 8px 10px;
@@ -774,7 +977,7 @@
 }
 .nexusai-msg__source-panel-content {
     font-size: 11.5px;
-    color: #5a6a7a;
+    color: var(--nexusai-fg-muted);
     line-height: 1.5;
     margin: 0;
     white-space: pre-wrap;
@@ -1017,7 +1220,7 @@
     padding: 24px;
 }
 .nexusai-confirm {
-    background: #ffffff;
+    background: var(--nexusai-bg);
     border-radius: 12px;
     box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18), 0 4px 16px rgba(15, 23, 42, 0.08);
     padding: 28px 32px;
@@ -1028,12 +1231,12 @@
 .nexusai-confirm__title {
     font-size: 17px;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--nexusai-fg);
     margin: 0 0 12px;
 }
 .nexusai-confirm__body {
     font-size: 14px;
-    color: #475569;
+    color: var(--nexusai-fg-muted);
     line-height: 1.6;
     margin: 0 0 24px;
 }
@@ -1060,9 +1263,9 @@
     cursor: not-allowed;
 }
 .nexusai-confirm__btn--cancel {
-    background: #f1f5f9;
-    color: #475569;
-    border-color: #e2e8f0;
+    background: var(--nexusai-bg-subtle);
+    color: var(--nexusai-fg-muted);
+    border-color: var(--nexusai-border);
 }
 .nexusai-confirm__btn--cancel:hover { background: #e2e8f0; }
 .nexusai-confirm__btn--confirm {
@@ -1118,7 +1321,7 @@
     cursor: pointer;
 }
 .nexusai-input__paste-chip:hover {
-    background: #e6edfb;
+    background: var(--nexusai-primary-subtle);
     border-color: var(--nexusai-primary);
 }
 .nexusai-input__paste-chip-remove {
@@ -1136,7 +1339,7 @@
 }
 .nexusai-input__paste-preview {
     margin: 8px 12px 0;
-    background: #f7f8fc;
+    background: var(--nexusai-surface);
     border: 1px solid var(--nexusai-primary-ring);
     border-radius: 8px;
     padding: 8px 10px;
@@ -1320,7 +1523,7 @@
 .nexusai-search__input {
     flex: 1;
     padding: 8px 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--nexusai-border);
     border-radius: 8px;
     font-size: 13px;
     outline: none;
@@ -1341,7 +1544,7 @@
 .nexusai-search__btn:disabled { opacity: .5; cursor: not-allowed; }
 .nexusai-search__empty {
     font-size: 13px;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     text-align: center;
     padding: 24px 16px;
     line-height: 1.55;
@@ -1370,13 +1573,13 @@
 }
 .nexusai-search__empty-title {
     font-size: 13px;
-    color: #475569;
+    color: var(--nexusai-fg-muted);
     margin: 0 0 4px;
     line-height: 1.5;
 }
 .nexusai-search__empty-sub {
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     margin: 0 0 14px;
     line-height: 1.5;
 }
@@ -1397,8 +1600,8 @@
 .nexusai-search__recent {
     margin: -4px 0 12px;
     padding: 10px 12px;
-    background: #f7f8fc;
-    border: 1px solid #e8edf5;
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 8px;
 }
 .nexusai-search__recent-label {
@@ -1407,7 +1610,7 @@
     gap: 5px;
     font-size: 11px;
     font-weight: 600;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     text-transform: uppercase;
     letter-spacing: 0.4px;
     margin-bottom: 8px;
@@ -1419,11 +1622,11 @@
 }
 .nexusai-search__recent-item {
     padding: 5px 10px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-border);
     border-radius: var(--nexusai-radius-full, 9999px);
     font-size: 12px;
-    color: #475569;
+    color: var(--nexusai-fg-muted);
     cursor: pointer;
     transition: border-color .12s, color .12s;
 }
@@ -1432,8 +1635,8 @@
     color: var(--nexusai-primary, #6366f1);
 }
 .nexusai-search__result {
-    background: #f7f8fc;
-    border: 1px solid #e8edf5;
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 8px;
     padding: 10px 12px;
     margin-bottom: 8px;
@@ -1509,7 +1712,7 @@
 }
 .nexusai-search__content {
     font-size: 12px;
-    color: #5a6a7a;
+    color: var(--nexusai-fg-muted);
     line-height: 1.5;
     margin: 0;
 }
@@ -1553,15 +1756,15 @@
     padding: 5px 10px;
     font-size: 12px;
     font-weight: 500;
-    color: #64748b;
-    background: #f7f8fc;
-    border: 1px solid #e2e8f0;
+    color: var(--nexusai-fg-muted);
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 999px;
     cursor: pointer;
     transition: all .12s;
 }
 .nexusai-search__typebtn:hover {
-    border-color: #c6d4f0;
+    border-color: var(--nexusai-border-hover);
     color: var(--nexusai-primary);
 }
 .nexusai-search__typebtn--active {
@@ -1609,15 +1812,15 @@
     padding: 5px 10px;
     font-size: 12px;
     font-weight: 500;
-    color: #64748b;
-    background: #f7f8fc;
-    border: 1px solid #e2e8f0;
+    color: var(--nexusai-fg-muted);
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all .12s;
 }
 .nexusai-calendar__rangebtn:hover {
-    border-color: #c6d4f0;
+    border-color: var(--nexusai-border-hover);
     color: var(--nexusai-primary);
 }
 .nexusai-calendar__rangebtn--active {
@@ -1631,7 +1834,7 @@
     align-items: center;
     gap: 8px;
     padding: 32px 12px;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     text-align: center;
     font-size: 13px;
 }
@@ -1650,8 +1853,8 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    background: #f7f8fc;
-    border: 1px solid #e8edf5;
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-left: 3px solid var(--nexusai-primary);
     border-radius: 8px;
     padding: 10px 12px;
@@ -1659,7 +1862,7 @@
     transition: background .12s, border-color .12s;
 }
 .nexusai-calendar-item:hover {
-    background: #eef1fb;
+    background: var(--nexusai-primary-subtle);
 }
 .nexusai-calendar-item__icon {
     flex-shrink: 0;
@@ -1695,12 +1898,12 @@
     display: block;
     margin-top: 3px;
     font-size: 11.5px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
 }
 
 /* ── CAL-02 · Alertas de calendario ── */
 .nexusai-calendar-item-wrapper {
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--nexusai-border);
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 8px;
@@ -1715,21 +1918,21 @@
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    background: #f8fafc;
-    border-top: 1px solid #e2e8f0;
+    background: var(--nexusai-bg-muted);
+    border-top: 1px solid var(--nexusai-border);
 }
 .nexusai-calendar__alert-label {
     font-size: 11.5px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     white-space: nowrap;
 }
 .nexusai-calendar__alert-select {
     font-size: 12px;
     padding: 2px 6px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--nexusai-border-strong);
     border-radius: 5px;
-    background: #fff;
-    color: #334155;
+    background: var(--nexusai-bg);
+    color: var(--nexusai-fg-muted);
     cursor: pointer;
 }
 .nexusai-calendar__alert-select:disabled {
@@ -1765,13 +1968,13 @@
     margin: 0;
     font-size: 11.5px;
     line-height: 1.5;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
 }
 .nexusai-calendar__feed-revoke-hint { margin-top: 4px; }
 .nexusai-calendar__feed-status {
     margin: 0;
     font-size: 12px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
 }
 .nexusai-calendar__feed-status--error { color: #dc2626; }
 .nexusai-calendar__feed-url-row {
@@ -1784,20 +1987,20 @@
     font-size: 11px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     padding: 6px 8px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--nexusai-border-strong);
     border-radius: 5px;
-    background: #f8fafc;
-    color: #334155;
+    background: var(--nexusai-bg-muted);
+    color: var(--nexusai-fg-muted);
 }
 .nexusai-calendar__feed-copy,
 .nexusai-calendar__feed-revoke {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
+    background: var(--nexusai-bg-subtle);
+    border: 1px solid var(--nexusai-border);
     border-radius: 5px;
     padding: 6px 12px;
     font: inherit;
     font-size: 12px;
-    color: #475569;
+    color: var(--nexusai-fg-muted);
     cursor: pointer;
     white-space: nowrap;
 }
@@ -1855,15 +2058,15 @@
     display: flex;
     padding: 8px 10px;
     gap: 6px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--nexusai-border);
 }
 .nexusai-history__scope-btn {
     flex: 1;
     padding: 4px 8px;
     font-size: 11px;
     font-weight: 500;
-    color: #64748b;
-    background: #f7f8fc;
+    color: var(--nexusai-fg-muted);
+    background: var(--nexusai-surface);
     border: 1px solid transparent;
     border-radius: 6px;
     cursor: pointer;
@@ -1872,8 +2075,8 @@
 .nexusai-history__scope-btn:hover { color: var(--nexusai-fg); }
 .nexusai-history__scope-btn--active {
     color: var(--nexusai-primary);
-    background: #e6edfb;
-    border-color: #c6d4f0;
+    background: var(--nexusai-primary-subtle);
+    border-color: var(--nexusai-border-hover);
 }
 
 .nexusai-history__list {
@@ -1883,7 +2086,7 @@
 }
 .nexusai-history__empty {
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     text-align: center;
     margin: 14px 8px;
 }
@@ -1900,11 +2103,11 @@
     transition: background .1s, border-color .1s;
 }
 .nexusai-history__item:hover {
-    background: #f7f8fc;
+    background: var(--nexusai-surface);
 }
 .nexusai-history__item--active {
-    background: #e6edfb;
-    border-color: #c6d4f0;
+    background: var(--nexusai-primary-subtle);
+    border-color: var(--nexusai-border-hover);
 }
 .nexusai-history__item-row {
     display: flex;
@@ -1922,12 +2125,12 @@
 }
 .nexusai-history__item-time {
     font-size: 10.5px;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     flex-shrink: 0;
 }
 .nexusai-history__item-meta {
     font-size: 10.5px;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     margin-top: 2px;
 }
 .nexusai-history__item-wrap {
@@ -1948,7 +2151,7 @@
     background: none;
     border: none;
     border-radius: 6px;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     cursor: pointer;
     opacity: 0;
     transition: opacity .12s, background .12s, color .12s;
@@ -1977,14 +2180,14 @@
     font-size: 12.5px;
     font-weight: 600;
     color: var(--nexusai-primary, #6366f1);
-    background: #f7f8fc;
-    border: 1px solid #e2e8f0;
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all .12s;
 }
-.nexusai-history__load-more:hover { border-color: #c6d4f0; }
-.nexusai-history__load-more:disabled { color: #94a3b8; cursor: default; }
+.nexusai-history__load-more:hover { border-color: var(--nexusai-border-hover); }
+.nexusai-history__load-more:disabled { color: var(--nexusai-fg-subtle); cursor: default; }
 
 /* ── Menú de navegación (UX-01) — calcado de .nexusai-history ── */
 .nexusai-navmenu {
@@ -1992,8 +2195,8 @@
     top: 56px;
     right: 10px;
     width: 220px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-border);
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     z-index: 1100;
@@ -2006,7 +2209,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 12px 6px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--nexusai-border);
 }
 .nexusai-navmenu__title {
     font-size: 13px;
@@ -2017,7 +2220,7 @@
     background: none;
     border: none;
     font-size: 18px;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     cursor: pointer;
     line-height: 1;
     padding: 0 4px;
@@ -2043,11 +2246,11 @@
     transition: background .1s, border-color .1s, color .1s;
 }
 .nexusai-navmenu__item:hover {
-    background: #f7f8fc;
+    background: var(--nexusai-surface);
 }
 .nexusai-navmenu__item--active {
-    background: #e6edfb;
-    border-color: #c6d4f0;
+    background: var(--nexusai-primary-subtle);
+    border-color: var(--nexusai-border-hover);
     color: var(--nexusai-primary);
 }
 .nexusai-navmenu__item-icon {
@@ -2079,8 +2282,8 @@
     padding: 7px 8px;
     font-size: 12.5px;
     font-weight: 500;
-    color: #64748b;
-    background: #f7f8fc;
+    color: var(--nexusai-fg-muted);
+    background: var(--nexusai-surface);
     border: 1px solid transparent;
     border-radius: 6px;
     cursor: pointer;
@@ -2089,8 +2292,8 @@
 .nexusai-study__modebtn:hover { color: var(--nexusai-fg); }
 .nexusai-study__modebtn--active {
     color: var(--nexusai-primary);
-    background: #e6edfb;
-    border-color: #c6d4f0;
+    background: var(--nexusai-primary-subtle);
+    border-color: var(--nexusai-border-hover);
 }
 
 /* ── Quiz Generator (Feature F) ── */
@@ -2119,7 +2322,7 @@
 }
 .nexusai-quiz__intro-text {
     font-size: 12px;
-    color: #5a6a7a;
+    color: var(--nexusai-fg-muted);
     margin: 0;
     line-height: 1.5;
 }
@@ -2132,11 +2335,11 @@
 .nexusai-quiz__label {
     font-size: 11.5px;
     font-weight: 500;
-    color: #475569;
+    color: var(--nexusai-fg-muted);
 }
 .nexusai-quiz__input {
     padding: 8px 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--nexusai-border);
     border-radius: 8px;
     font-size: 13px;
     outline: none;
@@ -2155,15 +2358,15 @@
     padding: 7px 0;
     font-size: 13px;
     font-weight: 500;
-    color: #64748b;
-    background: #f7f8fc;
-    border: 1px solid #e2e8f0;
+    color: var(--nexusai-fg-muted);
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all .12s;
 }
 .nexusai-quiz__numbtn:hover {
-    border-color: #c6d4f0;
+    border-color: var(--nexusai-border-hover);
     color: var(--nexusai-primary);
 }
 .nexusai-quiz__numbtn--active {
@@ -2193,15 +2396,15 @@
     padding: 7px 0;
     font-size: 13px;
     font-weight: 500;
-    color: #64748b;
-    background: #f7f8fc;
-    border: 1px solid #e2e8f0;
+    color: var(--nexusai-fg-muted);
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all .12s;
 }
 .nexusai-quiz__diffbtn:hover {
-    border-color: #c6d4f0;
+    border-color: var(--nexusai-border-hover);
     color: var(--nexusai-primary);
 }
 .nexusai-quiz__diffbtn--active {
@@ -2220,9 +2423,9 @@
     padding: 7px 6px;
     font-size: 12px;
     font-weight: 500;
-    color: #64748b;
-    background: #f7f8fc;
-    border: 1px solid #e2e8f0;
+    color: var(--nexusai-fg-muted);
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all .12s;
@@ -2230,7 +2433,7 @@
     line-height: 1.3;
 }
 .nexusai-quiz__typebtn:hover {
-    border-color: #c6d4f0;
+    border-color: var(--nexusai-border-hover);
     color: var(--nexusai-primary);
 }
 .nexusai-quiz__typebtn--active {
@@ -2257,17 +2460,17 @@
 }
 .nexusai-quiz__open-hint {
     font-size: 11.5px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     margin: 0;
     font-style: italic;
 }
 .nexusai-quiz__open-textarea {
     padding: 10px 12px;
-    border: 1.5px solid #e2e8f0;
+    border: 1.5px solid var(--nexusai-border);
     border-radius: 8px;
     font-size: 13px;
     color: var(--nexusai-fg);
-    background: #fff;
+    background: var(--nexusai-bg);
     resize: vertical;
     outline: none;
     font-family: inherit;
@@ -2276,7 +2479,7 @@
     min-height: 100px;
 }
 .nexusai-quiz__open-textarea:focus { border-color: var(--nexusai-primary); }
-.nexusai-quiz__open-textarea:disabled { background: #f8fafc; color: #94a3b8; }
+.nexusai-quiz__open-textarea:disabled { background: var(--nexusai-bg-muted); color: var(--nexusai-fg-subtle); }
 
 /* Spinner inline dentro del botón Verificar (preguntas abiertas) */
 .nexusai-quiz__btn-spinner {
@@ -2333,7 +2536,7 @@
 .nexusai-quiz__spinner {
     width: 32px;
     height: 32px;
-    border: 3px solid #e2e8f0;
+    border: 3px solid var(--nexusai-border);
     border-top-color: var(--nexusai-primary);
     border-radius: 50%;
     animation: nexusai-quiz-spin .8s linear infinite;
@@ -2343,7 +2546,7 @@
 }
 .nexusai-quiz__loading-text {
     font-size: 12.5px;
-    color: #64748b;
+    color: var(--nexusai-fg-muted);
     margin: 6px 0 0;
 }
 
@@ -2355,12 +2558,12 @@
 }
 .nexusai-quiz__progress-label {
     font-size: 11px;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle);
     font-weight: 500;
 }
 .nexusai-quiz__progress-bar {
     height: 4px;
-    background: #f1f5f9;
+    background: var(--nexusai-bg-subtle);
     border-radius: 2px;
     overflow: hidden;
 }
@@ -2389,8 +2592,8 @@
     align-items: flex-start;
     gap: 10px;
     padding: 10px 12px;
-    background: #fff;
-    border: 1.5px solid #e2e8f0;
+    background: var(--nexusai-bg);
+    border: 1.5px solid var(--nexusai-border);
     border-radius: 8px;
     font-size: 13px;
     color: var(--nexusai-fg);
@@ -2399,8 +2602,8 @@
     transition: border-color .12s, background .12s, transform .08s;
 }
 .nexusai-quiz__option:hover:not(:disabled) {
-    border-color: #c6d4f0;
-    background: #f7f8fc;
+    border-color: var(--nexusai-border-hover);
+    background: var(--nexusai-surface);
 }
 .nexusai-quiz__option:active:not(:disabled) {
     transform: scale(0.98);
@@ -2410,7 +2613,7 @@
 }
 .nexusai-quiz__option--selected {
     border-color: var(--nexusai-primary);
-    background: #e6edfb;
+    background: var(--nexusai-primary-subtle);
 }
 .nexusai-quiz__option--correct {
     border-color: #16a34a;
@@ -2428,8 +2631,8 @@
     justify-content: center;
     width: 22px;
     height: 22px;
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--nexusai-bg-subtle);
+    color: var(--nexusai-fg-muted);
     border-radius: 6px;
     font-weight: 600;
     font-size: 11.5px;
@@ -2642,18 +2845,18 @@
     font-size: 12.5px;
     font-weight: 600;
     color: var(--nexusai-primary, #6366f1);
-    background: #f7f8fc;
-    border: 1px solid #e2e8f0;
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     cursor: pointer;
     transition: all .12s;
 }
-.nexusai-review__load-more:hover { border-color: #c6d4f0; }
-.nexusai-review__load-more:disabled { color: #94a3b8; cursor: default; }
+.nexusai-review__load-more:hover { border-color: var(--nexusai-border-hover); }
+.nexusai-review__load-more:disabled { color: var(--nexusai-fg-subtle); cursor: default; }
 
 /* Individual card */
 .nexusai-review__card {
-    background: #fff;
+    background: var(--nexusai-bg);
     border: 1.5px solid var(--nexusai-border);
     border-radius: var(--nexusai-radius-md);
     padding: 12px;
@@ -2785,8 +2988,8 @@
 
 /* Explicación expandida */
 .nexusai-review__explanation {
-    background: #fafbff;
-    border: 1px solid #e0e7ff;
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-primary-ring);
     border-radius: var(--nexusai-radius);
     padding: 8px 10px;
     font-size: 12.5px;
@@ -2835,7 +3038,7 @@
     background: var(--nexusai-primary-light);
 }
 .nexusai-review__source--link:hover {
-    background: #e0e7ff;
+    background: var(--nexusai-primary-ring);
     border-color: #a5b4fc;
 }
 .nexusai-review__source:disabled {
@@ -2844,8 +3047,8 @@
 
 /* Sugerencias de repaso (SP-10) */
 .nexusai-review__suggestions {
-    background: #fafbff;
-    border: 1px solid #e0e7ff;
+    background: var(--nexusai-surface);
+    border: 1px solid var(--nexusai-primary-ring);
     border-radius: var(--nexusai-radius-md);
     padding: 12px;
     display: flex;
@@ -2892,8 +3095,8 @@
     gap: 8px;
 }
 .nexusai-review__suggestion-card {
-    background: #fff;
-    border: 1px solid #e0e7ff;
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-primary-ring);
     border-radius: var(--nexusai-radius);
     padding: 10px;
     display: flex;
@@ -2990,8 +3193,8 @@
     gap: 8px;
 }
 .nexusai-studyplan__card {
-    background: #fff;
-    border: 1px solid #e0e7ff;
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-primary-ring);
     border-radius: var(--nexusai-radius);
     padding: 10px;
     display: flex;
@@ -3089,7 +3292,7 @@
     font-size: 12px;
     border: 1px solid var(--nexusai-border);
     border-radius: 6px;
-    background: #fff;
+    background: var(--nexusai-bg);
     color: var(--nexusai-fg);
 }
 .nexusai-studyplan__review-btn {
@@ -3117,7 +3320,7 @@
     padding: 10px 0;
 }
 .nexusai-studyplan__review-result {
-    background: #fff;
+    background: var(--nexusai-bg);
     border: 1px solid var(--nexusai-border);
     border-radius: 6px;
     padding: 10px;
