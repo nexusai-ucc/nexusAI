@@ -466,6 +466,19 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Resumen semanal del foro + señal de urgencia por hilo, para el
+    // docente (FOR-06 / #367, FOR-05 / #366). Panel del widget React
+    // (teacherOnly), no un AMD module nativo como las otras 3 funciones de foro.
+    'local_nexusai_forum_weekly_digest' => [
+        'classname'     => '\local_nexusai\external\forum_weekly_digest',
+        'methodname'    => 'execute',
+        'description'   => 'Get a weekly digest of forum activity across the course, with per-thread urgency flags.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:manage',
+        'loginrequired' => true,
+    ],
+
     // ----- DOCENTE -----
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.

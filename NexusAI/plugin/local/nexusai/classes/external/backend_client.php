@@ -940,6 +940,28 @@ class backend_client {
     }
 
     /**
+     * Resumen semanal del foro (FOR-06, #367) + señal de urgencia por hilo
+     * (FOR-05, #366) — un solo endpoint combinado, ver docstring del router.
+     *
+     * @param int   $courseid    ID del curso.
+     * @param int   $days        Ventana de días hacia atrás.
+     * @param array $discussions Array de ['discussion_id', 'discussion_name', 'forum_name', 'posts' => [...]].
+     * @return array {course_id, period_days, discussion_count, discussions, summary}
+     */
+    public function weekly_digest(int $courseid, int $days, array $discussions): array {
+        $payload = [
+            'course_id'   => $courseid,
+            'days'        => $days,
+            'discussions' => $discussions,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/weekly-digest', $body);
+    }
+
+    /**
      * Genera una sugerencia de respuesta para un post de foro (F-05).
      *
      * @param int    $discussionid   ID de la discusión.
