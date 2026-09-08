@@ -145,7 +145,11 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
 
     if (loading) {
         return (
-            <div className="nexusai-studyplan nexusai-studyplan--loading">
+            <div
+                className="nexusai-studyplan nexusai-studyplan--loading"
+                role="status"
+                aria-label={lang === "es" ? "Cargando plan de estudio" : "Loading study plan"}
+            >
                 <div className="nexusai-quiz__spinner" />
             </div>
         );
@@ -179,6 +183,7 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
                             value={selectedSection}
                             onChange={(e) => setSelectedSection(e.target.value)}
                             disabled={summaryLoading}
+                            aria-label={lang === "es" ? "Unidad para el resumen de repaso" : "Unit for the review summary"}
                         >
                             <option value="">{L.allSections}</option>
                             {sections.map((s) => (
@@ -197,7 +202,7 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
                 </div>
 
                 {summaryLoading && (
-                    <div className="nexusai-studyplan__review-loading">
+                    <div className="nexusai-studyplan__review-loading" role="status" aria-label={L.generating}>
                         <div className="nexusai-quiz__spinner" />
                     </div>
                 )}
@@ -245,6 +250,7 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
                                     type="button"
                                     className="nexusai-studyplan__card-btn"
                                     onClick={() => onPracticeTopic?.(t.suggested_quiz_topic || t.topic)}
+                                    aria-label={`${L.practice}: ${t.topic}`}
                                 >
                                     {L.practice}
                                 </button>
@@ -253,6 +259,7 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
                                     className="nexusai-studyplan__card-btn nexusai-studyplan__card-btn--ghost"
                                     onClick={() => handleDismissTopic(t, i)}
                                     disabled={dismissingIdx === i}
+                                    aria-label={`${L.dismiss}: ${t.topic}`}
                                 >
                                     {dismissingIdx === i ? L.dismissing : L.dismiss}
                                 </button>

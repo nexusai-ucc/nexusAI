@@ -525,28 +525,32 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     <p className="nexusai-quiz__intro-text">{L.introText}</p>
                 </div>
                 <div className="nexusai-quiz__field">
-                    <label className="nexusai-quiz__label">{L.topicLabel}</label>
+                    <label className="nexusai-quiz__label" htmlFor="nexusai-quiz-topic">{L.topicLabel}</label>
                     <input
+                        id="nexusai-quiz-topic"
                         type="text"
                         className={`nexusai-quiz__input${topicError ? " nexusai-quiz__input--error" : ""}`}
                         placeholder={L.topicPlaceholder}
                         value={topic}
                         onChange={(e) => { setTopic(e.target.value); setTopicError(null); }}
                         maxLength={200}
+                        aria-invalid={!!topicError}
+                        aria-describedby={topicError ? "nexusai-quiz-topic-error" : undefined}
                     />
                     {topicError && (
-                        <p className="nexusai-quiz__topic-error">{topicError}</p>
+                        <p className="nexusai-quiz__topic-error" id="nexusai-quiz-topic-error" role="alert">{topicError}</p>
                     )}
                 </div>
                 <div className="nexusai-quiz__field">
-                    <label className="nexusai-quiz__label">{L.typeLabel}</label>
-                    <div className="nexusai-quiz__typebtns">
+                    <span className="nexusai-quiz__label" id="nexusai-quiz-type-label">{L.typeLabel}</span>
+                    <div className="nexusai-quiz__typebtns" role="group" aria-labelledby="nexusai-quiz-type-label">
                         {typeOptions.map(({ key, label }) => (
                             <button
                                 key={key}
                                 type="button"
                                 className={`nexusai-quiz__typebtn ${questionType === key ? "nexusai-quiz__typebtn--active" : ""}`}
                                 onClick={() => setQuestionType(key)}
+                                aria-pressed={questionType === key}
                             >
                                 {label}
                             </button>
@@ -559,14 +563,15 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     )}
                 </div>
                 <div className="nexusai-quiz__field">
-                    <label className="nexusai-quiz__label">{L.nQuestions}</label>
-                    <div className="nexusai-quiz__numbtns">
+                    <span className="nexusai-quiz__label" id="nexusai-quiz-num-label">{L.nQuestions}</span>
+                    <div className="nexusai-quiz__numbtns" role="group" aria-labelledby="nexusai-quiz-num-label">
                         {[3, 5, 7, 10].map((n) => (
                             <button
                                 key={n}
                                 type="button"
                                 className={`nexusai-quiz__numbtn ${numQuestions === n ? "nexusai-quiz__numbtn--active" : ""}`}
                                 onClick={() => setNumQuestions(n)}
+                                aria-pressed={numQuestions === n}
                             >
                                 {n}
                             </button>
@@ -574,17 +579,18 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     </div>
                 </div>
                 <div className="nexusai-quiz__field">
-                    <label className="nexusai-quiz__label">{L.difficultyLabel}</label>
+                    <span className="nexusai-quiz__label" id="nexusai-quiz-diff-label">{L.difficultyLabel}</span>
                     {difficultySuggestion?.reason && (
                         <p className="nexusai-quiz__diff-suggestion">{difficultySuggestion.reason}</p>
                     )}
-                    <div className="nexusai-quiz__diffbtns">
+                    <div className="nexusai-quiz__diffbtns" role="group" aria-labelledby="nexusai-quiz-diff-label">
                         {difficultyOptions.map(({ key, label }) => (
                             <button
                                 key={key}
                                 type="button"
                                 className={`nexusai-quiz__diffbtn ${difficulty === key ? "nexusai-quiz__diffbtn--active" : ""}`}
                                 onClick={() => setDifficulty(key)}
+                                aria-pressed={difficulty === key}
                             >
                                 {label}
                             </button>
@@ -630,7 +636,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     // ─── LOADING ───
     if (stage === "loading") {
         return (
-            <div className="nexusai-quiz nexusai-quiz--center">
+            <div className="nexusai-quiz nexusai-quiz--center" role="status">
                 <div className="nexusai-quiz__spinner" />
                 <p className="nexusai-quiz__loading-text">{L.generating}</p>
             </div>
@@ -641,7 +647,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     if (stage === "error") {
         return (
             <div className="nexusai-quiz nexusai-quiz--center">
-                <p className="nexusai-error__text">{error || L.errorGeneric}</p>
+                <p className="nexusai-error__text" role="alert">{error || L.errorGeneric}</p>
                 <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
                     <button type="button" className="nexusai-quiz__primary" onClick={start}>
                         {L.retry}
@@ -723,6 +729,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                                     className={cls}
                                     onClick={() => !reveal && setSelectedIdx(i)}
                                     disabled={reveal}
+                                    aria-pressed={isSelected}
                                 >
                                     <span className="nexusai-quiz__option-letter">{letter}</span>
                                     <span className="nexusai-quiz__option-text">{opt}</span>
@@ -778,7 +785,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
 
                 {/* ── Feedback después de verificar ── */}
                 {reveal && !isFlashcard && (
-                    <div className={`nexusai-quiz__feedback ${
+                    <div role="status" className={`nexusai-quiz__feedback ${
                         (isOpen || isFillBlank)
                             ? (evaluation?.correct ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong")
                             : (selectedIdx === q.correct_index ? "nexusai-quiz__feedback--correct" : "nexusai-quiz__feedback--wrong")
@@ -982,7 +989,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 </div>
 
                 {historyLoading && (
-                    <div className="nexusai-quiz nexusai-quiz--center">
+                    <div className="nexusai-quiz nexusai-quiz--center" role="status">
                         <div className="nexusai-quiz__spinner" />
                         <p className="nexusai-quiz__loading-text">{L.historyLoading}</p>
                     </div>

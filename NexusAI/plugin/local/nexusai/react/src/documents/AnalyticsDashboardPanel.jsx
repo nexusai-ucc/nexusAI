@@ -16,6 +16,37 @@ import { useEffect, useState } from "react";
 import { getAnalyticsDashboard } from "./api.js";
 import { IconBarChart, IconClipboardList, IconHelpCircle, IconTarget, IconThumbsUp } from "../components/icons.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
+import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
+
+// UX-12 (#370): silueta de carga — fila de cards de métricas + dos
+// secciones con barras, aproximando el layout real de abajo.
+function AnalyticsSkeleton() {
+    return (
+        <SkeletonScreen label="Cargando analytics...">
+            <div className="nexusai-skeleton-analytics__stats">
+                {Array.from({ length: 5 }, (_, i) => (
+                    <div key={i} className="nexusai-skeleton-analytics__stat">
+                        <Skeleton width={16} height={16} radius="50%" />
+                        <Skeleton width="40%" height={22} />
+                        <Skeleton width="80%" height={10} />
+                    </div>
+                ))}
+            </div>
+            <div className="nexusai-skeleton-analytics__grid">
+                {Array.from({ length: 2 }, (_, i) => (
+                    <div key={i} className="nexusai-skeleton-analytics__section">
+                        <Skeleton width="50%" height={14} />
+                        <div className="nexusai-skeleton-analytics__bars">
+                            {Array.from({ length: 7 }, (_, j) => (
+                                <Skeleton key={j} height={`${30 + ((j * 37) % 60)}%`} />
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </SkeletonScreen>
+    );
+}
 
 export default function AnalyticsDashboardPanel({ courseId }) {
     const [data, setData] = useState(null);
@@ -92,7 +123,7 @@ export default function AnalyticsDashboardPanel({ courseId }) {
                 ))}
             </div>
 
-            {loading && <div className="nexusai-loading">Cargando analytics...</div>}
+            {loading && <AnalyticsSkeleton />}
 
             {error && (
                 <div className="nexusai-alert nexusai-alert--error" role="alert">
