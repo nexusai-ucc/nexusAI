@@ -309,6 +309,31 @@ export async function deleteDocument(courseId, documentId) {
     });
 }
 
+/**
+ * Reindexa un documento ya subido, sin pedir un archivo nuevo (CONT-09,
+ * #358) — reusa el archivo que ya está guardado en el servidor.
+ *
+ * @param {number} courseId
+ * @param {string} documentId
+ */
+export async function reindexDocument(courseId, documentId) {
+    if (typeof window === "undefined" || !window.M?.cfg) {
+        await new Promise((r) => setTimeout(r, 300));
+        const mock = MOCK_DOCS.find((d) => d.id === documentId);
+        if (mock) {
+            mock.status = "pending";
+            mock.error_message = null;
+            setTimeout(() => { mock.status = "indexing"; }, 1000);
+            setTimeout(() => { mock.status = "indexed"; }, 2500);
+        }
+        return mock || { id: documentId, status: "pending" };
+    }
+    return callMoodle("local_nexusai_document_reindex", {
+        courseid:   courseId,
+        documentid: documentId,
+    });
+}
+
 // ============================================================
 // Helpers
 // ============================================================

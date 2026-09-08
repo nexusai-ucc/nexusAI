@@ -8,7 +8,7 @@
 
 import { useRef, useState } from "react";
 
-import { deleteDocument, getDocumentPreview, replaceDocument } from "./api.js";
+import { deleteDocument, getDocumentPreview, reindexDocument, replaceDocument } from "./api.js";
 import { IconFileText } from "../components/icons.jsx";
 import { useToast } from "../components/Toast.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
@@ -20,7 +20,83 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
     const [deletingId, setDeletingId]   = useState(null);
     const [confirmDoc, setConfirmDoc]   = useState(null);
     const [deleteError, setDeleteError] = useState(null);
-    const { showSuccess } = useToast();
+    const { showSuccess, showWarning } = useToast();
+
+    // CONT-09 (#358): acciones en lote — selección múltiple + reindexar/borrar
+    // varios documentos de una. Ejecución SECUENCIAL (no Promise.all), mismo
+    // criterio que uploadQueue (SP-13): da feedback de progreso por ítem y no
+    // satura el backend/LLM de golpe si se seleccionan muchos.
+    const [selectedIds, setSelectedIds] = useState(() => new Set());
+    const [bulkConfirm, setBulkConfirm] = useState(null); // { type: "delete"|"reindex", docs }
+    const [bulkRunning, setBulkRunning] = useState(false);
+    const [bulkQueue, setBulkQueue]     = useState([]); // [{ id, filename, status, error }]
+
+    const allSelected = documents.length > 0 && selectedIds.size === documents.length;
+    const someSelected = selectedIds.size > 0 && !allSelected;
+
+    const toggleSelectAll = () => {
+        setSelectedIds(allSelected ? new Set() : new Set(documents.map((d) => d.id)));
+    };
+
+    const toggleSelectOne = (id) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
+    const clearSelection = () => setSelectedIds(new Set());
+
+    const requestBulkAction = (type) => {
+        const docs = documents.filter((d) => selectedIds.has(d.id));
+        if (!docs.length) return;
+        setBulkConfirm({ type, docs });
+    };
+
+    const runBulkAction = async () => {
+        const { type, docs } = bulkConfirm;
+        setBulkConfirm(null);
+        setBulkRunning(true);
+        setBulkQueue(docs.map((d) => ({ id: d.id, filename: d.filename, status: "queued", error: null })));
+
+        let failed = 0;
+        for (const doc of docs) {
+            setBulkQueue((prev) => prev.map((it) => (it.id === doc.id ? { ...it, status: "running" } : it)));
+            try {
+                if (type === "delete") {
+                    await deleteDocument(courseId, doc.id);
+                    onChange((prev) => prev.filter((d) => d.id !== doc.id));
+                } else {
+                    const updated = await reindexDocument(courseId, doc.id);
+                    onChange((prev) => prev.map((d) => (d.id === doc.id ? { ...d, ...updated } : d)));
+                }
+                setBulkQueue((prev) => prev.map((it) => (it.id === doc.id ? { ...it, status: "done" } : it)));
+            } catch (err) {
+                failed += 1;
+                const message = getFriendlyErrorMessage(
+                    err,
+                    type === "delete" ? "No se pudo eliminar." : "No se pudo reindexar."
+                );
+                setBulkQueue((prev) => prev.map((it) => (it.id === doc.id ? { ...it, status: "error", error: message } : it)));
+            }
+        }
+
+        setBulkRunning(false);
+        clearSelection();
+        const ok = docs.length - failed;
+        const verb = type === "delete" ? "eliminados" : "reindexados";
+        if (failed === 0) {
+            showSuccess(`${ok} documento${ok === 1 ? "" : "s"} ${verb} correctamente`);
+            setBulkQueue([]);
+        } else {
+            showWarning(`${ok} de ${docs.length} documentos ${verb} — ${failed} con error`);
+            // La cola queda visible con el detalle de qué falló (se limpia
+            // sola en la próxima corrida, o el docente la descarta a mano).
+        }
+    };
+
+    const dismissBulkQueue = () => setBulkQueue([]);
 
     // CONT-07 (#356): reemplazar el archivo de un documento sin cambiar su id.
     // Flujo: click "Reemplazar" → abre el file picker (input oculto) → al
@@ -118,10 +194,83 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
 
     return (
         <>
+            {selectedIds.size > 0 && (
+                <div className="nexusai-bulkbar">
+                    <span className="nexusai-bulkbar__count">
+                        {selectedIds.size} seleccionado{selectedIds.size === 1 ? "" : "s"}
+                    </span>
+                    <button
+                        type="button"
+                        className="nexusai-link-btn"
+                        onClick={() => requestBulkAction("reindex")}
+                        disabled={bulkRunning}
+                    >
+                        Reindexar
+                    </button>
+                    <button
+                        type="button"
+                        className="nexusai-link-btn nexusai-link-btn--danger"
+                        onClick={() => requestBulkAction("delete")}
+                        disabled={bulkRunning}
+                    >
+                        Eliminar
+                    </button>
+                    <button
+                        type="button"
+                        className="nexusai-bulkbar__cancel"
+                        onClick={clearSelection}
+                        disabled={bulkRunning}
+                    >
+                        Cancelar selección
+                    </button>
+                </div>
+            )}
+
+            {bulkQueue.length > 0 && (
+                <ul className="nexusai-upload-queue">
+                    {bulkQueue.map((item) => (
+                        <li
+                            key={item.id}
+                            className={`nexusai-upload-queue__item ${item.status === "error" ? "nexusai-upload-queue__item--error" : ""}`}
+                        >
+                            <span className="nexusai-upload-queue__name">{item.filename}</span>
+                            {item.status === "error" ? (
+                                <>
+                                    <span className="nexusai-upload-queue__status">{item.error}</span>
+                                    {!bulkRunning && (
+                                        <button
+                                            type="button"
+                                            className="nexusai-upload-queue__dismiss"
+                                            onClick={dismissBulkQueue}
+                                            aria-label={`Descartar error de ${item.filename}`}
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </>
+                            ) : (
+                                <span className="nexusai-upload-queue__status">
+                                    {{ queued: "En cola...", running: "Procesando...", done: "Listo" }[item.status]}
+                                </span>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
+
             <div className="nexusai-table-wrap">
                 <table className="nexusai-table">
                     <thead>
                         <tr>
+                            <th className="nexusai-table__checkbox-col">
+                                <input
+                                    type="checkbox"
+                                    checked={allSelected}
+                                    ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                                    onChange={toggleSelectAll}
+                                    aria-label="Seleccionar todos los documentos"
+                                />
+                            </th>
                             <th>Archivo</th>
                             <th>Estado</th>
                             <th>Fecha</th>
@@ -133,6 +282,8 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                             <DocumentRow
                                 key={doc.id}
                                 doc={doc}
+                                selected={selectedIds.has(doc.id)}
+                                onToggleSelect={() => toggleSelectOne(doc.id)}
                                 onDelete={() => handleDeleteRequest(doc)}
                                 deleting={deletingId === doc.id}
                                 onReplace={() => handleReplaceRequest(doc)}
@@ -179,6 +330,30 @@ export default function DocumentsTable({ courseId, documents, onChange }) {
                     <strong>{replaceTarget.file.name}</strong>? El documento se
                     re-indexa desde cero; las citas viejas del chat siguen
                     apuntando a este mismo material.
+                </ConfirmModal>
+            )}
+
+            {bulkConfirm && (
+                <ConfirmModal
+                    title={bulkConfirm.type === "delete" ? "Eliminar documentos" : "Reindexar documentos"}
+                    confirmLabel={bulkConfirm.type === "delete" ? "Eliminar" : "Reindexar"}
+                    cancelLabel="Cancelar"
+                    danger={bulkConfirm.type === "delete"}
+                    onConfirm={runBulkAction}
+                    onCancel={() => setBulkConfirm(null)}
+                >
+                    {bulkConfirm.type === "delete" ? (
+                        <>
+                            ¿Borrar <strong>{bulkConfirm.docs.length}</strong> documentos? Esto
+                            elimina cada uno y todos sus chunks indexados. La acción no se puede
+                            deshacer.
+                        </>
+                    ) : (
+                        <>
+                            ¿Reindexar <strong>{bulkConfirm.docs.length}</strong> documentos? Puede
+                            tardar unos minutos por archivo.
+                        </>
+                    )}
                 </ConfirmModal>
             )}
 
@@ -240,12 +415,20 @@ export function ErrorModal({ message, onClose }) {
 // Fila de tabla
 // ============================================================
 
-function DocumentRow({ doc, onDelete, deleting, onReplace, replacing, previewOpen, preview, onTogglePreview }) {
+function DocumentRow({ doc, selected, onToggleSelect, onDelete, deleting, onReplace, replacing, previewOpen, preview, onTogglePreview }) {
     const showDate = STABLE_STATUSES.has(doc.status);
     const canPreview = doc.status === "indexed";
     return (
         <>
             <tr className={`nexusai-table__row nexusai-table__row--${doc.status}`}>
+                <td className="nexusai-table__checkbox-col">
+                    <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={onToggleSelect}
+                        aria-label={`Seleccionar ${doc.filename}`}
+                    />
+                </td>
                 <td>
                     <div className="nexusai-table__filename">
                         <span className="nexusai-table__filename-icon"><IconFileText size={14} /></span>
@@ -294,7 +477,7 @@ function DocumentRow({ doc, onDelete, deleting, onReplace, replacing, previewOpe
             </tr>
             {previewOpen && (
                 <tr className="nexusai-table__preview-row">
-                    <td colSpan={4}>
+                    <td colSpan={5}>
                         <DocumentPreview preview={preview} />
                     </td>
                 </tr>

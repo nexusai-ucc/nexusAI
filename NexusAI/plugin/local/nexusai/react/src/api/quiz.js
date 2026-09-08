@@ -509,3 +509,25 @@ export async function submitFlashcardReviews(courseId, reviews) {
 
     return response;
 }
+
+/**
+ * Racha de días consecutivos de actividad del alumno en el curso (intentos
+ * de quiz o preguntas al chat) — SP-16 / #354.
+ *
+ * @param {number} courseId
+ * @returns {Promise<{current_streak:number, practiced_today:boolean}>}
+ */
+export async function getStudyStreak(courseId) {
+    const ajax = await getMoodleAjax();
+    if (!ajax) return { current_streak: 0, practiced_today: false };
+
+    const [response] = await ajax.call([{
+        methodname: "local_nexusai_quiz_streak",
+        args: { courseid: courseId },
+    }]);
+
+    return {
+        current_streak: response.currentstreak ?? 0,
+        practiced_today: response.practicedtoday ?? false,
+    };
+}
