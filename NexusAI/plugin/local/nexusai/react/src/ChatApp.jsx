@@ -646,6 +646,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         onSend={send}
                         disabled={loading}
                         placeholder={t.placeholder}
+                        courseId={courseid}
                     />
 
                     {/* Footer */}

@@ -1,5 +1,10 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// NexusAI is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
 /**
  * Página de settings de admin para local_nexusai.

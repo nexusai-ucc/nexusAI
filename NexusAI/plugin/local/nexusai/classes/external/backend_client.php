@@ -808,6 +808,23 @@ class backend_client {
     }
 
     /**
+     * Transcribe un audio corto (pregunta hablada) a texto (VOICE-01, #314).
+     *
+     * @return array {text}
+     */
+    public function transcribe_audio(string $mimetype, string $audiobytes): array {
+        $payload = [
+            'mime_type'   => $mimetype,
+            'content_b64' => base64_encode($audiobytes),
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/voice/transcribe', $body);
+    }
+
+    /**
      * CONT-07 (#356): reemplaza el archivo de un documento existente sin
      * cambiar su document_id (las citas viejas del chat siguen apuntando al
      * mismo id).

@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<!--
+PUB-01 (issue #309): declara las librerías de terceros empaquetadas dentro
+del bundle React/webpack compilado en amd/build/ — requerido por moodle.org
+para cualquier plugin que distribuya código de terceros. El source (sin
+compilar) está en react/package.json; esto documenta lo que efectivamente
+queda minificado dentro de los dos bundles AMD commiteados.
+-->
+<libraries>
+    <library>
+        <name>react</name>
+        <location>amd/build/chatwidget-lazy.min.js, amd/build/documents-manager-lazy.min.js</location>
+        <version>18.3.1</version>
+        <license>MIT</license>
+    </library>
+    <library>
+        <name>react-dom</name>
+        <location>amd/build/chatwidget-lazy.min.js, amd/build/documents-manager-lazy.min.js</location>
+        <version>18.3.1</version>
+        <license>MIT</license>
+    </library>
+    <library>
+        <name>react-markdown</name>
+        <location>amd/build/chatwidget-lazy.min.js</location>
+        <version>9.1.0</version>
+        <license>MIT</license>
+    </library>
+    <library>
+        <name>remark-gfm</name>
+        <location>amd/build/chatwidget-lazy.min.js</location>
+        <version>4.0.1</version>
+        <license>MIT</license>
+    </library>
+    <library>
+        <name>marked</name>
+        <location>amd/build/chatwidget-lazy.min.js</location>
+        <version>12.0.2</version>
+        <license>MIT</license>
+    </library>
+    <library>
+        <name>dompurify</name>
+        <location>amd/build/chatwidget-lazy.min.js</location>
+        <version>3.4.13</version>
+        <license>Apache-2.0</license>
+        <licenseversion>2.0</licenseversion>
+    </library>
+    <library>
+        <name>temml</name>
+        <location>amd/build/chatwidget-lazy.min.js</location>
+        <version>0.11.0</version>
+        <license>MIT</license>
+    </library>
+</libraries>
