@@ -14,12 +14,18 @@
  * input para verlo entero o sacarlo. Al enviar, cada placeholder que sigue
  * presente en el texto se reemplaza por su contenido real — si el alumno lo
  * borró a mano, esa parte simplemente no se reinserta.
+ *
+ * ASIST-05 (#375): el límite de MAX_CHARS ya se aplicaba en silencio (el
+ * textarea simplemente dejaba de crecer), sin ningún aviso previo. El
+ * contador solo se muestra cerca del límite (CHARS_WARNING_THRESHOLD) para
+ * no ensuciar la UI en el uso normal de una pregunta corta.
  */
 
 import { useEffect, useRef, useState } from "react";
 import { IconFile, IconX } from "./icons.jsx";
 
 const MAX_CHARS = 2000;
+const CHARS_WARNING_THRESHOLD = 1800;
 
 // Umbral para colapsar un pegado — mismo criterio que sugiere el issue.
 const PASTE_LINES_THRESHOLD = 15;
@@ -100,6 +106,8 @@ export default function ChatInput({ onSend, disabled, placeholder }) {
     };
 
     const previewPaste = pastes.find((p) => p.id === previewId) || null;
+    const atLimit = value.length >= MAX_CHARS;
+    const showCounter = value.length >= CHARS_WARNING_THRESHOLD;
 
     return (
         <div className="nexusai-input-wrap">
@@ -172,6 +180,17 @@ export default function ChatInput({ onSend, disabled, placeholder }) {
                     </svg>
                 </button>
             </div>
+
+            {showCounter && (
+                <div
+                    className={`nexusai-input__counter ${atLimit ? "nexusai-input__counter--limit" : "nexusai-input__counter--warning"}`}
+                    role="status"
+                >
+                    {atLimit
+                        ? `Llegaste al límite de ${MAX_CHARS} caracteres`
+                        : `${value.length} / ${MAX_CHARS} caracteres`}
+                </div>
+            )}
         </div>
     );
 }
