@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Regla de visibilidad compartida del widget (UX-02).
@@ -19,10 +32,11 @@
 
 namespace local_nexusai;
 
-defined('MOODLE_INTERNAL') || die();
-
+/**
+ * Regla única de visibilidad del widget de NexusAI, compartida por before_footer_listener
+ * y primary_extend_listener para que nunca haya un ícono clickeable sin panel detrás.
+ */
 class visibility_helper {
-
     /**
      * Resuelve si el usuario actual debe ver el widget en la página actual y,
      * si es dentro de un curso real, si tiene la capability para usarlo.
