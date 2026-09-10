@@ -32,7 +32,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Persiste el resultado de un quiz completado por el alumno (SP-09 — historial de quizzes).
+ */
 class quiz_attempt_save extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'       => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -44,6 +52,11 @@ class quiz_attempt_save extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'id'    => new \external_value(PARAM_RAW, 'UUID del intento guardado'),
@@ -51,6 +64,17 @@ class quiz_attempt_save extends \external_api {
         ]);
     }
 
+    /**
+     * Persiste el resultado de un quiz completado por el alumno (SP-09 — historial de quizzes).
+     *
+     * @param int $courseid ID del curso
+     * @param string $questiontype Tipo de quiz generado
+     * @param string $difficulty Dificultad (easy|medium|hard)
+     * @param string $topic Tema (opcional)
+     * @param int $totalquestions Cantidad total de preguntas (1..10)
+     * @param int $correctcount Cantidad de respuestas correctas (0..10)
+     * @return array
+     */
     public static function execute(int $courseid, string $questiontype, string $difficulty = 'medium', string $topic = '', int $totalquestions = 0, int $correctcount = 0): array {
         global $USER;
 

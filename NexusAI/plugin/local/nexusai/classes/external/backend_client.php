@@ -40,8 +40,10 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
+/**
+ * Cliente HTTP al backend Python: firma cada request con HMAC de 3 capas (ADR-005) y expone
+ * un método por endpoint (chat, documentos, quiz, foros, calendario, analytics, privacidad, etc.).
+ */
 class backend_client {
     /** @var string Endpoint base del backend (ej: http://localhost:8001) */
     private string $endpoint;
@@ -152,8 +154,8 @@ class backend_client {
         string $question,
         ?string $sessionid = null
     ): array {
-        // course_id principal: el primero de la lista (el schema lo exige > 0
-        // por compat con clientes single-curso).
+        // El ID de curso principal es el primero de la lista (el schema lo
+        // exige > 0 por compat con clientes single-curso).
         $primarycourseid = !empty($courseids) ? (int) $courseids[0] : 0;
 
         $payload = [
@@ -250,7 +252,13 @@ class backend_client {
      * @param bool $includearchived Incluir gaps ya archivados (DOC-D08, #383).
      * @return array{course_id:int, days:int, total:int, items:array}
      */
-    public function list_gaps(int $courseid, int $days = 30, int $limit = 20, bool $includearchived = false, int $offset = 0): array {
+    public function list_gaps(
+        int $courseid,
+        int $days = 30,
+        int $limit = 20,
+        bool $includearchived = false,
+        int $offset = 0
+    ): array {
         $payload = [
             'course_id'        => $courseid,
             'days'             => $days,
@@ -330,7 +338,14 @@ class backend_client {
      * @param string      $difficulty   Dificultad (easy|medium|hard).
      * @return array{course_id:int, topic:?string, questions:array}
      */
-    public function generate_quiz(int $courseid, int $userid, ?string $topic, int $numquestions, string $questiontype = 'multiple_choice', string $difficulty = 'medium'): array {
+    public function generate_quiz(
+        int $courseid,
+        int $userid,
+        ?string $topic,
+        int $numquestions,
+        string $questiontype = 'multiple_choice',
+        string $difficulty = 'medium'
+    ): array {
         $payload = [
             'course_id'     => $courseid,
             'user_id'       => $userid,
@@ -405,7 +420,13 @@ class backend_client {
      * @param string $useranswer  Respuesta escrita por el alumno.
      * @return array{correct:bool, score:float, feedback:string}
      */
-    public function evaluate_quiz_answer(int $courseid, int $userid, string $question, string $modelanswer, string $useranswer): array {
+    public function evaluate_quiz_answer(
+        int $courseid,
+        int $userid,
+        string $question,
+        string $modelanswer,
+        string $useranswer
+    ): array {
         $payload = [
             'course_id'   => $courseid,
             'user_id'     => $userid,
@@ -497,7 +518,15 @@ class backend_client {
      * @param int         $correctcount   Cantidad de respuestas correctas.
      * @return array{id:string, created_at:string}
      */
-    public function save_quiz_attempt(int $courseid, int $userid, string $questiontype, string $difficulty, ?string $topic, int $totalquestions, int $correctcount): array {
+    public function save_quiz_attempt(
+        int $courseid,
+        int $userid,
+        string $questiontype,
+        string $difficulty,
+        ?string $topic,
+        int $totalquestions,
+        int $correctcount
+    ): array {
         $payload = [
             'course_id'       => $courseid,
             'user_id'         => $userid,
@@ -755,17 +784,17 @@ class backend_client {
     /**
      * Búsqueda semántica en el material del curso (Feature A — sin LLM).
      *
-     * @param int    $courseid ID del curso de Moodle.
-     * @param int    $userid   $USER->id real del usuario.
-     * @param string $query    Consulta (1..500 chars).
-     * @param int    $topk     Resultados máximos (1..10).
+     * @param int $courseid ID del curso de Moodle.
+     * @param int $userid $USER->id real del usuario.
+     * @param string $query Consulta (1..500 chars).
+     * @param int $topk Resultados máximos (1..10).
+     * @param int[] $courseids Cuando no está vacío, reemplaza course_id para búsqueda multi-curso.
+     * @param string $materialtype Filtra por mime type del documento (BUS-02). Vacío = sin filtro.
+     * @param int|null $section Filtra por sección del curso. Null = sin filtro.
+     * @param bool $sectionunassigned Si es true, filtra solo material sin sección asignada.
      * @return array{query:string, results:array, total:int}
      *
      * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
-     */
-    /**
-     * @param int[]  $courseids    When non-empty, overrides course_id for multi-course search.
-     * @param string $materialtype Filtra por mime type del documento (BUS-02). Vacío = sin filtro.
      */
     public function search(
         int $courseid,
@@ -814,7 +843,8 @@ class backend_client {
      * @param string $filename     Nombre del archivo.
      * @param string $mimetype     MIME type (solo 'application/pdf' aceptado en MVP).
      * @param string $filebytes    Contenido binario del archivo (raw, NO base64).
-     * @return array{id:string, course_id:int, uploader_id:int, filename:string, mime_type:string, status:string, error_message:?string}
+     * @return array{id:string, course_id:int, uploader_id:int, filename:string, mime_type:string,
+     *     status:string, error_message:?string}
      *
      * @throws \moodle_exception Si el backend rechaza o la red falla.
      */
@@ -893,9 +923,7 @@ class backend_client {
         return $this->post('/api/v1/documents/' . $documentid . '/replace', $body);
     }
 
-    // =========================================================
-    // Foros — Épica 06
-    // =========================================================
+    // Foros — Épica 06.
 
     /**
      * Indexa (o re-indexa) el embedding de un post de foro.
@@ -1115,9 +1143,7 @@ class backend_client {
         return $this->post('/api/v1/documents/pre-exam-summary', $body);
     }
 
-    // =========================================================
-    // Documentos
-    // =========================================================
+    // Documentos.
 
     /**
      * Lista los documentos indexados de un curso.
@@ -1174,9 +1200,7 @@ class backend_client {
         return $this->post('/api/v1/documents/' . $documentid . '/reindex', '{}');
     }
 
-    // ----------------------------------------------------------------
-    // CAL-02 — Alertas de calendario configurables por el alumno
-    // ----------------------------------------------------------------
+    // CAL-02 — Alertas de calendario configurables por el alumno.
 
     /**
      * Upsert de alerta de calendario. days_before=0 elimina la alerta.
@@ -1189,7 +1213,14 @@ class backend_client {
      * @param int    $daysbefore     0 = sin alerta, 1, 3 o 7 días antes.
      * @return array{id:string|null, days_before:int}
      */
-    public function save_calendar_alert(int $userid, int $courseid, int $eventid, string $eventname, int $eventtimestamp, int $daysbefore): array {
+    public function save_calendar_alert(
+        int $userid,
+        int $courseid,
+        int $eventid,
+        string $eventname,
+        int $eventtimestamp,
+        int $daysbefore
+    ): array {
         $payload = [
             'user_id'         => $userid,
             'course_id'       => $courseid,
@@ -1249,9 +1280,7 @@ class backend_client {
         return $this->post('/api/v1/calendar/alerts/mark-notified', $body);
     }
 
-    // ----------------------------------------------------------------
-    // PRIV-01 — Exportación y eliminación de datos personales (issue #310)
-    // ----------------------------------------------------------------
+    // PRIV-01 — Exportación y eliminación de datos personales (issue #310).
 
     /**
      * Exporta todo el historial personal del alumno en un curso (mensajes
@@ -1286,9 +1315,7 @@ class backend_client {
         );
     }
 
-    // ----------------------------------------------------------------
-    // ONB-02 — Estado de setup del curso (issue #425)
-    // ----------------------------------------------------------------
+    // ONB-02 — Estado de setup del curso (issue #425).
 
     /**
      * Estadísticas de material indexado en NexusAI para un curso (BACK-13).

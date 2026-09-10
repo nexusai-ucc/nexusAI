@@ -31,7 +31,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Borra una sesión de chat puntual del alumno (ASIST-02, #350).
+ */
 class chat_session_delete extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'  => new \external_value(PARAM_INT, 'Curso (para capability check)', VALUE_REQUIRED),
@@ -39,12 +47,24 @@ class chat_session_delete extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'success' => new \external_value(PARAM_BOOL, 'true si se borró correctamente'),
         ]);
     }
 
+    /**
+     * Borra una sesión de chat puntual del alumno (ASIST-02, #350).
+     *
+     * @param int $courseid Curso (para capability check)
+     * @param string $sessionid UUID de sesión a borrar
+     * @return array
+     */
     public static function execute(int $courseid, string $sessionid): array {
         global $USER;
 

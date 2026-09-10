@@ -42,6 +42,12 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Resumen semanal del foro para el docente (FOR-06, #367): junta todas las discusiones con actividad nueva en
+ * los últimos N días de TODOS los foros del curso y las manda al backend, que arma un único resumen
+ * sintetizado y además marca por hilo si parece "urgente" (FOR-05, #366, heurística sin LLM) — un solo
+ * endpoint combinado, ver docstring del router Python.
+ */
 class forum_weekly_digest extends \external_api {
     // Máximo de discusiones que se envían al backend en un solo digest —
     // mismo tope que el backend declara (WeeklyDigestRequest.discussions).
@@ -50,6 +56,11 @@ class forum_weekly_digest extends \external_api {
     const MAX_POSTS_PER_DISCUSSION = 20;
     const MAX_CHARS_PER_POST = 1000;
 
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
@@ -57,6 +68,11 @@ class forum_weekly_digest extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id'         => new \external_value(PARAM_INT, 'ID del curso'),
@@ -75,6 +91,16 @@ class forum_weekly_digest extends \external_api {
         ]);
     }
 
+    /**
+     * Resumen semanal del foro para el docente (FOR-06, #367): junta todas las discusiones con actividad
+     * nueva en los últimos N días de TODOS los foros del curso y las manda al backend, que arma un único
+     * resumen sintetizado y además marca por hilo si parece "urgente" (FOR-05, #366, heurística sin LLM) — un
+     * solo endpoint combinado, ver docstring del router Python.
+     *
+     * @param int $courseid ID del curso de Moodle
+     * @param int $days Ventana de días hacia atrás (1..30)
+     * @return array
+     */
     public static function execute(int $courseid, int $days = 7): array {
         global $DB;
 

@@ -31,7 +31,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Devuelve los mensajes completos de una sesión previa para que el frontend pueda continuar la conversación.
+ */
 class chat_session_messages extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'  => new \external_value(PARAM_INT, 'Curso (para capability check)', VALUE_REQUIRED),
@@ -39,6 +47,11 @@ class chat_session_messages extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'session_id' => new \external_value(PARAM_RAW, 'UUID de la sesión'),
@@ -53,6 +66,14 @@ class chat_session_messages extends \external_api {
         ]);
     }
 
+    /**
+     * Devuelve los mensajes completos de una sesión previa para que el frontend pueda continuar la
+     * conversación.
+     *
+     * @param int $courseid Curso (para capability check)
+     * @param string $sessionid UUID de sesión
+     * @return array
+     */
     public static function execute(int $courseid, string $sessionid): array {
         global $USER;
 

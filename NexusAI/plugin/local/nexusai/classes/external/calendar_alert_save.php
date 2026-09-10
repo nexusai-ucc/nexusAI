@@ -31,7 +31,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Guarda o actualiza la alerta de un alumno para un evento de calendario.
+ */
 class calendar_alert_save extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'userid'         => new \external_value(PARAM_INT, 'ID del usuario', VALUE_REQUIRED),
@@ -43,6 +51,11 @@ class calendar_alert_save extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'id'          => new \external_value(PARAM_TEXT, 'UUID de la alerta (null si se eliminó)', VALUE_OPTIONAL, null, NULL_ALLOWED),
@@ -50,6 +63,17 @@ class calendar_alert_save extends \external_api {
         ]);
     }
 
+    /**
+     * Guarda o actualiza la alerta de un alumno para un evento de calendario.
+     *
+     * @param int $userid ID del usuario
+     * @param int $courseid ID del curso
+     * @param int $eventid ID del evento en Moodle
+     * @param string $eventname Nombre del evento
+     * @param int $eventtimestamp Unix timestamp del evento
+     * @param int $daysbefore 0 = sin alerta, 1, 3 o 7 días antes
+     * @return array
+     */
     public static function execute(int $userid, int $courseid, int $eventid, string $eventname, int $eventtimestamp, int $daysbefore): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'userid'         => $userid,

@@ -31,19 +31,40 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Lee la URL de webhook configurada para el curso (FOR-07, #378), para precargar el campo en el panel docente
+ * al montar `ForumDigestPanel`.
+ */
 class forum_webhook_get extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'webhook_url' => new \external_value(PARAM_URL, 'URL guardada', VALUE_OPTIONAL, null, NULL_ALLOWED),
         ]);
     }
 
+    /**
+     * Lee la URL de webhook configurada para el curso (FOR-07, #378), para precargar el campo en el panel
+     * docente al montar `ForumDigestPanel`.
+     *
+     * @param int $courseid ID del curso
+     * @return array
+     */
     public static function execute(int $courseid): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid' => $courseid,

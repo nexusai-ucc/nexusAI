@@ -32,7 +32,16 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * CONT-07 (#356): reemplaza el archivo de un documento existente manteniendo su document_id (las citas viejas
+ * del chat siguen apuntando al mismo id).
+ */
 class document_replace extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'    => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
@@ -43,6 +52,11 @@ class document_replace extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'id'            => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento (sin cambios)'),

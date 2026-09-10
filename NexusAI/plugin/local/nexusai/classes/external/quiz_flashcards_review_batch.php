@@ -32,7 +32,16 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * SP-11 (#315): aplica repetición espaciada (SM-2) sobre el resultado de autoevaluación de una sesión de
+ * flashcards.
+ */
 class quiz_flashcards_review_batch extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -46,12 +55,25 @@ class quiz_flashcards_review_batch extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'updated' => new \external_value(PARAM_INT, 'Cantidad de flashcards con estado actualizado'),
         ]);
     }
 
+    /**
+     * SP-11 (#315): aplica repetición espaciada (SM-2) sobre el resultado de autoevaluación de una sesión de
+     * flashcards.
+     *
+     * @param int $courseid ID del curso
+     * @param array $reviews Resultado de autoevaluación por flashcard
+     * @return array
+     */
     public static function execute(int $courseid, array $reviews): array {
         global $USER;
 

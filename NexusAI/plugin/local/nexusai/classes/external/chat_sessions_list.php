@@ -30,7 +30,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Lista las sesiones previas del alumno para el sidebar de historial.
+ */
 class chat_sessions_list extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'   => new \external_value(PARAM_INT, 'Curso para validar capability', VALUE_REQUIRED),
@@ -44,6 +52,11 @@ class chat_sessions_list extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'sessions' => new \external_multiple_structure(
@@ -59,6 +72,14 @@ class chat_sessions_list extends \external_api {
         ]);
     }
 
+    /**
+     * Lista las sesiones previas del alumno para el sidebar de historial.
+     *
+     * @param int $courseid Curso para validar capability
+     * @param bool $scopecourse Si true, lista solo sesiones del curso actual. Si false, todas las del user.
+     * @param int $limit Máximo (1..100)
+     * @return array
+     */
     public static function execute(int $courseid, bool $scopecourse = true, int $limit = 20): array {
         global $USER;
 

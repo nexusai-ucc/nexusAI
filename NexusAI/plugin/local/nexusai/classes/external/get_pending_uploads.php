@@ -32,13 +32,26 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Devuelve la lista de archivos pendientes de confirmación para el docente actual en un curso dado.
+ */
 class get_pending_uploads extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_multiple_structure {
         return new \external_multiple_structure(
             new \external_single_structure([
@@ -49,6 +62,12 @@ class get_pending_uploads extends \external_api {
         );
     }
 
+    /**
+     * Devuelve la lista de archivos pendientes de confirmación para el docente actual en un curso dado.
+     *
+     * @param int $courseid ID del curso
+     * @return array
+     */
     public static function execute(int $courseid): array {
         global $USER;
 

@@ -32,7 +32,15 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * El docente confirmó que quiere indexar un archivo en NexusAI.
+ */
 class confirm_pending_upload extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -40,12 +48,24 @@ class confirm_pending_upload extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'success' => new \external_value(PARAM_BOOL, 'true si se indexó correctamente'),
         ]);
     }
 
+    /**
+     * El docente confirmó que quiere indexar un archivo en NexusAI.
+     *
+     * @param int $courseid ID del curso
+     * @param int $cmid Course module ID del recurso a indexar
+     * @return array
+     */
     public static function execute(int $courseid, int $cmid): array {
         global $USER;
 

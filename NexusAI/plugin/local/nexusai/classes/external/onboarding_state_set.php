@@ -36,10 +36,19 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Guarda, para el usuario actual y un curso puntual, si el tutorial fue cerrado (`dismissed`) y qué pasos
+ * opcionales están marcados "no aplica" (`skipped`).
+ */
 class onboarding_state_set extends \external_api {
     /** Tope de items en `skipped` — son 6 pasos posibles como mucho hoy, 20 da margen. */
     private const MAX_SKIPPED = 20;
 
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'  => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -52,12 +61,26 @@ class onboarding_state_set extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'success' => new \external_value(PARAM_BOOL, 'Guardado correctamente'),
         ]);
     }
 
+    /**
+     * Guarda, para el usuario actual y un curso puntual, si el tutorial fue cerrado (`dismissed`) y qué pasos
+     * opcionales están marcados "no aplica" (`skipped`).
+     *
+     * @param int $courseid ID del curso
+     * @param bool $dismissed Cerrar (true) o reabrir (false) el tutorial
+     * @param array $skipped Pasos opcionales excluidos de futuras revisiones
+     * @return array
+     */
     public static function execute(int $courseid, bool $dismissed, array $skipped): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'  => $courseid,

@@ -39,6 +39,9 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Recibe un audio corto grabado en el browser y lo reenvía al backend Python para transcribir (VOICE-01, #314).
+ */
 class chat_voice_transcribe extends \external_api {
     /** Tamaño máximo de base64 aceptado — audio corto, de sobra con 14 MB
      *  (~10 MB decodificado, inflate de base64 ~33%). */
@@ -54,6 +57,11 @@ class chat_voice_transcribe extends \external_api {
         'audio/x-m4a',
     ];
 
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'    => new \external_value(PARAM_INT, 'ID del curso (para validar capability)', VALUE_REQUIRED),
@@ -62,12 +70,25 @@ class chat_voice_transcribe extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'text' => new \external_value(PARAM_RAW, 'Texto transcripto'),
         ]);
     }
 
+    /**
+     * Transcribe un audio corto grabado en el browser vía el backend Python.
+     *
+     * @param int $courseid ID del curso (para validar capability)
+     * @param string $mimetype MIME type detectado por el browser
+     * @param string $contentb64 Audio en base64
+     * @return array
+     */
     public static function execute(int $courseid, string $mimetype, string $contentb64): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'    => $courseid,

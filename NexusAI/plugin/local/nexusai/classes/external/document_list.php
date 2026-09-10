@@ -31,7 +31,15 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Lista todos los documentos NexusAI-indexados de un curso.
+ */
 class document_list extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
@@ -43,6 +51,11 @@ class document_list extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'total' => new \external_value(PARAM_INT, 'Cantidad total de documentos del curso (para paginar, no la cantidad ya recortada por limit)'),
@@ -63,6 +76,14 @@ class document_list extends \external_api {
         ]);
     }
 
+    /**
+     * Lista todos los documentos NexusAI-indexados de un curso.
+     *
+     * @param int $courseid ID del curso de Moodle
+     * @param int $limit Máximo de items por página (sin valor: sin paginar, tope interno)
+     * @param int $offset Desde qué posición paginar
+     * @return array
+     */
     public static function execute(int $courseid, ?int $limit = null, int $offset = 0): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid' => $courseid,

@@ -30,7 +30,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Devuelve las alertas de calendario activas del alumno en el curso.
+ */
 class calendar_alerts_list extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'userid'   => new \external_value(PARAM_INT, 'ID del usuario', VALUE_REQUIRED),
@@ -38,6 +46,11 @@ class calendar_alerts_list extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'alerts' => new \external_multiple_structure(
@@ -50,6 +63,13 @@ class calendar_alerts_list extends \external_api {
         ]);
     }
 
+    /**
+     * Devuelve las alertas de calendario activas del alumno en el curso.
+     *
+     * @param int $userid ID del usuario
+     * @param int $courseid ID del curso
+     * @return array
+     */
     public static function execute(int $userid, int $courseid): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'userid'   => $userid,

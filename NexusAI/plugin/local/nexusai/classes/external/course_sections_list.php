@@ -32,13 +32,27 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Lista las secciones/unidades de un curso (número + nombre visible) para poblar el selector de sección al
+ * subir material y el filtro de búsqueda (BUS-05).
+ */
 class course_sections_list extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_multiple_structure {
         return new \external_multiple_structure(
             new \external_single_structure([
@@ -48,6 +62,13 @@ class course_sections_list extends \external_api {
         );
     }
 
+    /**
+     * Lista las secciones/unidades de un curso (número + nombre visible) para poblar el selector de sección
+     * al subir material y el filtro de búsqueda (BUS-05).
+     *
+     * @param int $courseid ID del curso
+     * @return array
+     */
     public static function execute(int $courseid): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid' => $courseid,

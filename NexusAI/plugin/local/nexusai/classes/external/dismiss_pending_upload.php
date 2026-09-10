@@ -31,19 +31,38 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * El docente eligió NO indexar el archivo en NexusAI.
+ */
 class dismiss_pending_upload extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'cmid' => new \external_value(PARAM_INT, 'Course module ID del recurso a descartar', VALUE_REQUIRED),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'success' => new \external_value(PARAM_BOOL, 'Siempre true'),
         ]);
     }
 
+    /**
+     * El docente eligió NO indexar el archivo en NexusAI.
+     *
+     * @param int $cmid Course module ID del recurso a descartar
+     * @return array
+     */
     public static function execute(int $cmid): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'cmid' => $cmid,

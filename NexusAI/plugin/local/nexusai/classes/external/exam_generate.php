@@ -32,7 +32,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Proxy entre React y el endpoint /api/v1/quiz/generate-exam del backend Python.
+ */
 class exam_generate extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'     => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -58,6 +66,11 @@ class exam_generate extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
@@ -79,6 +92,18 @@ class exam_generate extends \external_api {
         ]);
     }
 
+    /**
+     * Proxy entre React y el endpoint /api/v1/quiz/generate-exam del backend Python.
+     *
+     * @param int $courseid ID del curso
+     * @param array $documentids Archivos del curso de los que sacar las preguntas (al menos 1)
+     * @param string $topic Tema opcional
+     * @param int $numquestions Cantidad de preguntas (1..20)
+     * @param string $questiontype Tipo de pregunta (multiple_choice|true_false|open|mix)
+     * @param string $difficulty Dificultad (easy|medium|hard)
+     * @param array $topics Temas con dificultad detectada a priorizar (máx 15)
+     * @return array
+     */
     public static function execute(
         int $courseid,
         array $documentids,

@@ -31,7 +31,15 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Borra un documento indexado y todos sus chunks asociados.
+ */
 class document_delete extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'   => new \external_value(PARAM_INT, 'ID del curso (para validar capability)', VALUE_REQUIRED),
@@ -39,12 +47,24 @@ class document_delete extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'success' => new \external_value(PARAM_BOOL, 'true si se borró correctamente'),
         ]);
     }
 
+    /**
+     * Borra un documento indexado y todos sus chunks asociados.
+     *
+     * @param int $courseid ID del curso (para validar capability)
+     * @param string $documentid UUID del documento a borrar
+     * @return array
+     */
     public static function execute(int $courseid, string $documentid): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'   => $courseid,

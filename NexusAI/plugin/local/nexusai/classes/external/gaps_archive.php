@@ -36,7 +36,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Archiva o desarchiva un gap detectado (DOC-D08, issue #383).
+ */
 class gaps_archive extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'    => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -48,6 +56,11 @@ class gaps_archive extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
@@ -56,6 +69,14 @@ class gaps_archive extends \external_api {
         ]);
     }
 
+    /**
+     * Archiva o desarchiva un gap detectado (DOC-D08, issue #383).
+     *
+     * @param int $courseid ID del curso
+     * @param array $questionids IDs de las filas a archivar/desarchivar (al menos 1)
+     * @param bool $archived true para archivar, false para desarchivar
+     * @return array
+     */
     public static function execute(int $courseid, array $questionids, bool $archived): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'    => $courseid,

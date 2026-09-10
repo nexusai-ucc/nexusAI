@@ -32,11 +32,20 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Recibe el texto que el alumno está escribiendo en el editor de foro y devuelve los posts existentes en el
+ * mismo curso que sean semánticamente similares.
+ */
 class forum_search_similar extends \external_api {
     // Umbral de similitud hardcodeado en PHP para evitar problemas de conversión
     // de float en Moodle 5.x (PARAM_FLOAT convierte 0.75 a 1 via clean_param).
     const SIMILARITY_THRESHOLD = 0.65;
 
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'text'          => new \external_value(PARAM_RAW, 'Texto del post en redacción (mín 10 chars)', VALUE_REQUIRED),
@@ -46,6 +55,11 @@ class forum_search_similar extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'similar_posts' => new \external_multiple_structure(
@@ -60,6 +74,16 @@ class forum_search_similar extends \external_api {
         ]);
     }
 
+    /**
+     * Recibe el texto que el alumno está escribiendo en el editor de foro y devuelve los posts existentes en
+     * el mismo curso que sean semánticamente similares.
+     *
+     * @param string $text Texto del post en redacción (mín 10 chars)
+     * @param int $courseid ID del curso de Moodle
+     * @param int $excludepostid Post a excluir (al editar)
+     * @param int $topk Resultados máximos (1–10)
+     * @return array
+     */
     public static function execute(string $text, int $courseid, int $excludepostid = 0, int $topk = 3): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'text'          => $text,

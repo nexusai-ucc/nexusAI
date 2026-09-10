@@ -41,6 +41,9 @@ defined('MOODLE_INTERNAL') || die();
 // 4.2, así que evitamos depender de él.
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Es el proxy entre el frontend React (que llega vía core/ajax) y el backend Python NexusAI.
+ */
 class chat_send extends \external_api {
     /**
      * Define el contrato de entrada (lo que React envía vía core/ajax).

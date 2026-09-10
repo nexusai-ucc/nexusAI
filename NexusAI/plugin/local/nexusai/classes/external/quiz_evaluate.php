@@ -30,7 +30,16 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Evalúa la respuesta libre de un alumno a una pregunta abierta usando LLM (SP-05: preguntas abiertas con
+ * evaluación por IA).
+ */
 class quiz_evaluate extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'    => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -40,6 +49,11 @@ class quiz_evaluate extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'correct'  => new \external_value(PARAM_BOOL, '¿La respuesta es correcta?'),
@@ -48,6 +62,16 @@ class quiz_evaluate extends \external_api {
         ]);
     }
 
+    /**
+     * Evalúa la respuesta libre de un alumno a una pregunta abierta usando LLM (SP-05: preguntas abiertas con
+     * evaluación por IA).
+     *
+     * @param int $courseid ID del curso
+     * @param string $question Texto de la pregunta
+     * @param string $modelanswer Respuesta modelo (explanation del quiz)
+     * @param string $useranswer Respuesta escrita por el alumno
+     * @return array
+     */
     public static function execute(int $courseid, string $question, string $modelanswer, string $useranswer): array {
         global $USER;
 

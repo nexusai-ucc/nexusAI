@@ -31,13 +31,27 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * SP-16 (#354): racha de días consecutivos de actividad del alumno en el curso (intentos de quiz o preguntas
+ * al chat), derivada de datos ya persistidos en el backend — sin tabla ni migración nueva.
+ */
 class quiz_streak extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'currentstreak'  => new \external_value(PARAM_INT, 'Días consecutivos de actividad'),
@@ -45,6 +59,13 @@ class quiz_streak extends \external_api {
         ]);
     }
 
+    /**
+     * SP-16 (#354): racha de días consecutivos de actividad del alumno en el curso (intentos de quiz o
+     * preguntas al chat), derivada de datos ya persistidos en el backend — sin tabla ni migración nueva.
+     *
+     * @param int $courseid ID del curso
+     * @return array
+     */
     public static function execute(int $courseid): array {
         global $USER;
 

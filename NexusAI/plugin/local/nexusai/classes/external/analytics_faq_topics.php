@@ -31,7 +31,16 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Devuelve las preguntas más frecuentes de los alumnos del curso, agrupadas por tema mediante un LLM
+ * (DOC-D02).
+ */
 class analytics_faq_topics extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -39,6 +48,11 @@ class analytics_faq_topics extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id'       => new \external_value(PARAM_INT, 'ID del curso'),
@@ -56,6 +70,14 @@ class analytics_faq_topics extends \external_api {
         ]);
     }
 
+    /**
+     * Devuelve las preguntas más frecuentes de los alumnos del curso, agrupadas por tema mediante un LLM
+     * (DOC-D02).
+     *
+     * @param int $courseid ID del curso
+     * @param int $days Días hacia atrás (1..365)
+     * @return array
+     */
     public static function execute(int $courseid, int $days = 30): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid' => $courseid,

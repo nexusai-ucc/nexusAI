@@ -30,6 +30,10 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Lee los posts de una discusión desde Moodle DB y los manda al backend para que el LLM genere un resumen
+ * estructurado (summary + key_points + resolved).
+ */
 class forum_summarize_thread extends \external_api {
     // Máximo de posts que se envían al backend (el backend trunca igual, pero
     // limitamos en PHP para no construir payloads enormes).
@@ -37,6 +41,11 @@ class forum_summarize_thread extends \external_api {
     // Máximo de chars por post antes de truncar.
     const MAX_CHARS_PER_POST = 1000;
 
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'discussionid' => new \external_value(PARAM_INT, 'ID de la discusión de foro', VALUE_REQUIRED),
@@ -44,6 +53,11 @@ class forum_summarize_thread extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'summary'         => new \external_value(PARAM_RAW, 'Resumen del hilo generado por el LLM'),
@@ -56,6 +70,14 @@ class forum_summarize_thread extends \external_api {
         ]);
     }
 
+    /**
+     * Lee los posts de una discusión desde Moodle DB y los manda al backend para que el LLM genere un resumen
+     * estructurado (summary + key_points + resolved).
+     *
+     * @param int $discussionid ID de la discusión de foro
+     * @param int $courseid ID del curso de Moodle
+     * @return array
+     */
     public static function execute(int $discussionid, int $courseid): array {
         global $DB;
 

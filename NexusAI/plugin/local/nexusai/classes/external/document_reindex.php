@@ -33,7 +33,16 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Re-corre la indexación de un documento ya subido, sin pedir un archivo nuevo (CONT-09, #358) — el backend
+ * lee el archivo que ya tiene guardado en disco desde el upload original.
+ */
 class document_reindex extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'   => new \external_value(PARAM_INT, 'ID del curso (para validar capability)', VALUE_REQUIRED),
@@ -41,6 +50,11 @@ class document_reindex extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'id'            => new \external_value(PARAM_ALPHANUMEXT, 'ID del documento'),
@@ -55,6 +69,14 @@ class document_reindex extends \external_api {
         ]);
     }
 
+    /**
+     * Re-corre la indexación de un documento ya subido, sin pedir un archivo nuevo (CONT-09, #358) — el
+     * backend lee el archivo que ya tiene guardado en disco desde el upload original.
+     *
+     * @param int $courseid ID del curso (para validar capability)
+     * @param string $documentid UUID del documento a reindexar
+     * @return array
+     */
     public static function execute(int $courseid, string $documentid): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'   => $courseid,

@@ -32,7 +32,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Proxy entre React y el endpoint /api/v1/documents/pre-exam-summary del backend Python.
+ */
 class document_pre_exam_summary extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
@@ -40,6 +48,11 @@ class document_pre_exam_summary extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'summary'          => new \external_value(PARAM_RAW, 'Resumen de repaso generado por IA'),
@@ -53,6 +66,13 @@ class document_pre_exam_summary extends \external_api {
         ]);
     }
 
+    /**
+     * Proxy entre React y el endpoint /api/v1/documents/pre-exam-summary del backend Python.
+     *
+     * @param int $courseid ID del curso de Moodle
+     * @param int $section Unidad/sección opcional
+     * @return array
+     */
     public static function execute(int $courseid, ?int $section = null): array {
         global $USER;
 

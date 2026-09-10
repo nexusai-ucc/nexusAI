@@ -31,7 +31,16 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Plan de estudio personalizado: combina el historial de errores de quiz del alumno con las preguntas del
+ * chat que el material no pudo responder bien, y devuelve una lista unificada de temas débiles rankeada.
+ */
 class quiz_study_plan extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -39,6 +48,11 @@ class quiz_study_plan extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
@@ -64,6 +78,14 @@ class quiz_study_plan extends \external_api {
         ]);
     }
 
+    /**
+     * Plan de estudio personalizado: combina el historial de errores de quiz del alumno con las preguntas del
+     * chat que el material no pudo responder bien, y devuelve una lista unificada de temas débiles rankeada.
+     *
+     * @param int $courseid ID del curso
+     * @param int $days Días hacia atrás (1..365)
+     * @return array
+     */
     public static function execute(int $courseid, int $days = 30): array {
         global $USER;
 

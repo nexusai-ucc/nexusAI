@@ -30,10 +30,19 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Lee el hilo de foro desde Moodle DB y le pide al backend que genere una sugerencia de respuesta usando RAG
+ * + LLM (F-05 / F-11).
+ */
 class forum_suggest_reply extends \external_api {
     const MAX_POSTS         = 30;
     const MAX_CHARS_PER_POST = 1000;
 
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'discussionid'  => new \external_value(PARAM_INT, 'ID de la discusión de foro', VALUE_REQUIRED),
@@ -42,6 +51,11 @@ class forum_suggest_reply extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'suggested_reply'     => new \external_value(PARAM_RAW, 'Texto sugerido por el LLM'),
@@ -50,6 +64,15 @@ class forum_suggest_reply extends \external_api {
         ]);
     }
 
+    /**
+     * Lee el hilo de foro desde Moodle DB y le pide al backend que genere una sugerencia de respuesta usando
+     * RAG + LLM (F-05 / F-11).
+     *
+     * @param int $discussionid ID de la discusión de foro
+     * @param int $courseid ID del curso de Moodle
+     * @param int $replytopostid ID del post al que se responde
+     * @return array
+     */
     public static function execute(int $discussionid, int $courseid, int $replytopostid): array {
         global $DB;
 

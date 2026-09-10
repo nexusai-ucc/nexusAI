@@ -34,7 +34,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Proxy entre React y el endpoint /api/v1/search del backend Python.
+ */
 class search_query extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'query'    => new \external_value(PARAM_RAW, 'Consulta de búsqueda', VALUE_REQUIRED),
@@ -57,6 +65,11 @@ class search_query extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'query'   => new \external_value(PARAM_RAW, 'Consulta original'),
@@ -84,6 +97,18 @@ class search_query extends \external_api {
         ]);
     }
 
+    /**
+     * Proxy entre React y el endpoint /api/v1/search del backend Python.
+     *
+     * @param string $query Consulta de búsqueda
+     * @param int $courseid ID del curso actual
+     * @param int $topk Cantidad de resultados (1..10)
+     * @param bool $global Buscar en todos los cursos del usuario
+     * @param string $materialtype Filtrar por tipo de material (mime type)
+     * @param int $section Filtrar por sección/unidad del curso (-1 = sin filtro, BUS-05)
+     * @param bool $sectionunassigned Filtrar solo material sin unidad asignada (BUS-05)
+     * @return array
+     */
     public static function execute(
         string $query,
         int $courseid,

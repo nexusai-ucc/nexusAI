@@ -33,7 +33,16 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * SP-11 (#315): flashcards ya generadas que "tocan hoy" según repetición espaciada (SM-2), más vencidas
+ * primero.
+ */
 class quiz_flashcards_due extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -42,6 +51,11 @@ class quiz_flashcards_due extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
@@ -62,6 +76,15 @@ class quiz_flashcards_due extends \external_api {
         ]);
     }
 
+    /**
+     * SP-11 (#315): flashcards ya generadas que "tocan hoy" según repetición espaciada (SM-2), más vencidas
+     * primero.
+     *
+     * @param int $courseid ID del curso
+     * @param string $topic Tema (opcional)
+     * @param int $limit Cantidad máxima (1..50)
+     * @return array
+     */
     public static function execute(int $courseid, string $topic = '', int $limit = 10): array {
         global $USER;
 

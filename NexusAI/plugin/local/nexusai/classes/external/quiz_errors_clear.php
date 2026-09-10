@@ -29,19 +29,38 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Borra el historial de errores de quiz del alumno en un curso (SP-10).
+ */
 class quiz_errors_clear extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'deleted' => new \external_value(PARAM_INT, 'Cantidad de registros borrados'),
         ]);
     }
 
+    /**
+     * Borra el historial de errores de quiz del alumno en un curso (SP-10).
+     *
+     * @param int $courseid ID del curso
+     * @return array
+     */
     public static function execute(int $courseid): array {
         global $USER;
 

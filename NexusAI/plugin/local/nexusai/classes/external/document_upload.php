@@ -40,7 +40,16 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Recibe el contenido del archivo en base64 directamente desde React (FileReader sobre drag-and-drop HTML5),
+ * valida y reenvía al backend Python.
+ */
 class document_upload extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'    => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
@@ -56,6 +65,11 @@ class document_upload extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'id'            => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento creado'),

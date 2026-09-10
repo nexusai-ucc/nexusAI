@@ -32,7 +32,16 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * ASIST-01 (#321): guarda el voto 👍/👎 del alumno sobre una respuesta puntual del asistente, ligado a
+ * `messages.id`.
+ */
 class chat_message_feedback extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'  => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -42,12 +51,27 @@ class chat_message_feedback extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'ok' => new \external_value(PARAM_BOOL, 'true si se guardó correctamente'),
         ]);
     }
 
+    /**
+     * ASIST-01 (#321): guarda el voto 👍/👎 del alumno sobre una respuesta puntual del asistente, ligado a
+     * `messages.id`.
+     *
+     * @param int $courseid ID del curso
+     * @param string $messageid ID del mensaje (UUID)
+     * @param bool $ishelpful true = 👍, false = 👎
+     * @param string $comment Comentario corto opcional (solo con 👎)
+     * @return array
+     */
     public static function execute(int $courseid, string $messageid, bool $ishelpful, string $comment = ''): array {
         global $USER;
 

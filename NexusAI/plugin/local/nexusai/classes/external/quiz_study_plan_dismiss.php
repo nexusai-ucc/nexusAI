@@ -38,7 +38,16 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * SP-13 (#323): descarta un tema puntual del Plan de estudio del propio alumno sin borrar el historial
+ * subyacente (quiz_errors/unanswered_questions siguen intactos para el docente).
+ */
 class quiz_study_plan_dismiss extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'       => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -57,12 +66,26 @@ class quiz_study_plan_dismiss extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'affected' => new \external_value(PARAM_INT, 'Cantidad de filas actualizadas'),
         ]);
     }
 
+    /**
+     * SP-13 (#323): descarta un tema puntual del Plan de estudio del propio alumno sin borrar el historial
+     * subyacente (quiz_errors/unanswered_questions siguen intactos para el docente).
+     *
+     * @param int $courseid ID del curso
+     * @param array $quizerrorids IDs de errores de quiz a descartar
+     * @param array $gapquestionids IDs de preguntas sin responder a descartar
+     * @return array
+     */
     public static function execute(int $courseid, array $quizerrorids = [], array $gapquestionids = []): array {
         global $USER;
 

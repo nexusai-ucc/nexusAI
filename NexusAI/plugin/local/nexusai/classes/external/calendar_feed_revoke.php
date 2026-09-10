@@ -33,19 +33,40 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 require_once($GLOBALS['CFG']->dirroot . '/local/nexusai/lib.php');
 
+/**
+ * Rota el token del feed de calendario del alumno (CAL-07 / #377): la URL vieja deja de funcionar y se
+ * devuelve una nueva.
+ */
 class calendar_feed_revoke extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso (para contexto y capability)', VALUE_REQUIRED),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'url' => new \external_value(PARAM_RAW, 'Nueva URL absoluta del feed .ics'),
         ]);
     }
 
+    /**
+     * Rota el token del feed de calendario del alumno (CAL-07 / #377): la URL vieja deja de funcionar y se
+     * devuelve una nueva.
+     *
+     * @param int $courseid ID del curso (para contexto y capability)
+     * @return array
+     */
     public static function execute(int $courseid): array {
         global $USER;
 

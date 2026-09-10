@@ -43,7 +43,15 @@ require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 require_once($GLOBALS['CFG']->dirroot . '/group/lib.php');
 require_once($GLOBALS['CFG']->dirroot . '/calendar/lib.php');
 
+/**
+ * Agrega en una sola llamada el "estado de setup" de un curso: qué le falta armar al docente.
+ */
 class course_setup_state extends \external_api {
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -68,6 +76,11 @@ class course_setup_state extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso consultado'),
@@ -80,6 +93,12 @@ class course_setup_state extends \external_api {
         ]);
     }
 
+    /**
+     * Agrega en una sola llamada el "estado de setup" de un curso: qué le falta armar al docente.
+     *
+     * @param int $courseid ID del curso
+     * @return array
+     */
     public static function execute(int $courseid): array {
         $params = self::validate_parameters(self::execute_parameters(), ['courseid' => $courseid]);
 
