@@ -65,7 +65,13 @@ class chat_sessions_list extends \external_api {
                     'course_id'            => new \external_value(PARAM_INT, 'Curso de la sesión'),
                     'created_at'           => new \external_value(PARAM_RAW, 'ISO timestamp creación'),
                     'updated_at'           => new \external_value(PARAM_RAW, 'ISO timestamp última actividad'),
-                    'last_message_preview' => new \external_value(PARAM_RAW, 'Preview del primer mensaje', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'last_message_preview' => new \external_value(
+                        PARAM_RAW,
+                        'Preview del primer mensaje',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'message_count'        => new \external_value(PARAM_INT, 'Cantidad de mensajes'),
                 ])
             ),

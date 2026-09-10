@@ -58,7 +58,13 @@ class calendar_alert_save extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'id'          => new \external_value(PARAM_TEXT, 'UUID de la alerta (null si se eliminó)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'id'          => new \external_value(
+                PARAM_TEXT,
+                'UUID de la alerta (null si se eliminó)',
+                VALUE_OPTIONAL,
+                null,
+                NULL_ALLOWED
+            ),
             'days_before' => new \external_value(PARAM_INT, 'Días configurados'),
         ]);
     }
@@ -74,7 +80,14 @@ class calendar_alert_save extends \external_api {
      * @param int $daysbefore 0 = sin alerta, 1, 3 o 7 días antes
      * @return array
      */
-    public static function execute(int $userid, int $courseid, int $eventid, string $eventname, int $eventtimestamp, int $daysbefore): array {
+    public static function execute(
+        int $userid,
+        int $courseid,
+        int $eventid,
+        string $eventname,
+        int $eventtimestamp,
+        int $daysbefore
+    ): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'userid'         => $userid,
             'courseid'       => $courseid,

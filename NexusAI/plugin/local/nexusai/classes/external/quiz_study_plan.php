@@ -60,7 +60,10 @@ class quiz_study_plan extends \external_api {
                 new \external_single_structure([
                     'topic'                => new \external_value(PARAM_RAW, 'Tema débil identificado por la IA'),
                     'quiz_error_count'     => new \external_value(PARAM_INT, 'Errores de quiz que sustentan este tema'),
-                    'gap_count'            => new \external_value(PARAM_INT, 'Preguntas de chat sin responder que sustentan este tema'),
+                    'gap_count'            => new \external_value(
+                        PARAM_INT,
+                        'Preguntas de chat sin responder que sustentan este tema'
+                    ),
                     'reason'               => new \external_value(PARAM_RAW, 'Por qué es un tema débil'),
                     'suggested_quiz_topic' => new \external_value(PARAM_RAW, 'Tema sugerido para precargar el generador de quiz'),
                     // SP-13 (#323): IDs reales de fila que sustentan el tema — el

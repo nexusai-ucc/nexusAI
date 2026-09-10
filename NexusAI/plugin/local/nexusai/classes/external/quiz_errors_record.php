@@ -46,21 +46,61 @@ class quiz_errors_record extends \external_api {
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
             'errors'   => new \external_multiple_structure(
                 new \external_single_structure([
-                    'question_type'       => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta', VALUE_OPTIONAL, 'multiple_choice'),
+                    'question_type'       => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'Tipo de pregunta',
+                        VALUE_OPTIONAL,
+                        'multiple_choice'
+                    ),
                     'question'            => new \external_value(PARAM_RAW, 'Texto de la pregunta', VALUE_REQUIRED),
                     'explanation'         => new \external_value(PARAM_RAW, 'Explicación / respuesta modelo', VALUE_OPTIONAL, ''),
                     'source_filename'     => new \external_value(PARAM_TEXT, 'Archivo fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'source_document_id'  => new \external_value(PARAM_RAW, 'ID del documento fuente (best-effort)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id'  => new \external_value(
+                        PARAM_RAW,
+                        'ID del documento fuente (best-effort)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'options'             => new \external_multiple_structure(
                         new \external_value(PARAM_RAW, 'Opción'),
                         VALUE_OPTIONAL,
                         []
                     ),
-                    'correct_index'       => new \external_value(PARAM_INT, 'Índice de la opción correcta (-1..3)', VALUE_OPTIONAL, -1),
-                    'user_selected_index' => new \external_value(PARAM_INT, 'Índice elegido por el alumno (MC/TF)', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'user_answer'         => new \external_value(PARAM_RAW, 'Respuesta libre del alumno (open)', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'ai_feedback'         => new \external_value(PARAM_RAW, 'Feedback del evaluador IA (open)', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'ai_score'            => new \external_value(PARAM_FLOAT, 'Puntaje del evaluador IA (open)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'correct_index'       => new \external_value(
+                        PARAM_INT,
+                        'Índice de la opción correcta (-1..3)',
+                        VALUE_OPTIONAL,
+                        -1
+                    ),
+                    'user_selected_index' => new \external_value(
+                        PARAM_INT,
+                        'Índice elegido por el alumno (MC/TF)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'user_answer'         => new \external_value(
+                        PARAM_RAW,
+                        'Respuesta libre del alumno (open)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'ai_feedback'         => new \external_value(
+                        PARAM_RAW,
+                        'Feedback del evaluador IA (open)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'ai_score'            => new \external_value(
+                        PARAM_FLOAT,
+                        'Puntaje del evaluador IA (open)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                 ]),
                 'Preguntas respondidas mal en el quiz'
             ),

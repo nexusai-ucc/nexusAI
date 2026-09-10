@@ -167,7 +167,7 @@ class document_upload extends \external_api {
         $client = new backend_client();
         $response = $client->upload_document(
             (int) $params['courseid'],
-            (int) $USER->id, // SIEMPRE del server, no del cliente
+            (int) $USER->id, // Siempre del server, no del cliente.
             $params['filename'],
             $params['mimetype'],
             $filebytes,
@@ -237,13 +237,13 @@ class document_upload extends \external_api {
     private static function validate_magic_bytes(string $bytes, string $mimetype): void {
         switch ($mimetype) {
             case 'application/pdf':
-                // PDF: "%PDF-"
+                // PDF: "%PDF-".
                 if (substr($bytes, 0, 5) !== '%PDF-') {
                     throw new \invalid_parameter_exception('File does not look like a valid PDF');
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                // DOCX es un ZIP: magic bytes PK\x03\x04
+                // DOCX es un ZIP: magic bytes PK\x03\x04.
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
                     throw new \invalid_parameter_exception('File does not look like a valid DOCX');
                 }

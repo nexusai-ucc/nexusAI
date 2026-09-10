@@ -46,7 +46,13 @@ class document_list extends \external_api {
             // UX-17 (#387): opcionales — sin limit, el backend devuelve todo
             // hasta su tope interno (lo usa ExamGeneratorPanel.jsx, que
             // necesita elegir entre todos los documentos indexados).
-            'limit'    => new \external_value(PARAM_INT, 'Máximo de items por página (sin valor: sin paginar, tope interno)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'limit'    => new \external_value(
+                PARAM_INT,
+                'Máximo de items por página (sin valor: sin paginar, tope interno)',
+                VALUE_OPTIONAL,
+                null,
+                NULL_ALLOWED
+            ),
             'offset'   => new \external_value(PARAM_INT, 'Desde qué posición paginar', VALUE_OPTIONAL, 0),
         ]);
     }
@@ -58,7 +64,10 @@ class document_list extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'total' => new \external_value(PARAM_INT, 'Cantidad total de documentos del curso (para paginar, no la cantidad ya recortada por limit)'),
+            'total' => new \external_value(
+                PARAM_INT,
+                'Cantidad total de documentos del curso (para paginar, no la cantidad ya recortada por limit)'
+            ),
             'items' => new \external_multiple_structure(
                 new \external_single_structure([
                     'id'            => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento'),

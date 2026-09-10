@@ -63,9 +63,21 @@ class document_reindex extends \external_api {
             'filename'      => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
             'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
             'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
-            'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si status=error', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'error_message' => new \external_value(
+                PARAM_RAW,
+                'Mensaje de error si status=error',
+                VALUE_OPTIONAL,
+                null,
+                NULL_ALLOWED
+            ),
             'created_at'    => new \external_value(PARAM_RAW, 'Timestamp de creación', VALUE_OPTIONAL, null, NULL_ALLOWED),
-            'updated_at'    => new \external_value(PARAM_RAW, 'Timestamp de última actualización', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'updated_at'    => new \external_value(
+                PARAM_RAW,
+                'Timestamp de última actualización',
+                VALUE_OPTIONAL,
+                null,
+                NULL_ALLOWED
+            ),
         ]);
     }
 

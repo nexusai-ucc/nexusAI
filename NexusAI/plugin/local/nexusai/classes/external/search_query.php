@@ -79,11 +79,21 @@ class search_query extends \external_api {
                     'document_id'       => new \external_value(PARAM_RAW, 'UUID del documento', VALUE_OPTIONAL, ''),
                     'document_filename' => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
                     'course_id'         => new \external_value(PARAM_INT, 'ID del curso fuente', VALUE_OPTIONAL, 0),
-                    'course_name'       => new \external_value(PARAM_TEXT, 'Nombre del curso (solo en modo global)', VALUE_OPTIONAL, ''),
+                    'course_name'       => new \external_value(
+                        PARAM_TEXT,
+                        'Nombre del curso (solo en modo global)',
+                        VALUE_OPTIONAL,
+                        ''
+                    ),
                     'chunk_index'       => new \external_value(PARAM_INT, 'Índice del fragmento'),
                     'content'           => new \external_value(PARAM_RAW, 'Texto del fragmento'),
                     'similarity'        => new \external_value(PARAM_FLOAT, 'Score de similitud 0-1'),
-                    'has_file'          => new \external_value(PARAM_BOOL, 'El archivo original está disponible para descarga', VALUE_OPTIONAL, false),
+                    'has_file'          => new \external_value(
+                        PARAM_BOOL,
+                        'El archivo original está disponible para descarga',
+                        VALUE_OPTIONAL,
+                        false
+                    ),
                     'mime_type'         => new \external_value(PARAM_RAW, 'MIME type del documento', VALUE_OPTIONAL, ''),
                     'section'           => new \external_value(
                         PARAM_INT,

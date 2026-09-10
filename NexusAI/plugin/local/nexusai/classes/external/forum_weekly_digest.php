@@ -92,7 +92,13 @@ class forum_weekly_digest extends \external_api {
                     'urgent'          => new \external_value(PARAM_BOOL, 'Si algún post del hilo parece urgente/frustrado'),
                 ])
             ),
-            'summary'           => new \external_value(PARAM_RAW, 'Resumen de la semana generado por el LLM', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'summary'           => new \external_value(
+                PARAM_RAW,
+                'Resumen de la semana generado por el LLM',
+                VALUE_OPTIONAL,
+                null,
+                NULL_ALLOWED
+            ),
         ]);
     }
 

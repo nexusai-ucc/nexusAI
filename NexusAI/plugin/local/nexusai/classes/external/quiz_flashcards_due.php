@@ -61,7 +61,13 @@ class quiz_flashcards_due extends \external_api {
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
             'questions' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'id'                  => new \external_value(PARAM_ALPHANUMEXT, 'ID de la flashcard (UUID)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'id'                  => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'ID de la flashcard (UUID)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'question_type'       => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta'),
                     'question'            => new \external_value(PARAM_RAW, 'Frente de la tarjeta'),
                     'options'             => new \external_multiple_structure(
@@ -70,7 +76,13 @@ class quiz_flashcards_due extends \external_api {
                     'correct_index'       => new \external_value(PARAM_INT, 'Siempre -1 para flashcards'),
                     'explanation'         => new \external_value(PARAM_RAW, 'Dorso de la tarjeta'),
                     'source_filename'     => new \external_value(PARAM_TEXT, 'Archivo fuente'),
-                    'source_document_id'  => new \external_value(PARAM_ALPHANUMEXT, 'ID del documento fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id'  => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'ID del documento fuente',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                 ])
             ),
         ]);

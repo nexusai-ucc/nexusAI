@@ -60,7 +60,13 @@ class quiz_attempt_list extends \external_api {
             'items'     => new \external_multiple_structure(
                 new \external_single_structure([
                     'id'              => new \external_value(PARAM_RAW, 'UUID del intento'),
-                    'question_type'   => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de quiz (opcional)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'question_type'   => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'Tipo de quiz (opcional)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'difficulty'      => new \external_value(PARAM_ALPHA, 'Dificultad'),
                     'topic'           => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_OPTIONAL, null, NULL_ALLOWED),
                     'total_questions' => new \external_value(PARAM_INT, 'Total de preguntas'),

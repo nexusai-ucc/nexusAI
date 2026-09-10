@@ -45,7 +45,12 @@ class quiz_generate extends \external_api {
             'courseid'      => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
             'topic'         => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_OPTIONAL, ''),
             'numquestions'  => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..10)', VALUE_OPTIONAL, 5),
-            'questiontype'  => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta (multiple_choice|true_false|open|mix|flashcard)', VALUE_OPTIONAL, 'multiple_choice'),
+            'questiontype'  => new \external_value(
+                PARAM_ALPHANUMEXT,
+                'Tipo de pregunta (multiple_choice|true_false|open|mix|flashcard)',
+                VALUE_OPTIONAL,
+                'multiple_choice'
+            ),
             'difficulty'    => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_OPTIONAL, 'medium'),
         ]);
     }
@@ -61,7 +66,13 @@ class quiz_generate extends \external_api {
             'topic'     => new \external_value(PARAM_RAW, 'Tema solicitado', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'questions' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'id'                  => new \external_value(PARAM_ALPHANUMEXT, 'ID persistido (solo flashcards, SP-11)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'id'                  => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'ID persistido (solo flashcards, SP-11)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'question_type'      => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta'),
                     'question'           => new \external_value(PARAM_RAW, 'Texto de la pregunta'),
                     'options'            => new \external_multiple_structure(
@@ -70,7 +81,13 @@ class quiz_generate extends \external_api {
                     'correct_index'      => new \external_value(PARAM_INT, 'Índice de la opción correcta (-1..3)'),
                     'explanation'        => new \external_value(PARAM_RAW, 'Explicación / respuesta modelo'),
                     'source_filename'    => new \external_value(PARAM_TEXT, 'Archivo del que sale la pregunta'),
-                    'source_document_id' => new \external_value(PARAM_ALPHANUMEXT, 'ID del documento fuente (UUID)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id' => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'ID del documento fuente (UUID)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                 ])
             ),
         ]);
@@ -86,7 +103,13 @@ class quiz_generate extends \external_api {
      * @param string $difficulty Dificultad (easy|medium|hard)
      * @return array
      */
-    public static function execute(int $courseid, string $topic = '', int $numquestions = 5, string $questiontype = 'multiple_choice', string $difficulty = 'medium'): array {
+    public static function execute(
+        int $courseid,
+        string $topic = '',
+        int $numquestions = 5,
+        string $questiontype = 'multiple_choice',
+        string $difficulty = 'medium'
+    ): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [

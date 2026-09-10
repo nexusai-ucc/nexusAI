@@ -47,7 +47,12 @@ class quiz_suggest_difficulty extends \external_api {
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'topic'    => new \external_value(PARAM_TEXT, 'Tema elegido por el alumno (vacío = historial general)', VALUE_DEFAULT, ''),
+            'topic'    => new \external_value(
+                PARAM_TEXT,
+                'Tema elegido por el alumno (vacío = historial general)',
+                VALUE_DEFAULT,
+                ''
+            ),
         ]);
     }
 

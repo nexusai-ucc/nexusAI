@@ -66,7 +66,13 @@ class document_replace extends \external_api {
             'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
             'section'       => new \external_value(PARAM_INT, 'Sección asignada', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
-            'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si status=error', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'error_message' => new \external_value(
+                PARAM_RAW,
+                'Mensaje de error si status=error',
+                VALUE_OPTIONAL,
+                null,
+                NULL_ALLOWED
+            ),
         ]);
     }
 

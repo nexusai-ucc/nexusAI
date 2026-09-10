@@ -75,7 +75,14 @@ class quiz_attempt_save extends \external_api {
      * @param int $correctcount Cantidad de respuestas correctas (0..10)
      * @return array
      */
-    public static function execute(int $courseid, string $questiontype, string $difficulty = 'medium', string $topic = '', int $totalquestions = 0, int $correctcount = 0): array {
+    public static function execute(
+        int $courseid,
+        string $questiontype,
+        string $difficulty = 'medium',
+        string $topic = '',
+        int $totalquestions = 0,
+        int $correctcount = 0
+    ): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [

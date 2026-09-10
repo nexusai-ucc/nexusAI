@@ -62,13 +62,22 @@ class gaps_list extends \external_api {
         return new \external_single_structure([
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
             'days'      => new \external_value(PARAM_INT, 'Ventana temporal'),
-            'total'     => new \external_value(PARAM_INT, 'Cantidad total de gaps agrupados (para paginar, no la cantidad ya recortada por limit)'),
+            'total'     => new \external_value(
+                PARAM_INT,
+                'Cantidad total de gaps agrupados (para paginar, no la cantidad ya recortada por limit)'
+            ),
             'items'     => new \external_multiple_structure(
                 new \external_single_structure([
                     'question'       => new \external_value(PARAM_RAW, 'Pregunta agrupada'),
                     'count'          => new \external_value(PARAM_INT, 'Veces preguntada'),
                     'last_asked_at'  => new \external_value(PARAM_RAW, 'ISO timestamp de la última'),
-                    'avg_similarity' => new \external_value(PARAM_FLOAT, 'Similaridad promedio (0..1)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'avg_similarity' => new \external_value(
+                        PARAM_FLOAT,
+                        'Similaridad promedio (0..1)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     // IDs reales de unanswered_questions detrás de este gap — es lo
                     // que hay que mandar de vuelta a gaps_archive, no el texto.
                     'question_ids'   => new \external_multiple_structure(
@@ -91,7 +100,13 @@ class gaps_list extends \external_api {
      * @param bool $includearchived Incluir gaps ya archivados
      * @return array
      */
-    public static function execute(int $courseid, int $days = 30, int $limit = 20, int $offset = 0, bool $includearchived = false): array {
+    public static function execute(
+        int $courseid,
+        int $days = 30,
+        int $limit = 20,
+        int $offset = 0,
+        bool $includearchived = false
+    ): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'        => $courseid,
             'days'            => $days,

@@ -59,7 +59,13 @@ class quiz_review_suggestions extends \external_api {
             'suggestions'  => new \external_multiple_structure(
                 new \external_single_structure([
                     'source_filename'    => new \external_value(PARAM_TEXT, 'Archivo fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'source_document_id' => new \external_value(PARAM_RAW, 'ID del documento fuente (best-effort)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id' => new \external_value(
+                        PARAM_RAW,
+                        'ID del documento fuente (best-effort)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'error_count'        => new \external_value(PARAM_INT, 'Cantidad de errores del grupo'),
                     'last_error_at'      => new \external_value(PARAM_RAW, 'ISO timestamp del último error del grupo'),
                     'topic'              => new \external_value(PARAM_RAW, 'Subtema identificado por la IA'),

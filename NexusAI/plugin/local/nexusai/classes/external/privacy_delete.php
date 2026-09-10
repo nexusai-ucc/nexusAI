@@ -55,7 +55,10 @@ class privacy_delete extends \external_api {
         return new \external_single_structure([
             'messages_deleted'         => new \external_value(PARAM_INT, 'Mensajes de chat borrados'),
             'quiz_errors_deleted'      => new \external_value(PARAM_INT, 'Errores de quiz borrados'),
-            'quiz_attempts_anonymized' => new \external_value(PARAM_INT, 'Intentos de quiz anonimizados (no borrados, ver docstring del backend)'),
+            'quiz_attempts_anonymized' => new \external_value(
+                PARAM_INT,
+                'Intentos de quiz anonimizados (no borrados, ver docstring del backend)'
+            ),
         ]);
     }
 

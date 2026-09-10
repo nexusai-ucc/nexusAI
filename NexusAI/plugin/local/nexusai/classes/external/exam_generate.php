@@ -50,7 +50,12 @@ class exam_generate extends \external_api {
             ),
             'topic'        => new \external_value(PARAM_RAW, 'Tema opcional', VALUE_OPTIONAL, ''),
             'numquestions' => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..20)', VALUE_OPTIONAL, 10),
-            'questiontype' => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta (multiple_choice|true_false|open|mix)', VALUE_OPTIONAL, 'multiple_choice'),
+            'questiontype' => new \external_value(
+                PARAM_ALPHANUMEXT,
+                'Tipo de pregunta (multiple_choice|true_false|open|mix)',
+                VALUE_OPTIONAL,
+                'multiple_choice'
+            ),
             'difficulty'   => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_OPTIONAL, 'medium'),
             // DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ) que el
             // docente eligió priorizar como contexto extra de generación.
@@ -85,8 +90,20 @@ class exam_generate extends \external_api {
                     'correct_index'      => new \external_value(PARAM_INT, 'Índice de la opción correcta (-1..3)'),
                     'explanation'        => new \external_value(PARAM_RAW, 'Explicación / respuesta modelo'),
                     'source_filename'    => new \external_value(PARAM_TEXT, 'Archivo del que sale la pregunta'),
-                    'source_document_id' => new \external_value(PARAM_ALPHANUMEXT, 'ID del documento fuente (UUID)', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'source_topic'       => new \external_value(PARAM_TEXT, 'Tema de dificultad detectada del que sale la pregunta (DOC-D09)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id' => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'ID del documento fuente (UUID)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'source_topic'       => new \external_value(
+                        PARAM_TEXT,
+                        'Tema de dificultad detectada del que sale la pregunta (DOC-D09)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                 ])
             ),
         ]);
@@ -191,7 +208,9 @@ class exam_generate extends \external_api {
                         'explanation'        => (string) ($q['explanation'] ?? ''),
                         'source_filename'    => (string) ($q['source_filename'] ?? ''),
                         'source_document_id' => isset($q['source_document_id']) ? (string) $q['source_document_id'] : null,
-                        'source_topic'       => isset($q['source_topic']) && $q['source_topic'] !== '' ? (string) $q['source_topic'] : null,
+                        'source_topic'       => isset($q['source_topic']) && $q['source_topic'] !== ''
+                            ? (string) $q['source_topic']
+                            : null,
                     ];
                 },
                 $response['questions']

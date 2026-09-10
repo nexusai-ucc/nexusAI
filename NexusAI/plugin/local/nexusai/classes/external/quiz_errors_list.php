@@ -67,15 +67,45 @@ class quiz_errors_list extends \external_api {
                     'question'             => new \external_value(PARAM_RAW, 'Texto de la pregunta'),
                     'explanation'          => new \external_value(PARAM_RAW, 'Explicación / respuesta modelo'),
                     'source_filename'      => new \external_value(PARAM_TEXT, 'Archivo fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'source_document_id'   => new \external_value(PARAM_RAW, 'ID del documento fuente (best-effort)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id'   => new \external_value(
+                        PARAM_RAW,
+                        'ID del documento fuente (best-effort)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'options'              => new \external_multiple_structure(
                         new \external_value(PARAM_RAW, 'Opción')
                     ),
                     'correct_index'        => new \external_value(PARAM_INT, 'Índice de la opción correcta'),
-                    'user_selected_index'  => new \external_value(PARAM_INT, 'Índice elegido por el alumno', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'user_answer'          => new \external_value(PARAM_RAW, 'Respuesta libre del alumno', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'ai_feedback'          => new \external_value(PARAM_RAW, 'Feedback del evaluador IA', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'ai_score'             => new \external_value(PARAM_FLOAT, 'Puntaje del evaluador IA', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'user_selected_index'  => new \external_value(
+                        PARAM_INT,
+                        'Índice elegido por el alumno',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'user_answer'          => new \external_value(
+                        PARAM_RAW,
+                        'Respuesta libre del alumno',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'ai_feedback'          => new \external_value(
+                        PARAM_RAW,
+                        'Feedback del evaluador IA',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'ai_score'             => new \external_value(
+                        PARAM_FLOAT,
+                        'Puntaje del evaluador IA',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                 ])
             ),
         ]);

@@ -66,7 +66,13 @@ class privacy_export extends \external_api {
             'quiz_attempts' => new \external_multiple_structure(
                 new \external_single_structure([
                     'id'              => new \external_value(PARAM_RAW, 'UUID del intento'),
-                    'question_type'   => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'question_type'   => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'Tipo de pregunta',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'difficulty'      => new \external_value(PARAM_ALPHA, 'easy | medium | hard'),
                     'topic'           => new \external_value(PARAM_RAW, 'Tema', VALUE_OPTIONAL, null, NULL_ALLOWED),
                     'total_questions' => new \external_value(PARAM_INT, 'Cantidad de preguntas'),
@@ -83,7 +89,13 @@ class privacy_export extends \external_api {
                     'explanation'   => new \external_value(PARAM_RAW, 'Explicación de la respuesta correcta'),
                     'user_answer'   => new \external_value(PARAM_RAW, 'Respuesta del alumno', VALUE_OPTIONAL, null, NULL_ALLOWED),
                     'ai_feedback'   => new \external_value(PARAM_RAW, 'Feedback del LLM', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'ai_score'      => new \external_value(PARAM_FLOAT, 'Score del LLM 0.0-1.0', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'ai_score'      => new \external_value(
+                        PARAM_FLOAT,
+                        'Score del LLM 0.0-1.0',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'created_at'    => new \external_value(PARAM_RAW, 'Timestamp ISO 8601'),
                 ])
             ),
