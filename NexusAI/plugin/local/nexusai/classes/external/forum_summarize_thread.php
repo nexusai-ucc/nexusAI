@@ -35,10 +35,13 @@ require_once($GLOBALS['CFG']->libdir . '/externallib.php');
  * estructurado (summary + key_points + resolved).
  */
 class forum_summarize_thread extends \external_api {
-    // Máximo de posts que se envían al backend (el backend trunca igual, pero
-    // limitamos en PHP para no construir payloads enormes).
+    /**
+     * @var int Máximo de posts que se envían al backend (el backend trunca igual, pero limitamos
+     *     en PHP para no construir payloads enormes).
+     */
     const MAX_POSTS = 30;
-    // Máximo de chars por post antes de truncar.
+
+    /** @var int Máximo de chars por post antes de truncar. */
     const MAX_CHARS_PER_POST = 1000;
 
     /**

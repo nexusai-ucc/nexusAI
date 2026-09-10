@@ -35,7 +35,10 @@ require_once($GLOBALS['CFG']->libdir . '/externallib.php');
  * + LLM (F-05 / F-11).
  */
 class forum_suggest_reply extends \external_api {
-    const MAX_POSTS         = 30;
+    /** @var int Máximo de posts del hilo que se envían al backend como contexto. */
+    const MAX_POSTS = 30;
+
+    /** @var int Truncado por post para no inflar el contexto del LLM. */
     const MAX_CHARS_PER_POST = 1000;
 
     /**

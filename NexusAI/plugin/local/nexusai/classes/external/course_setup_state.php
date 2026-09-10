@@ -124,7 +124,7 @@ class course_setup_state extends \external_api {
     public static function gather_moodle_signals(int $courseid, \context $context): array {
         global $DB;
 
-        // --- Secciones con contenido (al menos un módulo, oculto o no) ---
+        // Secciones con contenido (al menos un módulo, oculto o no).
         $modinfo = get_fast_modinfo($courseid);
         $sectionswithcontent = 0;
         foreach ($modinfo->get_sections() as $cmids) {
@@ -133,19 +133,19 @@ class course_setup_state extends \external_api {
             }
         }
 
-        // --- Grupos ---
+        // Grupos.
         $groupcount = count(groups_get_all_groups($courseid));
 
-        // --- Alumnos matriculados (solo roles con arquetipo student) ---
+        // Alumnos matriculados (solo roles con arquetipo student).
         $studentroles = array_keys(get_archetype_roles('student'));
         $studentcount = empty($studentroles)
             ? 0
             : count_role_users($studentroles, $context);
 
-        // --- Foros ---
+        // Foros.
         $forumcount = $DB->count_records('forum', ['course' => $courseid]);
 
-        // --- Eventos de calendario propios del curso (no los de usuario) ---
+        // Eventos de calendario propios del curso (no los de usuario).
         $calendarcount = $DB->count_records_select(
             'event',
             "courseid = :courseid AND eventtype <> 'user'",

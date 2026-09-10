@@ -91,11 +91,11 @@ class quiz_attempt_save extends \external_api {
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
 
-        $allowed_types = ['multiple_choice', 'true_false', 'open', 'mix', 'flashcard', 'fill_blank'];
-        $qtype = in_array($params['questiontype'], $allowed_types, true) ? $params['questiontype'] : 'multiple_choice';
+        $allowedtypes = ['multiple_choice', 'true_false', 'open', 'mix', 'flashcard', 'fill_blank'];
+        $qtype = in_array($params['questiontype'], $allowedtypes, true) ? $params['questiontype'] : 'multiple_choice';
 
-        $allowed_difficulties = ['easy', 'medium', 'hard'];
-        $diff = in_array($params['difficulty'], $allowed_difficulties, true) ? $params['difficulty'] : 'medium';
+        $alloweddifficulties = ['easy', 'medium', 'hard'];
+        $diff = in_array($params['difficulty'], $alloweddifficulties, true) ? $params['difficulty'] : 'medium';
 
         $totalq = max(1, min(10, (int) $params['totalquestions']));
         $correct = max(0, min($totalq, (int) $params['correctcount']));

@@ -107,11 +107,11 @@ class quiz_generate extends \external_api {
         }
         $numq = max(1, min(10, (int) $params['numquestions']));
 
-        $allowed_types = ['multiple_choice', 'true_false', 'open', 'mix', 'flashcard', 'fill_blank'];
-        $qtype = in_array($params['questiontype'], $allowed_types, true) ? $params['questiontype'] : 'multiple_choice';
+        $allowedtypes = ['multiple_choice', 'true_false', 'open', 'mix', 'flashcard', 'fill_blank'];
+        $qtype = in_array($params['questiontype'], $allowedtypes, true) ? $params['questiontype'] : 'multiple_choice';
 
-        $allowed_difficulties = ['easy', 'medium', 'hard'];
-        $difficulty = in_array($params['difficulty'], $allowed_difficulties, true) ? $params['difficulty'] : 'medium';
+        $alloweddifficulties = ['easy', 'medium', 'hard'];
+        $difficulty = in_array($params['difficulty'], $alloweddifficulties, true) ? $params['difficulty'] : 'medium';
 
         $client   = new backend_client();
         $response = $client->generate_quiz(

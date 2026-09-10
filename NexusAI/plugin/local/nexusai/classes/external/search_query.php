@@ -165,7 +165,7 @@ class search_query extends \external_api {
             }
         }
 
-        // -1 = sin filtro de sección (BUS-05).
+        // Un valor de -1 significa sin filtro de sección (BUS-05).
         $section = ((int) $params['section']) >= 0 ? (int) $params['section'] : null;
 
         $client   = new backend_client();

@@ -142,22 +142,22 @@ class exam_generate extends \external_api {
         }
         $numq = max(1, min(20, (int) $params['numquestions']));
 
-        $allowed_types = ['multiple_choice', 'true_false', 'open', 'mix'];
-        $qtype = in_array($params['questiontype'], $allowed_types, true) ? $params['questiontype'] : 'multiple_choice';
+        $allowedtypes = ['multiple_choice', 'true_false', 'open', 'mix'];
+        $qtype = in_array($params['questiontype'], $allowedtypes, true) ? $params['questiontype'] : 'multiple_choice';
 
-        $allowed_difficulties = ['easy', 'medium', 'hard'];
-        $difficulty = in_array($params['difficulty'], $allowed_difficulties, true) ? $params['difficulty'] : 'medium';
+        $alloweddifficulties = ['easy', 'medium', 'hard'];
+        $difficulty = in_array($params['difficulty'], $alloweddifficulties, true) ? $params['difficulty'] : 'medium';
 
         // DOC-D09 (#390): sanitizar la lista de temas — origen restringido a
         // gap|faq, label recortado, y se ignora cualquier fila vacía.
-        $allowed_topic_sources = ['gap', 'faq'];
+        $allowedtopicsources = ['gap', 'faq'];
         $focustopics = [];
         foreach (array_slice($params['topics'], 0, 15) as $t) {
             $label = trim((string) ($t['label'] ?? ''));
             if ($label === '') {
                 continue;
             }
-            $source = in_array($t['source'] ?? '', $allowed_topic_sources, true) ? $t['source'] : 'gap';
+            $source = in_array($t['source'] ?? '', $allowedtopicsources, true) ? $t['source'] : 'gap';
             $focustopics[] = ['label' => mb_substr($label, 0, 200), 'source' => $source];
         }
 

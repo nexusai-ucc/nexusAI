@@ -97,13 +97,13 @@ class confirm_pending_upload extends \external_api {
         unset($pending[$key]);
         set_user_preference(\local_nexusai\observer::PENDING_PREF, json_encode($pending));
 
-        $context_id = (int) $entry['context_id'];
+        $contextid = (int) $entry['context_id'];
         $mimetype   = (string) $entry['mimetype'];
         $filename   = (string) $entry['filename'];
 
         // Leer el archivo del filestore de Moodle.
         $fs    = get_file_storage();
-        $files = $fs->get_area_files($context_id, 'mod_resource', 'content', false, 'itemid, filepath, filename', false);
+        $files = $fs->get_area_files($contextid, 'mod_resource', 'content', false, 'itemid, filepath, filename', false);
 
         if (empty($files)) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'File no longer exists in Moodle filestore');

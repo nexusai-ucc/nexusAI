@@ -96,6 +96,8 @@ class document_upload extends \external_api {
     ];
 
     /**
+     * Recibe el contenido de un archivo en base64 desde React, lo valida y lo reenvía al backend.
+     *
      * @param int    $courseid    ID del curso (el contexto del curso valida acceso).
      * @param string $filename    Nombre del archivo subido.
      * @param string $mimetype    MIME type: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML o TXT.
@@ -156,7 +158,7 @@ class document_upload extends \external_api {
         // Validar magic bytes según tipo MIME declarado.
         self::validate_magic_bytes($filebytes, $params['mimetype']);
 
-        // -1 = el docente no eligió sección (BUS-05) → se envía null al backend.
+        // Un valor de -1 significa que el docente no eligió sección (BUS-05) → se envía null al backend.
         $section = $params['section'] >= 0 ? (int) $params['section'] : null;
 
         // POST al backend con HMAC. El cliente backend re-encodea a base64
@@ -196,9 +198,9 @@ class document_upload extends \external_api {
             $params['filename']
         );
         if ($existing) {
-            $existing->delete();  // reemplazar si ya existía (re-upload)
+            $existing->delete();  // Reemplaza si ya existía (re-upload).
         }
-        $file_record = [
+        $filerecord = [
             'contextid' => $context->id,
             'component' => 'local_nexusai',
             'filearea'  => 'documents',
@@ -206,7 +208,7 @@ class document_upload extends \external_api {
             'filepath'  => '/',
             'filename'  => $params['filename'],
         ];
-        $fs->create_file_from_string($file_record, $filebytes);
+        $fs->create_file_from_string($filerecord, $filebytes);
 
         // CAL-03 (issue #239): notificar a los usuarios del curso que hay
         // material nuevo. Best-effort — nunca puede romper la respuesta del upload.

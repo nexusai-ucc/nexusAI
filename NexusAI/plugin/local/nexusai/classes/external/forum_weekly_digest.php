@@ -49,11 +49,16 @@ require_once($GLOBALS['CFG']->libdir . '/externallib.php');
  * endpoint combinado, ver docstring del router Python.
  */
 class forum_weekly_digest extends \external_api {
-    // Máximo de discusiones que se envían al backend en un solo digest —
-    // mismo tope que el backend declara (WeeklyDigestRequest.discussions).
+    /**
+     * @var int Máximo de discusiones que se envían al backend en un solo digest — mismo tope
+     *     que el backend declara (WeeklyDigestRequest.discussions).
+     */
     const MAX_DISCUSSIONS = 15;
-    // Máximo de posts por discusión (solo los de la ventana de días).
+
+    /** @var int Máximo de posts por discusión (solo los de la ventana de días). */
     const MAX_POSTS_PER_DISCUSSION = 20;
+
+    /** @var int Truncado por post para no inflar el contexto del LLM. */
     const MAX_CHARS_PER_POST = 1000;
 
     /**

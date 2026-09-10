@@ -65,7 +65,7 @@ class chat_send extends \external_api {
                 'ID del curso de Moodle donde se hace la pregunta',
                 VALUE_REQUIRED
             ),
-            // userid llega solo como hint del cliente. Lo IGNORAMOS y usamos
+            // El userid llega solo como hint del cliente. Lo IGNORAMOS y usamos
             // $USER->id real del lado del server (defensa contra impersonation).
             // Lo declaramos para no romper backwards compat con clientes viejos.
             'userid'    => new \external_value(
@@ -133,7 +133,7 @@ class chat_send extends \external_api {
     ): array {
         global $USER;
 
-        // ----- 1. Validar parámetros (Moodle ya hizo validación de tipos) -----
+        // 1. Validar parámetros (Moodle ya hizo validación de tipos).
         $params = self::validate_parameters(self::execute_parameters(), [
             'question'    => $question,
             'courseid'    => $courseid,
@@ -142,7 +142,7 @@ class chat_send extends \external_api {
             'multicourse' => $multicourse,
         ]);
 
-        // ----- 2. Validar contexto del curso + capability -----
+        // 2. Validar contexto del curso + capability.
         // El curso tiene que existir Y el usuario tiene que tener acceso.
         // validate_context() también dispara require_login() internamente y
         // levanta el contexto correcto en $PAGE.
@@ -150,7 +150,7 @@ class chat_send extends \external_api {
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
 
-        // ----- 3. Validaciones de negocio -----
+        // 3. Validaciones de negocio.
         $cleanquestion = trim($params['question']);
         if ($cleanquestion === '') {
             throw new \invalid_parameter_exception('Question cannot be empty');
@@ -159,7 +159,7 @@ class chat_send extends \external_api {
             throw new \invalid_parameter_exception('Question too long (max 2000 characters)');
         }
 
-        // sessionid: tiene que ser un UUID v4 o vacío. PARAM_ALPHANUMEXT ya
+        // El sessionid tiene que ser un UUID v4 o vacío. PARAM_ALPHANUMEXT ya
         // bloquea injection; chequeamos largo razonable acá.
         $cleansessionid = trim($params['sessionid']);
         if ($cleansessionid !== '' && (strlen($cleansessionid) < 8 || strlen($cleansessionid) > 64)) {
@@ -169,7 +169,7 @@ class chat_send extends \external_api {
             $cleansessionid = null;  // El backend acepta null para crear sesión nueva.
         }
 
-        // ----- 4. Llamar al backend Python -----
+        // 4. Llamar al backend Python.
         // userid SIEMPRE de $USER, NUNCA del parámetro. Si el atacante manda
         // un userid distinto al suyo, lo ignoramos silenciosamente.
         $client = new backend_client();
@@ -214,7 +214,7 @@ class chat_send extends \external_api {
             );
         }
 
-        // ----- 5. Validar shape de la respuesta -----
+        // 5. Validar shape de la respuesta.
         // El backend ya validó internamente con Pydantic, pero como external
         // function tenemos que devolver exactamente el shape declarado en
         // execute_returns() o Moodle nos pega.

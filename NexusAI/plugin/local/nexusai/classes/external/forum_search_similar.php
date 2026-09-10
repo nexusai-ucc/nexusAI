@@ -37,8 +37,10 @@ require_once($GLOBALS['CFG']->libdir . '/externallib.php');
  * mismo curso que sean semánticamente similares.
  */
 class forum_search_similar extends \external_api {
-    // Umbral de similitud hardcodeado en PHP para evitar problemas de conversión
-    // de float en Moodle 5.x (PARAM_FLOAT convierte 0.75 a 1 via clean_param).
+    /**
+     * @var float Umbral de similitud hardcodeado en PHP para evitar problemas de conversión de
+     *     float en Moodle 5.x (PARAM_FLOAT convierte 0.75 a 1 via clean_param).
+     */
     const SIMILARITY_THRESHOLD = 0.65;
 
     /**

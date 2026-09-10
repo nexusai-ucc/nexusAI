@@ -109,7 +109,7 @@ class privacy_export extends \external_api {
         require_capability('local/nexusai:use', $context);
 
         $client = new backend_client();
-        // $USER->id real de la sesión — nunca un parámetro que el alumno
+        // Se usa el $USER->id real de la sesión — nunca un parámetro que el alumno
         // pueda manipular para pedir el historial de otra persona.
         return $client->privacy_export((int) $USER->id, (int) $params['courseid']);
     }

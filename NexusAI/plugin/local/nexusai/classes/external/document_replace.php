@@ -83,6 +83,8 @@ class document_replace extends \external_api {
     ];
 
     /**
+     * Reemplaza el archivo de un documento existente manteniendo su document_id (CONT-07, #356).
+     *
      * @param int    $courseid   ID del curso (el contexto del curso valida acceso).
      * @param string $documentid UUID del documento a reemplazar.
      * @param string $filename   Nombre del archivo nuevo.
@@ -122,7 +124,7 @@ class document_replace extends \external_api {
             throw new \invalid_parameter_exception('Invalid filename length');
         }
 
-        // base64 inflate ~33%, así que 20 MB de archivo = ~27 MB en base64.
+        // Base64 inflate ~33%, así que 20 MB de archivo = ~27 MB en base64.
         if (strlen($params['content_b64']) > 30 * 1024 * 1024) {
             throw new \invalid_parameter_exception('File too large (max 20MB)');
         }
@@ -178,7 +180,7 @@ class document_replace extends \external_api {
         if ($existing) {
             $existing->delete();
         }
-        $file_record = [
+        $filerecord = [
             'contextid' => $context->id,
             'component' => 'local_nexusai',
             'filearea'  => 'documents',
@@ -186,7 +188,7 @@ class document_replace extends \external_api {
             'filepath'  => '/',
             'filename'  => $params['filename'],
         ];
-        $fs->create_file_from_string($file_record, $filebytes);
+        $fs->create_file_from_string($filerecord, $filebytes);
 
         return [
             'id'            => (string) $response['id'],
