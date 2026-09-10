@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_confirm_pending_upload`.
@@ -20,7 +33,6 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 class confirm_pending_upload extends \external_api {
-
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -98,13 +110,20 @@ class confirm_pending_upload extends \external_api {
 
         $client = new backend_client();
         $client->upload_document(
-            $params['courseid'], (int) $USER->id, $filename, $mimetype, $filebytes, $section
+            $params['courseid'],
+            (int) $USER->id,
+            $filename,
+            $mimetype,
+            $filebytes,
+            $section
         );
 
         // CAL-03 (issue #239): notificar a los usuarios del curso que hay
         // material nuevo. Best-effort — nunca puede romper la confirmación.
         \local_nexusai\notifier::notify_new_material(
-            $params['courseid'], $filename, (int) $USER->id
+            $params['courseid'],
+            $filename,
+            (int) $USER->id
         );
 
         return ['success' => true];

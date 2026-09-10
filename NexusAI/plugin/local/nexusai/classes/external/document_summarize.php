@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_document_summarize`.
@@ -18,7 +31,6 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 class document_summarize extends \external_api {
-
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'documentid' => new \external_value(PARAM_RAW, 'UUID del documento a resumir', VALUE_REQUIRED),
@@ -28,11 +40,11 @@ class document_summarize extends \external_api {
 
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'document_id'       => new \external_value(PARAM_RAW,  'UUID del documento'),
+            'document_id'       => new \external_value(PARAM_RAW, 'UUID del documento'),
             'document_filename' => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
-            'summary'           => new \external_value(PARAM_RAW,  'Resumen generado por IA'),
-            'chunks_used'       => new \external_value(PARAM_INT,  'Fragmentos usados para el resumen'),
-            'total_chunks'      => new \external_value(PARAM_INT,  'Total de fragmentos del documento'),
+            'summary'           => new \external_value(PARAM_RAW, 'Resumen generado por IA'),
+            'chunks_used'       => new \external_value(PARAM_INT, 'Fragmentos usados para el resumen'),
+            'total_chunks'      => new \external_value(PARAM_INT, 'Total de fragmentos del documento'),
         ]);
     }
 
@@ -65,11 +77,11 @@ class document_summarize extends \external_api {
         }
 
         return [
-            'document_id'       => (string) ($response['document_id']       ?? $cleandocid),
-            'document_filename' => (string) ($response['document_filename']  ?? ''),
-            'summary'           => (string) ($response['summary']            ?? ''),
-            'chunks_used'       => (int)    ($response['chunks_used']        ?? 0),
-            'total_chunks'      => (int)    ($response['total_chunks']       ?? 0),
+            'document_id'       => (string) ($response['document_id'] ?? $cleandocid),
+            'document_filename' => (string) ($response['document_filename'] ?? ''),
+            'summary'           => (string) ($response['summary'] ?? ''),
+            'chunks_used'       => (int)    ($response['chunks_used'] ?? 0),
+            'total_chunks'      => (int)    ($response['total_chunks'] ?? 0),
         ];
     }
 }

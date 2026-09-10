@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_forum_summarize_thread`.
@@ -18,7 +31,6 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 class forum_summarize_thread extends \external_api {
-
     // Máximo de posts que se envían al backend (el backend trunca igual, pero
     // limitamos en PHP para no construir payloads enormes).
     const MAX_POSTS = 30;
@@ -34,12 +46,12 @@ class forum_summarize_thread extends \external_api {
 
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'summary'         => new \external_value(PARAM_RAW,  'Resumen del hilo generado por el LLM'),
+            'summary'         => new \external_value(PARAM_RAW, 'Resumen del hilo generado por el LLM'),
             'key_points'      => new \external_multiple_structure(
                 new \external_value(PARAM_RAW, 'Punto clave')
             ),
             'resolved'        => new \external_value(PARAM_BOOL, 'Si la pregunta principal quedó respondida'),
-            'posts_used'      => new \external_value(PARAM_INT,  'Cantidad de posts procesados'),
+            'posts_used'      => new \external_value(PARAM_INT, 'Cantidad de posts procesados'),
             'posts_truncated' => new \external_value(PARAM_BOOL, 'Si se truncaron posts por longitud'),
         ]);
     }
@@ -133,11 +145,11 @@ class forum_summarize_thread extends \external_api {
         );
 
         return [
-            'summary'         => (string)  ($response['summary']         ?? ''),
-            'key_points'      => (array)   ($response['key_points']       ?? []),
-            'resolved'        => (bool)    ($response['resolved']          ?? false),
-            'posts_used'      => (int)     ($response['posts_used']        ?? count($posts)),
-            'posts_truncated' => (bool)    ($response['posts_truncated']   ?? $poststruncated),
+            'summary'         => (string)  ($response['summary'] ?? ''),
+            'key_points'      => (array)   ($response['key_points'] ?? []),
+            'resolved'        => (bool)    ($response['resolved'] ?? false),
+            'posts_used'      => (int)     ($response['posts_used'] ?? count($posts)),
+            'posts_truncated' => (bool)    ($response['posts_truncated'] ?? $poststruncated),
         ];
     }
 }

@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_forum_weekly_digest`.
@@ -30,7 +43,6 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 class forum_weekly_digest extends \external_api {
-
     // Máximo de discusiones que se envían al backend en un solo digest —
     // mismo tope que el backend declara (WeeklyDigestRequest.discussions).
     const MAX_DISCUSSIONS = 15;
@@ -52,10 +64,10 @@ class forum_weekly_digest extends \external_api {
             'discussion_count'  => new \external_value(PARAM_INT, 'Cantidad de discusiones con actividad'),
             'discussions'       => new \external_multiple_structure(
                 new \external_single_structure([
-                    'discussion_id'   => new \external_value(PARAM_INT,  'ID de la discusión'),
-                    'discussion_name' => new \external_value(PARAM_RAW,  'Título de la discusión'),
-                    'forum_name'      => new \external_value(PARAM_RAW,  'Nombre del foro'),
-                    'post_count'      => new \external_value(PARAM_INT,  'Posts nuevos en la ventana'),
+                    'discussion_id'   => new \external_value(PARAM_INT, 'ID de la discusión'),
+                    'discussion_name' => new \external_value(PARAM_RAW, 'Título de la discusión'),
+                    'forum_name'      => new \external_value(PARAM_RAW, 'Nombre del foro'),
+                    'post_count'      => new \external_value(PARAM_INT, 'Posts nuevos en la ventana'),
                     'urgent'          => new \external_value(PARAM_BOOL, 'Si algún post del hilo parece urgente/frustrado'),
                 ])
             ),

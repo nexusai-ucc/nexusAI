@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_quiz_attempt_save`.
@@ -20,21 +33,20 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 class quiz_attempt_save extends \external_api {
-
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'       => new \external_value(PARAM_INT,          'ID del curso',                              VALUE_REQUIRED),
-            'questiontype'   => new \external_value(PARAM_ALPHANUMEXT,  'Tipo de quiz generado',                     VALUE_REQUIRED),
-            'difficulty'     => new \external_value(PARAM_ALPHA,        'Dificultad (easy|medium|hard)',             VALUE_OPTIONAL, 'medium'),
-            'topic'          => new \external_value(PARAM_RAW,          'Tema (opcional)',                           VALUE_OPTIONAL, ''),
-            'totalquestions' => new \external_value(PARAM_INT,          'Cantidad total de preguntas (1..10)',       VALUE_REQUIRED),
-            'correctcount'   => new \external_value(PARAM_INT,          'Cantidad de respuestas correctas (0..10)', VALUE_REQUIRED),
+            'courseid'       => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'questiontype'   => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de quiz generado', VALUE_REQUIRED),
+            'difficulty'     => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_OPTIONAL, 'medium'),
+            'topic'          => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_OPTIONAL, ''),
+            'totalquestions' => new \external_value(PARAM_INT, 'Cantidad total de preguntas (1..10)', VALUE_REQUIRED),
+            'correctcount'   => new \external_value(PARAM_INT, 'Cantidad de respuestas correctas (0..10)', VALUE_REQUIRED),
         ]);
     }
 
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'id'    => new \external_value(PARAM_RAW,   'UUID del intento guardado'),
+            'id'    => new \external_value(PARAM_RAW, 'UUID del intento guardado'),
             'score' => new \external_value(PARAM_FLOAT, 'Score 0.0-1.0 calculado server-side'),
         ]);
     }

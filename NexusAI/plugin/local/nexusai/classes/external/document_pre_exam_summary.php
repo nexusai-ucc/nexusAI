@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_document_pre_exam_summary`.
@@ -20,7 +33,6 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 class document_pre_exam_summary extends \external_api {
-
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
@@ -33,7 +45,7 @@ class document_pre_exam_summary extends \external_api {
             'summary'          => new \external_value(PARAM_RAW, 'Resumen de repaso generado por IA'),
             'documents_used'   => new \external_multiple_structure(
                 new \external_single_structure([
-                    'document_id' => new \external_value(PARAM_RAW,  'UUID del documento'),
+                    'document_id' => new \external_value(PARAM_RAW, 'UUID del documento'),
                     'filename'    => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
                 ])
             ),

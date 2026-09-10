@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Cliente HTTP autenticado contra el backend Python NexusAI (FastAPI).
@@ -30,7 +43,6 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 
 class backend_client {
-
     /** @var string Endpoint base del backend (ej: http://localhost:8001) */
     private string $endpoint;
 
@@ -54,17 +66,26 @@ class backend_client {
         // con un error claro en lugar de mandar requests rotas al backend.
         if (empty($endpoint)) {
             throw new \moodle_exception(
-                'errorconfigmissing', 'local_nexusai', '', 'API endpoint'
+                'errorconfigmissing',
+                'local_nexusai',
+                '',
+                'API endpoint'
             );
         }
         if (empty($apikey)) {
             throw new \moodle_exception(
-                'errorconfigmissing', 'local_nexusai', '', 'API key'
+                'errorconfigmissing',
+                'local_nexusai',
+                '',
+                'API key'
             );
         }
         if (empty($secret)) {
             throw new \moodle_exception(
-                'errorconfigmissing', 'local_nexusai', '', 'Shared secret'
+                'errorconfigmissing',
+                'local_nexusai',
+                '',
+                'Shared secret'
             );
         }
 
@@ -613,7 +634,10 @@ class backend_client {
      * @return array{affected:int}
      */
     public function dismiss_study_plan_topic(
-        int $courseid, int $userid, array $quizerrorids, array $gapquestionids
+        int $courseid,
+        int $userid,
+        array $quizerrorids,
+        array $gapquestionids
     ): array {
         $payload = [
             'course_id'        => $courseid,
@@ -708,7 +732,11 @@ class backend_client {
      * @return array{ok:bool}
      */
     public function submit_message_feedback(
-        string $messageid, int $courseid, int $userid, bool $ishelpful, ?string $comment
+        string $messageid,
+        int $courseid,
+        int $userid,
+        bool $ishelpful,
+        ?string $comment
     ): array {
         $payload = [
             'message_id'  => $messageid,
@@ -740,8 +768,14 @@ class backend_client {
      * @param string $materialtype Filtra por mime type del documento (BUS-02). Vacío = sin filtro.
      */
     public function search(
-        int $courseid, int $userid, string $query, int $topk = 5, array $courseids = [],
-        string $materialtype = '', ?int $section = null, bool $sectionunassigned = false
+        int $courseid,
+        int $userid,
+        string $query,
+        int $topk = 5,
+        array $courseids = [],
+        string $materialtype = '',
+        ?int $section = null,
+        bool $sectionunassigned = false
     ): array {
         $payload = [
             'query'     => $query,
@@ -785,7 +819,11 @@ class backend_client {
      * @throws \moodle_exception Si el backend rechaza o la red falla.
      */
     public function upload_document(
-        int $courseid, int $uploaderid, string $filename, string $mimetype, string $filebytes,
+        int $courseid,
+        int $uploaderid,
+        string $filename,
+        string $mimetype,
+        string $filebytes,
         ?int $section = null
     ): array {
         $payload = [
@@ -836,7 +874,10 @@ class backend_client {
      * @return array Document state después del reemplazo.
      */
     public function replace_document(
-        string $documentid, string $filename, string $mimetype, string $filebytes
+        string $documentid,
+        string $filename,
+        string $mimetype,
+        string $filebytes
     ): array {
         $payload = [
             'filename'    => $filename,
@@ -1361,7 +1402,9 @@ class backend_client {
 
         if ($errno || empty($info['http_code'])) {
             throw new \moodle_exception(
-                'errorbackendunreachable', 'local_nexusai', '',
+                'errorbackendunreachable',
+                'local_nexusai',
+                '',
                 $curl->error ?? 'curl error #' . $errno
             );
         }
@@ -1375,7 +1418,9 @@ class backend_client {
                 $detail = substr($detail, 0, 500) . '...';
             }
             throw new \moodle_exception(
-                'errorbackend', 'local_nexusai', '',
+                'errorbackend',
+                'local_nexusai',
+                '',
                 'HTTP ' . $httpcode . ': ' . $detail
             );
         }
@@ -1392,7 +1437,10 @@ class backend_client {
         $decoded = json_decode($response, true);
         if (!is_array($decoded)) {
             throw new \moodle_exception(
-                'errorbackend', 'local_nexusai', '', 'Invalid JSON in response'
+                'errorbackend',
+                'local_nexusai',
+                '',
+                'Invalid JSON in response'
             );
         }
 

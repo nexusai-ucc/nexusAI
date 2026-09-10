@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_forum_search_similar`.
@@ -20,7 +33,6 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 class forum_search_similar extends \external_api {
-
     // Umbral de similitud hardcodeado en PHP para evitar problemas de conversión
     // de float en Moodle 5.x (PARAM_FLOAT convierte 0.75 a 1 via clean_param).
     const SIMILARITY_THRESHOLD = 0.65;
@@ -38,10 +50,10 @@ class forum_search_similar extends \external_api {
         return new \external_single_structure([
             'similar_posts' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'forum_post_id' => new \external_value(PARAM_INT,   'ID de mdl_forum_posts'),
-                    'discussion_id' => new \external_value(PARAM_INT,   'ID de mdl_forum_discussions'),
+                    'forum_post_id' => new \external_value(PARAM_INT, 'ID de mdl_forum_posts'),
+                    'discussion_id' => new \external_value(PARAM_INT, 'ID de mdl_forum_discussions'),
                     'similarity'    => new \external_value(PARAM_FLOAT, 'Score de similitud 0.0–1.0'),
-                    'preview'       => new \external_value(PARAM_RAW,   'Primeros 200 chars del post'),
+                    'preview'       => new \external_value(PARAM_RAW, 'Primeros 200 chars del post'),
                 ])
             ),
             'threshold_used' => new \external_value(PARAM_FLOAT, 'Umbral usado en la búsqueda'),
@@ -85,8 +97,8 @@ class forum_search_similar extends \external_api {
             $posts[] = [
                 'forum_post_id' => (int)   ($p['forum_post_id'] ?? 0),
                 'discussion_id' => (int)   ($p['discussion_id'] ?? 0),
-                'similarity'    => (float) ($p['similarity']    ?? 0.0),
-                'preview'       => (string)($p['preview']       ?? ''),
+                'similarity'    => (float) ($p['similarity'] ?? 0.0),
+                'preview'       => (string)($p['preview'] ?? ''),
             ];
         }
 

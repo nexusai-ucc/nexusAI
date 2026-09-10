@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_document_upload`.
@@ -28,7 +41,6 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 class document_upload extends \external_api {
-
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'    => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
@@ -36,7 +48,10 @@ class document_upload extends \external_api {
             'mimetype'    => new \external_value(PARAM_RAW, 'MIME type detectado por el browser', VALUE_REQUIRED),
             'content_b64' => new \external_value(PARAM_RAW, 'Contenido binario en base64', VALUE_REQUIRED),
             'section'     => new \external_value(
-                PARAM_INT, 'Sección/unidad del curso (-1 = no asignada, BUS-05)', VALUE_OPTIONAL, -1
+                PARAM_INT,
+                'Sección/unidad del curso (-1 = no asignada, BUS-05)',
+                VALUE_OPTIONAL,
+                -1
             ),
         ]);
     }
@@ -75,7 +90,11 @@ class document_upload extends \external_api {
      * @return array Document state después del upload.
      */
     public static function execute(
-        int $courseid, string $filename, string $mimetype, string $contentb64, int $section = -1
+        int $courseid,
+        string $filename,
+        string $mimetype,
+        string $contentb64,
+        int $section = -1
     ): array {
         global $USER;
 
@@ -132,7 +151,7 @@ class document_upload extends \external_api {
         $client = new backend_client();
         $response = $client->upload_document(
             (int) $params['courseid'],
-            (int) $USER->id,  // SIEMPRE del server, no del cliente
+            (int) $USER->id, // SIEMPRE del server, no del cliente
             $params['filename'],
             $params['mimetype'],
             $filebytes,
@@ -142,7 +161,9 @@ class document_upload extends \external_api {
         // Validar shape de la respuesta.
         if (!isset($response['id'], $response['status'])) {
             throw new \moodle_exception(
-                'errorbackend', 'local_nexusai', '',
+                'errorbackend',
+                'local_nexusai',
+                '',
                 'Backend upload response is missing required fields'
             );
         }
@@ -152,8 +173,14 @@ class document_upload extends \external_api {
         // itemid = course_id para agrupar por curso. Filename único por curso
         // (ya validado por el backend con chequeo de colisión).
         $fs = get_file_storage();
-        $existing = $fs->get_file($context->id, 'local_nexusai', 'documents',
-                                  $params['courseid'], '/', $params['filename']);
+        $existing = $fs->get_file(
+            $context->id,
+            'local_nexusai',
+            'documents',
+            $params['courseid'],
+            '/',
+            $params['filename']
+        );
         if ($existing) {
             $existing->delete();  // reemplazar si ya existía (re-upload)
         }
@@ -170,7 +197,9 @@ class document_upload extends \external_api {
         // CAL-03 (issue #239): notificar a los usuarios del curso que hay
         // material nuevo. Best-effort — nunca puede romper la respuesta del upload.
         \local_nexusai\notifier::notify_new_material(
-            (int) $params['courseid'], $params['filename'], (int) $USER->id
+            (int) $params['courseid'],
+            $params['filename'],
+            (int) $USER->id
         );
 
         return [

@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_search_query`.
@@ -22,7 +35,6 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 class search_query extends \external_api {
-
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'query'    => new \external_value(PARAM_RAW, 'Consulta de búsqueda', VALUE_REQUIRED),
@@ -31,10 +43,16 @@ class search_query extends \external_api {
             'global'   => new \external_value(PARAM_BOOL, 'Buscar en todos los cursos del usuario', VALUE_OPTIONAL, false),
             'materialtype' => new \external_value(PARAM_RAW, 'Filtrar por tipo de material (mime type)', VALUE_OPTIONAL, ''),
             'section'      => new \external_value(
-                PARAM_INT, 'Filtrar por sección/unidad del curso (-1 = sin filtro, BUS-05)', VALUE_OPTIONAL, -1
+                PARAM_INT,
+                'Filtrar por sección/unidad del curso (-1 = sin filtro, BUS-05)',
+                VALUE_OPTIONAL,
+                -1
             ),
             'sectionunassigned' => new \external_value(
-                PARAM_BOOL, 'Filtrar solo material sin unidad asignada (BUS-05)', VALUE_OPTIONAL, false
+                PARAM_BOOL,
+                'Filtrar solo material sin unidad asignada (BUS-05)',
+                VALUE_OPTIONAL,
+                false
             ),
         ]);
     }
@@ -55,7 +73,11 @@ class search_query extends \external_api {
                     'has_file'          => new \external_value(PARAM_BOOL, 'El archivo original está disponible para descarga', VALUE_OPTIONAL, false),
                     'mime_type'         => new \external_value(PARAM_RAW, 'MIME type del documento', VALUE_OPTIONAL, ''),
                     'section'           => new \external_value(
-                        PARAM_INT, 'Sección del documento', VALUE_OPTIONAL, null, NULL_ALLOWED
+                        PARAM_INT,
+                        'Sección del documento',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
                     ),
                 ])
             ),
@@ -63,8 +85,13 @@ class search_query extends \external_api {
     }
 
     public static function execute(
-        string $query, int $courseid, int $topk = 5, bool $global = false, string $materialtype = '',
-        int $section = -1, bool $sectionunassigned = false
+        string $query,
+        int $courseid,
+        int $topk = 5,
+        bool $global = false,
+        string $materialtype = '',
+        int $section = -1,
+        bool $sectionunassigned = false
     ): array {
         global $USER;
 

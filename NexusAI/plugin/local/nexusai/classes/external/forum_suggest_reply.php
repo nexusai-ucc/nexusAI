@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_forum_suggest_reply`.
@@ -18,23 +31,22 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 class forum_suggest_reply extends \external_api {
-
     const MAX_POSTS         = 30;
     const MAX_CHARS_PER_POST = 1000;
 
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'discussionid'  => new \external_value(PARAM_INT, 'ID de la discusión de foro', VALUE_REQUIRED),
-            'courseid'      => new \external_value(PARAM_INT, 'ID del curso de Moodle',      VALUE_REQUIRED),
+            'courseid'      => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
             'replytopostid' => new \external_value(PARAM_INT, 'ID del post al que se responde', VALUE_REQUIRED),
         ]);
     }
 
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'suggested_reply'     => new \external_value(PARAM_RAW,  'Texto sugerido por el LLM'),
+            'suggested_reply'     => new \external_value(PARAM_RAW, 'Texto sugerido por el LLM'),
             'has_course_material' => new \external_value(PARAM_BOOL, 'Si el RAG encontró material relevante del curso'),
-            'sources_used'        => new \external_value(PARAM_INT,  'Cantidad de chunks del curso usados'),
+            'sources_used'        => new \external_value(PARAM_INT, 'Cantidad de chunks del curso usados'),
         ]);
     }
 
@@ -131,9 +143,9 @@ class forum_suggest_reply extends \external_api {
         );
 
         return [
-            'suggested_reply'     => (string) ($response['suggested_reply']     ?? ''),
+            'suggested_reply'     => (string) ($response['suggested_reply'] ?? ''),
             'has_course_material' => (bool)   ($response['has_course_material'] ?? false),
-            'sources_used'        => (int)    ($response['sources_used']        ?? 0),
+            'sources_used'        => (int)    ($response['sources_used'] ?? 0),
         ];
     }
 }
