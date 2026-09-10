@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Enforcement de `local/nexusai:manage` en las external functions que
@@ -34,9 +47,9 @@
 
 namespace local_nexusai\tests;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
+ * Enforcement de local/nexusai:manage en external functions que todavía no tenían test (QA-02, #312).
+ *
  * @covers \local_nexusai\external\exam_generate
  * @covers \local_nexusai\external\analytics_dashboard
  * @covers \local_nexusai\external\analytics_faq_topics
@@ -52,7 +65,6 @@ defined('MOODLE_INTERNAL') || die();
  * @covers \local_nexusai\external\dismiss_pending_upload
  */
 class manage_capability_test extends \advanced_testcase {
-
     /**
      * Curso + alumno matriculado (rol student, SIN local/nexusai:manage).
      *
@@ -79,9 +91,7 @@ class manage_capability_test extends \advanced_testcase {
         return [$course, $teacher];
     }
 
-    // ============================================================
-    // Un test por clase :manage sin cobertura previa
-    // ============================================================
+    // Un test por clase :manage sin cobertura previa.
 
     public function test_exam_generate_requires_manage(): void {
         $this->resetAfterTest();
@@ -175,7 +185,11 @@ class manage_capability_test extends \advanced_testcase {
 
         $this->expectException(\required_capability_exception::class);
         \local_nexusai\external\document_replace::execute(
-            $course->id, '00000000-0000-0000-0000-000000000001', 'a.pdf', 'application/pdf', ''
+            $course->id,
+            '00000000-0000-0000-0000-000000000001',
+            'a.pdf',
+            'application/pdf',
+            ''
         );
     }
 
@@ -195,9 +209,7 @@ class manage_capability_test extends \advanced_testcase {
         \local_nexusai\external\confirm_pending_upload::execute($course->id, 1);
     }
 
-    // ============================================================
-    // dismiss_pending_upload — diseño deliberado, sin capability check
-    // ============================================================
+    // La función dismiss_pending_upload es diseño deliberado, sin capability check.
 
     /**
      * Confirma el diseño documentado en dismiss_pending_upload.php: opera
@@ -225,7 +237,7 @@ class manage_capability_test extends \advanced_testcase {
         ]);
         set_user_preference(\local_nexusai\observer::PENDING_PREF, $pending, $owner->id);
 
-        // "other" no tiene ningún rol especial y llama dismiss para el
+        // El usuario "other" no tiene ningún rol especial y llama dismiss para el
         // MISMO cmid que "owner" tiene pendiente — no debería tirar
         // ninguna excepción de capability (ni de ningún tipo).
         $this->setUser($other);
@@ -240,7 +252,8 @@ class manage_capability_test extends \advanced_testcase {
             true
         );
         $this->assertArrayHasKey(
-            '55', $ownerpref,
+            '55',
+            $ownerpref,
             'dismiss_pending_upload no debe afectar la preference de otro usuario'
         );
     }

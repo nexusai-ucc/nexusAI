@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Aislamiento multi-curso (QA-02, issue #312).
@@ -24,16 +37,15 @@
 
 namespace local_nexusai\tests;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
+ * Verifica aislamiento multi-curso en una muestra de external functions (QA-02, #312).
+ *
  * @covers \local_nexusai\external\chat_send
  * @covers \local_nexusai\external\quiz_generate
  * @covers \local_nexusai\external\calendar_alert_save
  * @covers \local_nexusai\external\document_summarize
  */
 class course_isolation_test extends \advanced_testcase {
-
     /**
      * Alumno matriculado SOLO en $courseA (rol student). $courseB existe
      * de verdad pero es ajeno — el alumno no tiene ningún rol ahí.
@@ -71,7 +83,12 @@ class course_isolation_test extends \advanced_testcase {
 
         $this->expectException(\required_capability_exception::class);
         \local_nexusai\external\calendar_alert_save::execute(
-            $student->id, $courseb->id, 1, 'Evento ajeno', time() + DAYSECS, 1
+            $student->id,
+            $courseb->id,
+            1,
+            'Evento ajeno',
+            time() + DAYSECS,
+            1
         );
     }
 

@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Tests de la External Function `local_nexusai_document_list`.
@@ -22,18 +35,13 @@
 
 namespace local_nexusai\tests;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests de document_list external function.
  *
  * @covers \local_nexusai\external\document_list
  */
 class document_list_test extends \advanced_testcase {
-
-    // ============================================================
-    // Test 1: estructura de execute_returns()
-    // ============================================================
+    // Test 1: estructura de execute_returns().
 
     /**
      * execute_returns() debe declarar todos los campos requeridos,
@@ -68,18 +76,18 @@ class document_list_test extends \advanced_testcase {
 
         // CONT-05: campos de timestamps.
         $this->assertArrayHasKey(
-            'created_at', $keys,
+            'created_at',
+            $keys,
             'created_at debe estar declarado en execute_returns() (CONT-05)'
         );
         $this->assertArrayHasKey(
-            'updated_at', $keys,
+            'updated_at',
+            $keys,
             'updated_at debe estar declarado en execute_returns() (CONT-05)'
         );
     }
 
-    // ============================================================
-    // Test 2: mapeo con timestamps presentes
-    // ============================================================
+    // Test 2: mapeo con timestamps presentes.
 
     /**
      * Cuando el backend devuelve created_at y updated_at, el array
@@ -118,9 +126,7 @@ class document_list_test extends \advanced_testcase {
         );
     }
 
-    // ============================================================
-    // Test 3: mapeo sin timestamps (backward compat)
-    // ============================================================
+    // Test 3: mapeo sin timestamps (backward compat).
 
     /**
      * Si el backend no devuelve created_at / updated_at (versiones
@@ -164,9 +170,7 @@ class document_list_test extends \advanced_testcase {
         $this->assertCount(0, $result);
     }
 
-    // ============================================================
-    // Helper: réplica del closure de mapeo de execute()
-    // ============================================================
+    // Helper: réplica del closure de mapeo de execute().
 
     /**
      * Réplica del closure array_map en execute() de document_list.php.

@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Tests de la External Function `local_nexusai_course_setup_state` (ONB-02 / #425).
@@ -21,16 +34,13 @@
 
 namespace local_nexusai\tests;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
+ * Tests de la external function course_setup_state (ONB-02, #425).
+ *
  * @covers \local_nexusai\external\course_setup_state
  */
 class course_setup_state_test extends \advanced_testcase {
-
-    // ============================================================
-    // Test 1: estructura de execute_returns()
-    // ============================================================
+    // Test 1: estructura de execute_returns().
 
     public function test_execute_returns_declares_all_signals(): void {
         $returns = \local_nexusai\external\course_setup_state::execute_returns();
@@ -53,9 +63,7 @@ class course_setup_state_test extends \advanced_testcase {
         }
     }
 
-    // ============================================================
-    // Test 2: signal() — present según el conteo
-    // ============================================================
+    // Test 2: signal() — present según el conteo.
 
     public function test_signal_present_reflects_count(): void {
         $cls = \local_nexusai\external\course_setup_state::class;
@@ -67,9 +75,7 @@ class course_setup_state_test extends \advanced_testcase {
         $this->assertSame(['present' => false, 'count' => 0], $cls::signal(-3));
     }
 
-    // ============================================================
-    // Test 3: material_signal() — traducción y degradación
-    // ============================================================
+    // Test 3: material_signal() — traducción y degradación.
 
     public function test_material_signal_null_when_backend_absent(): void {
         $result = \local_nexusai\external\course_setup_state::material_signal(null);
@@ -100,9 +106,7 @@ class course_setup_state_test extends \advanced_testcase {
         $this->assertSame(3, $inferred['count']);
     }
 
-    // ============================================================
-    // Test 4: curso vacío → todas las señales de Moodle en false
-    // ============================================================
+    // Test 4: curso vacío → todas las señales de Moodle en false.
 
     public function test_gather_moodle_signals_empty_course(): void {
         $this->resetAfterTest();
@@ -118,9 +122,7 @@ class course_setup_state_test extends \advanced_testcase {
         }
     }
 
-    // ============================================================
-    // Test 5: curso armado → señales detectadas
-    // ============================================================
+    // Test 5: curso armado → señales detectadas.
 
     public function test_gather_moodle_signals_detects_content(): void {
         global $DB;

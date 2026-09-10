@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Tests de backend_client — autenticación HMAC.
@@ -22,8 +35,6 @@
 
 namespace local_nexusai\tests;
 
-defined('MOODLE_INTERNAL') || die();
-
 use local_nexusai\external\backend_client;
 
 /**
@@ -32,10 +43,7 @@ use local_nexusai\external\backend_client;
  * @covers \local_nexusai\external\backend_client
  */
 class backend_client_test extends \advanced_testcase {
-
-    // ============================================================
-    // Helper de reflexión
-    // ============================================================
+    // Helper de reflexión.
 
     /**
      * Invoca un método estático privado/protegido via ReflectionMethod.
@@ -50,9 +58,7 @@ class backend_client_test extends \advanced_testcase {
         return $ref->invoke(null, ...$args);
     }
 
-    // ============================================================
-    // Test 1: formato de la firma HMAC
-    // ============================================================
+    // Test 1: formato de la firma HMAC.
 
     /**
      * compute_signature() debe retornar una cadena hex de 64 caracteres,
@@ -80,9 +86,7 @@ class backend_client_test extends \advanced_testcase {
         );
     }
 
-    // ============================================================
-    // Test 2: integridad — la firma cambia con el body
-    // ============================================================
+    // Test 2: integridad — la firma cambia con el body.
 
     /**
      * Si el body cambia (incluso un solo byte), la firma debe ser distinta.
@@ -91,10 +95,14 @@ class backend_client_test extends \advanced_testcase {
     public function test_compute_signature_differs_when_body_changes(): void {
         $common = ['sharedsecret32chars', '1716649200', 'nonce-test-abc'];
 
-        $sig1 = $this->invoke_static('compute_signature',
-            [...$common, '{"course_id":1}']);
-        $sig2 = $this->invoke_static('compute_signature',
-            [...$common, '{"course_id":2}']);
+        $sig1 = $this->invoke_static(
+            'compute_signature',
+            [...$common, '{"course_id":1}']
+        );
+        $sig2 = $this->invoke_static(
+            'compute_signature',
+            [...$common, '{"course_id":2}']
+        );
 
         $this->assertNotEquals(
             $sig1,
@@ -103,9 +111,7 @@ class backend_client_test extends \advanced_testcase {
         );
     }
 
-    // ============================================================
-    // Test 3: aislamiento — la firma cambia con el secret
-    // ============================================================
+    // Test 3: aislamiento — la firma cambia con el secret.
 
     /**
      * Dos instancias con distinto shared_secret producen firmas distintas
@@ -114,10 +120,14 @@ class backend_client_test extends \advanced_testcase {
     public function test_compute_signature_differs_when_secret_changes(): void {
         $common = ['1716649200', 'nonce-test-abc', '{"hello":"world"}'];
 
-        $sig1 = $this->invoke_static('compute_signature',
-            ['secret-A-32-chars-long', ...$common]);
-        $sig2 = $this->invoke_static('compute_signature',
-            ['secret-B-32-chars-long', ...$common]);
+        $sig1 = $this->invoke_static(
+            'compute_signature',
+            ['secret-A-32-chars-long', ...$common]
+        );
+        $sig2 = $this->invoke_static(
+            'compute_signature',
+            ['secret-B-32-chars-long', ...$common]
+        );
 
         $this->assertNotEquals(
             $sig1,
@@ -126,9 +136,7 @@ class backend_client_test extends \advanced_testcase {
         );
     }
 
-    // ============================================================
-    // Test 4: compatibilidad PHP ↔ Python
-    // ============================================================
+    // Test 4: compatibilidad PHP ↔ Python.
 
     /**
      * El algoritmo PHP debe producir exactamente el mismo resultado que Python:
@@ -149,11 +157,13 @@ class backend_client_test extends \advanced_testcase {
         $body      = '{"course_id":1,"uploader_id":42}';
 
         // Cálculo esperado (mismo algoritmo que Python side).
-        $signed_string = $timestamp . $nonce . $body;
-        $expected = hash_hmac('sha256', $signed_string, $secret);
+        $signedstring = $timestamp . $nonce . $body;
+        $expected = hash_hmac('sha256', $signedstring, $secret);
 
-        $actual = $this->invoke_static('compute_signature',
-            [$secret, $timestamp, $nonce, $body]);
+        $actual = $this->invoke_static(
+            'compute_signature',
+            [$secret, $timestamp, $nonce, $body]
+        );
 
         $this->assertEquals(
             $expected,
@@ -162,9 +172,7 @@ class backend_client_test extends \advanced_testcase {
         );
     }
 
-    // ============================================================
-    // Test 5: generate_nonce — formato y unicidad
-    // ============================================================
+    // Test 5: generate_nonce — formato y unicidad.
 
     /**
      * generate_nonce() debe retornar un string hex de 32 caracteres
