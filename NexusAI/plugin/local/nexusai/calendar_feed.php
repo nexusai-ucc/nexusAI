@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Feed iCalendar (.ics) suscribible de los eventos de un curso (CAL-07 / #377).
@@ -79,9 +92,9 @@ $timeend   = time() + 120 * DAYSECS;
 // sus grupos, pero no los de grupos a los que no pertenece.
 $usergroups = array_keys(groups_get_all_groups((int) $course->id, $userid));
 
-// $users = [$userid] hace falta para que se incluyan los eventos de actividad
-// (vencimientos de tareas y cuestionarios) — sin él solo vuelven los eventos
-// "de curso" sueltos, que son los menos.
+// Pasar $userid en el array de usuarios hace falta para que se incluyan los
+// eventos de actividad (vencimientos de tareas y cuestionarios) — sin él solo
+// vuelven los eventos "de curso" sueltos, que son los menos.
 $events = calendar_get_legacy_events(
     $timestart,
     $timeend,
@@ -90,8 +103,8 @@ $events = calendar_get_legacy_events(
     [(int) $course->id]
 );
 
-// calendar_get_legacy_events combina user/group/course con OR, así que al pasar
-// $users también arrastra eventos de OTROS cursos del alumno. Filtramos
+// La función combina user/group/course con OR, así que al pasar el usuario
+// también arrastra eventos de OTROS cursos del alumno. Filtramos
 // explícitamente: el feed de un curso son SOLO los eventos de ese curso.
 $events = array_filter($events, static function ($e) use ($course) {
     return (int) $e->courseid === (int) $course->id;
