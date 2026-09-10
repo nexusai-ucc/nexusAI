@@ -11,6 +11,7 @@ Investigación sobre desarrollo de plugins para Moodle 4.x, APIs internas, segur
 - [arquitectura-plugin-detallada.md](arquitectura-plugin-detallada.md) — XMLDB, capacidades RBAC, Mustache, clase PHP proxy completa, cron de sincronización de materiales.
 - [nexusai-api-specs.md](nexusai-api-specs.md) — API de la plataforma Nexus AI (invoke, sessions, MCP tools, data ingestion).
 - [webservices-teoria.md](webservices-teoria.md) — Arquitectura 3 capas, patrón 3 métodos, REST/SOAP, modelo de tokens, integraciones ERP/CRM, subsistema IA 4.5+.
+- [publicacion-marketplace.md](publicacion-marketplace.md) — Por qué el monorepo bloquea el registro en el Moodle Plugins Directory, `git subtree split` paso a paso, y checklist de envío (estado post-PUB-01).
 
 ## Objetivo
 
@@ -18,4 +19,4 @@ Fundamentar la arquitectura del plugin NexusAI dentro del ecosistema Moodle y ga
 
 ---
 
-*Última actualización: 2026-05-02 — Marcos Bugliotti*
+*Última actualización: 2026-09-10 — Marcos Bugliotti*
