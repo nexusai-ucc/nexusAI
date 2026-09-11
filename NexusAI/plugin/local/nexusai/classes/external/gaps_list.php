@@ -44,12 +44,12 @@ class gaps_list extends \external_api {
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'        => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'days'            => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_OPTIONAL, 30),
-            'limit'           => new \external_value(PARAM_INT, 'Máximo de items (1..100)', VALUE_OPTIONAL, 20),
+            'days'            => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_DEFAULT, 30),
+            'limit'           => new \external_value(PARAM_INT, 'Máximo de items (1..100)', VALUE_DEFAULT, 20),
             // UX-15 (#385): offset sobre los grupos ya clusterizados, para pedir la próxima página.
-            'offset'          => new \external_value(PARAM_INT, 'Desde qué posición paginar', VALUE_OPTIONAL, 0),
+            'offset'          => new \external_value(PARAM_INT, 'Desde qué posición paginar', VALUE_DEFAULT, 0),
             // DOC-D08 (#383): por default solo gaps activos.
-            'includearchived' => new \external_value(PARAM_BOOL, 'Incluir gaps ya archivados', VALUE_OPTIONAL, false),
+            'includearchived' => new \external_value(PARAM_BOOL, 'Incluir gaps ya archivados', VALUE_DEFAULT, false),
         ]);
     }
 

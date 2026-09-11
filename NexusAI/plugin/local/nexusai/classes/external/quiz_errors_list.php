@@ -44,9 +44,9 @@ class quiz_errors_list extends \external_api {
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_OPTIONAL, 90),
-            'limit'    => new \external_value(PARAM_INT, 'Máximo de items (1..200)', VALUE_OPTIONAL, 100),
-            'offset'   => new \external_value(PARAM_INT, 'Items a saltear (paginación)', VALUE_OPTIONAL, 0),
+            'days'     => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_DEFAULT, 90),
+            'limit'    => new \external_value(PARAM_INT, 'Máximo de items (1..200)', VALUE_DEFAULT, 100),
+            'offset'   => new \external_value(PARAM_INT, 'Items a saltear (paginación)', VALUE_DEFAULT, 0),
         ]);
     }
 

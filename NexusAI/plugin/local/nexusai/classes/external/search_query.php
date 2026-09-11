@@ -47,19 +47,19 @@ class search_query extends \external_api {
         return new \external_function_parameters([
             'query'    => new \external_value(PARAM_RAW, 'Consulta de búsqueda', VALUE_REQUIRED),
             'courseid' => new \external_value(PARAM_INT, 'ID del curso actual', VALUE_REQUIRED),
-            'topk'     => new \external_value(PARAM_INT, 'Cantidad de resultados (1..10)', VALUE_OPTIONAL, 5),
-            'global'   => new \external_value(PARAM_BOOL, 'Buscar en todos los cursos del usuario', VALUE_OPTIONAL, false),
-            'materialtype' => new \external_value(PARAM_RAW, 'Filtrar por tipo de material (mime type)', VALUE_OPTIONAL, ''),
+            'topk'     => new \external_value(PARAM_INT, 'Cantidad de resultados (1..10)', VALUE_DEFAULT, 5),
+            'global'   => new \external_value(PARAM_BOOL, 'Buscar en todos los cursos del usuario', VALUE_DEFAULT, false),
+            'materialtype' => new \external_value(PARAM_RAW, 'Filtrar por tipo de material (mime type)', VALUE_DEFAULT, ''),
             'section'      => new \external_value(
                 PARAM_INT,
                 'Filtrar por sección/unidad del curso (-1 = sin filtro, BUS-05)',
-                VALUE_OPTIONAL,
+                VALUE_DEFAULT,
                 -1
             ),
             'sectionunassigned' => new \external_value(
                 PARAM_BOOL,
                 'Filtrar solo material sin unidad asignada (BUS-05)',
-                VALUE_OPTIONAL,
+                VALUE_DEFAULT,
                 false
             ),
         ]);
@@ -76,13 +76,13 @@ class search_query extends \external_api {
             'total'   => new \external_value(PARAM_INT, 'Total de resultados'),
             'results' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'document_id'       => new \external_value(PARAM_RAW, 'UUID del documento', VALUE_OPTIONAL, ''),
+                    'document_id'       => new \external_value(PARAM_RAW, 'UUID del documento', VALUE_DEFAULT, ''),
                     'document_filename' => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
-                    'course_id'         => new \external_value(PARAM_INT, 'ID del curso fuente', VALUE_OPTIONAL, 0),
+                    'course_id'         => new \external_value(PARAM_INT, 'ID del curso fuente', VALUE_DEFAULT, 0),
                     'course_name'       => new \external_value(
                         PARAM_TEXT,
                         'Nombre del curso (solo en modo global)',
-                        VALUE_OPTIONAL,
+                        VALUE_DEFAULT,
                         ''
                     ),
                     'chunk_index'       => new \external_value(PARAM_INT, 'Índice del fragmento'),
@@ -91,10 +91,10 @@ class search_query extends \external_api {
                     'has_file'          => new \external_value(
                         PARAM_BOOL,
                         'El archivo original está disponible para descarga',
-                        VALUE_OPTIONAL,
+                        VALUE_DEFAULT,
                         false
                     ),
-                    'mime_type'         => new \external_value(PARAM_RAW, 'MIME type del documento', VALUE_OPTIONAL, ''),
+                    'mime_type'         => new \external_value(PARAM_RAW, 'MIME type del documento', VALUE_DEFAULT, ''),
                     'section'           => new \external_value(
                         PARAM_INT,
                         'Sección del documento',

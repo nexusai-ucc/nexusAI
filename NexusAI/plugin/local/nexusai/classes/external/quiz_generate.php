@@ -43,15 +43,15 @@ class quiz_generate extends \external_api {
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'      => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'topic'         => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_OPTIONAL, ''),
-            'numquestions'  => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..10)', VALUE_OPTIONAL, 5),
+            'topic'         => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_DEFAULT, ''),
+            'numquestions'  => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..10)', VALUE_DEFAULT, 5),
             'questiontype'  => new \external_value(
                 PARAM_ALPHANUMEXT,
                 'Tipo de pregunta (multiple_choice|true_false|open|mix|flashcard)',
-                VALUE_OPTIONAL,
+                VALUE_DEFAULT,
                 'multiple_choice'
             ),
-            'difficulty'    => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_OPTIONAL, 'medium'),
+            'difficulty'    => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
         ]);
     }
 

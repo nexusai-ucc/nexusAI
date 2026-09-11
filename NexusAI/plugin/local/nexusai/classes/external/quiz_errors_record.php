@@ -49,11 +49,11 @@ class quiz_errors_record extends \external_api {
                     'question_type'       => new \external_value(
                         PARAM_ALPHANUMEXT,
                         'Tipo de pregunta',
-                        VALUE_OPTIONAL,
+                        VALUE_DEFAULT,
                         'multiple_choice'
                     ),
                     'question'            => new \external_value(PARAM_RAW, 'Texto de la pregunta', VALUE_REQUIRED),
-                    'explanation'         => new \external_value(PARAM_RAW, 'Explicación / respuesta modelo', VALUE_OPTIONAL, ''),
+                    'explanation'         => new \external_value(PARAM_RAW, 'Explicación / respuesta modelo', VALUE_DEFAULT, ''),
                     'source_filename'     => new \external_value(PARAM_TEXT, 'Archivo fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
                     'source_document_id'  => new \external_value(
                         PARAM_RAW,
@@ -70,7 +70,7 @@ class quiz_errors_record extends \external_api {
                     'correct_index'       => new \external_value(
                         PARAM_INT,
                         'Índice de la opción correcta (-1..3)',
-                        VALUE_OPTIONAL,
+                        VALUE_DEFAULT,
                         -1
                     ),
                     'user_selected_index' => new \external_value(

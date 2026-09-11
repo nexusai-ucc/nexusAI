@@ -53,7 +53,7 @@ class document_list extends \external_api {
                 null,
                 NULL_ALLOWED
             ),
-            'offset'   => new \external_value(PARAM_INT, 'Desde qué posición paginar', VALUE_OPTIONAL, 0),
+            'offset'   => new \external_value(PARAM_INT, 'Desde qué posición paginar', VALUE_DEFAULT, 0),
         ]);
     }
 

@@ -45,8 +45,8 @@ class quiz_attempt_save extends \external_api {
         return new \external_function_parameters([
             'courseid'       => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
             'questiontype'   => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de quiz generado', VALUE_REQUIRED),
-            'difficulty'     => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_OPTIONAL, 'medium'),
-            'topic'          => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_OPTIONAL, ''),
+            'difficulty'     => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
+            'topic'          => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_DEFAULT, ''),
             'totalquestions' => new \external_value(PARAM_INT, 'Cantidad total de preguntas (1..10)', VALUE_REQUIRED),
             'correctcount'   => new \external_value(PARAM_INT, 'Cantidad de respuestas correctas (0..10)', VALUE_REQUIRED),
         ]);

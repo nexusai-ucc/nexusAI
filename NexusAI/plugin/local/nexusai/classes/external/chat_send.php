@@ -76,13 +76,13 @@ class chat_send extends \external_api {
             'sessionid' => new \external_value(
                 PARAM_ALPHANUMEXT,
                 'UUID de sesión existente, o vacío para crear una nueva',
-                VALUE_OPTIONAL,
+                VALUE_DEFAULT,
                 ''
             ),
             'multicourse' => new \external_value(
                 PARAM_BOOL,
                 'Si true, busca en TODOS los cursos del alumno con material indexado (Feature B)',
-                VALUE_OPTIONAL,
+                VALUE_DEFAULT,
                 false
             ),
         ]);

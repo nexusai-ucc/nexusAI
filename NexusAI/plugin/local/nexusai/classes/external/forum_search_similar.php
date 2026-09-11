@@ -52,8 +52,8 @@ class forum_search_similar extends \external_api {
         return new \external_function_parameters([
             'text'          => new \external_value(PARAM_RAW, 'Texto del post en redacción (mín 10 chars)', VALUE_REQUIRED),
             'courseid'      => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
-            'excludepostid' => new \external_value(PARAM_INT, 'Post a excluir (al editar)', VALUE_OPTIONAL, 0),
-            'topk'          => new \external_value(PARAM_INT, 'Resultados máximos (1–10)', VALUE_OPTIONAL, 3),
+            'excludepostid' => new \external_value(PARAM_INT, 'Post a excluir (al editar)', VALUE_DEFAULT, 0),
+            'topk'          => new \external_value(PARAM_INT, 'Resultados máximos (1–10)', VALUE_DEFAULT, 3),
         ]);
     }
 

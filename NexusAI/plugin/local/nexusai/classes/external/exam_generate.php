@@ -48,15 +48,15 @@ class exam_generate extends \external_api {
                 new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento fuente'),
                 'Archivos del curso de los que sacar las preguntas (al menos 1)'
             ),
-            'topic'        => new \external_value(PARAM_RAW, 'Tema opcional', VALUE_OPTIONAL, ''),
-            'numquestions' => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..20)', VALUE_OPTIONAL, 10),
+            'topic'        => new \external_value(PARAM_RAW, 'Tema opcional', VALUE_DEFAULT, ''),
+            'numquestions' => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..20)', VALUE_DEFAULT, 10),
             'questiontype' => new \external_value(
                 PARAM_ALPHANUMEXT,
                 'Tipo de pregunta (multiple_choice|true_false|open|mix)',
-                VALUE_OPTIONAL,
+                VALUE_DEFAULT,
                 'multiple_choice'
             ),
-            'difficulty'   => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_OPTIONAL, 'medium'),
+            'difficulty'   => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
             // DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ) que el
             // docente eligió priorizar como contexto extra de generación.
             'topics'       => new \external_multiple_structure(

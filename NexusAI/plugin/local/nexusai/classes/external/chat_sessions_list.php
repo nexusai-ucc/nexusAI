@@ -45,10 +45,10 @@ class chat_sessions_list extends \external_api {
             'scopecourse' => new \external_value(
                 PARAM_BOOL,
                 'Si true, lista solo sesiones del curso actual. Si false, todas las del user.',
-                VALUE_OPTIONAL,
+                VALUE_DEFAULT,
                 true
             ),
-            'limit'      => new \external_value(PARAM_INT, 'Máximo (1..100)', VALUE_OPTIONAL, 20),
+            'limit'      => new \external_value(PARAM_INT, 'Máximo (1..100)', VALUE_DEFAULT, 20),
         ]);
     }
 

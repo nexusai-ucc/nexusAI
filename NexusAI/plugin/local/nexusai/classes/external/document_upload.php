@@ -59,7 +59,7 @@ class document_upload extends \external_api {
             'section'     => new \external_value(
                 PARAM_INT,
                 'Sección/unidad del curso (-1 = no asignada, BUS-05)',
-                VALUE_OPTIONAL,
+                VALUE_DEFAULT,
                 -1
             ),
         ]);
