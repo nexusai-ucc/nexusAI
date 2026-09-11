@@ -63,6 +63,7 @@ namespace local_nexusai;
  * @covers \local_nexusai\external\get_pending_uploads
  * @covers \local_nexusai\external\confirm_pending_upload
  * @covers \local_nexusai\external\dismiss_pending_upload
+ * @runTestsInSeparateProcesses
  */
 final class manage_capability_test extends \advanced_testcase {
     /**

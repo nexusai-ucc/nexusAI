@@ -39,6 +39,7 @@ namespace local_nexusai;
  * Tests de document_list external function.
  *
  * @covers \local_nexusai\external\document_list
+ * @runTestsInSeparateProcesses
  */
 final class document_list_test extends \advanced_testcase {
     // Test 1: estructura de execute_returns().

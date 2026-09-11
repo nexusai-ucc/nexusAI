@@ -38,6 +38,7 @@ namespace local_nexusai;
  * Tests de la external function course_setup_state (ONB-02, #425).
  *
  * @covers \local_nexusai\external\course_setup_state
+ * @runTestsInSeparateProcesses
  */
 final class course_setup_state_test extends \advanced_testcase {
     // Test 1: estructura de execute_returns().

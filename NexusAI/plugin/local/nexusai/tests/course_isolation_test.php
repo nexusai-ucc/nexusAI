@@ -49,6 +49,7 @@ namespace local_nexusai;
  * @covers \local_nexusai\external\quiz_generate
  * @covers \local_nexusai\external\calendar_alert_save
  * @covers \local_nexusai\external\document_summarize
+ * @runTestsInSeparateProcesses
  */
 final class course_isolation_test extends \advanced_testcase {
     /**

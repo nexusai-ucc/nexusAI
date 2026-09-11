@@ -36,6 +36,7 @@ namespace local_nexusai;
  *
  * @covers \local_nexusai\external\onboarding_state_get
  * @covers \local_nexusai\external\onboarding_state_set
+ * @runTestsInSeparateProcesses
  */
 final class onboarding_state_test extends \advanced_testcase {
     public function test_read_state_defaults_when_no_preference_set(): void {

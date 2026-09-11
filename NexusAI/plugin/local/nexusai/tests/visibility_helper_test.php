@@ -38,6 +38,7 @@ namespace local_nexusai;
  * Tests de visibility_helper::onboarding_hint() en modo revisión (ONB-04, #427).
  *
  * @covers \local_nexusai\visibility_helper
+ * @runTestsInSeparateProcesses
  */
 final class visibility_helper_test extends \advanced_testcase {
     protected function tearDown(): void {
