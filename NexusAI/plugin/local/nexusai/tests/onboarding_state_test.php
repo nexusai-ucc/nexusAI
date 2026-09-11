@@ -46,7 +46,11 @@ final class onboarding_state_test extends \advanced_testcase {
 
         $state = \local_nexusai\external\onboarding_state_get::read_state($course->id);
 
-        $this->assertSame($course->id, $state['courseid']);
+        // Se usa assertEquals, no assertSame: $course->id que devuelve el generador de test
+        // viene como string numérico; read_state() lo tipa a int vía su firma
+        // (int $courseid) -- son el mismo curso, la representación PHP exacta no
+        // es lo que este test quiere probar.
+        $this->assertEquals($course->id, $state['courseid']);
         $this->assertFalse($state['dismissed']);
         $this->assertSame([], $state['skipped']);
     }

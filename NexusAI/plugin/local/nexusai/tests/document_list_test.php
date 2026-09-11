@@ -46,21 +46,36 @@ final class document_list_test extends \advanced_testcase {
     /**
      * execute_returns() debe declarar todos los campos requeridos,
      * incluidos los de CONT-05 (created_at, updated_at).
+     *
+     * El contrato es {total, items[]} (paginación, UX-17/#387), no una
+     * lista pelada -- este test asumía la forma vieja, previa a paginación,
+     * y nunca se corrió de verdad hasta ahora (issue #474) para notarlo.
      */
     public function test_execute_returns_declares_required_fields(): void {
         $returns = \local_nexusai\external\document_list::execute_returns();
 
         $this->assertInstanceOf(
-            \external_multiple_structure::class,
+            \external_single_structure::class,
             $returns,
-            'execute_returns() debe retornar external_multiple_structure'
+            'execute_returns() debe retornar external_single_structure con {total, items}'
         );
 
-        $inner = $returns->content;
+        $topkeys = $returns->keys;
+        $this->assertArrayHasKey('total', $topkeys);
+        $this->assertArrayHasKey('items', $topkeys);
+
+        $items = $topkeys['items'];
+        $this->assertInstanceOf(
+            \external_multiple_structure::class,
+            $items,
+            'items debe ser external_multiple_structure'
+        );
+
+        $inner = $items->content;
         $this->assertInstanceOf(
             \external_single_structure::class,
             $inner,
-            'El contenido debe ser external_single_structure'
+            'El contenido de items debe ser external_single_structure'
         );
 
         $keys = $inner->keys;

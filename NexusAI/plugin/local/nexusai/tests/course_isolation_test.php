@@ -24,10 +24,15 @@
  * garantiza por contexto (un rol asignado en el contexto del curso A no
  * otorga nada en el contexto del curso B) — este test lo confirma
  * explícitamente por primera vez para estas funciones, sin necesitar
- * mockear backend_client: require_capability() tira ANTES de llegar a
- * `new backend_client()` en las 4 clases cubiertas acá (mismo esqueleto
- * validate_parameters → context_course::instance → validate_context →
- * require_capability → backend_client que usa el resto del plugin).
+ * mockear backend_client.
+ *
+ * La excepción real es `require_login_exception`, no `required_capability_exception`:
+ * `validate_context()` llama internamente a `require_login()` para un contexto de
+ * curso, que verifica matriculación ANTES de que execute() llegue a
+ * `require_capability()` — un alumno no matriculado nunca pasa de ahí, así que la
+ * capability ni se evalúa (confirmado corriendo el test de verdad por primera vez,
+ * issue #474; el comentario original asumía que era require_capability() la que
+ * tiraba).
  *
  * @package    local_nexusai
  * @category   test
@@ -65,7 +70,7 @@ final class course_isolation_test extends \advanced_testcase {
         $this->resetAfterTest();
         [, $courseb] = $this->create_student_isolated_from_another_course();
 
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(\require_login_exception::class);
         \local_nexusai\external\chat_send::execute('hola', $courseb->id);
     }
 
@@ -73,7 +78,7 @@ final class course_isolation_test extends \advanced_testcase {
         $this->resetAfterTest();
         [, $courseb] = $this->create_student_isolated_from_another_course();
 
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(\require_login_exception::class);
         \local_nexusai\external\quiz_generate::execute($courseb->id);
     }
 
@@ -81,7 +86,7 @@ final class course_isolation_test extends \advanced_testcase {
         $this->resetAfterTest();
         [, $courseb, $student] = $this->create_student_isolated_from_another_course();
 
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(\require_login_exception::class);
         \local_nexusai\external\calendar_alert_save::execute(
             $student->id,
             $courseb->id,
@@ -96,7 +101,7 @@ final class course_isolation_test extends \advanced_testcase {
         $this->resetAfterTest();
         [, $courseb] = $this->create_student_isolated_from_another_course();
 
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(\require_login_exception::class);
         \local_nexusai\external\document_summarize::execute('00000000-0000-0000-0000-000000000001', $courseb->id);
     }
 
