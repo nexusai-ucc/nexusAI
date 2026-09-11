@@ -33,14 +33,14 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
+namespace local_nexusai;
 
 /**
  * Tests de document_list external function.
  *
  * @covers \local_nexusai\external\document_list
  */
-class document_list_test extends \advanced_testcase {
+final class document_list_test extends \advanced_testcase {
     // Test 1: estructura de execute_returns().
 
     /**

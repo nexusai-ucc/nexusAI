@@ -29,7 +29,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
+namespace local_nexusai;
 
 /**
  * Tests de las external functions onboarding_state_get/onboarding_state_set (ONB-05, #428).
@@ -37,7 +37,7 @@ namespace local_nexusai\tests;
  * @covers \local_nexusai\external\onboarding_state_get
  * @covers \local_nexusai\external\onboarding_state_set
  */
-class onboarding_state_test extends \advanced_testcase {
+final class onboarding_state_test extends \advanced_testcase {
     public function test_read_state_defaults_when_no_preference_set(): void {
         $this->resetAfterTest();
         $this->setAdminUser();

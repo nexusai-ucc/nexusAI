@@ -35,7 +35,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
+namespace local_nexusai;
 
 /**
  * Verifica aislamiento multi-curso en una muestra de external functions (QA-02, #312).
@@ -45,7 +45,7 @@ namespace local_nexusai\tests;
  * @covers \local_nexusai\external\calendar_alert_save
  * @covers \local_nexusai\external\document_summarize
  */
-class course_isolation_test extends \advanced_testcase {
+final class course_isolation_test extends \advanced_testcase {
     /**
      * Alumno matriculado SOLO en $courseA (rol student). $courseB existe
      * de verdad pero es ajeno — el alumno no tiene ningún rol ahí.

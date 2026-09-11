@@ -32,14 +32,14 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
+namespace local_nexusai;
 
 /**
  * Tests de visibility_helper::onboarding_hint() en modo revisión (ONB-04, #427).
  *
  * @covers \local_nexusai\visibility_helper
  */
-class visibility_helper_test extends \advanced_testcase {
+final class visibility_helper_test extends \advanced_testcase {
     protected function tearDown(): void {
         unset($_GET['id']);
         parent::tearDown();

@@ -32,14 +32,14 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
+namespace local_nexusai;
 
 /**
  * Tests de la external function course_setup_state (ONB-02, #425).
  *
  * @covers \local_nexusai\external\course_setup_state
  */
-class course_setup_state_test extends \advanced_testcase {
+final class course_setup_state_test extends \advanced_testcase {
     // Test 1: estructura de execute_returns().
 
     public function test_execute_returns_declares_all_signals(): void {

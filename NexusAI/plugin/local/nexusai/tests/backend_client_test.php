@@ -33,7 +33,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
+namespace local_nexusai;
 
 use local_nexusai\external\backend_client;
 
@@ -42,7 +42,7 @@ use local_nexusai\external\backend_client;
  *
  * @covers \local_nexusai\external\backend_client
  */
-class backend_client_test extends \advanced_testcase {
+final class backend_client_test extends \advanced_testcase {
     // Helper de reflexión.
 
     /**

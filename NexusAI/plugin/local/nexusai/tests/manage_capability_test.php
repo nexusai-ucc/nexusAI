@@ -45,7 +45,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
+namespace local_nexusai;
 
 /**
  * Enforcement de local/nexusai:manage en external functions que todavía no tenían test (QA-02, #312).
@@ -64,7 +64,7 @@ namespace local_nexusai\tests;
  * @covers \local_nexusai\external\confirm_pending_upload
  * @covers \local_nexusai\external\dismiss_pending_upload
  */
-class manage_capability_test extends \advanced_testcase {
+final class manage_capability_test extends \advanced_testcase {
     /**
      * Curso + alumno matriculado (rol student, SIN local/nexusai:manage).
      *
