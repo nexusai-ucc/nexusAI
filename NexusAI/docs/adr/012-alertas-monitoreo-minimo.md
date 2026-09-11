@@ -24,9 +24,9 @@ Los eventos que más importan en un piloto, por impacto directo en la experienci
 
 ## Decisión
 
-Se implementan alertas mínimas por **webhook saliente** (Slack/Discord, configurable por variable de entorno `ALERT_WEBHOOK_URL`), sin agregar ningún servicio ni proceso adicional persistente más allá de un script de cron ya-existente-en-espíritu (la VM ya corre tareas periódicas simples):
+Se implementan alertas mínimas por **email vía SMTP de Gmail** (configurable por variables de entorno `ALERT_SMTP_USER` / `ALERT_SMTP_PASSWORD` / `ALERT_EMAIL_TO`, con `ALERT_SMTP_HOST`/`ALERT_SMTP_PORT` con default `smtp.gmail.com:465` pero reutilizables para cualquier SMTP con auth), sin agregar ningún servicio ni proceso adicional persistente más allá de un script de cron ya-existente-en-espíritu (la VM ya corre tareas periódicas simples). `smtplib` es stdlib de Python — no suma ninguna dependencia nueva. La cuenta remitente necesita una **App Password** de Google (no la contraseña normal — Gmail bloquea login SMTP directo desde 2022), generada en Cuenta de Google → Seguridad → Verificación en 2 pasos → Contraseñas de aplicaciones.
 
-- **Backend caído** (evento 1): `scripts/health_check_alert.py`, un script standalone sin dependencias de terceros (solo `urllib` de la stdlib), pensado para correr por **cron cada 1 minuto** — deliberadamente AFUERA del proceso de FastAPI, porque si el proceso muere nada adentro puede avisar de su propia caída. Cuenta fallas consecutivas de `/health` en un archivo de estado local (cada invocación de cron es un proceso nuevo) y alertea al cruzar un umbral configurable (default: 3 fallas seguidas), con una única alerta por racha de caída y una notificación de recuperación cuando vuelve a responder.
+- **Backend caído** (evento 1): `scripts/health_check_alert.py`, un script standalone sin dependencias de terceros (solo `urllib` + `smtplib` de la stdlib), pensado para correr por **cron cada 1 minuto** — deliberadamente AFUERA del proceso de FastAPI, porque si el proceso muere nada adentro puede avisar de su propia caída. Cuenta fallas consecutivas de `/health` en un archivo de estado local (cada invocación de cron es un proceso nuevo) y alertea al cruzar un umbral configurable (default: 3 fallas seguidas), con una única alerta por racha de caída y una notificación de recuperación cuando vuelve a responder.
 
 - **Tasa de 5xx elevada** (evento 2): `app/shared/error_monitoring.py::record_5xx_and_maybe_alert`, llamado desde `RequestIDMiddleware` (`app/shared/middleware.py`) por cada response con status ≥ 500. Reusa el patrón de ventana fija en Redis de `app/shared/rate_limit.py` (mismo `INCR` + `EXPIRE` por bucket de tiempo) — no el mismo código, porque acá no hace falta lanzar una `HTTPException` sino contar y, opcionalmente, disparar un webhook.
 
@@ -36,7 +36,7 @@ Se implementan alertas mínimas por **webhook saliente** (Slack/Discord, configu
 
 - **Cuota agotada** (evento 4): dentro de la misma falla del LLM, si la excepción final es `openai.RateLimitError` (429 — cuota agotada tanto en OpenAI como en el shim compatible de Gemini), se dispara una alerta separada y más específica ("revisar cuota/billing del proveedor"), con umbral bajo (1, por defecto) porque implica que ya no queda ningún eslabón de la cadena de fallback disponible.
 
-Todas las alertas comparten el mecanismo de `app/shared/alerting.py::record_event_and_maybe_alert`: ventana fija en Redis + una bandera `SET NX` con el mismo TTL para no floodear el webhook mientras el problema persiste (una sola alerta por ventana, no una por request).
+Todas las alertas comparten el mecanismo de `app/shared/alerting.py::record_event_and_maybe_alert`: ventana fija en Redis + una bandera `SET NX` con el mismo TTL para no floodear la casilla de correo mientras el problema persiste (una sola alerta por ventana, no una por request). El envío en sí (`send_alert`) corre `smtplib.SMTP_SSL` dentro de `asyncio.to_thread` para no bloquear el event loop de FastAPI, ya que `smtplib` es una librería síncrona.
 
 ## Alternativas evaluadas
 
@@ -68,28 +68,44 @@ Servicio externo que pinguea `/health` y alertea.
 
 **Por qué no ahora, pero no se descarta:** queda anotado como complemento futuro para el chequeo de `/health` específicamente (ver "Cuándo revisar"), corriendo en paralelo al script de cron — no lo reemplaza para los otros 3 eventos.
 
-### Alternativa C — Webhook + contadores en Redis (elegida)
+### Alternativa C — Webhook a Slack/Discord + contadores en Redis
 
-Descripta en la Decisión.
+Primera versión de este ADR: notificar por un webhook entrante (Slack Incoming Webhook o Discord), con el mismo mecanismo de ventana fija en Redis.
 
 **Pros:**
-- Cero servicios nuevos: reusa Redis (ya está desplegado, ver `app/infrastructure/redis_client.py`) y un script de cron (mecanismo que la VM ya soportaría sin cambios).
-- Slack/Discord Incoming Webhooks son gratis y ya es donde el equipo mira notificaciones de otras herramientas.
-- Cada pieza es ~50-100 líneas de Python testeables sin mocks pesados.
+- Casi cero setup: crear un webhook es un solo paso en la UI de Slack/Discord, sin cuentas nuevas ni contraseñas de aplicación.
+- Push casi instantáneo a un canal, sin depender de que alguien revise una bandeja de entrada.
 
 **Contras:**
-- Sin dashboards ni histórico — solo notificación puntual al cruzar un umbral.
-- El chequeo de `/health` por cron en la misma VM no detecta la caída de la VM entera (si la VM muere, el cron también).
+- Requiere que el equipo ya use Slack o Discord como canal de trabajo — para un piloto de una persona, es una herramienta más a chequear.
+- El destino queda atado a un workspace/servidor de terceros en vez de algo tan personal y ya-revisado-a-diario como el propio email.
 
-**Por qué sí:** cierra los 4 gaps del contexto con el presupuesto de recursos disponible, sin comprometer a nada que haya que desmontar si más adelante se adopta la Alternativa A o B.
+**Por qué no:** se prefirió un canal que el responsable del piloto ya revisa constantemente sin fricción — el propio correo — antes que sumar el hábito de mirar un canal de Slack/Discord dedicado. Queda documentada por si el equipo crece y conviene centralizar en un canal compartido (ver "Cuándo revisar").
+
+### Alternativa D — Email vía SMTP de Gmail (elegida)
+
+Descripta en la Decisión. Mismo mecanismo de conteo/umbral que la Alternativa C, cambiando el transporte de notificación.
+
+**Pros:**
+- Cero servicios nuevos: reusa Redis (ya desplegado, ver `app/infrastructure/redis_client.py`), un script de cron (mecanismo que la VM ya soportaría sin cambios), y `smtplib` de la stdlib — ninguna dependencia nueva en `requirements.txt`.
+- El destino es el correo personal del responsable del piloto, que ya revisa sin necesidad de sumar un canal nuevo.
+- Cada pieza sigue siendo ~50-100 líneas de Python testeables sin mocks pesados (se mockea `smtplib.SMTP_SSL`, no un servicio externo real).
+
+**Contras:**
+- Requiere una App Password de Google (un paso de setup manual, ver Decisión) — más fricción inicial que crear un webhook.
+- Sin dashboards ni histórico — igual que la Alternativa C, solo notificación puntual al cruzar un umbral.
+- El chequeo de `/health` por cron en la misma VM no detecta la caída de la VM entera (si la VM muere, el cron también) — esto no cambia según el transporte de notificación elegido.
+- Gmail impone límites de envío (~500/día en cuentas normales) — muy por encima de lo que un piloto con pocos usuarios concurrentes puede generar, así que no es una restricción real hoy.
+
+**Por qué sí:** cierra los 4 gaps del contexto con el presupuesto de recursos disponible, sin comprometer a nada que haya que desmontar si más adelante se adopta la Alternativa A o B, y entrega la notificación al lugar donde hoy se la va a leer.
 
 ## Consecuencias
 
 ### Positivas
 
 - Los 4 eventos del piloto generan una notificación sin intervención humana, sin agregar procesos persistentes nuevos (el único proceso adicional es el script de cron, que corre unos milisegundos por minuto).
-- El webhook es configurable por variable de entorno (`ALERT_WEBHOOK_URL`) — sin credenciales hardcodeadas, y sin webhook configurado el sistema no rompe: solo loguea con `WARNING`.
-- La lógica de umbral (`record_event_and_maybe_alert`) es genérica y reusable — agregar un quinto evento a futuro (p. ej. fallos de indexación de documentos) es una función nueva de ~10 líneas, no un mecanismo nuevo.
+- El destino es configurable por variable de entorno (`ALERT_SMTP_USER`, `ALERT_SMTP_PASSWORD`, `ALERT_EMAIL_TO`) — sin credenciales hardcodeadas, y sin esas tres variables configuradas el sistema no rompe: solo loguea con `WARNING`.
+- La lógica de umbral (`record_event_and_maybe_alert`) es genérica y reusable — agregar un quinto evento a futuro (p. ej. fallos de indexación de documentos) es una función nueva de ~10 líneas, no un mecanismo nuevo. Cambiar el transporte de notificación (por ejemplo, sumar Slack más adelante) tampoco toca esa lógica: solo `send_alert`.
 
 ### Negativas / trade-offs aceptados
 
@@ -97,6 +113,7 @@ Descripta en la Decisión.
 - "Se acerca al límite de cuota" no se detecta de forma proactiva (no hay integración con la API de billing/uso del proveedor) — solo se detecta la cuota YA agotada (`RateLimitError` propagada). Los proveedores usados (Gemini vía shim OpenAI-compat, OpenAI) no exponen un endpoint simple de "% de cuota usada" para consultar proactivamente.
 - El chequeo de `/health` corre en cron en la misma infraestructura que monitorea — si la VM completa se cae (no solo el proceso), el cron tampoco corre y no hay alerta.
 - Las alertas se pierden si Redis está caído en el momento del evento (el contador no se puede incrementar) — se loguea el fallo pero no hay alerta de respaldo sin Redis.
+- Si Gmail cambia su política de App Passwords, o la cuenta remitente queda bloqueada/sospechada de spam, el envío se corta silenciosamente (queda solo el log de `WARNING`) hasta que alguien note la ausencia de alertas.
 
 ### Cómo se mitigan
 
@@ -107,7 +124,8 @@ Descripta en la Decisión.
 
 ## Cuándo revisar esta decisión
 
-- Si el volumen de alertas por webhook se vuelve ruidoso (falsos positivos frecuentes) — ajustar umbrales antes de agregar herramientas nuevas.
+- Si el volumen de alertas por email se vuelve ruidoso (falsos positivos frecuentes) — ajustar umbrales antes de agregar herramientas nuevas.
+- Si el equipo crece y conviene centralizar las alertas en un canal compartido en vez del correo de una sola persona — volver a la Alternativa C (webhook Slack/Discord) o sumarla como transporte adicional.
 - Si se necesita histórico/tendencias (no solo "pasó algo ahora") — momento de evaluar Alternativa A, cuando el presupuesto de RAM de las VMs lo permita o se migre de infraestructura (ver ADR-011).
 - Si se quiere detectar la caída de la VM completa, no solo del proceso — agregar un SaaS externo (Alternativa B) como complemento al script de cron, sin reemplazar el resto.
 - Si un proveedor de IA expone una API de uso/cuota consultable — reemplazar la detección reactiva (`RateLimitError`) por un chequeo proactivo de porcentaje de cuota usada.
