@@ -44,7 +44,7 @@ class document_pre_exam_summary extends \external_api {
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
-            'section'  => new \external_value(PARAM_INT, 'Unidad/sección opcional', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'section'  => new \external_value(PARAM_INT, 'Unidad/sección opcional', VALUE_DEFAULT, null, NULL_ALLOWED),
         ]);
     }
 

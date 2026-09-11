@@ -49,7 +49,7 @@ class document_list extends \external_api {
             'limit'    => new \external_value(
                 PARAM_INT,
                 'Máximo de items por página (sin valor: sin paginar, tope interno)',
-                VALUE_OPTIONAL,
+                VALUE_DEFAULT,
                 null,
                 NULL_ALLOWED
             ),

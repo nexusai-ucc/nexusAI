@@ -71,7 +71,8 @@ class chat_send extends \external_api {
             'userid'    => new \external_value(
                 PARAM_INT,
                 'IGNORADO. El backend usa $USER->id del server. Se acepta solo por compat.',
-                VALUE_OPTIONAL
+                VALUE_DEFAULT,
+                0
             ),
             'sessionid' => new \external_value(
                 PARAM_ALPHANUMEXT,
