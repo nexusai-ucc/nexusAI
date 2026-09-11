@@ -104,7 +104,7 @@ Descripta en la Decisión. Mismo mecanismo de conteo/umbral que la Alternativa C
 ### Positivas
 
 - Los 4 eventos del piloto generan una notificación sin intervención humana, sin agregar procesos persistentes nuevos (el único proceso adicional es el script de cron, que corre unos milisegundos por minuto).
-- El destino es configurable por variable de entorno (`ALERT_SMTP_USER`, `ALERT_SMTP_PASSWORD`, `ALERT_EMAIL_TO`) — sin credenciales hardcodeadas, y sin esas tres variables configuradas el sistema no rompe: solo loguea con `WARNING`.
+- El destino (`ALERT_EMAIL_TO`, default el correo del responsable del piloto — no es un secreto) y la cuenta remitente (`ALERT_SMTP_USER`/`ALERT_SMTP_PASSWORD`, sin default) son configurables por variable de entorno — sin credenciales hardcodeadas, y sin la cuenta remitente configurada el sistema no rompe: solo loguea con `WARNING`.
 - La lógica de umbral (`record_event_and_maybe_alert`) es genérica y reusable — agregar un quinto evento a futuro (p. ej. fallos de indexación de documentos) es una función nueva de ~10 líneas, no un mecanismo nuevo. Cambiar el transporte de notificación (por ejemplo, sumar Slack más adelante) tampoco toca esa lógica: solo `send_alert`.
 
 ### Negativas / trade-offs aceptados
