@@ -14,12 +14,28 @@
  * input para verlo entero o sacarlo. Al enviar, cada placeholder que sigue
  * presente en el texto se reemplaza por su contenido real — si el alumno lo
  * borró a mano, esa parte simplemente no se reinserta.
+ *
+ * ASIST-05 (#375): el límite de MAX_CHARS ya se aplicaba en silencio (el
+ * textarea simplemente dejaba de crecer), sin ningún aviso previo. El
+ * contador solo se muestra cerca del límite (CHARS_WARNING_THRESHOLD) para
+ * no ensuciar la UI en el uso normal de una pregunta corta.
+ *
+ * VOICE-01 (#314): botón de micrófono al lado de enviar. Graba con
+ * MediaRecorder (API nativa del browser, sin librería nueva) y al soltar
+ * transcribe el audio — el resultado SOLO llena el textarea existente
+ * (`setValue`), nunca dispara `onSend` directo. Así el alumno siempre ve el
+ * texto transcripto, lo puede editar, y lo envía con el flujo normal
+ * (Enter/botón enviar) — cumple el criterio de aceptación de "confirmar
+ * antes de enviar" sin construir un flujo paralelo. Un error de permiso de
+ * micrófono o de transcripción nunca bloquea poder tipear a mano.
  */
 
 import { useEffect, useRef, useState } from "react";
-import { IconFile, IconX } from "./icons.jsx";
+import { IconFile, IconMic, IconX } from "./icons.jsx";
+import { transcribeAudio } from "../api/voice.js";
 
 const MAX_CHARS = 2000;
+const CHARS_WARNING_THRESHOLD = 1800;
 
 // Umbral para colapsar un pegado — mismo criterio que sugiere el issue.
 const PASTE_LINES_THRESHOLD = 15;
@@ -29,12 +45,32 @@ function placeholderFor(id, lines) {
     return `[📋 Pegado #${id} — ${lines} línea${lines === 1 ? "" : "s"}]`;
 }
 
-export default function ChatInput({ onSend, disabled, placeholder }) {
+// Función (no constante de módulo) a propósito: se re-evalúa en cada
+// render en vez de una sola vez al importar el archivo, para que tests
+// puedan stubear navigator.mediaDevices/MediaRecorder antes de renderizar.
+function isMicSupported() {
+    return (
+        typeof navigator !== "undefined" &&
+        !!navigator.mediaDevices &&
+        typeof navigator.mediaDevices.getUserMedia === "function" &&
+        typeof window !== "undefined" &&
+        typeof window.MediaRecorder !== "undefined"
+    );
+}
+
+export default function ChatInput({ onSend, disabled, placeholder, courseId }) {
+    const micSupported = isMicSupported();
     const [value, setValue] = useState("");
     const [pastes, setPastes] = useState([]); // { id, text, lines, chars }
     const [previewId, setPreviewId] = useState(null);
     const nextPasteId = useRef(1);
     const textareaRef = useRef(null);
+
+    // VOICE-01: "idle" | "recording" | "transcribing" | "error"
+    const [voiceState, setVoiceState] = useState("idle");
+    const [voiceError, setVoiceError] = useState(null);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
 
     // Auto-grow del textarea según el contenido.
     useEffect(() => {
@@ -71,6 +107,56 @@ export default function ChatInput({ onSend, disabled, placeholder }) {
         }
     };
 
+    // VOICE-01: graba con MediaRecorder, y al soltar transcribe y llena el
+    // textarea existente — nunca envía directo.
+    const startRecording = async () => {
+        setVoiceError(null);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunksRef.current.push(e.data);
+            };
+
+            recorder.onstop = async () => {
+                stream.getTracks().forEach((t) => t.stop());
+                const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+                setVoiceState("transcribing");
+                try {
+                    const text = await transcribeAudio(courseId, blob);
+                    if (text && text.trim()) {
+                        setValue((prev) => (prev.trim() ? `${prev.trim()} ${text.trim()}` : text.trim()));
+                    }
+                    setVoiceState("idle");
+                } catch {
+                    setVoiceError("No se pudo transcribir el audio. Probá de nuevo o escribí tu pregunta.");
+                    setVoiceState("error");
+                }
+            };
+
+            mediaRecorderRef.current = recorder;
+            recorder.start();
+            setVoiceState("recording");
+        } catch {
+            setVoiceError("No se pudo acceder al micrófono. Revisá los permisos del navegador.");
+            setVoiceState("error");
+        }
+    };
+
+    const stopRecording = () => {
+        mediaRecorderRef.current?.stop();
+    };
+
+    const handleMicClick = () => {
+        if (voiceState === "recording") {
+            stopRecording();
+        } else if (voiceState !== "transcribing") {
+            startRecording();
+        }
+    };
+
     const onPaste = (e) => {
         const text = e.clipboardData.getData("text");
         if (!text) return;
@@ -100,6 +186,8 @@ export default function ChatInput({ onSend, disabled, placeholder }) {
     };
 
     const previewPaste = pastes.find((p) => p.id === previewId) || null;
+    const atLimit = value.length >= MAX_CHARS;
+    const showCounter = value.length >= CHARS_WARNING_THRESHOLD;
 
     return (
         <div className="nexusai-input-wrap">
@@ -157,6 +245,22 @@ export default function ChatInput({ onSend, disabled, placeholder }) {
                     disabled={disabled}
                     aria-label="Tu pregunta"
                 />
+                {micSupported && (
+                    <button
+                        type="button"
+                        className={`nexusai-input__mic ${voiceState === "recording" ? "nexusai-input__mic--recording" : ""}`}
+                        onClick={handleMicClick}
+                        disabled={disabled || voiceState === "transcribing"}
+                        aria-label={voiceState === "recording" ? "Detener grabación" : "Grabar pregunta por voz"}
+                        title={voiceState === "recording" ? "Detener grabación" : "Grabar pregunta por voz"}
+                    >
+                        {voiceState === "transcribing" ? (
+                            <span className="nexusai-input__mic-spinner" aria-hidden="true" />
+                        ) : (
+                            <IconMic size={17} />
+                        )}
+                    </button>
+                )}
                 <button
                     type="button"
                     className="nexusai-input__send"
@@ -172,6 +276,23 @@ export default function ChatInput({ onSend, disabled, placeholder }) {
                     </svg>
                 </button>
             </div>
+
+            {voiceError && (
+                <div className="nexusai-input__voice-error" role="alert">
+                    {voiceError}
+                </div>
+            )}
+
+            {showCounter && (
+                <div
+                    className={`nexusai-input__counter ${atLimit ? "nexusai-input__counter--limit" : "nexusai-input__counter--warning"}`}
+                    role="status"
+                >
+                    {atLimit
+                        ? `Llegaste al límite de ${MAX_CHARS} caracteres`
+                        : `${value.length} / ${MAX_CHARS} caracteres`}
+                </div>
+            )}
         </div>
     );
 }

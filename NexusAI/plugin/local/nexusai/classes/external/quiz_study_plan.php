@@ -37,6 +37,16 @@ class quiz_study_plan extends \external_api {
                     'gap_count'            => new \external_value(PARAM_INT, 'Preguntas de chat sin responder que sustentan este tema'),
                     'reason'               => new \external_value(PARAM_RAW, 'Por qué es un tema débil'),
                     'suggested_quiz_topic' => new \external_value(PARAM_RAW, 'Tema sugerido para precargar el generador de quiz'),
+                    // SP-13 (#323): IDs reales de fila que sustentan el tema — el
+                    // texto de "topic" lo genera el LLM en cada llamada y no es
+                    // una clave estable, así que descartar el tema opera sobre
+                    // estos IDs (ver quiz_study_plan_dismiss.php).
+                    'quiz_error_ids'   => new \external_multiple_structure(
+                        new \external_value(PARAM_ALPHANUMEXT, 'UUID de una fila de quiz_errors')
+                    ),
+                    'gap_question_ids' => new \external_multiple_structure(
+                        new \external_value(PARAM_ALPHANUMEXT, 'UUID de una fila de unanswered_questions')
+                    ),
                 ])
             ),
         ]);
@@ -68,6 +78,8 @@ class quiz_study_plan extends \external_api {
                     'gap_count'            => (int) ($t['gap_count'] ?? 0),
                     'reason'               => (string) ($t['reason'] ?? ''),
                     'suggested_quiz_topic' => (string) ($t['suggested_quiz_topic'] ?? ($t['topic'] ?? '')),
+                    'quiz_error_ids'       => array_map('strval', $t['quiz_error_ids'] ?? []),
+                    'gap_question_ids'     => array_map('strval', $t['gap_question_ids'] ?? []),
                 ],
                 $response['topics'] ?? []
             ),

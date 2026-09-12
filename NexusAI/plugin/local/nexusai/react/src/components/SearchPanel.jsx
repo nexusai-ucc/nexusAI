@@ -17,7 +17,43 @@ import { useEffect, useState } from "react";
 import { searchMaterial } from "../api/search.js";
 import { summarizeDocument } from "../api/summary.js";
 import { listCourseSections } from "../api/courseSections.js";
-import { IconBookOpen, IconFile, IconFileText, IconGlobe } from "./icons.jsx";
+import { IconBookOpen, IconClock, IconFile, IconFileText, IconGlobe, IconSearch } from "./icons.jsx";
+
+// BUS-06 (#361): últimas búsquedas del alumno, guardadas en localStorage
+// (no hace falta backend) — primer consumidor de localStorage en este
+// plugin. Clave scopeada por curso + try/catch en cada acceso, mismo
+// criterio que TAB_STORAGE_KEY/sessionStorage en ChatApp.jsx (storage
+// bloqueado en modo privado no debe romper el resto del panel).
+const MAX_RECENT_SEARCHES = 8;
+
+function recentSearchesKey(courseId) {
+    return `nexusai_recent_searches_${courseId}`;
+}
+
+function loadRecentSearches(courseId) {
+    try {
+        const raw = localStorage.getItem(recentSearchesKey(courseId));
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveRecentSearch(courseId, query) {
+    const trimmed = query.trim();
+    if (!trimmed) return loadRecentSearches(courseId);
+    try {
+        const existing = loadRecentSearches(courseId).filter(
+            (q) => q.toLowerCase() !== trimmed.toLowerCase()
+        );
+        const next = [trimmed, ...existing].slice(0, MAX_RECENT_SEARCHES);
+        localStorage.setItem(recentSearchesKey(courseId), JSON.stringify(next));
+        return next;
+    } catch {
+        return loadRecentSearches(courseId);
+    }
+}
 
 const MATERIAL_TYPE_LABELS = {
     "application/pdf": { es: "PDF", en: "PDF" },
@@ -61,6 +97,7 @@ export default function SearchPanel({
     isTeacher = false,
     lang = "es",
     scopeOverride,
+    onGoToChat,
 }) {
     const [query, setQuery]           = useState("");
     const [results, setResults]       = useState(null);
@@ -72,6 +109,9 @@ export default function SearchPanel({
     const [summaries, setSummaries] = useState({});
     const [section, setSection] = useState(""); // "" = todas | "-1" = sin asignar | número = sección real
     const [sections, setSections] = useState([]);
+    // BUS-06 (#361): historial de búsquedas recientes (localStorage, por curso).
+    const [recentSearches, setRecentSearches] = useState(() => loadRecentSearches(courseId));
+    const [inputFocused, setInputFocused] = useState(false);
 
     const effectiveGlobal = scopeOverride !== undefined ? scopeOverride : globalMode;
 
@@ -85,6 +125,10 @@ export default function SearchPanel({
         return () => { cancelled = true; };
     }, [courseId]);
 
+    useEffect(() => {
+        setRecentSearches(loadRecentSearches(courseId));
+    }, [courseId]);
+
     const L = lang === "es" ? {
         placeholder:  "Buscá en el material del curso...",
         button:       "Buscar",
@@ -94,12 +138,16 @@ export default function SearchPanel({
         sectionAll:   "Todas las unidades",
         sectionUnassigned: "Sin unidad asignada",
         noResults:    (q) => `No se encontraron resultados para "${q}".`,
+        noResultsHint: "Probá con otras palabras, o preguntale directamente al asistente en el Chat.",
+        noResultsCta:  "Preguntarle al asistente",
+        idleHint:     "Buscá un concepto, una definición o un tema y te muestro en qué archivo del curso aparece.",
         error:        "No se pudo realizar la búsqueda. Intentá de nuevo.",
         openFile:        "Abrir ↗",
         summarize:       "Resumir",
         hideSummary:     "Ocultar resumen",
         summaryLabel:    "Resumen generado por IA",
         summaryError:    "No se pudo generar el resumen. Intentá de nuevo.",
+        recentLabel:     "Búsquedas recientes",
     } : {
         placeholder:  "Search in course material...",
         button:       "Search",
@@ -109,18 +157,23 @@ export default function SearchPanel({
         sectionAll:   "All sections",
         sectionUnassigned: "Unassigned",
         noResults:    (q) => `No results found for "${q}".`,
+        noResultsHint: "Try other words, or ask the assistant directly in Chat.",
+        noResultsCta:  "Ask the assistant",
+        idleHint:     "Search for a concept, a definition or a topic and I'll show you which course file it appears in.",
         error:        "Search failed. Please try again.",
         openFile:        "Open ↗",
         summarize:       "Summarize",
         hideSummary:     "Hide summary",
         summaryLabel:    "AI-generated summary",
         summaryError:    "Could not generate summary. Try again.",
+        recentLabel:     "Recent searches",
     };
 
     const performSearch = async (q) => {
         setLoading(true);
         setError(null);
         setLastQuery(q);
+        setInputFocused(false);
         try {
             const data = await searchMaterial({
                 query: q,
@@ -131,6 +184,7 @@ export default function SearchPanel({
                 sectionUnassigned: section === "-1",
             });
             setResults(data);
+            setRecentSearches(saveRecentSearch(courseId, q));
         } catch {
             setError(L.error);
         } finally {
@@ -143,6 +197,11 @@ export default function SearchPanel({
         e.preventDefault();
         if (!query.trim()) return;
         await performSearch(query.trim());
+    };
+
+    const selectRecentSearch = (q) => {
+        setQuery(q);
+        performSearch(q);
     };
 
     const switchScope = (toGlobal) => {
@@ -201,6 +260,8 @@ export default function SearchPanel({
                     placeholder={L.placeholder}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
                     maxLength={500}
                 />
                 <button
@@ -211,6 +272,27 @@ export default function SearchPanel({
                     {loading ? "..." : L.button}
                 </button>
             </form>
+
+            {inputFocused && !query.trim() && recentSearches.length > 0 && (
+                <div className="nexusai-search__recent">
+                    <span className="nexusai-search__recent-label">
+                        <IconClock size={12} /> {L.recentLabel}
+                    </span>
+                    <div className="nexusai-search__recent-list">
+                        {recentSearches.map((q) => (
+                            <button
+                                key={q}
+                                type="button"
+                                className="nexusai-search__recent-item"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => selectRecentSearch(q)}
+                            >
+                                {q}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {!isTeacher && scopeOverride === undefined && (
                 <div className="nexusai-search__scope">
@@ -274,8 +356,27 @@ export default function SearchPanel({
                 </div>
             )}
 
+            {!loading && !error && !results && (
+                <p className="nexusai-search__empty">{L.idleHint}</p>
+            )}
+
             {results && results.total === 0 && (
-                <p className="nexusai-search__empty">{L.noResults(lastQuery)}</p>
+                <div className="nexusai-search__empty-state">
+                    <div className="nexusai-search__empty-icon">
+                        <IconSearch size={20} />
+                    </div>
+                    <p className="nexusai-search__empty-title">{L.noResults(lastQuery)}</p>
+                    <p className="nexusai-search__empty-sub">{L.noResultsHint}</p>
+                    {onGoToChat && (
+                        <button
+                            type="button"
+                            className="nexusai-search__empty-cta"
+                            onClick={() => onGoToChat()}
+                        >
+                            {L.noResultsCta}
+                        </button>
+                    )}
+                </div>
             )}
 
             {results && results.results.map((r, i) => {

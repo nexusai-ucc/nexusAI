@@ -36,22 +36,27 @@ from __future__ import annotations
 
 import hashlib
 import json as _json
+import logging
 import re as _re
 import uuid
 from typing import Annotated, List, Optional
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.hmac import verify_hmac
-from app.db.models import ForumPostEmbedding
+from app.db.models import ForumPostEmbedding, ForumWebhookConfig
 from app.db.session import get_db
 from app.documents.retriever import format_context_for_prompt, retrieve_context
 from app.providers.embeddings import EmbeddingProvider, get_embedding_provider
 from app.providers.llm import LLMProvider, get_llm_provider
 from app.shared.config import get_settings
+
+_logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -511,3 +516,277 @@ async def suggest_reply(
         has_course_material=has_material,
         sources_used=sources_used,
     )
+
+
+# ─────────────────────────────────────────────────────────────
+# FOR-05 (#366) — Heurística de urgencia/frustración
+# ─────────────────────────────────────────────────────────────
+
+_URGENCY_KEYWORDS = [
+    "urgente", "urgencia", "urgent",
+    "ayuda", "help",
+    "no entiendo", "i don't understand", "i dont understand",
+    "no puedo", "i can't", "i cant",
+    "desesperad", "desperate",
+    "frustrad", "frustrat",
+    "perdido", "perdida", "lost",
+    "confundid", "confused",
+    "por favor", "please help",
+]
+
+
+def detect_urgency(text: str) -> bool:
+    """Heurística simple de urgencia/frustración — sin LLM, determinística y
+    fácil de verificar con casos de prueba reales (el issue permite
+    explícitamente "una llamada LLM o una heurística simple"; una heurística
+    es más barata y no depende de la disponibilidad del proveedor).
+
+    Marca "urgente" solo si se combinan AL MENOS 2 señales de las 3 — evita
+    falsos positivos por una sola palabra clave suelta o un simple signo de
+    pregunta en un post neutral:
+      1. Palabra clave de urgencia/frustración/pedido de ayuda.
+      2. Densidad alta de "!"/"?" (3 o más en el post).
+      3. Un tramo largo en mayúsculas sostenidas ("grito", 15+ caracteres).
+    """
+    if not text or not text.strip():
+        return False
+
+    lower = text.lower()
+    signals = 0
+
+    if any(kw in lower for kw in _URGENCY_KEYWORDS):
+        signals += 1
+
+    if (text.count("!") + text.count("?")) >= 3:
+        signals += 1
+
+    if _re.search(r"[A-ZÁÉÍÓÚÑ]{15,}", text):
+        signals += 1
+
+    return signals >= 2
+
+
+# ─────────────────────────────────────────────────────────────
+# FOR-06 (#367) — Digest semanal del foro
+# ─────────────────────────────────────────────────────────────
+#
+# Un solo endpoint combinado con FOR-05: ambas issues comparten la misma
+# ventana de datos (últimos N días) y el mismo momento de revisión del
+# docente ("no tener que entrar hilo por hilo"), así que la señal de
+# urgencia por hilo viaja junto con el resumen general en la misma
+# respuesta, sin duplicar el fetch de discusiones.
+#
+# Este backend NO tiene copia de foros/hilos/posts (solo embeddings para
+# duplicados, ForumPostEmbedding) — PHP arma la lista de discusiones con
+# actividad reciente consultando directo las tablas nativas de Moodle
+# (que sí tienen timestamps) y la manda acá. Stateless, no escribe en DB.
+
+_MAX_DISCUSSIONS_IN_DIGEST = 15
+_MAX_POSTS_PER_DISCUSSION_IN_DIGEST = 20
+
+
+class DigestDiscussion(BaseModel):
+    discussion_id: int = Field(gt=0)
+    discussion_name: str = Field(max_length=300)
+    forum_name: str = Field(max_length=300)
+    posts: List[ThreadPost] = Field(min_length=1, max_length=_MAX_POSTS_PER_DISCUSSION_IN_DIGEST)
+
+
+class WeeklyDigestRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    days: int = Field(default=7, ge=1, le=30)
+    discussions: List[DigestDiscussion] = Field(default_factory=list, max_length=_MAX_DISCUSSIONS_IN_DIGEST)
+
+
+class DigestDiscussionResult(BaseModel):
+    discussion_id: int
+    discussion_name: str
+    forum_name: str
+    post_count: int
+    urgent: bool  # FOR-05: al menos un post del hilo disparó la heurística
+
+
+class WeeklyDigestResponse(BaseModel):
+    course_id: int
+    period_days: int
+    discussion_count: int
+    discussions: List[DigestDiscussionResult]
+    summary: Optional[str] = None  # None si no hubo actividad en la ventana
+
+
+def _build_digest_prompt(discussions: List[DigestDiscussion]) -> str:
+    blocks = []
+    for d in discussions:
+        thread_text, _, _ = _build_summarize_prompt(d.posts)
+        blocks.append(f'=== Hilo: "{d.discussion_name}" (foro: {d.forum_name}) ===\n{thread_text}')
+    return "\n\n".join(blocks)
+
+
+_DIGEST_SYSTEM = """\
+Sos un asistente académico que arma un resumen semanal de la actividad de \
+los foros de un curso, para que el docente no tenga que revisar cada hilo \
+por separado. Respondé en español salvo que la mayoría de los posts estén \
+en inglés. Sé conciso y priorizá lo accionable: qué necesita la atención \
+del docente, qué se resolvió solo entre los alumnos.
+"""
+
+_DIGEST_USER_TMPL = """\
+Estos son los hilos de foro con actividad nueva en los últimos {days} días.
+
+{threads_text}
+
+Escribí un resumen de 3-6 oraciones de la actividad de la semana, agrupando \
+temas relacionados si los hay y señalando qué hilos parecen necesitar una \
+respuesta del docente. Devolvé solo el texto del resumen, sin JSON ni \
+encabezados."""
+
+
+@router.post("/weekly-digest", response_model=WeeklyDigestResponse)
+async def weekly_digest(
+    payload: WeeklyDigestRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    llm: LLMProvider = Depends(get_llm_provider),
+    db: AsyncSession = Depends(get_db),
+) -> WeeklyDigestResponse:
+    """Resumen semanal del foro (FOR-06) + señal de urgencia por hilo (FOR-05).
+
+    Sin discusiones con actividad → respuesta vacía sin llamar al LLM
+    (nada que resumir, no tiene sentido gastar una llamada).
+    """
+    if not payload.discussions:
+        return WeeklyDigestResponse(
+            course_id=payload.course_id,
+            period_days=payload.days,
+            discussion_count=0,
+            discussions=[],
+            summary=None,
+        )
+
+    discussion_results = [
+        DigestDiscussionResult(
+            discussion_id=d.discussion_id,
+            discussion_name=d.discussion_name,
+            forum_name=d.forum_name,
+            post_count=len(d.posts),
+            urgent=any(detect_urgency(p.content) for p in d.posts),
+        )
+        for d in payload.discussions
+    ]
+
+    threads_text = _build_digest_prompt(payload.discussions)
+    messages = [
+        {"role": "system", "content": _DIGEST_SYSTEM},
+        {"role": "user", "content": _DIGEST_USER_TMPL.format(days=payload.days, threads_text=threads_text)},
+    ]
+
+    try:
+        result = await llm.chat_completion(messages)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="El LLM no está disponible temporalmente",
+        ) from exc
+
+    summary = result.text.strip()
+
+    # FOR-07 (#378): si el docente configuró un webhook para este curso,
+    # reenviar el resumen ahí además de mostrarlo en el panel. Un fallo acá
+    # NUNCA debe romper la respuesta al frontend — se loguea y se ignora.
+    await _notify_webhook_if_configured(db, payload.course_id, summary)
+
+    return WeeklyDigestResponse(
+        course_id=payload.course_id,
+        period_days=payload.days,
+        discussion_count=len(payload.discussions),
+        discussions=discussion_results,
+        summary=summary,
+    )
+
+
+# ─────────────────────────────────────────────────────────────
+# FOR-07 (#378) — Webhook externo para el digest semanal
+# ─────────────────────────────────────────────────────────────
+#
+# El plugin Moodle no tiene ninguna tabla de configuración por-curso
+# propia (ver migración 022_forum_webhook_configs) — la URL vive acá, y
+# el POST saliente a Slack/Discord/Teams se dispara desde este mismo
+# backend (httpx ya es dependencia, sin librería nueva).
+
+_WEBHOOK_POST_TIMEOUT = 8.0
+
+
+class WebhookConfigSaveRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    webhook_url: str = Field(default="", max_length=2000)  # "" = borrar config
+
+
+class WebhookConfigSaveResponse(BaseModel):
+    webhook_url: Optional[str]
+
+
+class WebhookConfigGetRequest(BaseModel):
+    course_id: int = Field(gt=0)
+
+
+class WebhookConfigGetResponse(BaseModel):
+    webhook_url: Optional[str]
+
+
+async def _notify_webhook_if_configured(db: AsyncSession, course_id: int, summary: Optional[str]) -> None:
+    if not summary:
+        return  # nada que notificar (mismo criterio que "sin discusiones, sin LLM")
+
+    row = await db.execute(
+        select(ForumWebhookConfig.webhook_url).where(ForumWebhookConfig.course_id == course_id)
+    )
+    webhook_url = row.scalar_one_or_none()
+    if not webhook_url:
+        return
+
+    try:
+        async with httpx.AsyncClient(timeout=_WEBHOOK_POST_TIMEOUT) as client:
+            await client.post(webhook_url, json={"text": summary})
+    except Exception:
+        _logger.warning("FOR-07: fallo al notificar el webhook del curso %s", course_id, exc_info=True)
+
+
+@router.post("/webhook-config/save", response_model=WebhookConfigSaveResponse)
+async def save_webhook_config(
+    payload: WebhookConfigSaveRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> WebhookConfigSaveResponse:
+    """Guarda (o borra, con webhook_url="") la URL de webhook del curso."""
+    if not payload.webhook_url:
+        await db.execute(delete(ForumWebhookConfig).where(ForumWebhookConfig.course_id == payload.course_id))
+        await db.commit()
+        return WebhookConfigSaveResponse(webhook_url=None)
+
+    if not _re.match(r"^https?://", payload.webhook_url):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="webhook_url debe ser http(s)")
+
+    stmt = (
+        pg_insert(ForumWebhookConfig)
+        .values(id=uuid.uuid4(), course_id=payload.course_id, webhook_url=payload.webhook_url)
+        .on_conflict_do_update(
+            constraint="uq_forum_webhook_configs_course",
+            set_={"webhook_url": payload.webhook_url},
+        )
+        .returning(ForumWebhookConfig.webhook_url)
+    )
+    result = await db.execute(stmt)
+    await db.commit()
+    row = result.fetchone()
+    return WebhookConfigSaveResponse(webhook_url=row.webhook_url)
+
+
+@router.post("/webhook-config/get", response_model=WebhookConfigGetResponse)
+async def get_webhook_config(
+    payload: WebhookConfigGetRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> WebhookConfigGetResponse:
+    row = await db.execute(
+        select(ForumWebhookConfig.webhook_url).where(ForumWebhookConfig.course_id == payload.course_id)
+    )
+    return WebhookConfigGetResponse(webhook_url=row.scalar_one_or_none())

@@ -1293,7 +1293,7 @@ npm run build
 6. **Feature A PHP** (backend_client.php + search_query.php + services.php) — 1.5 horas
 7. **Feature A React** (search.js + SearchPanel.jsx + ChatApp.jsx + styles.css) — 2 horas
 8. **Test Feature A** end-to-end local — 1 hora
-9. **Push a main** → GitHub Actions despliega automáticamente a Fly.io
+9. **Push a main** → deploy manual por SSH a la VM de producción en Oracle Cloud (ver [`docs/DEPLOY_ORACLE.md`](docs/DEPLOY_ORACLE.md))
 
 **Total estimado: 12-13 horas de trabajo efectivo.**
 

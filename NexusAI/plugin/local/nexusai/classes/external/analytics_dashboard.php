@@ -59,6 +59,11 @@ class analytics_dashboard extends \external_api {
                 'questions_answered' => new \external_value(PARAM_INT, 'Preguntas respondidas'),
                 'ratio'              => new \external_value(PARAM_FLOAT, 'gaps / (gaps + respondidas)'),
             ]),
+            'feedback_ratio' => new \external_single_structure([
+                'helpful_count' => new \external_value(PARAM_INT, 'Respuestas marcadas como útiles (👍)'),
+                'total_rated'   => new \external_value(PARAM_INT, 'Total de respuestas votadas'),
+                'useful_pct'    => new \external_value(PARAM_FLOAT, '% marcado como útil'),
+            ]),
             'topics_consulted' => new \external_value(PARAM_INT, 'Preguntas distintas (agrupadas) consultadas en el período'),
         ]);
     }
@@ -81,6 +86,7 @@ class analytics_dashboard extends \external_api {
 
         $qsd = is_array($response['quiz_score_distribution'] ?? null) ? $response['quiz_score_distribution'] : [];
         $gr  = is_array($response['gaps_ratio'] ?? null) ? $response['gaps_ratio'] : [];
+        $fr  = is_array($response['feedback_ratio'] ?? null) ? $response['feedback_ratio'] : [];
 
         return [
             'course_id'   => (int) ($response['course_id'] ?? $params['courseid']),
@@ -114,6 +120,11 @@ class analytics_dashboard extends \external_api {
                 'gaps_detected'      => (int) ($gr['gaps_detected'] ?? 0),
                 'questions_answered' => (int) ($gr['questions_answered'] ?? 0),
                 'ratio'              => (float) ($gr['ratio'] ?? 0.0),
+            ],
+            'feedback_ratio' => [
+                'helpful_count' => (int) ($fr['helpful_count'] ?? 0),
+                'total_rated'   => (int) ($fr['total_rated'] ?? 0),
+                'useful_pct'    => (float) ($fr['useful_pct'] ?? 0.0),
             ],
             'topics_consulted' => (int) ($response['topics_consulted'] ?? 0),
         ];

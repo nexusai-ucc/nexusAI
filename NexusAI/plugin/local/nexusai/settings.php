@@ -1,5 +1,10 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// NexusAI is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
 /**
  * Página de settings de admin para local_nexusai.
@@ -66,6 +71,23 @@ if ($hassiteconfig) {
         get_string('sharedsecret', 'local_nexusai'),
         get_string('sharedsecret_desc', 'local_nexusai'),
         ''
+    ));
+
+    // ----- Sección notificaciones -----
+    $settings->add(new admin_setting_heading(
+        'local_nexusai/section_notifications',
+        get_string('section_notifications', 'local_nexusai'),
+        get_string('section_notifications_desc', 'local_nexusai')
+    ));
+
+    // Email remitente de las alertas de calendario y notificaciones NexusAI.
+    // Si se deja vacío usa el noreplyaddress global de Moodle.
+    $settings->add(new admin_setting_configtext(
+        'local_nexusai/alert_from_email',
+        get_string('alert_from_email', 'local_nexusai'),
+        get_string('alert_from_email_desc', 'local_nexusai'),
+        'nexus.ai.mail@gmail.com',
+        PARAM_EMAIL
     ));
 
     $ADMIN->add('localplugins', $settings);

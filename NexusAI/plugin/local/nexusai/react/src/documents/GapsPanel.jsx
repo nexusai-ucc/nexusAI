@@ -8,7 +8,9 @@
 
 import { useEffect, useState } from "react";
 import { listGaps, archiveGap } from "./api.js";
-import { IconCheck, IconArchive } from "../components/icons.jsx";
+import { downloadCsvFile } from "./csv.js";
+import { IconCheck, IconArchive, IconDownload } from "../components/icons.jsx";
+import { getFriendlyErrorMessage } from "../components/errors.js";
 
 function relativeTime(iso) {
     if (!iso) return "";
@@ -66,7 +68,7 @@ export default function GapsPanel({ courseId }) {
             })
             .catch((err) => {
                 if (!cancelled) {
-                    setError(err.message || "Error cargando gaps");
+                    setError(getFriendlyErrorMessage(err, "No se pudieron cargar los vacíos de contenido."));
                     setLoading(false);
                 }
             });
@@ -82,10 +84,25 @@ export default function GapsPanel({ courseId }) {
             setItems((prev) => [...prev, ...(data?.items || [])]);
             setTotal(data?.total ?? total);
         } catch (err) {
-            setError(err.message || "Error cargando más gaps");
+            setError(getFriendlyErrorMessage(err, "No se pudieron cargar más vacíos de contenido."));
         } finally {
             setLoadingMore(false);
         }
+    };
+
+    const handleExportCsv = () => {
+        const rows = items.map((g) => [
+            g.question,
+            g.avg_similarity === null || g.avg_similarity === undefined
+                ? "sin match"
+                : `${Math.round(g.avg_similarity * 100)}%`,
+            g.last_asked_at ? new Date(g.last_asked_at).toLocaleString("es-AR") : "",
+        ]);
+        downloadCsvFile(
+            ["Pregunta", "Similitud", "Última consulta"],
+            rows,
+            `gaps-nexusai-curso-${courseId}.csv`
+        );
     };
 
     const handleToggleArchive = async (item, idx) => {
@@ -104,7 +121,7 @@ export default function GapsPanel({ courseId }) {
                 );
             }
         } catch (err) {
-            setError(err.message || "No se pudo archivar el gap");
+            setError(getFriendlyErrorMessage(err, "No se pudo archivar el vacío de contenido."));
         } finally {
             setArchivingIdx(null);
         }
@@ -117,7 +134,7 @@ export default function GapsPanel({ courseId }) {
                 Útil para descubrir qué temas pedir o agregar a tus archivos del curso.
             </p>
 
-            <div className="nexusai-gaps__filter">
+            <div className="nexusai-gaps__filter" role="group" aria-label="Filtrar vacíos de contenido por período">
                 <span className="nexusai-gaps__filter-label">Mostrar:</span>
                 {[7, 30, 90, 365].map((d) => (
                     <button
@@ -125,6 +142,7 @@ export default function GapsPanel({ courseId }) {
                         type="button"
                         className={`nexusai-gaps__filter-btn ${days === d ? "nexusai-gaps__filter-btn--active" : ""}`}
                         onClick={() => setDays(d)}
+                        aria-pressed={days === d}
                     >
                         {d === 7 && "Últimos 7 días"}
                         {d === 30 && "Último mes"}
@@ -142,7 +160,7 @@ export default function GapsPanel({ courseId }) {
                 </label>
             </div>
 
-            {loading && <div className="nexusai-loading">Cargando gaps...</div>}
+            {loading && <div className="nexusai-loading" role="status">Cargando gaps...</div>}
 
             {error && (
                 <div className="nexusai-alert nexusai-alert--error" role="alert">
@@ -164,9 +182,15 @@ export default function GapsPanel({ courseId }) {
 
             {!loading && !error && items.length > 0 && (
                 <div className="nexusai-gaps__list">
-                    <h3 className="nexusai-documents__heading">
-                        Preguntas sin respuesta ({total})
-                    </h3>
+                    <div className="nexusai-gaps__list-header">
+                        <h3 className="nexusai-documents__heading">
+                            Preguntas sin respuesta ({total})
+                        </h3>
+                        <button type="button" className="nexusai-btn" onClick={handleExportCsv}>
+                            <IconDownload size={13} />
+                            Exportar CSV
+                        </button>
+                    </div>
                     {items.map((g, i) => {
                         const sim = similarityLabel(g.avg_similarity);
                         return (
@@ -203,6 +227,7 @@ export default function GapsPanel({ courseId }) {
                                         className="nexusai-gap-item__archive-btn"
                                         onClick={() => handleToggleArchive(g, i)}
                                         disabled={archivingIdx === i}
+                                        aria-label={`${g.is_archived ? "Desarchivar" : "Archivar"} la pregunta: ${g.question}`}
                                     >
                                         <IconArchive size={12} />
                                         {archivingIdx === i

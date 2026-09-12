@@ -11,16 +11,23 @@ name: Frontend CI
 # referenciaba pero nunca existieron. Corregir el path bug los hubiera
 # hecho fallar de verdad por primera vez (`Missing script: "lint"`).
 # Configurar lint/tests del frontend es trabajo aparte, no de esta issue.
+#
+# QA-01 (issue #311) agregó el step de tests (Vitest) más abajo. Nota
+# heredada de DEPLOY-02 (PR #458): este archivo vivía en
+# NexusAI/.github/workflows/, no en la raíz real del repo git — GitHub
+# Actions no lo ejecutaba nunca. PUB-01 (issue #309) hizo el arreglo de
+# mayor alcance que esa nota dejaba pendiente: se movió el archivo a la
+# raíz real y se agregó el prefijo `NexusAI/` a todas las rutas.
 
 on:
   push:
     branches: [main]
     paths:
-      - 'plugin/local/nexusai/react/**'
+      - 'NexusAI/plugin/local/nexusai/react/**'
       - '.github/workflows/frontend-ci.yml'
   pull_request:
     paths:
-      - 'plugin/local/nexusai/react/**'
+      - 'NexusAI/plugin/local/nexusai/react/**'
       - '.github/workflows/frontend-ci.yml'
 
 concurrency:
@@ -38,7 +45,7 @@ jobs:
       - name: Skip si no hay package.json todavía
         id: check
         run: |
-          if [ ! -f plugin/local/nexusai/react/package.json ]; then
+          if [ ! -f NexusAI/plugin/local/nexusai/react/package.json ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
             echo "::warning::plugin/local/nexusai/react/package.json no existe todavía. Saltando frontend CI."
           else
@@ -51,26 +58,31 @@ jobs:
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: plugin/local/nexusai/react/package-lock.json
+          cache-dependency-path: NexusAI/plugin/local/nexusai/react/package-lock.json
 
       - name: Install deps
         if: steps.check.outputs.skip == 'false'
-        working-directory: plugin/local/nexusai/react
+        working-directory: NexusAI/plugin/local/nexusai/react
         run: npm ci
 
       - name: npm audit (SEC-01 / issue #317) — falla en severidad alta o crítica
         if: steps.check.outputs.skip == 'false'
-        working-directory: plugin/local/nexusai/react
+        working-directory: NexusAI/plugin/local/nexusai/react
         run: npm audit --audit-level=high
+
+      - name: Tests (Vitest) — QA-01 / issue #311
+        if: steps.check.outputs.skip == 'false'
+        working-directory: NexusAI/plugin/local/nexusai/react
+        run: npm test
 
       - name: Webpack build (production)
         if: steps.check.outputs.skip == 'false'
-        working-directory: plugin/local/nexusai/react
+        working-directory: NexusAI/plugin/local/nexusai/react
         run: npm run build
 
       - name: Verificar tamaño del bundle (warn si > 512 KB)
         if: steps.check.outputs.skip == 'false'
-        working-directory: plugin/local/nexusai
+        working-directory: NexusAI/plugin/local/nexusai
         run: |
           BUNDLE=amd/build/chatwidget-lazy.min.js
           if [ ! -f "$BUNDLE" ]; then
@@ -86,7 +98,7 @@ jobs:
 
       - name: Verificar que el bundle commiteado coincide con el generado
         if: steps.check.outputs.skip == 'false' && github.event_name == 'pull_request'
-        working-directory: plugin/local/nexusai
+        working-directory: NexusAI/plugin/local/nexusai
         run: |
           # Si el bundle generado difiere del commiteado, fallar
           # (forzamos a que el dev regenere y commitee antes de pedir review)
