@@ -85,6 +85,11 @@ behatdata/
 services/api/data/
 data/
 
+# Archivos subidos por usuarios en desarrollo local (nunca commitear
+# contenido real -- ver PR #484, ya se colaron 2 PDFs de prueba acá).
+services/api/uploads/*
+!services/api/uploads/.gitkeep
+
 # Logs
 *.log
 logs/
