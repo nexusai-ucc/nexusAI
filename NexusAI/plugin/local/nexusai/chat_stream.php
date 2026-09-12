@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Proxy streaming Server-Sent Events entre el browser y el backend FastAPI.
@@ -50,7 +63,7 @@ if (isguestuser()) {
 }
 require_sesskey();
 
-// ----- Parsear input -----
+// Parsear input.
 // Soporta tanto JSON body como form-urlencoded (mayor flexibilidad para
 // fetch() desde React).
 $rawbody = file_get_contents('php://input');
@@ -60,9 +73,9 @@ if (!is_array($payload)) {
     $payload = $_POST;
 }
 
-$question    = isset($payload['question'])    ? (string) $payload['question']    : '';
-$courseid    = isset($payload['courseid'])    ? (int)    $payload['courseid']    : 0;
-$sessionid   = isset($payload['sessionid'])   ? (string) $payload['sessionid']   : '';
+$question    = isset($payload['question']) ? (string) $payload['question'] : '';
+$courseid    = isset($payload['courseid']) ? (int)    $payload['courseid'] : 0;
+$sessionid   = isset($payload['sessionid']) ? (string) $payload['sessionid'] : '';
 $multicourse = !empty($payload['multicourse']);
 
 if ($courseid <= 0) {
@@ -94,14 +107,14 @@ if ($cleansessionid !== '' && (strlen($cleansessionid) < 8 || strlen($cleansessi
     exit;
 }
 
-// ----- Armar payload para el backend Python -----
-$body_array = [
+// Armar payload para el backend Python.
+$bodyarray = [
     'question'  => $cleanquestion,
     'course_id' => $courseid,
     'user_id'   => (int) $USER->id,
 ];
 if ($cleansessionid !== '') {
-    $body_array['session_id'] = $cleansessionid;
+    $bodyarray['session_id'] = $cleansessionid;
 }
 
 // Feature B: resolver cursos del alumno si multicourse=true.
@@ -122,19 +135,19 @@ if ($multicourse) {
         $courseids   = [$courseid];
         $coursenames = [(string) $courseid => 'Materia actual'];
     }
-    $body_array['course_id']    = (int) $courseids[0];
-    $body_array['course_ids']   = $courseids;
-    $body_array['course_names'] = $coursenames;
+    $bodyarray['course_id']    = (int) $courseids[0];
+    $bodyarray['course_ids']   = $courseids;
+    $bodyarray['course_names'] = $coursenames;
 }
 
-$body = json_encode($body_array, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+$body = json_encode($bodyarray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 if ($body === false) {
     http_response_code(500);
     echo json_encode(['error' => 'json encode failed']);
     exit;
 }
 
-// ----- Config del backend (igual que backend_client) -----
+// Config del backend (igual que backend_client).
 $endpoint = rtrim((string) get_config('local_nexusai', 'api_endpoint'), '/');
 $apikey   = (string) get_config('local_nexusai', 'api_key');
 $secret   = (string) get_config('local_nexusai', 'shared_secret');
@@ -145,17 +158,17 @@ if ($endpoint === '' || $apikey === '' || $secret === '') {
     exit;
 }
 
-// ----- HMAC (igual ordering que backend_client::compute_signature) -----
+// HMAC, mismo ordering que backend_client::compute_signature.
 $timestamp = (string) time();
 $nonce     = bin2hex(random_bytes(16));
 $signature = hash_hmac('sha256', $timestamp . $nonce . $body, $secret);
 
-// ----- Headers SSE al browser ANTES de empezar el cURL -----
+// Headers SSE al browser ANTES de empezar el cURL.
 // CRÍTICO: tienen que ir antes del primer echo/flush, y NO debe haber
 // output buffering por delante.
 @header('Content-Type: text/event-stream');
 @header('Cache-Control: no-cache');
-@header('X-Accel-Buffering: no');  // por si nginx está delante
+@header('X-Accel-Buffering: no');  // Por si nginx está delante.
 
 // Flush cualquier output buffer pendiente de Moodle/PHP. Sin esto los chunks
 // se acumulan en memoria y el browser los recibe todos juntos al final.
@@ -164,7 +177,7 @@ while (ob_get_level() > 0) {
 }
 @ob_implicit_flush(true);
 
-// ----- cURL al backend Python con WRITEFUNCTION -----
+// Uso de cURL al backend Python con WRITEFUNCTION.
 // Usamos curl_* de PHP directamente (no la clase \curl de Moodle) porque
 // necesitamos CURLOPT_WRITEFUNCTION para forwardear chunks tal como llegan.
 //
