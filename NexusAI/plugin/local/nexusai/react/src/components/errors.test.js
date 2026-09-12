@@ -71,3 +71,31 @@ describe("getFriendlyErrorMessage", () => {
         );
     });
 });
+
+// FEAT-06 (#481, límite diario de consultas): el backend distingue el
+// límite por minuto del límite diario con un `detail.message` propio (ver
+// services/api/app/shared/rate_limit.py::check_rate_limit, _MESSAGES) — un
+// `detail` ESTRUCTURADO (objeto, no string), a diferencia del caso genérico
+// de arriba ("ignorando el detail crudo"). Antes de este fix,
+// getFriendlyErrorMessage() mandaba CUALQUIER 429 al mismo mensaje curado
+// genérico sin mirar el detail — el alumno nunca veía la diferencia entre
+// "esperá un minuto" y "volvé mañana".
+describe("getFriendlyErrorMessage — límite diario vs. límite por minuto (429 propio)", () => {
+    it("muestra el mensaje específico del límite por minuto", () => {
+        const err = new Error(
+            'Error del backend NexusAI: HTTP 429: {"detail":{"error":"rate_limit_exceeded","scope":"minute","message":"Superaste el límite de 20 consultas por minuto. Esperá un momento y volvé a intentarlo.","limit":20,"window_sec":60}}'
+        );
+        expect(getFriendlyErrorMessage(err, "fallback")).toBe(
+            "Superaste el límite de 20 consultas por minuto. Esperá un momento y volvé a intentarlo."
+        );
+    });
+
+    it("muestra el mensaje específico del límite diario — distinto al de por minuto", () => {
+        const err = new Error(
+            'Error del backend NexusAI: HTTP 429: {"detail":{"error":"rate_limit_exceeded","scope":"daily","message":"Alcanzaste tu límite de 50 consultas de hoy. Volvé a intentarlo mañana.","limit":50,"window_sec":86400}}'
+        );
+        expect(getFriendlyErrorMessage(err, "fallback")).toBe(
+            "Alcanzaste tu límite de 50 consultas de hoy. Volvé a intentarlo mañana."
+        );
+    });
+});

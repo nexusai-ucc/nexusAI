@@ -8,8 +8,9 @@ Sprint 3 additions:
              Devuelve los tokens en ChatResponse para monitoreo en tiempo real.
   - BACK-13: validación explícita de material indexado en el sistema prompt.
              El retrieval filtra por course_id (aislamiento multi-curso verificado).
-  - BACK-14: rate limiting por user_id (20 req/min), logging estructurado JSON
-             con request_id + course_id + user_id + tokens + latencia.
+  - BACK-14: rate limiting por user_id (20 req/min + límite diario), logging
+             estructurado JSON con request_id + course_id + user_id + tokens
+             + latencia.
 """
 
 from __future__ import annotations
@@ -178,12 +179,20 @@ async def messages(
     start_time = time.perf_counter()
     request_id = getattr(request.state, "request_id", "-")
 
-    # ----- BACK-14: Rate limiting por user_id -----
+    # ----- BACK-14: Rate limiting por user_id (por minuto + diario) -----
     await check_rate_limit(
         user_id=payload.user_id,
         redis=redis,
         limit=settings.rate_limit_per_user_minute,
         window_sec=60,
+        scope="minute",
+    )
+    await check_rate_limit(
+        user_id=payload.user_id,
+        redis=redis,
+        limit=settings.rate_limit_per_user_daily,
+        window_sec=86400,
+        scope="daily",
     )
 
     # ----- Moderación de contenido — antes de cualquier escritura o gasto de
@@ -393,6 +402,14 @@ async def messages_stream(
         redis=redis,
         limit=settings.rate_limit_per_user_minute,
         window_sec=60,
+        scope="minute",
+    )
+    await check_rate_limit(
+        user_id=payload.user_id,
+        redis=redis,
+        limit=settings.rate_limit_per_user_daily,
+        window_sec=86400,
+        scope="daily",
     )
 
     # ----- Moderación de contenido — antes de abrir el stream (que ya

@@ -1428,4 +1428,42 @@ class backend_client {
         $signedstring = $timestamp . $nonce . $body;
         return hash_hmac('sha256', $signedstring, $secret);
     }
+
+    /**
+     * FEAT-06 (#481, límite diario): pela un mensaje apto para mostrar al
+     * alumno a partir del body crudo de un error HTTP del backend.
+     *
+     * Usado por chat_stream.php (proxy SSE) — a diferencia del path
+     * no-streaming (`request()` de más arriba, que deja pasar el JSON crudo
+     * dentro del mensaje de la `moodle_exception` y confía en que el
+     * frontend lo parsee con `errors.js`), el proxy SSE tiene que emitir un
+     * evento `data: {...}\n\n` ya armado — no hay una capa de parseo del
+     * lado del browser para un cuerpo que no vino en formato SSE.
+     *
+     * El backend propio (`services/api/app/shared/rate_limit.py`) manda un
+     * `detail` ESTRUCTURADO (objeto, no string) con un `message` ya pensado
+     * para el alumno — lo preferimos por sobre el JSON crudo cuando está
+     * presente.
+     *
+     * @param string $rawbody Body de la respuesta HTTP tal como llegó (se
+     *                        espera JSON, pero no se asume — puede venir
+     *                        vacío o roto si el backend cayó a mitad de
+     *                        respuesta).
+     * @param int    $httpstatus Status HTTP de la respuesta (usado solo
+     *                        para el fallback final, si no hay nada
+     *                        parseable).
+     * @return string Mensaje listo para mostrar al alumno.
+     */
+    public static function extract_stream_error_detail(string $rawbody, int $httpstatus): string {
+        $decoded = json_decode($rawbody, true);
+        $rawdetail = is_array($decoded) ? ($decoded['detail'] ?? null) : null;
+
+        if (is_array($rawdetail) && isset($rawdetail['message']) && is_string($rawdetail['message'])) {
+            return $rawdetail['message'];
+        }
+        if (is_string($rawdetail) && $rawdetail !== '') {
+            return $rawdetail;
+        }
+        return 'HTTP ' . $httpstatus;
+    }
 }
