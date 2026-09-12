@@ -1,0 +1,92 @@
+name: Sync derived repos
+#
+# El monorepo es la única fuente de verdad para el desarrollo. Los repos
+# moodle-local_nexusai y nexusai-backend son artefactos DERIVADOS —
+# generados automáticamente vía `git subtree split` cada vez que se
+# mergea a `development` — para que el plugin y el backend se puedan
+# probar/desplegar de forma independiente (requisito de presentación a
+# Moodle Marketplace: el plugin no puede vivir en un monorepo).
+#
+# Nadie debe commitear directo en la rama `development` de esos dos repos
+# derivados: se sobreescribe en el próximo sync. Los cambios van siempre
+# acá, en nexusAI/NexusAI/plugin/local/nexusai o NexusAI/services/api.
+#
+# La rama `main` de cada repo derivado NO se toca acá — queda como
+# snapshot manual (p. ej. el que se sube a Moodle Marketplace), a criterio
+# de cuándo se decide congelar una versión.
+#
+# Overlays: cada repo derivado necesita algunos archivos que no viven
+# dentro de la carpeta que se separa (típicamente su propio CI, con rutas
+# relativas a la raíz de ESE repo). Esos archivos se versionan acá mismo,
+# en .github/sync-overlays/<repo>/, y este workflow los reaplica encima
+# del resultado del subtree split antes de pushear — así también son
+# "un solo lugar para editar", igual que el resto del código.
+
+on:
+  push:
+    branches: [development]
+
+concurrency:
+  group: sync-derived-repos
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync ${{ matrix.repo }}
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repo: moodle-local_nexusai
+            prefix: NexusAI/plugin/local/nexusai
+          - repo: nexusai-backend
+            prefix: NexusAI/services/api
+
+    steps:
+      - name: Checkout monorepo (historia completa)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: development
+
+      - name: Configurar identidad git para el commit de overlay
+        run: |
+          git config user.name "nexusai-sync-bot"
+          git config user.email "noreply@github.com"
+
+      - name: git subtree split de ${{ matrix.prefix }}
+        run: git subtree split --prefix="${{ matrix.prefix }}" --branch "split-${{ matrix.repo }}"
+
+      - name: Preparar worktree con el resultado del split
+        run: git worktree add /tmp/wt-${{ matrix.repo }} "split-${{ matrix.repo }}"
+
+      - name: Reaplicar overlay (archivos propios del repo derivado, p. ej. CI)
+        run: |
+          OVERLAY=".github/sync-overlays/${{ matrix.repo }}"
+          if [ -d "$OVERLAY" ]; then
+            cp -a "$OVERLAY"/. "/tmp/wt-${{ matrix.repo }}/"
+          fi
+
+      - name: Commitear overlay si cambió algo
+        working-directory: /tmp/wt-${{ matrix.repo }}
+        run: |
+          git config user.name "nexusai-sync-bot"
+          git config user.email "noreply@github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(sync): reaplicar overlay tras subtree split automático"
+          else
+            echo "Sin cambios de overlay para commitear."
+          fi
+
+      - name: Push a development de ${{ matrix.repo }}
+        working-directory: /tmp/wt-${{ matrix.repo }}
+        run: |
+          git push "https://x-access-token:${{ secrets.SYNC_REPOS_TOKEN }}@github.com/nexusai-ucc/${{ matrix.repo }}.git" HEAD:development --force
+
+      - name: Limpiar worktree y rama temporal
+        if: always()
+        run: |
+          git worktree remove "/tmp/wt-${{ matrix.repo }}" --force || true
+          git branch -D "split-${{ matrix.repo }}" || true
