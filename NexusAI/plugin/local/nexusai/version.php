@@ -30,9 +30,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026090805;
-// Fix: document_replace valida course_id + error_message NULL_ALLOWED; onboarding_hint reusa onboarding_state_get.
-$plugin->release   = '0.17.9';
+$plugin->version   = 2026091200;
+// Feat: Privacy API admin (plugin\provider + core_userlist_provider) + MySQL en CI.
+$plugin->release   = '0.17.10';
 $plugin->maturity  = MATURITY_ALPHA;
 
 // Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.

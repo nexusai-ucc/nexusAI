@@ -51,6 +51,11 @@ jobs:
           - php: '8.1'
             moodle-branch: 'MOODLE_405_STABLE'
             database: 'pgsql'
+          # Checklist de Moodle Marketplace pide probar contra MySQL además
+          # de PostgreSQL como mínimo (PUB-01, investigación de publicación).
+          - php: '8.1'
+            moodle-branch: 'MOODLE_405_STABLE'
+            database: 'mysqli'
 
     services:
       postgres:
@@ -66,6 +71,19 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+          MYSQL_DATABASE: 'moodle_test'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout plugin
         uses: actions/checkout@v4
@@ -76,7 +94,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: pgsql, mbstring, xml, intl, zip, gd, soap
+          extensions: pgsql, mysqli, mbstring, xml, intl, zip, gd, soap
           coverage: none
           ini-values: max_input_vars=5000
 
