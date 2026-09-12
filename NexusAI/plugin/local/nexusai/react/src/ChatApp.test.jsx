@@ -123,6 +123,36 @@ describe("ChatApp — envío de pregunta y respuesta (flujo central)", () => {
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
+    it("al recibir un evento de error a mitad de stream (onError), saca el bubble parcial y muestra el error genérico", async () => {
+        // A diferencia del test de arriba ("al fallar el envío"), acá el
+        // fallo no es un rechazo de sendMessageStream antes de arrancar el
+        // stream — es el callback onError que sendMessageStream() dispara
+        // DESPUÉS de que ya llegaron tokens (evento SSE "error" a mitad de
+        // respuesta). ChatApp.jsx lo maneja re-lanzándolo como excepción
+        // dentro del try/catch (ver el `onError: (detail) => { throw new
+        // Error(detail); }` del componente) — este test verifica que ese
+        // camino realmente limpia la burbuja parcial en vez de dejarla
+        // colgada, y que no hay ningún status HTTP en el detail para
+        // mapear a un mensaje curado, así que cae al genérico.
+        sendMessageStream.mockImplementation(async (_params, { onToken, onError }) => {
+            onToken?.("Esto es lo que alcanzó ");
+            onError("El proveedor LLM no respondió a tiempo");
+        });
+        const user = openChat();
+
+        await askQuestion(user, "¿Qué es una integral?");
+
+        // La burbuja parcial ("Esto es lo que alcanzó ") no debe quedar
+        // colgada en pantalla — se saca junto con el mensaje optimista.
+        await waitFor(() =>
+            expect(screen.queryByText(/Esto es lo que alcanzó/)).not.toBeInTheDocument()
+        );
+        expect(screen.queryByText("¿Qué es una integral?")).not.toBeInTheDocument();
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "Algo salió mal. Tocá «Reintentar» para volver a enviar tu pregunta."
+        );
+    });
+
     it("muestra el mensaje de rate limit (429) cuando el backend lo devuelve", async () => {
         sendMessageStream.mockRejectedValue(new Error('HTTP 429: {"detail":"quota exceeded"}'));
         const user = openChat();

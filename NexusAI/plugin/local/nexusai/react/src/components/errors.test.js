@@ -26,9 +26,23 @@ describe("getFriendlyErrorMessage", () => {
         expect(getFriendlyErrorMessage(err, "fallback")).toBe("Sesión expirada, volvé a ingresar");
     });
 
-    it("en 401 sin detail parseable cae al fallback del caller", () => {
+    it("en 401 sin JSON {detail} muestra el texto crudo después de 'HTTP 401:', no el fallback", () => {
+        // OJO: este test antes se llamaba "cae al fallback del caller" pero
+        // afirmaba exactamente lo contrario — el nombre no coincidía con lo
+        // que en realidad verifica (hallazgo de la auditoría /audit sobre
+        // esta PR). El comportamiento real: cualquier 4xx sin JSON
+        // `{"detail":...}` parseable cae al regex genérico `HTTP\s+\d+[:\s]+(.+)`
+        // y le muestra al alumno el texto técnico crudo de la excepción — no
+        // hay ningún camino hoy que use el fallback del caller para un 4xx
+        // con texto después del código. Ver el siguiente test para el caso
+        // (más angosto) donde sí se usa el fallback.
         const err = new Error("HTTP 401: Unauthorized");
         expect(getFriendlyErrorMessage(err, "fallback")).toBe("Unauthorized");
+    });
+
+    it("en 401 sin ningún texto después del código (ni JSON ni texto plano) sí cae al fallback del caller", () => {
+        const err = new Error("HTTP 401");
+        expect(getFriendlyErrorMessage(err, "fallback")).toBe("fallback");
     });
 
     it("en 403 (sin permisos) usa el detail del backend", () => {
