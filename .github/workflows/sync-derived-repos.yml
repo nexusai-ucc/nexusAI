@@ -26,14 +26,13 @@ on:
   push:
     branches: [development]
 
-concurrency:
-  group: sync-derived-repos
-  cancel-in-progress: false
-
 jobs:
   sync:
     name: Sync ${{ matrix.repo }}
     runs-on: ubuntu-22.04
+    concurrency:
+      group: sync-derived-repos-${{ matrix.repo }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
