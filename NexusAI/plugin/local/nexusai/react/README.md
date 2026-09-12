@@ -86,7 +86,47 @@ dependencia en runtime.
 
 ## Testing
 
-TODO Sprint 3: agregar Jest + React Testing Library.
+Suite con **Vitest + React Testing Library** (`jsdom` como entorno de DOM).
+
+```bash
+npm test          # corre toda la suite una vez (lo mismo que corre CI)
+npm run test:watch  # modo watch para desarrollo
+```
+
+**Nota Node 22+:** Node agregó un `localStorage`/`sessionStorage` global
+experimental que pisa el de `jsdom` y rompe cualquier test que use
+`localStorage` (`Cannot read properties of undefined (reading 'clear')`). Los
+scripts de `package.json` ya pasan `NODE_OPTIONS=--no-experimental-webstorage`
+para desactivarlo — no hace falta configurar nada aparte, pero si corrés
+Vitest directo (`npx vitest ...`) sin pasar por `npm test`, agregá ese mismo
+flag a mano.
+
+Cobertura actual (por prioridad de riesgo, no pareja):
+
+- **Chat** (`ChatApp.test.jsx`): envío de pregunta, render de la respuesta
+  streameada, fuentes citadas como pills clickeables, estado "no encontré
+  esto en el material" (`grounded: false`), y recuperación con "Reintentar"
+  ante errores 5xx/429 del backend.
+- **Mensajes de error** (`components/errors.test.js`): `getFriendlyErrorMessage()`
+  para 401/403/422/429/5xx y fallback ante errores sin código HTTP (timeout,
+  red).
+- Resto de paneles (búsqueda, calendario, foro, quiz/flashcards, analytics,
+  documentos, onboarding): ver los `*.test.jsx` junto a cada componente en
+  `src/`.
+
+**Pendiente para una próxima iteración** (no cubierto todavía):
+
+- `MessageBubble.jsx` en aislamiento (hoy se ejerce indirectamente vía
+  `ChatApp.test.jsx`): sanitizado de markdown/LaTeX, feedback 👍/👎, expansión
+  de "Mostrar más".
+- `sendMessageStream()` (`api/chat.js`) contra un stream SSE real (hoy se
+  mockea a nivel de componente).
+- Flujo completo de sesión de flashcards en `QuizPanel.jsx` (el algoritmo
+  SM-2 en sí vive en el backend, ya cubierto por los 244 tests de
+  `services/api/`).
+- 401/403 específicos de `core/ajax` (Moodle los devuelve como rechazo de
+  promesa, no como `Error: HTTP 401`) — hoy solo está cubierto el path HTTP
+  crudo del proxy de streaming.
 
 ## Performance budget
 

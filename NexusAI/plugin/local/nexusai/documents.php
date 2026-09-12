@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Página de gestión de documentos NexusAI por curso.
@@ -21,7 +34,7 @@ require_once(__DIR__ . '/../../config.php');
 
 global $PAGE, $OUTPUT, $USER, $COURSE, $DB;
 
-// ----- 1. Resolver curso -----
+// 1. Resolver curso.
 $courseid = required_param('courseid', PARAM_INT);
 $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 
@@ -30,12 +43,12 @@ $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 // valor que no matchee una de sus keys y cae a "material".
 $initialtab = optional_param('tab', '', PARAM_ALPHA);
 
-// ----- 2. Login + capability -----
+// 2. Login + capability.
 require_login($course);
 $context = context_course::instance($course->id);
 require_capability('local/nexusai:manage', $context);
 
-// ----- 3. Setup página -----
+// 3. Setup página.
 $pageurl = new moodle_url('/local/nexusai/documents.php', ['courseid' => $courseid]);
 $PAGE->set_url($pageurl);
 $PAGE->set_context($context);
@@ -46,13 +59,13 @@ $PAGE->set_title(
 );
 $PAGE->set_heading(format_string($course->fullname));
 
-// Breadcrumb: Curso → NexusAI
+// Breadcrumb: Curso → NexusAI.
 $PAGE->navbar->add(
     get_string('documents_page_title', 'local_nexusai'),
     $pageurl
 );
 
-// ----- 4. Cargar bundle React de documents -----
+// 4. Cargar bundle React de documents.
 $PAGE->requires->js_call_amd('local_nexusai/documents-manager-lazy', 'init', [
     [
         'courseid'  => (int) $course->id,
@@ -66,7 +79,7 @@ $PAGE->requires->js_call_amd('local_nexusai/documents-manager-lazy', 'init', [
     ],
 ]);
 
-// ----- 5. Render -----
+// 5. Render.
 echo $OUTPUT->header();
 
 echo $OUTPUT->heading(get_string('documents_page_title', 'local_nexusai'));

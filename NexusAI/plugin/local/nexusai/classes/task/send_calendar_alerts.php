@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Scheduled task — envía notificaciones de calendario NexusAI (CAL-02).
@@ -16,14 +29,22 @@
 
 namespace local_nexusai\task;
 
-defined('MOODLE_INTERNAL') || die();
-
+/**
+ * Envía notificaciones de calendario NexusAI cuya hora de aviso ya llegó (CAL-02).
+ */
 class send_calendar_alerts extends \core\task\scheduled_task {
-
+    /**
+     * Nombre visible de la tarea en Site administration → Server → Scheduled tasks.
+     *
+     * @return string
+     */
     public function get_name(): string {
         return get_string('messageprovider:cal_alert', 'local_nexusai');
     }
 
+    /**
+     * Consulta las alertas vencidas al backend, notifica a cada alumno y las marca como enviadas.
+     */
     public function execute(): void {
         $client = new \local_nexusai\external\backend_client();
 
@@ -62,7 +83,9 @@ class send_calendar_alerts extends \core\task\scheduled_task {
             $message->subject            = get_string('cal_alert_subject', 'local_nexusai', $eventname);
             $message->fullmessage        = get_string('cal_alert_body', 'local_nexusai', $eventname);
             $message->fullmessageformat  = FORMAT_PLAIN;
-            $message->fullmessagehtml    = '<p>' . get_string('cal_alert_body', 'local_nexusai', format_string($eventname)) . '</p>';
+            $message->fullmessagehtml    = '<p>'
+                . get_string('cal_alert_body', 'local_nexusai', format_string($eventname))
+                . '</p>';
             $message->smallmessage       = $eventname;
             $message->notification       = 1;
 

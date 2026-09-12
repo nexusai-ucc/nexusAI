@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Notificaciones de NexusAI — CAL-03 (issue #239).
@@ -26,10 +39,10 @@
 
 namespace local_nexusai;
 
-defined('MOODLE_INTERNAL') || die();
-
+/**
+ * Notifica a los usuarios de un curso cuando se sube material nuevo (CAL-03, #239).
+ */
 class notifier {
-
     /**
      * Notifica a los usuarios del curso que hay material nuevo (best-effort).
      *
@@ -49,9 +62,16 @@ class notifier {
         }
     }
 
+    /**
+     * Resuelve destinatarios y les manda la notificación, uno por uno.
+     *
+     * @param int    $courseid  ID del curso donde se subió el archivo.
+     * @param string $filename  Nombre del archivo subido.
+     * @param int    $teacherid $USER->id del docente que subió (se excluye de los destinatarios).
+     */
     private static function send_notifications(int $courseid, string $filename, int $teacherid): void {
         if (empty(get_config('local_nexusai', 'enabled'))) {
-            return; // switch maestro apagado — sin efectos secundarios.
+            return; // Switch maestro apagado — sin efectos secundarios.
         }
 
         $course = get_course($courseid);
@@ -71,12 +91,21 @@ class notifier {
 
         foreach ($recipients as $recipient) {
             if ((int) $recipient->id === $teacherid) {
-                continue; // no notificarse a uno mismo.
+                continue; // No notificarse a uno mismo.
             }
             self::send_one($course, $courseurl, $recipient, $teacher, $filename);
         }
     }
 
+    /**
+     * Arma y envía una notificación de material nuevo a un destinatario puntual.
+     *
+     * @param \stdClass  $course    Curso donde se subió el material.
+     * @param \moodle_url $courseurl URL del curso, para el link de la notificación.
+     * @param \stdClass  $recipient Usuario destinatario.
+     * @param \stdClass  $teacher   Usuario remitente (docente que subió el material).
+     * @param string     $filename  Nombre del archivo subido.
+     */
     private static function send_one(
         \stdClass $course,
         \moodle_url $courseurl,
