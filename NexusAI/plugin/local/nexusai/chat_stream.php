@@ -167,6 +167,21 @@ while (ob_get_level() > 0) {
 // ----- cURL al backend Python con WRITEFUNCTION -----
 // Usamos curl_* de PHP directamente (no la clase \curl de Moodle) porque
 // necesitamos CURLOPT_WRITEFUNCTION para forwardear chunks tal como llegan.
+//
+// FEAT-06 (#481, límite diario): antes de esto, un error del backend que NO
+// llegaba en formato SSE (ej. un 429 de rate limit, que FastAPI devuelve
+// como JSON plano `{"detail":{...}}`, no como `data: {...}\n\n`) se
+// reenviaba tal cual al browser. El parser SSE de React descarta en
+// silencio cualquier línea que no empiece con "data:", así que el alumno
+// se quedaba con el indicador de "escribiendo" colgado para siempre, sin
+// ningún error visible — el 429 nunca llegaba a mostrarse. Para evitarlo,
+// inspeccionamos el status real de la respuesta con CURLOPT_HEADERFUNCTION
+// ANTES de reenviar cuerpo: si no es 2xx, bufferizamos el body (es un JSON
+// chico, no un stream real) y lo reformateamos como un evento SSE de error
+// bien armado en vez de pasarlo crudo.
+$httpstatus = null;
+$errorbuffer = '';
+
 $ch = curl_init();
 curl_setopt_array($ch, [
     CURLOPT_URL            => $endpoint . '/api/v1/chat/stream',
@@ -183,9 +198,23 @@ curl_setopt_array($ch, [
     CURLOPT_TIMEOUT        => 300,
     CURLOPT_CONNECTTIMEOUT => 10,
     CURLOPT_RETURNTRANSFER => false,
-    // Callback que se ejecuta cada vez que llegan bytes del backend.
-    // Lo único que hacemos es escribirlos al output del cliente y forzar flush.
-    CURLOPT_WRITEFUNCTION  => function ($curl, $chunk) {
+    // Se ejecuta por cada línea de header que llega — usamos la primera
+    // "HTTP/x.x <status>" para saber si el backend respondió 2xx (stream
+    // real) o un error (JSON plano, hay que bufferizar y reformatear).
+    CURLOPT_HEADERFUNCTION => function ($curl, $headerline) use (&$httpstatus) {
+        if ($httpstatus === null && preg_match('#^HTTP/\S+\s+(\d{3})#', $headerline, $m)) {
+            $httpstatus = (int) $m[1];
+        }
+        return strlen($headerline);
+    },
+    // Callback que se ejecuta cada vez que llegan bytes del backend. Si ya
+    // sabemos que la respuesta no es 2xx, acumulamos en vez de reenviar
+    // (mejor esfuerzo: por si el error viniera en varios chunks).
+    CURLOPT_WRITEFUNCTION  => function ($curl, $chunk) use (&$httpstatus, &$errorbuffer) {
+        if ($httpstatus !== null && $httpstatus >= 400) {
+            $errorbuffer .= $chunk;
+            return strlen($chunk);
+        }
         echo $chunk;
         @flush();
         return strlen($chunk);
@@ -200,6 +229,12 @@ if ($ok === false) {
     echo "data: " . json_encode([
         'type'   => 'error',
         'detail' => 'backend_unreachable: ' . substr($err, 0, 200),
+    ]) . "\n\n";
+    @flush();
+} else if ($httpstatus !== null && $httpstatus >= 400 && $errorbuffer !== '') {
+    echo "data: " . json_encode([
+        'type'   => 'error',
+        'detail' => \local_nexusai\external\backend_client::extract_stream_error_detail($errorbuffer, $httpstatus),
     ]) . "\n\n";
     @flush();
 }
