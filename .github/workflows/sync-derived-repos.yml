@@ -21,6 +21,21 @@ name: Sync derived repos
 # en .github/sync-overlays/<repo>/, y este workflow los reaplica encima
 # del resultado del subtree split antes de pushear — así también son
 # "un solo lugar para editar", igual que el resto del código.
+#
+# Seguridad ante pushes manuales (auditoría de Santiago, PR #484): ningún
+# repo derivado tiene branch protection en `development` todavía (falta
+# activarla a mano, ver comentario de la PR). Como red de contención de
+# software mientras tanto, este workflow mantiene una rama espejo
+# `sync-bot-state` que actualiza junto con `development` en cada corrida
+# exitosa, y antes de cada nuevo `--force` compara las dos: si difieren,
+# alguien escribió en `development` sin pasar por acá, y el job falla en
+# vez de sobreescribirlo en silencio.
+#
+# Nota para la primera corrida: `development` de los dos repos derivados
+# hoy tiene contenido pusheado a mano (no vía este workflow) que difiere
+# bastante del estado actual del monorepo. La primera sincronización lo va
+# a reemplazar por completo — cualquiera con un clon local de esos repos
+# va a necesitar `git reset --hard origin/development` después.
 
 on:
   push:
@@ -57,6 +72,23 @@ jobs:
       - name: git subtree split de ${{ matrix.prefix }}
         run: git subtree split --prefix="${{ matrix.prefix }}" --branch "split-${{ matrix.repo }}"
 
+      - name: Detectar pushes manuales a development desde el último sync
+        # Ningún repo derivado tiene branch protection todavía, así que
+        # nada impide técnicamente que alguien comitee ahí a mano — y el
+        # próximo --force lo perdería sin aviso. `sync-bot-state` es una
+        # rama espejo que este mismo workflow actualiza junto con
+        # `development` en cada corrida exitosa: si en algún momento
+        # difieren, es porque algo más escribió en `development` sin pasar
+        # por este workflow. Frena acá en vez de sobreescribirlo en silencio.
+        run: |
+          REPO="nexusai-ucc/${{ matrix.repo }}"
+          DEV_SHA=$(git ls-remote "https://github.com/$REPO.git" refs/heads/development | cut -f1)
+          BOT_SHA=$(git ls-remote "https://github.com/$REPO.git" refs/heads/sync-bot-state | cut -f1)
+          if [ -n "$BOT_SHA" ] && [ "$DEV_SHA" != "$BOT_SHA" ]; then
+            echo "::error::development de $REPO ($DEV_SHA) no coincide con el último estado sincronizado por este workflow ($BOT_SHA) -- alguien pusheó ahí manualmente. Revisar a mano antes de re-sincronizar (ver comentario al inicio del archivo: development es generado, no se edita directo)."
+            exit 1
+          fi
+
       - name: Preparar worktree con el resultado del split
         run: git worktree add /tmp/wt-${{ matrix.repo }} "split-${{ matrix.repo }}"
 
@@ -82,7 +114,10 @@ jobs:
       - name: Push a development de ${{ matrix.repo }}
         working-directory: /tmp/wt-${{ matrix.repo }}
         run: |
-          git push "https://x-access-token:${{ secrets.SYNC_REPOS_TOKEN }}@github.com/nexusai-ucc/${{ matrix.repo }}.git" HEAD:development --force
+          REMOTE="https://x-access-token:${{ secrets.SYNC_REPOS_TOKEN }}@github.com/nexusai-ucc/${{ matrix.repo }}.git"
+          git push "$REMOTE" HEAD:development --force
+          # Marca "hasta acá sincronizó el bot" -- ver paso de detección de arriba.
+          git push "$REMOTE" HEAD:sync-bot-state --force
 
       - name: Limpiar worktree y rama temporal
         if: always()
