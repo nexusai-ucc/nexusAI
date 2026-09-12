@@ -1,6 +1,12 @@
 # Evaluación del pipeline RAG
 
 > **Resumen:** Cómo medimos si el RAG de NexusAI funciona bien. Tres niveles: retrieval (¿trajo los chunks correctos?), generación (¿la respuesta es fiel al contexto?), y experiencia (¿el alumno siente que sirve?).
+>
+> **Estado (actualizado 2026-09-11):** la metodología de abajo ya se ejecutó end-to-end
+> contra el backend real (no mockeado) al menos una vez. Los resultados están en
+> [Resultados de la corrida](#resultados-de-la-corrida-2026-09-11) — reemplazan la
+> frase "está diseñado para no alucinar" por números concretos, con sus límites
+> documentados. El harness reproducible vive en `services/api/scripts/eval_rag.py`.
 
 ---
 
@@ -129,16 +135,143 @@ Post-MVP, con alumnos reales:
 
 ## Decisiones tomadas para NexusAI
 
-- **Dataset de evaluación de 30-50 preguntas** generado con Leandro, versionado en `investigacion/02-rag/eval-dataset.json` (post-MVP).
+- **Dataset de evaluación**, versionado en [`investigacion/02-rag/eval-dataset.json`](eval-dataset.json)
+  y el material que indexa en [`fixtures/apunte-bases-de-datos.md`](fixtures/apunte-bases-de-datos.md).
+  Ver "Ajustes a la metodología" más abajo — son 12 preguntas (no 30-50) porque
+  se reusaron las de `services/api/tests/golden_set.md` en vez de inventar contenido nuevo.
 - **Umbrales de release del MVP:** recall@5 ≥ 0.85, faithfulness ≥ 0.95, fallback honesto ≥ 0.90.
 - **ragas + PyTest** para CI.
 - **Thumbs up/down** instrumentado desde el Sprint 1 (baratísimo, gran valor).
 
+## Ajustes a la metodología (antes de ejecutarla)
+
+La metodología tal como estaba escrita no era ejecutable literalmente. Ajustes mínimos
+aplicados, señalados en vez de cambiados en silencio:
+
+1. **Ground truth de Nivel 1 sin anotación manual del docente.** El diseño original
+   pide que un docente marque a mano qué `chunk_id` contiene la respuesta de cada
+   pregunta (paso 4 de "Cómo armamos el dataset de evaluación"). Eso no es reproducible
+   en CI ni automatizable sin un docente presente. Reemplazo: cada pregunta del dataset
+   trae `ground_truth_keywords` — frases ancla que solo aparecen en la sección del
+   apunte que responde esa pregunta — y el harness marca un chunk recuperado como
+   correcto si contiene todas esas keywords. Es determinístico y no depende de IDs de
+   chunk que cambian si se re-chunkea el documento.
+2. **Dataset de 12 preguntas, no 30-50.** En vez de inventar contenido nuevo sin
+   respaldo, se reusó el golden set ya curado por el equipo en
+   `services/api/tests/golden_set.md` (TEST-08): 4 preguntas de respuesta directa
+   (categoría A), 4 de síntesis (categoría B) y 4 fuera del material (categoría C).
+   Cubre los tres niveles de la metodología, pero es una muestra chica — los
+   intervalos de confianza son anchos. Pendiente real: ampliarlo con el docente
+   a 30-50 preguntas sobre una materia real, como decía el plan original.
+3. **Material de prueba sintético, no un apunte real de una materia.** No había en
+   el repo ningún PDF/apunte real de curso reusable como fixture (los de
+   `services/api/tests` son PDFs generados con reportlab solo para probar
+   extracción de texto, sin contenido de dominio). Se escribió
+   `fixtures/apunte-bases-de-datos.md` cubriendo exactamente los temas que
+   `golden_set.md` ya asumía (modelo relacional, SQL, normalización, transacciones,
+   índices) para poder indexarlo y correr retrieval real contra un curso real,
+   con course_id dedicado (990001) para no tocar datos de alumnos reales.
+4. **Nivel 2 (LLM-as-judge) corre con un modelo *distinto* al que genera la
+   respuesta bajo evaluación.** El prompt de juez de la metodología no especifica
+   qué modelo lo ejecuta. Usar el mismo `LLM_MODEL` de producción (gemini-2.5-flash)
+   para juzgar sus propias respuestas hubiera consumido el doble de la cuota diaria
+   del sistema bajo evaluación (ver hallazgo de infraestructura abajo) solo en
+   tooling de evaluación. El judge corre contra `openai/gpt-oss-120b` (Groq, misma
+   API key de fallback), separado del sistema medido.
+
+## Hallazgos de infraestructura (2026-09-11)
+
+Correr la evaluación end-to-end contra el backend real expuso un problema de
+producción que no era visible en los tests unitarios (que mockean el LLM):
+
+- **`LLM_MODEL=gemini-2.5-flash` tiene cuota gratuita de 20 requests/DÍA**
+  (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`), no por minuto. La corrida
+  de evaluación (12 preguntas, cada una 1 llamada real a `/chat/messages`) agotó
+  esa cuota junto con el uso normal de desarrollo del día.
+- **El fallback automático configurado está roto:** `LLM_FALLBACK_MODEL=
+  llama-3.3-70b-versatile` (Groq) devuelve `404 model_not_found` — el modelo fue
+  retirado. El código de `LLMProvider._fallback_chain()` sí intenta pasar al
+  fallback cuando el primario agota cuota (funciona como está diseñado), pero como
+  el fallback en sí no existe, la cadena completa falla y el endpoint devuelve
+  `503` al alumno.
+- **Consecuencia medible:** una vez agotada la cuota diaria del primario, **100%
+  de las preguntas al chat devuelven 503**, sin degradar a una respuesta parcial
+  ni a un fallback honesto — el alumno no recibe "no encuentro esto en el
+  material", recibe un error de servidor. Esto afectó 6/8 preguntas de Nivel 2 y
+  4/4 de Nivel 3 en esta corrida (ver `n_preguntas_error_infraestructura` en el
+  reporte).
+- **Recomendación:** actualizar `LLM_FALLBACK_MODEL` a un modelo vigente de Groq
+  (`services/api/scripts/eval_rag.py` usa `openai/gpt-oss-120b` con éxito para el
+  judge) y monitorear el consumo diario de cuota de Gemini — 20 req/día no alcanza
+  ni para un curso chico en un día de clase, mucho menos para varios cursos.
+
+## Resultados de la corrida (2026-09-11)
+
+Ejecutada con `services/api/scripts/eval_rag.py` contra el backend real (Postgres +
+pgvector, Redis, FastAPI, LLM y embeddings reales — sin mocks), curso dedicado
+`course_id=990001`, material y dataset descritos arriba. Reporte completo y
+reproducible en [`eval-report.json`](eval-report.json).
+
+### Nivel 1 — Retrieval (8 preguntas, categorías A + B)
+
+| Métrica | Resultado | Objetivo |
+|---|---|---|
+| Recall@5 | **1.00** | ≥ 0.85 ✅ |
+| Precision@5 | **0.275** | ≥ 0.50 ❌ |
+| MRR | **0.9375** | ≥ 0.70 ✅ |
+
+El chunk correcto siempre apareció entre los top-5 (recall perfecto) y casi
+siempre en la primera posición (MRR alto). La precision@5 queda debajo del
+objetivo porque el apunte de prueba es corto (~9 chunks totales con
+`max_tokens=512`): con top_k=5 fijo, más de la mitad de los chunks devueltos son
+"vecinos" del correcto por el overlap de chunking, no ruido real. Con un corpus
+de tamaño real (varios apuntes por curso) se espera que la precision@5 suba
+porque hay más chunks irrelevantes que el retrieval sí filtra. Umbral usado:
+`min_similarity=0.3`, `top_k=5` — igual que `chat/router.py` en producción.
+
+### Nivel 2 — Generación / faithfulness
+
+| Métrica | Resultado | Objetivo |
+|---|---|---|
+| Preguntas evaluadas por el judge | **2 de 8** | — |
+| Preguntas perdidas por error de infraestructura | **6 de 8** | — |
+| FIEL rate (sobre las 2 evaluadas) | **50% (1/2)** | ≥ 95% ❌ |
+
+Muestra insuficiente para conclusión — ver "Hallazgos de infraestructura". De las
+2 respuestas que sí se pudieron juzgar: la pregunta A2 (DELETE/TRUNCATE/DROP) fue
+clasificada **FIEL** (cita las tres fuentes correctamente, sin inventar); la
+pregunta A4 (transacciones ACID) fue clasificada **PARCIAL** — la respuesta real
+corta la enumeración de las 4 propiedades ACID a mitad de camino (menciona
+Atomicidad y Consistencia, corta antes de Aislamiento y Durabilidad), probablemente
+por un límite de `max_tokens` de la llamada, no por invención de contenido.
+Pendiente real: re-ejecutar Nivel 2 completo una vez resuelto el hallazgo de
+infraestructura para tener las 8 muestras.
+
+### Nivel 3 — Fallback honesto
+
+| Métrica | Resultado | Objetivo |
+|---|---|---|
+| Preguntas fuera del material | 4 | — |
+| Preguntas efectivamente respondidas | **0 de 4** | — |
+| Fallback rate | **no medible esta corrida** | ≥ 90% |
+
+Las 4 preguntas de categoría C (MongoDB, licencia de Oracle, capital de Francia,
+SQLAlchemy) devolvieron `503` por el problema de infraestructura descripto arriba,
+antes de llegar al LLM. **No es un 0% de honestidad — es 0 muestras.** Contarlo
+como fallo de fallback sería un error de medición (el harness ya distingue
+`n_preguntas_error_infraestructura` de `fallback_rate` en el reporte). Pendiente
+real y de mayor prioridad que expandir el dataset: arreglar el fallback roto
+(hallazgo de arriba) y re-correr Nivel 3.
+
 ## Abierto / pendiente
 
-- [ ] Construir el dataset inicial con 3 apuntes y Leandro (Sprint 2).
-- [ ] Decidir si el evaluador LLM-as-judge usa GPT-4o-mini (barato) o GPT-4o (más riguroso).
-- [ ] Integrar la suite al CI antes del Sprint 3.
+- [x] Construir el dataset inicial — `eval-dataset.json` + `fixtures/apunte-bases-de-datos.md` (2026-09-11).
+- [x] Implementar y correr el harness end-to-end — `services/api/scripts/eval_rag.py` (2026-09-11).
+- [x] Decidir el modelo del LLM-as-judge — `openai/gpt-oss-120b` vía Groq, separado del sistema bajo evaluación.
+- [ ] Arreglar `LLM_FALLBACK_MODEL` (modelo deprecado, 404) — bloqueante para medir Nivel 2/3 con una muestra completa.
+- [ ] Re-correr Nivel 2 y Nivel 3 completos una vez resuelto lo anterior.
+- [ ] Ampliar el dataset a 30-50 preguntas con un docente, sobre una materia real (plan original).
+- [ ] Integrar la suite al CI (`ragas` + PyTest), condicionado a tener cuota de LLM dedicada para CI (no la del free tier de producción).
 
 ## Referencias
 
@@ -148,4 +281,4 @@ Post-MVP, con alumnos reales:
 
 ---
 
-*Última actualización: 2026-04-24 — equipo NexusAI*
+*Última actualización: 2026-09-11 — corrida real ejecutada, ver "Resultados de la corrida"*

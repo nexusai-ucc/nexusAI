@@ -1,0 +1,105 @@
+{
+  "_meta": {
+    "description": "Dataset de evaluación RAG de NexusAI. Deriva directamente de services/api/tests/golden_set.md (TEST-08), reusando sus 12 preguntas curadas por el equipo en vez de inventar contenido nuevo. Se agregan aquí los 'ground_truth_keywords' (para automatizar Nivel 1 - retrieval, que golden_set.md dejaba para verificación manual) contra el apunte real indexado en fixtures/apunte-bases-de-datos.md.",
+    "course_material": "fixtures/apunte-bases-de-datos.md",
+    "source": "services/api/tests/golden_set.md"
+  },
+  "items": [
+    {
+      "id": "A1",
+      "category": "A",
+      "question": "¿Qué es una clave primaria en el modelo relacional?",
+      "ground_truth_keywords": ["clave primaria", "NULL"],
+      "answer_keywords": ["única", "NULL"],
+      "expects_fallback": false
+    },
+    {
+      "id": "A2",
+      "category": "A",
+      "question": "¿Qué diferencia hay entre DELETE, TRUNCATE y DROP en SQL?",
+      "ground_truth_keywords": ["TRUNCATE", "DDL"],
+      "answer_keywords": ["DELETE", "TRUNCATE", "DROP"],
+      "expects_fallback": false
+    },
+    {
+      "id": "A3",
+      "category": "A",
+      "question": "¿Qué son las formas normales y para qué sirven?",
+      "ground_truth_keywords": ["formas normales", "redundancia"],
+      "answer_keywords": ["1FN", "2FN", "3FN"],
+      "expects_fallback": false
+    },
+    {
+      "id": "A4",
+      "category": "A",
+      "question": "¿Qué es una transacción y cuáles son sus propiedades ACID?",
+      "ground_truth_keywords": ["propiedades", "ACID"],
+      "answer_keywords": ["atomicidad", "consistencia", "aislamiento", "durabilidad"],
+      "expects_fallback": false
+    },
+    {
+      "id": "B1",
+      "category": "B",
+      "question": "Si tengo una tabla con muchas columnas redundantes, ¿qué proceso debo aplicar y cuál sería el primer paso?",
+      "ground_truth_keywords": ["aplicar normalización", "1FN"],
+      "answer_keywords": ["normalización", "1FN"],
+      "expects_fallback": false
+    },
+    {
+      "id": "B2",
+      "category": "B",
+      "question": "¿En qué situaciones conviene usar un índice y cuándo puede ser contraproducente?",
+      "ground_truth_keywords": ["contraproducente", "índice"],
+      "answer_keywords": ["índice", "escrituras"],
+      "expects_fallback": false
+    },
+    {
+      "id": "B3",
+      "category": "B",
+      "question": "¿Qué ocurre si dos transacciones intentan modificar el mismo registro al mismo tiempo?",
+      "ground_truth_keywords": ["lost update", "MVCC"],
+      "answer_keywords": ["concurrencia", "lock"],
+      "expects_fallback": false
+    },
+    {
+      "id": "B4",
+      "category": "B",
+      "question": "Explicá la diferencia entre un JOIN interno y uno externo con un ejemplo.",
+      "ground_truth_keywords": ["INNER JOIN", "LEFT JOIN"],
+      "answer_keywords": ["INNER JOIN", "LEFT JOIN"],
+      "expects_fallback": false
+    },
+    {
+      "id": "C1",
+      "category": "C",
+      "question": "¿Cuál es la sintaxis para crear una tabla en MongoDB?",
+      "ground_truth_keywords": [],
+      "answer_keywords": [],
+      "expects_fallback": true
+    },
+    {
+      "id": "C2",
+      "category": "C",
+      "question": "¿Cuánto cuesta una licencia de Oracle Database?",
+      "ground_truth_keywords": [],
+      "answer_keywords": [],
+      "expects_fallback": true
+    },
+    {
+      "id": "C3",
+      "category": "C",
+      "question": "¿Cuál es la capital de Francia?",
+      "ground_truth_keywords": [],
+      "answer_keywords": [],
+      "expects_fallback": true
+    },
+    {
+      "id": "C4",
+      "category": "C",
+      "question": "¿Cómo se implementa un ORM en Python con SQLAlchemy?",
+      "ground_truth_keywords": [],
+      "answer_keywords": [],
+      "expects_fallback": true
+    }
+  ]
+}
