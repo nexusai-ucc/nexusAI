@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_exam_generate`.
@@ -19,8 +32,15 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Proxy entre React y el endpoint /api/v1/quiz/generate-exam del backend Python.
+ */
 class exam_generate extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'     => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -28,10 +48,15 @@ class exam_generate extends \external_api {
                 new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento fuente'),
                 'Archivos del curso de los que sacar las preguntas (al menos 1)'
             ),
-            'topic'        => new \external_value(PARAM_RAW, 'Tema opcional', VALUE_OPTIONAL, ''),
-            'numquestions' => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..20)', VALUE_OPTIONAL, 10),
-            'questiontype' => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta (multiple_choice|true_false|open|mix)', VALUE_OPTIONAL, 'multiple_choice'),
-            'difficulty'   => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_OPTIONAL, 'medium'),
+            'topic'        => new \external_value(PARAM_RAW, 'Tema opcional', VALUE_DEFAULT, ''),
+            'numquestions' => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..20)', VALUE_DEFAULT, 10),
+            'questiontype' => new \external_value(
+                PARAM_ALPHANUMEXT,
+                'Tipo de pregunta (multiple_choice|true_false|open|mix)',
+                VALUE_DEFAULT,
+                'multiple_choice'
+            ),
+            'difficulty'   => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
             // DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ) que el
             // docente eligió priorizar como contexto extra de generación.
             'topics'       => new \external_multiple_structure(
@@ -46,6 +71,11 @@ class exam_generate extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
@@ -53,20 +83,44 @@ class exam_generate extends \external_api {
             'questions' => new \external_multiple_structure(
                 new \external_single_structure([
                     'question_type'      => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta'),
-                    'question'           => new \external_value(PARAM_RAW,  'Texto de la pregunta'),
+                    'question'           => new \external_value(PARAM_RAW, 'Texto de la pregunta'),
                     'options'            => new \external_multiple_structure(
                         new \external_value(PARAM_RAW, 'Opción')
                     ),
-                    'correct_index'      => new \external_value(PARAM_INT,  'Índice de la opción correcta (-1..3)'),
-                    'explanation'        => new \external_value(PARAM_RAW,  'Explicación / respuesta modelo'),
+                    'correct_index'      => new \external_value(PARAM_INT, 'Índice de la opción correcta (-1..3)'),
+                    'explanation'        => new \external_value(PARAM_RAW, 'Explicación / respuesta modelo'),
                     'source_filename'    => new \external_value(PARAM_TEXT, 'Archivo del que sale la pregunta'),
-                    'source_document_id' => new \external_value(PARAM_ALPHANUMEXT, 'ID del documento fuente (UUID)', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'source_topic'       => new \external_value(PARAM_TEXT, 'Tema de dificultad detectada del que sale la pregunta (DOC-D09)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id' => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'ID del documento fuente (UUID)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'source_topic'       => new \external_value(
+                        PARAM_TEXT,
+                        'Tema de dificultad detectada del que sale la pregunta (DOC-D09)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                 ])
             ),
         ]);
     }
 
+    /**
+     * Proxy entre React y el endpoint /api/v1/quiz/generate-exam del backend Python.
+     *
+     * @param int $courseid ID del curso
+     * @param array $documentids Archivos del curso de los que sacar las preguntas (al menos 1)
+     * @param string $topic Tema opcional
+     * @param int $numquestions Cantidad de preguntas (1..20)
+     * @param string $questiontype Tipo de pregunta (multiple_choice|true_false|open|mix)
+     * @param string $difficulty Dificultad (easy|medium|hard)
+     * @param array $topics Temas con dificultad detectada a priorizar (máx 15)
+     * @return array
+     */
     public static function execute(
         int $courseid,
         array $documentids,
@@ -105,22 +159,22 @@ class exam_generate extends \external_api {
         }
         $numq = max(1, min(20, (int) $params['numquestions']));
 
-        $allowed_types = ['multiple_choice', 'true_false', 'open', 'mix'];
-        $qtype = in_array($params['questiontype'], $allowed_types, true) ? $params['questiontype'] : 'multiple_choice';
+        $allowedtypes = ['multiple_choice', 'true_false', 'open', 'mix'];
+        $qtype = in_array($params['questiontype'], $allowedtypes, true) ? $params['questiontype'] : 'multiple_choice';
 
-        $allowed_difficulties = ['easy', 'medium', 'hard'];
-        $difficulty = in_array($params['difficulty'], $allowed_difficulties, true) ? $params['difficulty'] : 'medium';
+        $alloweddifficulties = ['easy', 'medium', 'hard'];
+        $difficulty = in_array($params['difficulty'], $alloweddifficulties, true) ? $params['difficulty'] : 'medium';
 
         // DOC-D09 (#390): sanitizar la lista de temas — origen restringido a
         // gap|faq, label recortado, y se ignora cualquier fila vacía.
-        $allowed_topic_sources = ['gap', 'faq'];
+        $allowedtopicsources = ['gap', 'faq'];
         $focustopics = [];
         foreach (array_slice($params['topics'], 0, 15) as $t) {
             $label = trim((string) ($t['label'] ?? ''));
             if ($label === '') {
                 continue;
             }
-            $source = in_array($t['source'] ?? '', $allowed_topic_sources, true) ? $t['source'] : 'gap';
+            $source = in_array($t['source'] ?? '', $allowedtopicsources, true) ? $t['source'] : 'gap';
             $focustopics[] = ['label' => mb_substr($label, 0, 200), 'source' => $source];
         }
 
@@ -154,7 +208,9 @@ class exam_generate extends \external_api {
                         'explanation'        => (string) ($q['explanation'] ?? ''),
                         'source_filename'    => (string) ($q['source_filename'] ?? ''),
                         'source_document_id' => isset($q['source_document_id']) ? (string) $q['source_document_id'] : null,
-                        'source_topic'       => isset($q['source_topic']) && $q['source_topic'] !== '' ? (string) $q['source_topic'] : null,
+                        'source_topic'       => isset($q['source_topic']) && $q['source_topic'] !== ''
+                            ? (string) $q['source_topic']
+                            : null,
                     ];
                 },
                 $response['questions']

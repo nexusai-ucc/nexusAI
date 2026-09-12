@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_confirm_pending_upload`.
@@ -19,8 +32,15 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * El docente confirmó que quiere indexar un archivo en NexusAI.
+ */
 class confirm_pending_upload extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -28,12 +48,24 @@ class confirm_pending_upload extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'success' => new \external_value(PARAM_BOOL, 'true si se indexó correctamente'),
         ]);
     }
 
+    /**
+     * El docente confirmó que quiere indexar un archivo en NexusAI.
+     *
+     * @param int $courseid ID del curso
+     * @param int $cmid Course module ID del recurso a indexar
+     * @return array
+     */
     public static function execute(int $courseid, int $cmid): array {
         global $USER;
 
@@ -65,13 +97,13 @@ class confirm_pending_upload extends \external_api {
         unset($pending[$key]);
         set_user_preference(\local_nexusai\observer::PENDING_PREF, json_encode($pending));
 
-        $context_id = (int) $entry['context_id'];
+        $contextid = (int) $entry['context_id'];
         $mimetype   = (string) $entry['mimetype'];
         $filename   = (string) $entry['filename'];
 
         // Leer el archivo del filestore de Moodle.
         $fs    = get_file_storage();
-        $files = $fs->get_area_files($context_id, 'mod_resource', 'content', false, 'itemid, filepath, filename', false);
+        $files = $fs->get_area_files($contextid, 'mod_resource', 'content', false, 'itemid, filepath, filename', false);
 
         if (empty($files)) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'File no longer exists in Moodle filestore');
@@ -98,13 +130,20 @@ class confirm_pending_upload extends \external_api {
 
         $client = new backend_client();
         $client->upload_document(
-            $params['courseid'], (int) $USER->id, $filename, $mimetype, $filebytes, $section
+            $params['courseid'],
+            (int) $USER->id,
+            $filename,
+            $mimetype,
+            $filebytes,
+            $section
         );
 
         // CAL-03 (issue #239): notificar a los usuarios del curso que hay
         // material nuevo. Best-effort — nunca puede romper la confirmación.
         \local_nexusai\notifier::notify_new_material(
-            $params['courseid'], $filename, (int) $USER->id
+            $params['courseid'],
+            $filename,
+            (int) $USER->id
         );
 
         return ['success' => true];

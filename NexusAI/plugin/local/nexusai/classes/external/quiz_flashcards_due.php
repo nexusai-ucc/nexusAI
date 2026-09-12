@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_quiz_flashcards_due`.
@@ -20,8 +33,16 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * SP-11 (#315): flashcards ya generadas que "tocan hoy" según repetición espaciada (SM-2), más vencidas
+ * primero.
+ */
 class quiz_flashcards_due extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -30,26 +51,52 @@ class quiz_flashcards_due extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
             'questions' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'id'                  => new \external_value(PARAM_ALPHANUMEXT, 'ID de la flashcard (UUID)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'id'                  => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'ID de la flashcard (UUID)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'question_type'       => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta'),
-                    'question'            => new \external_value(PARAM_RAW,  'Frente de la tarjeta'),
+                    'question'            => new \external_value(PARAM_RAW, 'Frente de la tarjeta'),
                     'options'             => new \external_multiple_structure(
                         new \external_value(PARAM_RAW, 'Opción')
                     ),
-                    'correct_index'       => new \external_value(PARAM_INT,  'Siempre -1 para flashcards'),
-                    'explanation'         => new \external_value(PARAM_RAW,  'Dorso de la tarjeta'),
+                    'correct_index'       => new \external_value(PARAM_INT, 'Siempre -1 para flashcards'),
+                    'explanation'         => new \external_value(PARAM_RAW, 'Dorso de la tarjeta'),
                     'source_filename'     => new \external_value(PARAM_TEXT, 'Archivo fuente'),
-                    'source_document_id'  => new \external_value(PARAM_ALPHANUMEXT, 'ID del documento fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id'  => new \external_value(
+                        PARAM_ALPHANUMEXT,
+                        'ID del documento fuente',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                 ])
             ),
         ]);
     }
 
+    /**
+     * SP-11 (#315): flashcards ya generadas que "tocan hoy" según repetición espaciada (SM-2), más vencidas
+     * primero.
+     *
+     * @param int $courseid ID del curso
+     * @param string $topic Tema (opcional)
+     * @param int $limit Cantidad máxima (1..50)
+     * @return array
+     */
     public static function execute(int $courseid, string $topic = '', int $limit = 10): array {
         global $USER;
 

@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Event observer for local_nexusai — auto-sync on course module creation.
@@ -26,10 +39,10 @@
 
 namespace local_nexusai;
 
-defined('MOODLE_INTERNAL') || die();
-
+/**
+ * Sincroniza automáticamente con el backend NexusAI cuando se crea/edita contenido en Moodle.
+ */
 class observer {
-
     /** MIME types soportados por el backend (sincronizado con extractor.py). */
     const SUPPORTED_MIME_TYPES = [
         'application/pdf',
@@ -75,29 +88,16 @@ class observer {
                 '[NexusAI] Auto-indexing failed for cmid=' . $cmid . ': ' . $e->getMessage(),
                 DEBUG_NORMAL
             );
-            error_log('[NexusAI] auto-index error cmid=' . $cmid . ' — ' . $e->getMessage());
         }
     }
 
-    /**
-     * Lee el archivo adjunto del módulo resource y lo envía al backend.
-     *
-     * @param int $cmid     Course module ID.
-     * @param int $courseid Course ID.
-     * @param int $userid   ID del usuario que creó el módulo (el docente).
-     *
-     * @throws \moodle_exception Si el backend rechaza o hay error de red.
-     * @throws \coding_exception  Si no se puede leer el archivo.
-     */
     /**
      * Nombre de la user preference donde se acumulan los uploads pendientes de confirmación.
      * Valor: JSON object {cmid: {courseid, context_id, filename, mimetype}}.
      */
     const PENDING_PREF = 'local_nexusai_pending_uploads';
 
-    // =========================================================
-    // Foros — Épica 06
-    // =========================================================
+    // Foros — Épica 06.
 
     /**
      * Indexa el primer post de una nueva discusión de foro.
@@ -128,7 +128,6 @@ class observer {
                 '[NexusAI] forum_discussion_created failed for discussion=' . $discussionid . ': ' . $e->getMessage(),
                 DEBUG_NORMAL
             );
-            error_log('[NexusAI] forum_discussion_created error discussion=' . $discussionid . ' — ' . $e->getMessage());
         }
     }
 
@@ -189,7 +188,6 @@ class observer {
                 '[NexusAI] forum_post_deleted failed for post=' . $postid . ': ' . $e->getMessage(),
                 DEBUG_NORMAL
             );
-            error_log('[NexusAI] forum_post_deleted error post=' . $postid . ' — ' . $e->getMessage());
         }
     }
 
@@ -221,20 +219,23 @@ class observer {
 
             $client = new \local_nexusai\external\backend_client();
             $client->index_forum_post($postid, $discussionid, $courseid, $content);
-
         } catch (\Throwable $e) {
             debugging(
                 '[NexusAI] forum post indexing failed for post=' . $postid . ': ' . $e->getMessage(),
                 DEBUG_NORMAL
             );
-            error_log('[NexusAI] forum post index error post=' . $postid . ' — ' . $e->getMessage());
         }
     }
 
-    // =========================================================
-    // Módulos de recurso (documentos)
-    // =========================================================
+    // Módulos de recurso (documentos).
 
+    /**
+     * Lee el archivo adjunto del módulo resource y guarda un upload pendiente de confirmación.
+     *
+     * @param int $cmid     Course module ID.
+     * @param int $courseid Course ID.
+     * @param int $userid   ID del usuario que creó el módulo (el docente).
+     */
     private static function index_resource_module(int $cmid, int $courseid, int $userid): void {
         global $CFG, $USER;
 
@@ -275,6 +276,9 @@ class observer {
 
         set_user_preference(self::PENDING_PREF, json_encode($pending), $userid);
 
-        error_log('[NexusAI] Pending upload queued for "' . $filename . '" (cmid=' . $cmid . ', course=' . $courseid . ')');
+        debugging(
+            '[NexusAI] Pending upload queued for "' . $filename . '" (cmid=' . $cmid . ', course=' . $courseid . ')',
+            DEBUG_DEVELOPER
+        );
     }
 }

@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_document_reindex`.
@@ -20,8 +33,16 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Re-corre la indexación de un documento ya subido, sin pedir un archivo nuevo (CONT-09, #358) — el backend
+ * lee el archivo que ya tiene guardado en disco desde el upload original.
+ */
 class document_reindex extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'   => new \external_value(PARAM_INT, 'ID del curso (para validar capability)', VALUE_REQUIRED),
@@ -29,6 +50,11 @@ class document_reindex extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'id'            => new \external_value(PARAM_ALPHANUMEXT, 'ID del documento'),
@@ -37,12 +63,32 @@ class document_reindex extends \external_api {
             'filename'      => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
             'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
             'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
-            'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si status=error', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'error_message' => new \external_value(
+                PARAM_RAW,
+                'Mensaje de error si status=error',
+                VALUE_OPTIONAL,
+                null,
+                NULL_ALLOWED
+            ),
             'created_at'    => new \external_value(PARAM_RAW, 'Timestamp de creación', VALUE_OPTIONAL, null, NULL_ALLOWED),
-            'updated_at'    => new \external_value(PARAM_RAW, 'Timestamp de última actualización', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'updated_at'    => new \external_value(
+                PARAM_RAW,
+                'Timestamp de última actualización',
+                VALUE_OPTIONAL,
+                null,
+                NULL_ALLOWED
+            ),
         ]);
     }
 
+    /**
+     * Re-corre la indexación de un documento ya subido, sin pedir un archivo nuevo (CONT-09, #358) — el
+     * backend lee el archivo que ya tiene guardado en disco desde el upload original.
+     *
+     * @param int $courseid ID del curso (para validar capability)
+     * @param string $documentid UUID del documento a reindexar
+     * @return array
+     */
     public static function execute(int $courseid, string $documentid): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'   => $courseid,
@@ -60,7 +106,9 @@ class document_reindex extends \external_api {
         $document = $client->get_document($params['documentid']);
         if (((int) ($document['course_id'] ?? 0)) !== (int) $params['courseid']) {
             throw new \moodle_exception(
-                'errorbackend', 'local_nexusai', '',
+                'errorbackend',
+                'local_nexusai',
+                '',
                 'Cannot reindex: document does not belong to the requested course'
             );
         }
