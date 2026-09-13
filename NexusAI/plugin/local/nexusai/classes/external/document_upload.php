@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_document_upload`.
@@ -27,8 +40,16 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Recibe el contenido del archivo en base64 directamente desde React (FileReader sobre drag-and-drop HTML5),
+ * valida y reenvía al backend Python.
+ */
 class document_upload extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'    => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
@@ -36,11 +57,19 @@ class document_upload extends \external_api {
             'mimetype'    => new \external_value(PARAM_RAW, 'MIME type detectado por el browser', VALUE_REQUIRED),
             'content_b64' => new \external_value(PARAM_RAW, 'Contenido binario en base64', VALUE_REQUIRED),
             'section'     => new \external_value(
-                PARAM_INT, 'Sección/unidad del curso (-1 = no asignada, BUS-05)', VALUE_OPTIONAL, -1
+                PARAM_INT,
+                'Sección/unidad del curso (-1 = no asignada, BUS-05)',
+                VALUE_DEFAULT,
+                -1
             ),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'id'            => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento creado'),
@@ -67,6 +96,8 @@ class document_upload extends \external_api {
     ];
 
     /**
+     * Recibe el contenido de un archivo en base64 desde React, lo valida y lo reenvía al backend.
+     *
      * @param int    $courseid    ID del curso (el contexto del curso valida acceso).
      * @param string $filename    Nombre del archivo subido.
      * @param string $mimetype    MIME type: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML o TXT.
@@ -75,7 +106,11 @@ class document_upload extends \external_api {
      * @return array Document state después del upload.
      */
     public static function execute(
-        int $courseid, string $filename, string $mimetype, string $contentb64, int $section = -1
+        int $courseid,
+        string $filename,
+        string $mimetype,
+        string $contentb64,
+        int $section = -1
     ): array {
         global $USER;
 
@@ -123,7 +158,7 @@ class document_upload extends \external_api {
         // Validar magic bytes según tipo MIME declarado.
         self::validate_magic_bytes($filebytes, $params['mimetype']);
 
-        // -1 = el docente no eligió sección (BUS-05) → se envía null al backend.
+        // Un valor de -1 significa que el docente no eligió sección (BUS-05) → se envía null al backend.
         $section = $params['section'] >= 0 ? (int) $params['section'] : null;
 
         // POST al backend con HMAC. El cliente backend re-encodea a base64
@@ -132,7 +167,7 @@ class document_upload extends \external_api {
         $client = new backend_client();
         $response = $client->upload_document(
             (int) $params['courseid'],
-            (int) $USER->id,  // SIEMPRE del server, no del cliente
+            (int) $USER->id, // Siempre del server, no del cliente.
             $params['filename'],
             $params['mimetype'],
             $filebytes,
@@ -142,7 +177,9 @@ class document_upload extends \external_api {
         // Validar shape de la respuesta.
         if (!isset($response['id'], $response['status'])) {
             throw new \moodle_exception(
-                'errorbackend', 'local_nexusai', '',
+                'errorbackend',
+                'local_nexusai',
+                '',
                 'Backend upload response is missing required fields'
             );
         }
@@ -152,12 +189,18 @@ class document_upload extends \external_api {
         // itemid = course_id para agrupar por curso. Filename único por curso
         // (ya validado por el backend con chequeo de colisión).
         $fs = get_file_storage();
-        $existing = $fs->get_file($context->id, 'local_nexusai', 'documents',
-                                  $params['courseid'], '/', $params['filename']);
+        $existing = $fs->get_file(
+            $context->id,
+            'local_nexusai',
+            'documents',
+            $params['courseid'],
+            '/',
+            $params['filename']
+        );
         if ($existing) {
-            $existing->delete();  // reemplazar si ya existía (re-upload)
+            $existing->delete();  // Reemplaza si ya existía (re-upload).
         }
-        $file_record = [
+        $filerecord = [
             'contextid' => $context->id,
             'component' => 'local_nexusai',
             'filearea'  => 'documents',
@@ -165,12 +208,14 @@ class document_upload extends \external_api {
             'filepath'  => '/',
             'filename'  => $params['filename'],
         ];
-        $fs->create_file_from_string($file_record, $filebytes);
+        $fs->create_file_from_string($filerecord, $filebytes);
 
         // CAL-03 (issue #239): notificar a los usuarios del curso que hay
         // material nuevo. Best-effort — nunca puede romper la respuesta del upload.
         \local_nexusai\notifier::notify_new_material(
-            (int) $params['courseid'], $params['filename'], (int) $USER->id
+            (int) $params['courseid'],
+            $params['filename'],
+            (int) $USER->id
         );
 
         return [
@@ -192,13 +237,13 @@ class document_upload extends \external_api {
     private static function validate_magic_bytes(string $bytes, string $mimetype): void {
         switch ($mimetype) {
             case 'application/pdf':
-                // PDF: "%PDF-"
+                // PDF: "%PDF-".
                 if (substr($bytes, 0, 5) !== '%PDF-') {
                     throw new \invalid_parameter_exception('File does not look like a valid PDF');
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                // DOCX es un ZIP: magic bytes PK\x03\x04
+                // DOCX es un ZIP: magic bytes PK\x03\x04.
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
                     throw new \invalid_parameter_exception('File does not look like a valid DOCX');
                 }

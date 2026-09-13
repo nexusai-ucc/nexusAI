@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Tests de `onboarding_state_get`/`onboarding_state_set` (ONB-05 / #428).
@@ -16,16 +29,16 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
-
-defined('MOODLE_INTERNAL') || die();
+namespace local_nexusai;
 
 /**
+ * Tests de las external functions onboarding_state_get/onboarding_state_set (ONB-05, #428).
+ *
  * @covers \local_nexusai\external\onboarding_state_get
  * @covers \local_nexusai\external\onboarding_state_set
+ * @runTestsInSeparateProcesses
  */
-class onboarding_state_test extends \advanced_testcase {
-
+final class onboarding_state_test extends \advanced_testcase {
     public function test_read_state_defaults_when_no_preference_set(): void {
         $this->resetAfterTest();
         $this->setAdminUser();
@@ -34,7 +47,11 @@ class onboarding_state_test extends \advanced_testcase {
 
         $state = \local_nexusai\external\onboarding_state_get::read_state($course->id);
 
-        $this->assertSame($course->id, $state['courseid']);
+        // Se usa assertEquals, no assertSame: $course->id que devuelve el generador de test
+        // viene como string numérico; read_state() lo tipa a int vía su firma
+        // (int $courseid) -- son el mismo curso, la representación PHP exacta no
+        // es lo que este test quiere probar.
+        $this->assertEquals($course->id, $state['courseid']);
         $this->assertFalse($state['dismissed']);
         $this->assertSame([], $state['skipped']);
     }

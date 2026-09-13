@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
+
 class Settings(BaseSettings):
     env: str = "development"
     app_version: str = "0.1.0"
@@ -45,6 +46,15 @@ class Settings(BaseSettings):
     # ANTES de pasar al proveedor secundario. Vacío = comportamiento idéntico
     # a antes de INFRA-03 (salta directo del primario al secundario).
     llm_intermediate_models: Optional[str] = None
+
+    # LLM — credenciales dedicadas para el LLM-as-judge de scripts/eval_rag.py.
+    # Opcionales: si no están seteadas, el judge cae a llm_fallback_api_key/
+    # llm_fallback_base_url (ver eval_rag.py::get_judge_provider). Ese fallback
+    # comparte cuota con el proveedor secundario real de producción — setear
+    # estas para que correr la evaluación no compita por la cuota del fallback
+    # que usan alumnos reales.
+    llm_judge_api_key: Optional[str] = None
+    llm_judge_base_url: Optional[str] = None
 
     # Resúmenes de documentos (PERF-02) — ver documents/summarizer.py.
     #
@@ -92,13 +102,103 @@ class Settings(BaseSettings):
     rate_limit_per_user_daily: int = 50
     rate_limit_per_user_minute: int = 20
 
+    # Alertas mínimas (ver ADR-012 y app/shared/alerting.py).
+    #
+    # alert_smtp_*/alert_email_to: envío por email vía SMTP (pensado para
+    #   Gmail con una App Password — no la contraseña normal de la cuenta,
+    #   Gmail bloquea login SMTP directo). Sin `alert_smtp_user` +
+    #   `alert_smtp_password` configuradas, las alertas quedan solo
+    #   logueadas (WARNING) — no rompe nada, solo pierde visibilidad
+    #   automática. Nunca hardcodear la password acá: siempre por variable
+    #   de entorno (`ALERT_SMTP_PASSWORD`).
+    #
+    #   `alert_email_to` sí tiene default (el mail del responsable del
+    #   piloto) porque no es un secreto — solo el destino de una
+    #   notificación. Se puede pisar por env var (`ALERT_EMAIL_TO`) si
+    #   cambia quién recibe las alertas.
+    #
+    # error_rate_*: ventana fija (mismo patrón que rate_limit.py) para avisar
+    #   si hay una ráfaga de respuestas 5xx.
+    #
+    # llm_failure_*: ídem pero contando fallas del LLM específicamente (el
+    #   proveedor agotó su cadena de fallback completa), que llegan al
+    #   cliente como 503 pero conviene diferenciar de un 5xx genérico porque
+    #   la causa y la acción a tomar son otras (cuota/proveedor caído).
+    #
+    # llm_slow_*: latencia del LLM. Una respuesta lenta no es un error (sigue
+    #   devolviendo 200), así que no la detecta el conteo de 5xx — necesita
+    #   su propio umbral.
+    alert_smtp_host: str = "smtp.gmail.com"
+    alert_smtp_port: int = 465
+    alert_smtp_user: Optional[str] = None
+    alert_smtp_password: Optional[str] = None
+    alert_email_to: str = "santiagotricherri@gmail.com"
+
+    # Cooldown global entre alertas del MISMO tipo (mismo key_prefix), ver
+    # app.shared.alerting.record_event_and_maybe_alert. Hallazgo de audit
+    # (PR #482): el dedupe original solo suprimía repeticiones DENTRO de una
+    # ventana (`error_rate_window_sec=60` por default) — en una caída
+    # sostenida donde cada request devuelve 5xx, cada ventana nueva volvía a
+    # cruzar el umbral y a alertar, hasta ~60 emails/hora solo por esa señal.
+    # Este cooldown es independiente de `window_sec`/`threshold` de cada
+    # caller: una vez que se manda una alerta de un tipo, ese mismo tipo no
+    # vuelve a alertar hasta que pase este tiempo, sin importar cuántas
+    # ventanas sigan cruzando el umbral mientras tanto.
+    alert_cooldown_sec: int = 900
+
+    error_rate_window_sec: int = 60
+    error_rate_threshold: int = 10
+
+    llm_failure_window_sec: int = 300
+    llm_failure_threshold: int = 3
+
+    # Cuota/presupuesto del proveedor de IA: una RateLimitError (429) que se
+    # propaga hasta el caller significa que la cadena ENTERA (primario +
+    # intermedios + secundario, ver providers/llm.py) devolvió "cuota
+    # agotada". Umbral bajo (1) porque, a diferencia de una falla transitoria
+    # cualquiera, esto ya implica que ningún eslabón configurado puede
+    # responder — vale la pena avisar de inmediato.
+    llm_quota_window_sec: int = 600
+    llm_quota_threshold: int = 1
+
+    llm_slow_threshold_ms: int = 15_000
+    llm_slow_window_sec: int = 300
+    llm_slow_threshold_count: int = 5
+
     # API
     api_port: int = 8001
+
+    # Moderación de contenido — capa de seguridad sobre las entradas del
+    # alumno antes de llegar al LLM principal. Ver app/shared/moderation.py.
+    #
+    # moderation_enabled: apaga toda la capa (default True). Pensado para dev
+    #   local, donde no siempre se quiere pagar la latencia/costo extra de la
+    #   llamada de moderación.
+    # moderation_api_key: si está seteada, se usa la Moderation API de OpenAI
+    #   (gratuita, rápida, especializada en esto) sin importar cuál sea el
+    #   LLM_BASE_URL activo — es un endpoint HTTP aparte, no pasa por
+    #   LLMProvider. Sin esta key (p. ej. en el MVP con Gemini, que no expone
+    #   un endpoint de moderación equivalente vía el shim OpenAI-compat), se
+    #   cae a clasificar el texto con el LLM activo — más caro y algo menos
+    #   preciso, pero mantiene el agnosticismo de proveedor (ADR-003).
+    # moderation_fail_open: qué hacer si la moderación misma falla (timeout,
+    #   ambos caminos caídos). True (default) = dejar pasar el mensaje al LLM
+    #   principal — bloquear alumnos por la falla de un servicio AUXILIAR es
+    #   peor UX que el riesgo residual, y el LLM principal ya tiene su propio
+    #   system prompt con guardrails. False = bloquear hasta que la
+    #   moderación vuelva a estar disponible.
+    moderation_enabled: bool = True
+    moderation_api_key: Optional[str] = None
+    moderation_fail_open: bool = True
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
 
+
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings()
+    # mypy no sabe que BaseSettings completa los args "faltantes" leyendo
+    # variables de entorno en tiempo de ejecución (no hay plugin de mypy
+    # para pydantic-settings instalado acá).
+    return Settings()  # type: ignore[call-arg]

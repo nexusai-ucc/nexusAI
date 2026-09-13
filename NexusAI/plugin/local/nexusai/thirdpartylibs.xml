@@ -9,13 +9,25 @@ queda minificado dentro de los dos bundles AMD commiteados.
 <libraries>
     <library>
         <name>react</name>
-        <location>amd/build/chatwidget-lazy.min.js, amd/build/documents-manager-lazy.min.js</location>
+        <location>amd/build/chatwidget-lazy.min.js</location>
+        <version>18.3.1</version>
+        <license>MIT</license>
+    </library>
+    <library>
+        <name>react</name>
+        <location>amd/build/documents-manager-lazy.min.js</location>
         <version>18.3.1</version>
         <license>MIT</license>
     </library>
     <library>
         <name>react-dom</name>
-        <location>amd/build/chatwidget-lazy.min.js, amd/build/documents-manager-lazy.min.js</location>
+        <location>amd/build/chatwidget-lazy.min.js</location>
+        <version>18.3.1</version>
+        <license>MIT</license>
+    </library>
+    <library>
+        <name>react-dom</name>
+        <location>amd/build/documents-manager-lazy.min.js</location>
         <version>18.3.1</version>
         <license>MIT</license>
     </library>

@@ -24,6 +24,31 @@ function extractDetail(raw) {
     return null;
 }
 
+// FEAT-06 (#481, límite diario): a diferencia del rate limit de un proveedor
+// LLM (429 con texto técnico, no apto para mostrar), el `detail` de NUESTRO
+// propio rate limiter (services/api/app/shared/rate_limit.py::check_rate_limit)
+// es un objeto estructurado — {"error":"rate_limit_exceeded","scope":"minute"
+// |"daily","message":"<texto en español para el alumno>",...} — no un string,
+// así que `extractDetail()` de arriba (que solo matchea `"detail":"<string>"`)
+// nunca lo capturaba, y `getFriendlyErrorMessage()` mandaba CUALQUIER 429 al
+// mensaje curado genérico sin mirar el detail. Eso rompía la razón de ser del
+// límite diario: el alumno nunca veía la diferencia entre "esperá un minuto"
+// y "volvé mañana", solo el mismo texto genérico para los dos casos.
+function extractOwnRateLimitMessage(raw) {
+    const match = raw.match(/"detail"\s*:\s*(\{[^}]*\})/);
+    if (!match) return null;
+    try {
+        const parsed = JSON.parse(match[1]);
+        if (parsed.error === "rate_limit_exceeded" && typeof parsed.message === "string") {
+            return parsed.message;
+        }
+    } catch {
+        // No era el JSON que esperábamos (p. ej. un 429 de otro origen) —
+        // seguimos con el mensaje curado genérico.
+    }
+    return null;
+}
+
 const INFRA_MESSAGES = {
     es: {
         rateLimit: "Se alcanzó el límite de uso por ahora. Probá de nuevo en unos minutos.",
@@ -41,7 +66,7 @@ export function getFriendlyErrorMessage(err, fallback, lang = "es") {
     const status = statusMatch ? parseInt(statusMatch[1], 10) : null;
     const msgs = INFRA_MESSAGES[lang] || INFRA_MESSAGES.es;
 
-    if (status === 429) return msgs.rateLimit;
+    if (status === 429) return extractOwnRateLimitMessage(raw) || msgs.rateLimit;
     if (status && status >= 500 && status < 600) return msgs.unavailable;
 
     if (status && status >= 400 && status < 500) {

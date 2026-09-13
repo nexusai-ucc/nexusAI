@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_course_setup_state` (ONB-02 / #425).
@@ -30,8 +43,15 @@ require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 require_once($GLOBALS['CFG']->dirroot . '/group/lib.php');
 require_once($GLOBALS['CFG']->dirroot . '/calendar/lib.php');
 
+/**
+ * Agrega en una sola llamada el "estado de setup" de un curso: qué le falta armar al docente.
+ */
 class course_setup_state extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
@@ -56,6 +76,11 @@ class course_setup_state extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso consultado'),
@@ -68,6 +93,12 @@ class course_setup_state extends \external_api {
         ]);
     }
 
+    /**
+     * Agrega en una sola llamada el "estado de setup" de un curso: qué le falta armar al docente.
+     *
+     * @param int $courseid ID del curso
+     * @return array
+     */
     public static function execute(int $courseid): array {
         $params = self::validate_parameters(self::execute_parameters(), ['courseid' => $courseid]);
 
@@ -93,7 +124,7 @@ class course_setup_state extends \external_api {
     public static function gather_moodle_signals(int $courseid, \context $context): array {
         global $DB;
 
-        // --- Secciones con contenido (al menos un módulo, oculto o no) ---
+        // Secciones con contenido (al menos un módulo, oculto o no).
         $modinfo = get_fast_modinfo($courseid);
         $sectionswithcontent = 0;
         foreach ($modinfo->get_sections() as $cmids) {
@@ -102,19 +133,19 @@ class course_setup_state extends \external_api {
             }
         }
 
-        // --- Grupos ---
+        // Grupos.
         $groupcount = count(groups_get_all_groups($courseid));
 
-        // --- Alumnos matriculados (solo roles con arquetipo student) ---
+        // Alumnos matriculados (solo roles con arquetipo student).
         $studentroles = array_keys(get_archetype_roles('student'));
         $studentcount = empty($studentroles)
             ? 0
             : count_role_users($studentroles, $context);
 
-        // --- Foros ---
+        // Foros.
         $forumcount = $DB->count_records('forum', ['course' => $courseid]);
 
-        // --- Eventos de calendario propios del curso (no los de usuario) ---
+        // Eventos de calendario propios del curso (no los de usuario).
         $calendarcount = $DB->count_records_select(
             'event',
             "courseid = :courseid AND eventtype <> 'user'",

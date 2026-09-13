@@ -28,6 +28,7 @@ Usar [`000-template.md`](000-template.md) como base. Estructura:
 | [006](006-privacy-strategy.md) | Estrategia de Privacy API — `null_provider` ahora, `metadata\provider` cuando se justifique | ✅ Aceptada | 2026-05-04 |
 | [010](010-onboarding-docente.md) | Alcance del copiloto de ayuda / onboarding al docente — solo lectura, un componente reusable, estado en `user_preferences` | 📝 Propuesta | 2026-08-30 |
 | [011](011-deploy-self-hosted-oracle.md) | Deploy self-hosted en Oracle Cloud — retiro de Railway y Fly.io | ✅ Aceptada | 2026-09-07 |
+| [012](012-alertas-monitoreo-minimo.md) | Alertas mínimas viables — sin nueva infraestructura de monitoreo | ✅ Aceptada | 2026-09-11 |
 
 ## ADRs planificados (Sprint 2-3)
 

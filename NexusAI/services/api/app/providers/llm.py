@@ -46,7 +46,7 @@ Ver ADR-003 (decisión multi-provider) y ADR-004 (Gemini MVP / OpenAI prod).
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, AsyncIterator, Optional, Union
 
@@ -140,7 +140,9 @@ class LLMProvider:
         # llm_reasoning_effort. Cada call-site lo puede pisar pasando
         # `reasoning_effort=` a chat_completion/chat_stream.
         self.reasoning_effort: str = (
-            reasoning_effort if reasoning_effort is not None else settings.llm_reasoning_effort
+            reasoning_effort
+            if reasoning_effort is not None
+            else settings.llm_reasoning_effort
         )
         self.client: AsyncOpenAI = AsyncOpenAI(
             api_key=api_key or settings.llm_api_key,
@@ -207,6 +209,9 @@ class LLMProvider:
         chain = [(self.client, self.model)]
         chain.extend((self.client, m) for m in self.intermediate_models)
         if self.fallback_client:
+            # Invariante de __init__: fallback_client solo se crea si
+            # llm_fallback_model también estaba seteado.
+            assert self.fallback_model is not None
             chain.append((self.fallback_client, self.fallback_model))
         return chain
 
@@ -265,9 +270,12 @@ class LLMProvider:
     ) -> Any:
         """Chat completion no-streaming con retry, contra el client/model dados."""
         return await async_retry(
+            # El SDK espera TypedDicts con "role" literal; dicts planos
+            # funcionan bien en runtime (se serializan igual) pero mypy no
+            # los matchea estructuralmente.
             lambda: client.chat.completions.create(
                 model=model,
-                messages=messages,
+                messages=messages,  # type: ignore[arg-type]
                 stream=False,
                 **kwargs,
             )
@@ -283,17 +291,46 @@ class LLMProvider:
         tiene sus propios 3 reintentos vía _create_completion/async_retry —
         recién si esos 3 fallan por _FALLBACK_TRIGGERS pasa al siguiente
         eslabón. Con un solo eslabón (caso default sin fallback configurado),
-        el comportamiento es idéntico al de antes de INFRA-01/INFRA-03."""
+        el comportamiento es idéntico al de antes de INFRA-01/INFRA-03.
+
+        Si CUALQUIER eslabón agota cuota (RateLimitError) antes de llegar al
+        final de la cadena, esa excepción se guarda y se prioriza sobre la
+        del último eslabón (ver ADR-012): sin esto, un primario que agota
+        cuota pero un eslabón intermedio que ya no existe (NotFoundError) o
+        un secundario caído (InternalServerError) hace que la excepción que
+        llega al caller no sea RateLimitError — y record_llm_failure_and_maybe_alert
+        (app/shared/error_monitoring.py) nunca dispara la alerta específica
+        de cuota agotada, la más urgente/accionable de las 4."""
+        quota_exhausted: Optional[openai.RateLimitError] = None
         for i, (client, model) in enumerate(chain):
             try:
-                return await LLMProvider._create_completion(client, model, messages, **kwargs)
-            except _FALLBACK_TRIGGERS as exc:
+                return await LLMProvider._create_completion(
+                    client, model, messages, **kwargs
+                )
+            except openai.RateLimitError as exc:
+                quota_exhausted = quota_exhausted or exc
                 if i == len(chain) - 1:
                     raise
                 next_model = chain[i + 1][1]
                 logger.warning(
                     "LLM fallback activado: %s agotado (%s: %s). Pasando a %s.",
-                    model, type(exc).__name__, exc, next_model,
+                    model,
+                    type(exc).__name__,
+                    exc,
+                    next_model,
+                )
+            except _FALLBACK_TRIGGERS as exc:
+                if i == len(chain) - 1:
+                    if quota_exhausted is not None:
+                        raise quota_exhausted from exc
+                    raise
+                next_model = chain[i + 1][1]
+                logger.warning(
+                    "LLM fallback activado: %s agotado (%s: %s). Pasando a %s.",
+                    model,
+                    type(exc).__name__,
+                    exc,
+                    next_model,
                 )
 
     async def _create_stream(
@@ -312,21 +349,42 @@ class LLMProvider:
         ya se envió output parcial al caller y no se puede "deshacer".
         """
         chain = self._fallback_chain()
+        quota_exhausted: Optional[openai.RateLimitError] = None
         for i, (client, model) in enumerate(chain):
             try:
                 return await client.chat.completions.create(
                     model=model,
-                    messages=messages,
+                    messages=messages,  # type: ignore[arg-type]
                     stream=True,
                     **kwargs,
                 )
-            except _FALLBACK_TRIGGERS as exc:
+            except openai.RateLimitError as exc:
+                quota_exhausted = quota_exhausted or exc
                 if i == len(chain) - 1:
                     raise
                 next_model = chain[i + 1][1]
                 logger.warning(
                     "LLM fallback activado (stream): %s agotado (%s: %s). Pasando a %s.",
-                    model, type(exc).__name__, exc, next_model,
+                    model,
+                    type(exc).__name__,
+                    exc,
+                    next_model,
+                )
+            except _FALLBACK_TRIGGERS as exc:
+                if i == len(chain) - 1:
+                    # Ver el comentario equivalente en _run_completion_chain:
+                    # priorizar la cuota agotada de un eslabón anterior sobre
+                    # la falla puntual del último eslabón.
+                    if quota_exhausted is not None:
+                        raise quota_exhausted from exc
+                    raise
+                next_model = chain[i + 1][1]
+                logger.warning(
+                    "LLM fallback activado (stream): %s agotado (%s: %s). Pasando a %s.",
+                    model,
+                    type(exc).__name__,
+                    exc,
+                    next_model,
                 )
 
     async def chat_stream(
@@ -396,6 +454,7 @@ class LLMProvider:
 # ============================================================
 # FastAPI Dependency
 # ============================================================
+
 
 @lru_cache(maxsize=1)
 def _cached_provider() -> LLMProvider:

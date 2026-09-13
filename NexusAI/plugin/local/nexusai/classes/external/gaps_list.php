@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_gaps_list`.
@@ -18,31 +31,53 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Devuelve los "gaps" del docente — preguntas frecuentes de alumnos que el material indexado del curso no
+ * pudo responder bien.
+ */
 class gaps_list extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'        => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'days'            => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_OPTIONAL, 30),
-            'limit'           => new \external_value(PARAM_INT, 'Máximo de items (1..100)', VALUE_OPTIONAL, 20),
+            'days'            => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_DEFAULT, 30),
+            'limit'           => new \external_value(PARAM_INT, 'Máximo de items (1..100)', VALUE_DEFAULT, 20),
             // UX-15 (#385): offset sobre los grupos ya clusterizados, para pedir la próxima página.
-            'offset'          => new \external_value(PARAM_INT, 'Desde qué posición paginar', VALUE_OPTIONAL, 0),
+            'offset'          => new \external_value(PARAM_INT, 'Desde qué posición paginar', VALUE_DEFAULT, 0),
             // DOC-D08 (#383): por default solo gaps activos.
-            'includearchived' => new \external_value(PARAM_BOOL, 'Incluir gaps ya archivados', VALUE_OPTIONAL, false),
+            'includearchived' => new \external_value(PARAM_BOOL, 'Incluir gaps ya archivados', VALUE_DEFAULT, false),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
             'days'      => new \external_value(PARAM_INT, 'Ventana temporal'),
-            'total'     => new \external_value(PARAM_INT, 'Cantidad total de gaps agrupados (para paginar, no la cantidad ya recortada por limit)'),
+            'total'     => new \external_value(
+                PARAM_INT,
+                'Cantidad total de gaps agrupados (para paginar, no la cantidad ya recortada por limit)'
+            ),
             'items'     => new \external_multiple_structure(
                 new \external_single_structure([
                     'question'       => new \external_value(PARAM_RAW, 'Pregunta agrupada'),
                     'count'          => new \external_value(PARAM_INT, 'Veces preguntada'),
                     'last_asked_at'  => new \external_value(PARAM_RAW, 'ISO timestamp de la última'),
-                    'avg_similarity' => new \external_value(PARAM_FLOAT, 'Similaridad promedio (0..1)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'avg_similarity' => new \external_value(
+                        PARAM_FLOAT,
+                        'Similaridad promedio (0..1)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     // IDs reales de unanswered_questions detrás de este gap — es lo
                     // que hay que mandar de vuelta a gaps_archive, no el texto.
                     'question_ids'   => new \external_multiple_structure(
@@ -54,7 +89,24 @@ class gaps_list extends \external_api {
         ]);
     }
 
-    public static function execute(int $courseid, int $days = 30, int $limit = 20, int $offset = 0, bool $includearchived = false): array {
+    /**
+     * Devuelve los "gaps" del docente — preguntas frecuentes de alumnos que el material indexado del curso no
+     * pudo responder bien.
+     *
+     * @param int $courseid ID del curso
+     * @param int $days Días hacia atrás (1..365)
+     * @param int $limit Máximo de items (1..100)
+     * @param int $offset Desde qué posición paginar
+     * @param bool $includearchived Incluir gaps ya archivados
+     * @return array
+     */
+    public static function execute(
+        int $courseid,
+        int $days = 30,
+        int $limit = 20,
+        int $offset = 0,
+        bool $includearchived = false
+    ): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'        => $courseid,
             'days'            => $days,

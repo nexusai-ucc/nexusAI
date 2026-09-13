@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_chat_voice_transcribe`.
@@ -26,8 +39,10 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Recibe un audio corto grabado en el browser y lo reenvía al backend Python para transcribir (VOICE-01, #314).
+ */
 class chat_voice_transcribe extends \external_api {
-
     /** Tamaño máximo de base64 aceptado — audio corto, de sobra con 14 MB
      *  (~10 MB decodificado, inflate de base64 ~33%). */
     private const MAX_B64_BYTES = 14 * 1024 * 1024;
@@ -42,6 +57,11 @@ class chat_voice_transcribe extends \external_api {
         'audio/x-m4a',
     ];
 
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'    => new \external_value(PARAM_INT, 'ID del curso (para validar capability)', VALUE_REQUIRED),
@@ -50,12 +70,25 @@ class chat_voice_transcribe extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'text' => new \external_value(PARAM_RAW, 'Texto transcripto'),
         ]);
     }
 
+    /**
+     * Transcribe un audio corto grabado en el browser vía el backend Python.
+     *
+     * @param int $courseid ID del curso (para validar capability)
+     * @param string $mimetype MIME type detectado por el browser
+     * @param string $contentb64 Audio en base64
+     * @return array
+     */
     public static function execute(int $courseid, string $mimetype, string $contentb64): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'    => $courseid,

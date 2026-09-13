@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_forum_summarize_thread`.
@@ -17,14 +30,25 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Lee los posts de una discusión desde Moodle DB y los manda al backend para que el LLM genere un resumen
+ * estructurado (summary + key_points + resolved).
+ */
 class forum_summarize_thread extends \external_api {
-
-    // Máximo de posts que se envían al backend (el backend trunca igual, pero
-    // limitamos en PHP para no construir payloads enormes).
+    /**
+     * @var int Máximo de posts que se envían al backend (el backend trunca igual, pero limitamos
+     *     en PHP para no construir payloads enormes).
+     */
     const MAX_POSTS = 30;
-    // Máximo de chars por post antes de truncar.
+
+    /** @var int Máximo de chars por post antes de truncar. */
     const MAX_CHARS_PER_POST = 1000;
 
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'discussionid' => new \external_value(PARAM_INT, 'ID de la discusión de foro', VALUE_REQUIRED),
@@ -32,18 +56,31 @@ class forum_summarize_thread extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'summary'         => new \external_value(PARAM_RAW,  'Resumen del hilo generado por el LLM'),
+            'summary'         => new \external_value(PARAM_RAW, 'Resumen del hilo generado por el LLM'),
             'key_points'      => new \external_multiple_structure(
                 new \external_value(PARAM_RAW, 'Punto clave')
             ),
             'resolved'        => new \external_value(PARAM_BOOL, 'Si la pregunta principal quedó respondida'),
-            'posts_used'      => new \external_value(PARAM_INT,  'Cantidad de posts procesados'),
+            'posts_used'      => new \external_value(PARAM_INT, 'Cantidad de posts procesados'),
             'posts_truncated' => new \external_value(PARAM_BOOL, 'Si se truncaron posts por longitud'),
         ]);
     }
 
+    /**
+     * Lee los posts de una discusión desde Moodle DB y los manda al backend para que el LLM genere un resumen
+     * estructurado (summary + key_points + resolved).
+     *
+     * @param int $discussionid ID de la discusión de foro
+     * @param int $courseid ID del curso de Moodle
+     * @return array
+     */
     public static function execute(int $discussionid, int $courseid): array {
         global $DB;
 
@@ -133,11 +170,11 @@ class forum_summarize_thread extends \external_api {
         );
 
         return [
-            'summary'         => (string)  ($response['summary']         ?? ''),
-            'key_points'      => (array)   ($response['key_points']       ?? []),
-            'resolved'        => (bool)    ($response['resolved']          ?? false),
-            'posts_used'      => (int)     ($response['posts_used']        ?? count($posts)),
-            'posts_truncated' => (bool)    ($response['posts_truncated']   ?? $poststruncated),
+            'summary'         => (string)  ($response['summary'] ?? ''),
+            'key_points'      => (array)   ($response['key_points'] ?? []),
+            'resolved'        => (bool)    ($response['resolved'] ?? false),
+            'posts_used'      => (int)     ($response['posts_used'] ?? count($posts)),
+            'posts_truncated' => (bool)    ($response['posts_truncated'] ?? $poststruncated),
         ];
     }
 }
