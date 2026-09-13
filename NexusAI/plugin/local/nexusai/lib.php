@@ -32,6 +32,25 @@
  */
 
 /**
+ * Normaliza el idioma de Moodle al código que entiende el frontend React.
+ *
+ * current_language() puede devolver variantes regionales (es_ar, es_mx,
+ * en_us, en_gb) o idiomas sin paquete propio en el frontend (fr, pt_br...).
+ * Los diccionarios del widget solo distinguen "es" vs "en" (todo lo que no
+ * sea exactamente "es" cae al inglés) — sin esta normalización, un Moodle
+ * instalado con una variante regional se ve en inglés aunque el sitio esté
+ * en español.
+ *
+ * @return string "es" o "en".
+ */
+function local_nexusai_frontend_lang(): string {
+    $lang = strtolower((string) current_language());
+    // Nos quedamos con el subtag principal: "es_ar" -> "es", "en_us" -> "en".
+    $primary = explode('_', $lang)[0];
+    return $primary === 'es' ? 'es' : 'en';
+}
+
+/**
  * Hook ejecutado por Moodle 4.1-4.3 antes de cerrar el </body>.
  *
  * En Moodle 4.4+ el hook handling se hace en classes/hook/output/before_footer_listener.php,
@@ -72,7 +91,7 @@ function local_nexusai_before_footer(): string {
                 'userid'     => (int) $USER->id,
                 'sesskey'    => sesskey(),
                 'wwwroot'    => (string) (new moodle_url('/'))->out(false),
-                'lang'       => current_language(),
+                'lang'       => local_nexusai_frontend_lang(),
                 'isteacher'  => 0,
                 'onboarding' => $onboarding,
             ],
@@ -92,7 +111,7 @@ function local_nexusai_before_footer(): string {
             'userid'     => (int) $USER->id,
             'sesskey'    => sesskey(),
             'wwwroot'    => (string) (new moodle_url('/'))->out(false),
-            'lang'       => current_language(),
+            'lang'       => local_nexusai_frontend_lang(),
             'isteacher'  => (int) has_capability('local/nexusai:manage', $context),
             'onboarding' => $onboarding,
         ],

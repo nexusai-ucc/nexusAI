@@ -71,7 +71,7 @@ class before_footer_listener {
                 'userid'     => (int) $USER->id,
                 'sesskey'    => sesskey(),
                 'wwwroot'    => (string) (new \moodle_url('/'))->out(false),
-                'lang'       => current_language(),
+                'lang'       => \local_nexusai_frontend_lang(),
                 'isteacher'  => (int) $isteacher,
                 'onboarding' => $onboarding,
             ],
