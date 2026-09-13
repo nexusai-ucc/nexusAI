@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Tests del privacy\provider — `plugin\provider` y `core_userlist_provider`
@@ -18,9 +31,7 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
-
-defined('MOODLE_INTERNAL') || die();
+namespace local_nexusai;
 
 use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
@@ -28,13 +39,12 @@ use core_privacy\local\request\userlist;
 use local_nexusai\privacy\provider;
 
 /**
+ * Tests del privacy\provider de local_nexusai.
+ *
  * @covers \local_nexusai\privacy\provider
  */
-class privacy_provider_test extends \advanced_testcase {
-
-    // ============================================================
-    // get_contexts_for_userid
-    // ============================================================
+final class privacy_provider_test extends \advanced_testcase {
+    // Tests de get_contexts_for_userid().
 
     public function test_get_contexts_for_userid_empty_when_not_enrolled(): void {
         $this->resetAfterTest();
@@ -72,9 +82,7 @@ class privacy_provider_test extends \advanced_testcase {
         $this->assertCount(0, $contextlist->get_contextids());
     }
 
-    // ============================================================
-    // get_users_in_context
-    // ============================================================
+    // Tests de get_users_in_context().
 
     public function test_get_users_in_context_returns_enrolled_users_with_capability(): void {
         $this->resetAfterTest();
@@ -99,9 +107,7 @@ class privacy_provider_test extends \advanced_testcase {
         $this->assertCount(0, $userlist->get_userids());
     }
 
-    // ============================================================
-    // Short-circuits que evitan llegar a backend_client (sin HTTP real)
-    // ============================================================
+    // Short-circuits que evitan llegar a backend_client (sin HTTP real).
 
     public function test_delete_data_for_all_users_in_context_ignores_non_course_context(): void {
         $this->resetAfterTest();
@@ -143,11 +149,11 @@ class privacy_provider_test extends \advanced_testcase {
         $this->assertTrue(true);
     }
 
-    // ============================================================
-    // Helper
-    // ============================================================
+    // Helper.
 
     /**
+     * ID del rol archetype 'student'.
+     *
      * @return int ID del rol archetype 'student'.
      */
     private function get_student_role_id(): int {

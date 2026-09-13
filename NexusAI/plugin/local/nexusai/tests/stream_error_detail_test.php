@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Tests de backend_client::extract_stream_error_detail().
@@ -17,17 +30,16 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
-
-defined('MOODLE_INTERNAL') || die();
+namespace local_nexusai;
 
 use local_nexusai\external\backend_client;
 
 /**
+ * Tests de backend_client::extract_stream_error_detail().
+ *
  * @covers \local_nexusai\external\backend_client::extract_stream_error_detail
  */
-class stream_error_detail_test extends \advanced_testcase {
-
+final class stream_error_detail_test extends \advanced_testcase {
     /**
      * Nuestro propio rate limiter manda un `detail` estructurado — objeto,
      * no string — con un `message` ya pensado para el alumno. Tiene que
