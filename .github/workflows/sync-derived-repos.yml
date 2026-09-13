@@ -63,6 +63,12 @@ jobs:
         with:
           fetch-depth: 0
           ref: development
+          # Sin esto, el checkout deja el GITHUB_TOKEN por defecto persistido
+          # como credential helper para github.com, y ese header pisa las
+          # credenciales del SYNC_REPOS_TOKEN embebidas en la URL del push
+          # más abajo -- el push termina autenticando como github-actions[bot]
+          # (sin permisos en los repos derivados) en vez de con el PAT.
+          persist-credentials: false
 
       - name: Configurar identidad git para el commit de overlay
         run: |
