@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Aislamiento multi-curso (QA-02, issue #312).
@@ -11,10 +24,15 @@
  * garantiza por contexto (un rol asignado en el contexto del curso A no
  * otorga nada en el contexto del curso B) — este test lo confirma
  * explícitamente por primera vez para estas funciones, sin necesitar
- * mockear backend_client: require_capability() tira ANTES de llegar a
- * `new backend_client()` en las 4 clases cubiertas acá (mismo esqueleto
- * validate_parameters → context_course::instance → validate_context →
- * require_capability → backend_client que usa el resto del plugin).
+ * mockear backend_client.
+ *
+ * La excepción real es `require_login_exception`, no `required_capability_exception`:
+ * `validate_context()` llama internamente a `require_login()` para un contexto de
+ * curso, que verifica matriculación ANTES de que execute() llegue a
+ * `require_capability()` — un alumno no matriculado nunca pasa de ahí, así que la
+ * capability ni se evalúa (confirmado corriendo el test de verdad por primera vez,
+ * issue #474; el comentario original asumía que era require_capability() la que
+ * tiraba).
  *
  * @package    local_nexusai
  * @category   test
@@ -22,18 +40,18 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
-
-defined('MOODLE_INTERNAL') || die();
+namespace local_nexusai;
 
 /**
+ * Verifica aislamiento multi-curso en una muestra de external functions (QA-02, #312).
+ *
  * @covers \local_nexusai\external\chat_send
  * @covers \local_nexusai\external\quiz_generate
  * @covers \local_nexusai\external\calendar_alert_save
  * @covers \local_nexusai\external\document_summarize
+ * @runTestsInSeparateProcesses
  */
-class course_isolation_test extends \advanced_testcase {
-
+final class course_isolation_test extends \advanced_testcase {
     /**
      * Alumno matriculado SOLO en $courseA (rol student). $courseB existe
      * de verdad pero es ajeno — el alumno no tiene ningún rol ahí.
@@ -53,7 +71,7 @@ class course_isolation_test extends \advanced_testcase {
         $this->resetAfterTest();
         [, $courseb] = $this->create_student_isolated_from_another_course();
 
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(\require_login_exception::class);
         \local_nexusai\external\chat_send::execute('hola', $courseb->id);
     }
 
@@ -61,7 +79,7 @@ class course_isolation_test extends \advanced_testcase {
         $this->resetAfterTest();
         [, $courseb] = $this->create_student_isolated_from_another_course();
 
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(\require_login_exception::class);
         \local_nexusai\external\quiz_generate::execute($courseb->id);
     }
 
@@ -69,9 +87,14 @@ class course_isolation_test extends \advanced_testcase {
         $this->resetAfterTest();
         [, $courseb, $student] = $this->create_student_isolated_from_another_course();
 
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(\require_login_exception::class);
         \local_nexusai\external\calendar_alert_save::execute(
-            $student->id, $courseb->id, 1, 'Evento ajeno', time() + DAYSECS, 1
+            $student->id,
+            $courseb->id,
+            1,
+            'Evento ajeno',
+            time() + DAYSECS,
+            1
         );
     }
 
@@ -79,7 +102,7 @@ class course_isolation_test extends \advanced_testcase {
         $this->resetAfterTest();
         [, $courseb] = $this->create_student_isolated_from_another_course();
 
-        $this->expectException(\required_capability_exception::class);
+        $this->expectException(\require_login_exception::class);
         \local_nexusai\external\document_summarize::execute('00000000-0000-0000-0000-000000000001', $courseb->id);
     }
 

@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_document_replace`.
@@ -19,8 +32,16 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * CONT-07 (#356): reemplaza el archivo de un documento existente manteniendo su document_id (las citas viejas
+ * del chat siguen apuntando al mismo id).
+ */
 class document_replace extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'    => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
@@ -31,6 +52,11 @@ class document_replace extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'id'            => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento (sin cambios)'),
@@ -40,7 +66,13 @@ class document_replace extends \external_api {
             'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
             'section'       => new \external_value(PARAM_INT, 'Sección asignada', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
-            'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si status=error', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'error_message' => new \external_value(
+                PARAM_RAW,
+                'Mensaje de error si status=error',
+                VALUE_OPTIONAL,
+                null,
+                NULL_ALLOWED
+            ),
         ]);
     }
 
@@ -57,6 +89,8 @@ class document_replace extends \external_api {
     ];
 
     /**
+     * Reemplaza el archivo de un documento existente manteniendo su document_id (CONT-07, #356).
+     *
      * @param int    $courseid   ID del curso (el contexto del curso valida acceso).
      * @param string $documentid UUID del documento a reemplazar.
      * @param string $filename   Nombre del archivo nuevo.
@@ -65,7 +99,11 @@ class document_replace extends \external_api {
      * @return array Document state después del reemplazo.
      */
     public static function execute(
-        int $courseid, string $documentid, string $filename, string $mimetype, string $contentb64
+        int $courseid,
+        string $documentid,
+        string $filename,
+        string $mimetype,
+        string $contentb64
     ): array {
         global $USER;
 
@@ -92,7 +130,7 @@ class document_replace extends \external_api {
             throw new \invalid_parameter_exception('Invalid filename length');
         }
 
-        // base64 inflate ~33%, así que 20 MB de archivo = ~27 MB en base64.
+        // Base64 inflate ~33%, así que 20 MB de archivo = ~27 MB en base64.
         if (strlen($params['content_b64']) > 30 * 1024 * 1024) {
             throw new \invalid_parameter_exception('File too large (max 20MB)');
         }
@@ -111,7 +149,9 @@ class document_replace extends \external_api {
         $document = $client->get_document($params['documentid']);
         if (((int) ($document['course_id'] ?? 0)) !== (int) $params['courseid']) {
             throw new \moodle_exception(
-                'errorbackend', 'local_nexusai', '',
+                'errorbackend',
+                'local_nexusai',
+                '',
                 'Cannot replace: document does not belong to the requested course'
             );
         }
@@ -125,7 +165,9 @@ class document_replace extends \external_api {
 
         if (!isset($response['id'], $response['status'])) {
             throw new \moodle_exception(
-                'errorbackend', 'local_nexusai', '',
+                'errorbackend',
+                'local_nexusai',
+                '',
                 'Backend replace response is missing required fields'
             );
         }
@@ -133,12 +175,18 @@ class document_replace extends \external_api {
         // Actualizar la copia en el file storage de Moodle: borrar la vieja
         // (pudo tener otro nombre) y guardar la nueva bajo el nombre actual.
         $fs = get_file_storage();
-        $existing = $fs->get_file($context->id, 'local_nexusai', 'documents',
-                                  $params['courseid'], '/', $params['filename']);
+        $existing = $fs->get_file(
+            $context->id,
+            'local_nexusai',
+            'documents',
+            $params['courseid'],
+            '/',
+            $params['filename']
+        );
         if ($existing) {
             $existing->delete();
         }
-        $file_record = [
+        $filerecord = [
             'contextid' => $context->id,
             'component' => 'local_nexusai',
             'filearea'  => 'documents',
@@ -146,7 +194,7 @@ class document_replace extends \external_api {
             'filepath'  => '/',
             'filename'  => $params['filename'],
         ];
-        $fs->create_file_from_string($file_record, $filebytes);
+        $fs->create_file_from_string($filerecord, $filebytes);
 
         return [
             'id'            => (string) $response['id'],

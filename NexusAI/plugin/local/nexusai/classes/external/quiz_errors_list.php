@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_quiz_errors_list`.
@@ -18,43 +31,96 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Devuelve el historial de preguntas que el alumno respondió mal en quizes de un curso (SP-10 — repaso basado
+ * en errores).
+ */
 class quiz_errors_list extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_OPTIONAL, 90),
-            'limit'    => new \external_value(PARAM_INT, 'Máximo de items (1..200)', VALUE_OPTIONAL, 100),
-            'offset'   => new \external_value(PARAM_INT, 'Items a saltear (paginación)', VALUE_OPTIONAL, 0),
+            'days'     => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_DEFAULT, 90),
+            'limit'    => new \external_value(PARAM_INT, 'Máximo de items (1..200)', VALUE_DEFAULT, 100),
+            'offset'   => new \external_value(PARAM_INT, 'Items a saltear (paginación)', VALUE_DEFAULT, 0),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
             'total'     => new \external_value(PARAM_INT, 'Cantidad de items'),
             'items'     => new \external_multiple_structure(
                 new \external_single_structure([
-                    'id'                   => new \external_value(PARAM_RAW,   'ID del registro'),
-                    'created_at'           => new \external_value(PARAM_RAW,   'ISO timestamp'),
+                    'id'                   => new \external_value(PARAM_RAW, 'ID del registro'),
+                    'created_at'           => new \external_value(PARAM_RAW, 'ISO timestamp'),
                     'question_type'        => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta'),
-                    'question'             => new \external_value(PARAM_RAW,   'Texto de la pregunta'),
-                    'explanation'          => new \external_value(PARAM_RAW,   'Explicación / respuesta modelo'),
-                    'source_filename'      => new \external_value(PARAM_TEXT,  'Archivo fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'source_document_id'   => new \external_value(PARAM_RAW,   'ID del documento fuente (best-effort)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'question'             => new \external_value(PARAM_RAW, 'Texto de la pregunta'),
+                    'explanation'          => new \external_value(PARAM_RAW, 'Explicación / respuesta modelo'),
+                    'source_filename'      => new \external_value(PARAM_TEXT, 'Archivo fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id'   => new \external_value(
+                        PARAM_RAW,
+                        'ID del documento fuente (best-effort)',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'options'              => new \external_multiple_structure(
                         new \external_value(PARAM_RAW, 'Opción')
                     ),
-                    'correct_index'        => new \external_value(PARAM_INT,   'Índice de la opción correcta'),
-                    'user_selected_index'  => new \external_value(PARAM_INT,   'Índice elegido por el alumno', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'user_answer'          => new \external_value(PARAM_RAW,   'Respuesta libre del alumno', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'ai_feedback'          => new \external_value(PARAM_RAW,   'Feedback del evaluador IA', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'ai_score'             => new \external_value(PARAM_FLOAT, 'Puntaje del evaluador IA', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'correct_index'        => new \external_value(PARAM_INT, 'Índice de la opción correcta'),
+                    'user_selected_index'  => new \external_value(
+                        PARAM_INT,
+                        'Índice elegido por el alumno',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'user_answer'          => new \external_value(
+                        PARAM_RAW,
+                        'Respuesta libre del alumno',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'ai_feedback'          => new \external_value(
+                        PARAM_RAW,
+                        'Feedback del evaluador IA',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'ai_score'             => new \external_value(
+                        PARAM_FLOAT,
+                        'Puntaje del evaluador IA',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                 ])
             ),
         ]);
     }
 
+    /**
+     * Devuelve el historial de preguntas que el alumno respondió mal en quizes de un curso (SP-10 — repaso
+     * basado en errores).
+     *
+     * @param int $courseid ID del curso
+     * @param int $days Días hacia atrás (1..365)
+     * @param int $limit Máximo de items (1..200)
+     * @param int $offset Items a saltear (paginación)
+     * @return array
+     */
     public static function execute(int $courseid, int $days = 90, int $limit = 100, int $offset = 0): array {
         global $USER;
 

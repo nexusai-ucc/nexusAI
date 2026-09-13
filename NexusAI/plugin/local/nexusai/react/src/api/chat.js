@@ -258,6 +258,30 @@ export async function sendMessageStream(
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
+    // Si el stream se corta (proxy con timeout, conexión perdida) sin que
+    // llegue nunca un evento "done" o "error", antes no se disparaba ningún
+    // callback: el alumno se quedaba viendo la burbuja de respuesta vacía
+    // para siempre, sin error visible. Lo trackeamos para poder avisar.
+    let receivedTerminalEvent = false;
+
+    const processRawEvent = (rawEvent) => {
+        for (const line of rawEvent.split("\n")) {
+            if (!line.startsWith("data:")) continue;
+            const json = line.slice(5).trim();
+            if (!json) continue;
+            let parsed;
+            try { parsed = JSON.parse(json); }
+            catch { continue; }
+
+            switch (parsed.type) {
+                case "meta":        onMeta?.(parsed); break;
+                case "token":       onToken?.(parsed.content || ""); break;
+                case "answer_meta": onAnswerMeta?.(parsed); break;
+                case "done":        receivedTerminalEvent = true; onDone?.(parsed); break;
+                case "error":       receivedTerminalEvent = true; onError?.(parsed.detail || "stream error"); break;
+            }
+        }
+    };
 
     while (true) {
         const { value, done } = await reader.read();
@@ -271,23 +295,21 @@ export async function sendMessageStream(
         while ((idx = buffer.indexOf("\n\n")) >= 0) {
             const rawEvent = buffer.slice(0, idx);
             buffer = buffer.slice(idx + 2);
-
-            for (const line of rawEvent.split("\n")) {
-                if (!line.startsWith("data:")) continue;
-                const json = line.slice(5).trim();
-                if (!json) continue;
-                let parsed;
-                try { parsed = JSON.parse(json); }
-                catch { continue; }
-
-                switch (parsed.type) {
-                    case "meta":        onMeta?.(parsed); break;
-                    case "token":       onToken?.(parsed.content || ""); break;
-                    case "answer_meta": onAnswerMeta?.(parsed); break;
-                    case "done":        onDone?.(parsed); break;
-                    case "error":       onError?.(parsed.detail || "stream error"); break;
-                }
-            }
+            processRawEvent(rawEvent);
         }
+    }
+
+    // El reader terminó. Si quedó un evento sin el "\n\n" final en el buffer
+    // (la conexión se cortó a mitad de un evento), lo procesamos igual —
+    // mejor esfuerzo, pero recupera el caso común de que solo faltaba el
+    // delimitador de cierre.
+    if (buffer.trim()) {
+        processRawEvent(buffer);
+    }
+
+    // Nadie disparó "done" ni "error": la conexión se cerró sin ningún
+    // indicio explícito. Avisamos para que la UI no quede colgada.
+    if (!receivedTerminalEvent) {
+        onError?.("La conexión se cerró antes de terminar la respuesta.");
     }
 }

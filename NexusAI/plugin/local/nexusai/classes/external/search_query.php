@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_search_query`.
@@ -21,50 +34,99 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Proxy entre React y el endpoint /api/v1/search del backend Python.
+ */
 class search_query extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'query'    => new \external_value(PARAM_RAW, 'Consulta de búsqueda', VALUE_REQUIRED),
             'courseid' => new \external_value(PARAM_INT, 'ID del curso actual', VALUE_REQUIRED),
-            'topk'     => new \external_value(PARAM_INT, 'Cantidad de resultados (1..10)', VALUE_OPTIONAL, 5),
-            'global'   => new \external_value(PARAM_BOOL, 'Buscar en todos los cursos del usuario', VALUE_OPTIONAL, false),
-            'materialtype' => new \external_value(PARAM_RAW, 'Filtrar por tipo de material (mime type)', VALUE_OPTIONAL, ''),
+            'topk'     => new \external_value(PARAM_INT, 'Cantidad de resultados (1..10)', VALUE_DEFAULT, 5),
+            'global'   => new \external_value(PARAM_BOOL, 'Buscar en todos los cursos del usuario', VALUE_DEFAULT, false),
+            'materialtype' => new \external_value(PARAM_RAW, 'Filtrar por tipo de material (mime type)', VALUE_DEFAULT, ''),
             'section'      => new \external_value(
-                PARAM_INT, 'Filtrar por sección/unidad del curso (-1 = sin filtro, BUS-05)', VALUE_OPTIONAL, -1
+                PARAM_INT,
+                'Filtrar por sección/unidad del curso (-1 = sin filtro, BUS-05)',
+                VALUE_DEFAULT,
+                -1
             ),
             'sectionunassigned' => new \external_value(
-                PARAM_BOOL, 'Filtrar solo material sin unidad asignada (BUS-05)', VALUE_OPTIONAL, false
+                PARAM_BOOL,
+                'Filtrar solo material sin unidad asignada (BUS-05)',
+                VALUE_DEFAULT,
+                false
             ),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'query'   => new \external_value(PARAM_RAW, 'Consulta original'),
             'total'   => new \external_value(PARAM_INT, 'Total de resultados'),
             'results' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'document_id'       => new \external_value(PARAM_RAW, 'UUID del documento', VALUE_OPTIONAL, ''),
+                    'document_id'       => new \external_value(PARAM_RAW, 'UUID del documento', VALUE_DEFAULT, ''),
                     'document_filename' => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
-                    'course_id'         => new \external_value(PARAM_INT, 'ID del curso fuente', VALUE_OPTIONAL, 0),
-                    'course_name'       => new \external_value(PARAM_TEXT, 'Nombre del curso (solo en modo global)', VALUE_OPTIONAL, ''),
+                    'course_id'         => new \external_value(PARAM_INT, 'ID del curso fuente', VALUE_DEFAULT, 0),
+                    'course_name'       => new \external_value(
+                        PARAM_TEXT,
+                        'Nombre del curso (solo en modo global)',
+                        VALUE_DEFAULT,
+                        ''
+                    ),
                     'chunk_index'       => new \external_value(PARAM_INT, 'Índice del fragmento'),
                     'content'           => new \external_value(PARAM_RAW, 'Texto del fragmento'),
                     'similarity'        => new \external_value(PARAM_FLOAT, 'Score de similitud 0-1'),
-                    'has_file'          => new \external_value(PARAM_BOOL, 'El archivo original está disponible para descarga', VALUE_OPTIONAL, false),
-                    'mime_type'         => new \external_value(PARAM_RAW, 'MIME type del documento', VALUE_OPTIONAL, ''),
+                    'has_file'          => new \external_value(
+                        PARAM_BOOL,
+                        'El archivo original está disponible para descarga',
+                        VALUE_DEFAULT,
+                        false
+                    ),
+                    'mime_type'         => new \external_value(PARAM_RAW, 'MIME type del documento', VALUE_DEFAULT, ''),
                     'section'           => new \external_value(
-                        PARAM_INT, 'Sección del documento', VALUE_OPTIONAL, null, NULL_ALLOWED
+                        PARAM_INT,
+                        'Sección del documento',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
                     ),
                 ])
             ),
         ]);
     }
 
+    /**
+     * Proxy entre React y el endpoint /api/v1/search del backend Python.
+     *
+     * @param string $query Consulta de búsqueda
+     * @param int $courseid ID del curso actual
+     * @param int $topk Cantidad de resultados (1..10)
+     * @param bool $global Buscar en todos los cursos del usuario
+     * @param string $materialtype Filtrar por tipo de material (mime type)
+     * @param int $section Filtrar por sección/unidad del curso (-1 = sin filtro, BUS-05)
+     * @param bool $sectionunassigned Filtrar solo material sin unidad asignada (BUS-05)
+     * @return array
+     */
     public static function execute(
-        string $query, int $courseid, int $topk = 5, bool $global = false, string $materialtype = '',
-        int $section = -1, bool $sectionunassigned = false
+        string $query,
+        int $courseid,
+        int $topk = 5,
+        bool $global = false,
+        string $materialtype = '',
+        int $section = -1,
+        bool $sectionunassigned = false
     ): array {
         global $USER;
 
@@ -113,7 +175,7 @@ class search_query extends \external_api {
             }
         }
 
-        // -1 = sin filtro de sección (BUS-05).
+        // Un valor de -1 significa sin filtro de sección (BUS-05).
         $section = ((int) $params['section']) >= 0 ? (int) $params['section'] : null;
 
         $client   = new backend_client();

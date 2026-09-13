@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Tests de `visibility_helper::onboarding_hint()` — modo revisión (ONB-04 / #427).
@@ -19,20 +32,26 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_nexusai\tests;
-
-defined('MOODLE_INTERNAL') || die();
+namespace local_nexusai;
 
 /**
+ * Tests de visibility_helper::onboarding_hint() en modo revisión (ONB-04, #427).
+ *
  * @covers \local_nexusai\visibility_helper
+ * @runTestsInSeparateProcesses
  */
-class visibility_helper_test extends \advanced_testcase {
-
+final class visibility_helper_test extends \advanced_testcase {
     protected function tearDown(): void {
         unset($_GET['id']);
         parent::tearDown();
     }
 
+    /**
+     * Simula estar parado en course/edit.php?id=$editid con $course como curso actual.
+     *
+     * @param \stdClass $course Curso actual ($COURSE/$PAGE->course).
+     * @param int $editid ID que aparece en el query string de la URL simulada.
+     */
     private function set_course_edit_page(\stdClass $course, int $editid): void {
         global $PAGE;
         $PAGE->set_course($course);
@@ -73,7 +92,7 @@ class visibility_helper_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $othercourse = $this->getDataGenerator()->create_course();
 
-        // $COURSE/$PAGE quedan en $course, pero el ?id= de la URL apunta a otro.
+        // El $COURSE/$PAGE actual queda en $course, pero el ?id= de la URL apunta a otro.
         $this->set_course_edit_page($course, $othercourse->id);
 
         $this->assertNull(\local_nexusai\visibility_helper::onboarding_hint());

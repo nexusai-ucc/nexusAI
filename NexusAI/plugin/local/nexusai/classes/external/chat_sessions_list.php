@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_chat_sessions_list`.
@@ -17,21 +30,33 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Lista las sesiones previas del alumno para el sidebar de historial.
+ */
 class chat_sessions_list extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'   => new \external_value(PARAM_INT, 'Curso para validar capability', VALUE_REQUIRED),
             'scopecourse' => new \external_value(
                 PARAM_BOOL,
                 'Si true, lista solo sesiones del curso actual. Si false, todas las del user.',
-                VALUE_OPTIONAL,
+                VALUE_DEFAULT,
                 true
             ),
-            'limit'      => new \external_value(PARAM_INT, 'Máximo (1..100)', VALUE_OPTIONAL, 20),
+            'limit'      => new \external_value(PARAM_INT, 'Máximo (1..100)', VALUE_DEFAULT, 20),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'sessions' => new \external_multiple_structure(
@@ -40,13 +65,27 @@ class chat_sessions_list extends \external_api {
                     'course_id'            => new \external_value(PARAM_INT, 'Curso de la sesión'),
                     'created_at'           => new \external_value(PARAM_RAW, 'ISO timestamp creación'),
                     'updated_at'           => new \external_value(PARAM_RAW, 'ISO timestamp última actividad'),
-                    'last_message_preview' => new \external_value(PARAM_RAW, 'Preview del primer mensaje', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'last_message_preview' => new \external_value(
+                        PARAM_RAW,
+                        'Preview del primer mensaje',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
                     'message_count'        => new \external_value(PARAM_INT, 'Cantidad de mensajes'),
                 ])
             ),
         ]);
     }
 
+    /**
+     * Lista las sesiones previas del alumno para el sidebar de historial.
+     *
+     * @param int $courseid Curso para validar capability
+     * @param bool $scopecourse Si true, lista solo sesiones del curso actual. Si false, todas las del user.
+     * @param int $limit Máximo (1..100)
+     * @return array
+     */
     public static function execute(int $courseid, bool $scopecourse = true, int $limit = 20): array {
         global $USER;
 

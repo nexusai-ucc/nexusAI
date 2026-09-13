@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_forum_weekly_digest`.
@@ -29,15 +42,30 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Resumen semanal del foro para el docente (FOR-06, #367): junta todas las discusiones con actividad nueva en
+ * los últimos N días de TODOS los foros del curso y las manda al backend, que arma un único resumen
+ * sintetizado y además marca por hilo si parece "urgente" (FOR-05, #366, heurística sin LLM) — un solo
+ * endpoint combinado, ver docstring del router Python.
+ */
 class forum_weekly_digest extends \external_api {
-
-    // Máximo de discusiones que se envían al backend en un solo digest —
-    // mismo tope que el backend declara (WeeklyDigestRequest.discussions).
+    /**
+     * @var int Máximo de discusiones que se envían al backend en un solo digest — mismo tope
+     *     que el backend declara (WeeklyDigestRequest.discussions).
+     */
     const MAX_DISCUSSIONS = 15;
-    // Máximo de posts por discusión (solo los de la ventana de días).
+
+    /** @var int Máximo de posts por discusión (solo los de la ventana de días). */
     const MAX_POSTS_PER_DISCUSSION = 20;
+
+    /** @var int Truncado por post para no inflar el contexto del LLM. */
     const MAX_CHARS_PER_POST = 1000;
 
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid' => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
@@ -45,6 +73,11 @@ class forum_weekly_digest extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'course_id'         => new \external_value(PARAM_INT, 'ID del curso'),
@@ -52,17 +85,33 @@ class forum_weekly_digest extends \external_api {
             'discussion_count'  => new \external_value(PARAM_INT, 'Cantidad de discusiones con actividad'),
             'discussions'       => new \external_multiple_structure(
                 new \external_single_structure([
-                    'discussion_id'   => new \external_value(PARAM_INT,  'ID de la discusión'),
-                    'discussion_name' => new \external_value(PARAM_RAW,  'Título de la discusión'),
-                    'forum_name'      => new \external_value(PARAM_RAW,  'Nombre del foro'),
-                    'post_count'      => new \external_value(PARAM_INT,  'Posts nuevos en la ventana'),
+                    'discussion_id'   => new \external_value(PARAM_INT, 'ID de la discusión'),
+                    'discussion_name' => new \external_value(PARAM_RAW, 'Título de la discusión'),
+                    'forum_name'      => new \external_value(PARAM_RAW, 'Nombre del foro'),
+                    'post_count'      => new \external_value(PARAM_INT, 'Posts nuevos en la ventana'),
                     'urgent'          => new \external_value(PARAM_BOOL, 'Si algún post del hilo parece urgente/frustrado'),
                 ])
             ),
-            'summary'           => new \external_value(PARAM_RAW, 'Resumen de la semana generado por el LLM', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'summary'           => new \external_value(
+                PARAM_RAW,
+                'Resumen de la semana generado por el LLM',
+                VALUE_OPTIONAL,
+                null,
+                NULL_ALLOWED
+            ),
         ]);
     }
 
+    /**
+     * Resumen semanal del foro para el docente (FOR-06, #367): junta todas las discusiones con actividad
+     * nueva en los últimos N días de TODOS los foros del curso y las manda al backend, que arma un único
+     * resumen sintetizado y además marca por hilo si parece "urgente" (FOR-05, #366, heurística sin LLM) — un
+     * solo endpoint combinado, ver docstring del router Python.
+     *
+     * @param int $courseid ID del curso de Moodle
+     * @param int $days Ventana de días hacia atrás (1..30)
+     * @return array
+     */
     public static function execute(int $courseid, int $days = 7): array {
         global $DB;
 

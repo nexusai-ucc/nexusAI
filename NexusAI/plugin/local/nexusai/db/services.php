@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External Functions registry for local_nexusai.
@@ -23,7 +36,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $functions = [
 
-    // ----- ALUMNO -----
+    // Alumno.
 
     // Enviar un mensaje del alumno al asistente y recibir la respuesta del LLM.
     // Esta es la función que invoca React vía core/ajax.
@@ -96,7 +109,8 @@ $functions = [
     'local_nexusai_course_sections_list' => [
         'classname'     => '\local_nexusai\external\course_sections_list',
         'methodname'    => 'execute',
-        'description'   => 'List a course\'s sections (number + display name) — used by the upload section picker and the search section filter (BUS-05).',
+        'description'   => 'List a course\'s sections (number + display name) — used by the upload section '
+            . 'picker and the search section filter (BUS-05).',
         'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:use',
@@ -108,7 +122,8 @@ $functions = [
     'local_nexusai_course_setup_state' => [
         'classname'     => '\local_nexusai\external\course_setup_state',
         'methodname'    => 'execute',
-        'description'   => 'Aggregate a course\'s setup state (sections, groups, students, forums, calendar, NexusAI material) for the teacher onboarding tutorial (ONB-02).',
+        'description'   => 'Aggregate a course\'s setup state (sections, groups, students, forums, calendar, '
+            . 'NexusAI material) for the teacher onboarding tutorial (ONB-02).',
         'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:manage',
@@ -393,7 +408,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // ----- CALENDARIO — CAL-02 -----
+    // Calendario — CAL-02.
 
     // Guarda / actualiza la alerta de un evento de calendario para el alumno.
     'local_nexusai_calendar_alert_save' => [
@@ -439,7 +454,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // ----- FOROS — Épica 06 -----
+    // Foros — Épica 06.
 
     // Detecta posts similares al texto que el alumno está escribiendo (F-07).
     // Usado por el forum-duplicate-checker AMD module antes de publicar.
@@ -510,7 +525,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // ----- DOCENTE -----
+    // Docente.
 
     // Subir un documento (PDF) del curso para indexarlo en el backend RAG.
     // Recibe un `draftitemid` del file picker de Moodle, lee el archivo del
@@ -591,7 +606,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // ----- CONFIRMACIÓN DE CARGA DESDE SECCIÓN DEL CURSO -----
+    // Confirmación de carga desde sección del curso.
 
     // Lista los archivos subidos al curso (tab general) pendientes de confirmación.
     'local_nexusai_get_pending_uploads' => [
@@ -648,7 +663,7 @@ $functions = [
 
 ];
 
-// $services queda vacío: no exponemos un service preconfigurado todavía. La
+// El array $services queda vacío: no exponemos un service preconfigurado todavía. La
 // función es invocable solo desde el plugin (vía core/ajax). Si en el futuro
 // queremos permitir llamadas externas con token, agregar acá un service.
 $services = [];

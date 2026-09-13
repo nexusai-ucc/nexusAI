@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_quiz_attempt_save`.
@@ -19,27 +32,57 @@ namespace local_nexusai\external;
 defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Persiste el resultado de un quiz completado por el alumno (SP-09 — historial de quizzes).
+ */
 class quiz_attempt_save extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'       => new \external_value(PARAM_INT,          'ID del curso',                              VALUE_REQUIRED),
-            'questiontype'   => new \external_value(PARAM_ALPHANUMEXT,  'Tipo de quiz generado',                     VALUE_REQUIRED),
-            'difficulty'     => new \external_value(PARAM_ALPHA,        'Dificultad (easy|medium|hard)',             VALUE_OPTIONAL, 'medium'),
-            'topic'          => new \external_value(PARAM_RAW,          'Tema (opcional)',                           VALUE_OPTIONAL, ''),
-            'totalquestions' => new \external_value(PARAM_INT,          'Cantidad total de preguntas (1..10)',       VALUE_REQUIRED),
-            'correctcount'   => new \external_value(PARAM_INT,          'Cantidad de respuestas correctas (0..10)', VALUE_REQUIRED),
+            'courseid'       => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'questiontype'   => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de quiz generado', VALUE_REQUIRED),
+            'difficulty'     => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
+            'topic'          => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_DEFAULT, ''),
+            'totalquestions' => new \external_value(PARAM_INT, 'Cantidad total de preguntas (1..10)', VALUE_REQUIRED),
+            'correctcount'   => new \external_value(PARAM_INT, 'Cantidad de respuestas correctas (0..10)', VALUE_REQUIRED),
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'id'    => new \external_value(PARAM_RAW,   'UUID del intento guardado'),
+            'id'    => new \external_value(PARAM_RAW, 'UUID del intento guardado'),
             'score' => new \external_value(PARAM_FLOAT, 'Score 0.0-1.0 calculado server-side'),
         ]);
     }
 
-    public static function execute(int $courseid, string $questiontype, string $difficulty = 'medium', string $topic = '', int $totalquestions = 0, int $correctcount = 0): array {
+    /**
+     * Persiste el resultado de un quiz completado por el alumno (SP-09 — historial de quizzes).
+     *
+     * @param int $courseid ID del curso
+     * @param string $questiontype Tipo de quiz generado
+     * @param string $difficulty Dificultad (easy|medium|hard)
+     * @param string $topic Tema (opcional)
+     * @param int $totalquestions Cantidad total de preguntas (1..10)
+     * @param int $correctcount Cantidad de respuestas correctas (0..10)
+     * @return array
+     */
+    public static function execute(
+        int $courseid,
+        string $questiontype,
+        string $difficulty = 'medium',
+        string $topic = '',
+        int $totalquestions = 0,
+        int $correctcount = 0
+    ): array {
         global $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -55,11 +98,11 @@ class quiz_attempt_save extends \external_api {
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
 
-        $allowed_types = ['multiple_choice', 'true_false', 'open', 'mix', 'flashcard', 'fill_blank'];
-        $qtype = in_array($params['questiontype'], $allowed_types, true) ? $params['questiontype'] : 'multiple_choice';
+        $allowedtypes = ['multiple_choice', 'true_false', 'open', 'mix', 'flashcard', 'fill_blank'];
+        $qtype = in_array($params['questiontype'], $allowedtypes, true) ? $params['questiontype'] : 'multiple_choice';
 
-        $allowed_difficulties = ['easy', 'medium', 'hard'];
-        $diff = in_array($params['difficulty'], $allowed_difficulties, true) ? $params['difficulty'] : 'medium';
+        $alloweddifficulties = ['easy', 'medium', 'hard'];
+        $diff = in_array($params['difficulty'], $alloweddifficulties, true) ? $params['difficulty'] : 'medium';
 
         $totalq = max(1, min(10, (int) $params['totalquestions']));
         $correct = max(0, min($totalq, (int) $params['correctcount']));
