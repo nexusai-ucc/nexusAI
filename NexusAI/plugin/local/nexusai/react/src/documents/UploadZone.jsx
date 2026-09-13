@@ -28,9 +28,23 @@ const ACCEPT_TYPES = [
     ".htm",
 ].join(",");
 
-export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES }) {
+export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES, lang = "es" }) {
     const inputRef = useRef(null);
     const [dragOver, setDragOver] = useState(false);
+
+    const L = lang === "es" ? {
+        uploading:  "Subiendo archivos...",
+        drop:       "Arrastrá uno o varios archivos acá",
+        wait:       "Por favor esperá a que termine",
+        clickHint:  "o hacé click para seleccionar",
+        formats:    "Formatos: PDF · DOCX · PPTX · XLSX · CSV · MD · HTML · TXT · Tamaño máximo: 20 MB",
+    } : {
+        uploading:  "Uploading files...",
+        drop:       "Drag one or more files here",
+        wait:       "Please wait until it finishes",
+        clickHint:  "or click to select",
+        formats:    "Formats: PDF · DOCX · PPTX · XLSX · CSV · MD · HTML · TXT · Max size: 20 MB",
+    };
 
     const handleFiles = (files) => {
         if (!files || !files.length) return;
@@ -96,13 +110,13 @@ export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES }
                 )}
             </div>
             <div className="nexusai-dropzone__title">
-                {disabled ? "Subiendo archivos..." : "Arrastrá uno o varios archivos acá"}
+                {disabled ? L.uploading : L.drop}
             </div>
             <div className="nexusai-dropzone__hint">
-                {disabled ? "Por favor esperá a que termine" : "o hacé click para seleccionar"}
+                {disabled ? L.wait : L.clickHint}
             </div>
             <div className="nexusai-dropzone__formats">
-                Formatos: PDF · DOCX · PPTX · XLSX · CSV · MD · HTML · TXT · Tamaño máximo: 20 MB
+                {L.formats}
             </div>
         </div>
     );

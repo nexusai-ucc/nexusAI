@@ -58,8 +58,40 @@ function isMicSupported() {
     );
 }
 
-export default function ChatInput({ onSend, disabled, placeholder, courseId }) {
+export default function ChatInput({ onSend, disabled, placeholder, courseId, lang = "es" }) {
     const micSupported = isMicSupported();
+
+    const L = lang === "es" ? {
+        placeholder:      "Preguntá lo que quieras sobre esta materia...",
+        pastedLabel:      (id, n) => `Pegado #${id} · ${n} líneas`,
+        removePaste:      (id) => `Quitar pegado #${id}`,
+        pastePreviewInfo: (p) => `Pegado #${p.id} — ${p.lines} líneas, ${p.chars} caracteres`,
+        close:            "Cerrar",
+        stopRecording:    "Detener grabación",
+        recordVoice:      "Grabar pregunta por voz",
+        sendMessage:      "Enviar mensaje",
+        sendTitle:        "Enviar (Enter)",
+        yourQuestion:     "Tu pregunta",
+        transcribeError:  "No se pudo transcribir el audio. Probá de nuevo o escribí tu pregunta.",
+        micError:         "No se pudo acceder al micrófono. Revisá los permisos del navegador.",
+        atLimit:          (max) => `Llegaste al límite de ${max} caracteres`,
+        counter:          (len, max) => `${len} / ${max} caracteres`,
+    } : {
+        placeholder:      "Ask anything about this subject...",
+        pastedLabel:      (id, n) => `Pasted #${id} · ${n} lines`,
+        removePaste:      (id) => `Remove pasted #${id}`,
+        pastePreviewInfo: (p) => `Pasted #${p.id} — ${p.lines} lines, ${p.chars} characters`,
+        close:            "Close",
+        stopRecording:    "Stop recording",
+        recordVoice:      "Record question by voice",
+        sendMessage:      "Send message",
+        sendTitle:        "Send (Enter)",
+        yourQuestion:     "Your question",
+        transcribeError:  "Couldn't transcribe the audio. Try again or type your question.",
+        micError:         "Couldn't access the microphone. Check your browser permissions.",
+        atLimit:          (max) => `You've reached the limit of ${max} characters`,
+        counter:          (len, max) => `${len} / ${max} characters`,
+    };
     const [value, setValue] = useState("");
     const [pastes, setPastes] = useState([]); // { id, text, lines, chars }
     const [previewId, setPreviewId] = useState(null);
@@ -131,7 +163,7 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId }) {
                     }
                     setVoiceState("idle");
                 } catch {
-                    setVoiceError("No se pudo transcribir el audio. Probá de nuevo o escribí tu pregunta.");
+                    setVoiceError(L.transcribeError);
                     setVoiceState("error");
                 }
             };
@@ -140,7 +172,7 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId }) {
             recorder.start();
             setVoiceState("recording");
         } catch {
-            setVoiceError("No se pudo acceder al micrófono. Revisá los permisos del navegador.");
+            setVoiceError(L.micError);
             setVoiceState("error");
         }
     };
@@ -201,11 +233,11 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId }) {
                             onClick={() => setPreviewId(previewId === p.id ? null : p.id)}
                         >
                             <IconFile size={12} />
-                            Pegado #{p.id} · {p.lines} líneas
+                            {L.pastedLabel(p.id, p.lines)}
                             <span
                                 className="nexusai-input__paste-chip-remove"
                                 role="button"
-                                aria-label={`Quitar pegado #${p.id}`}
+                                aria-label={L.removePaste(p.id)}
                                 onClick={(e) => { e.stopPropagation(); removePaste(p.id); }}
                             >
                                 <IconX size={11} />
@@ -218,12 +250,12 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId }) {
             {previewPaste && (
                 <div className="nexusai-input__paste-preview">
                     <div className="nexusai-input__paste-preview-header">
-                        <span>Pegado #{previewPaste.id} — {previewPaste.lines} líneas, {previewPaste.chars} caracteres</span>
+                        <span>{L.pastePreviewInfo(previewPaste)}</span>
                         <button
                             type="button"
                             className="nexusai-input__paste-preview-close"
                             onClick={() => setPreviewId(null)}
-                            aria-label="Cerrar"
+                            aria-label={L.close}
                         >
                             <IconX size={13} />
                         </button>
@@ -240,10 +272,10 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId }) {
                     onChange={(e) => setValue(e.target.value.slice(0, MAX_CHARS))}
                     onKeyDown={onKeyDown}
                     onPaste={onPaste}
-                    placeholder={placeholder || "Preguntá lo que quieras sobre esta materia..."}
+                    placeholder={placeholder || L.placeholder}
                     rows={1}
                     disabled={disabled}
-                    aria-label="Tu pregunta"
+                    aria-label={L.yourQuestion}
                 />
                 {micSupported && (
                     <button
@@ -251,8 +283,8 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId }) {
                         className={`nexusai-input__mic ${voiceState === "recording" ? "nexusai-input__mic--recording" : ""}`}
                         onClick={handleMicClick}
                         disabled={disabled || voiceState === "transcribing"}
-                        aria-label={voiceState === "recording" ? "Detener grabación" : "Grabar pregunta por voz"}
-                        title={voiceState === "recording" ? "Detener grabación" : "Grabar pregunta por voz"}
+                        aria-label={voiceState === "recording" ? L.stopRecording : L.recordVoice}
+                        title={voiceState === "recording" ? L.stopRecording : L.recordVoice}
                     >
                         {voiceState === "transcribing" ? (
                             <span className="nexusai-input__mic-spinner" aria-hidden="true" />
@@ -266,8 +298,8 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId }) {
                     className="nexusai-input__send"
                     onClick={send}
                     disabled={!canSend}
-                    aria-label="Enviar mensaje"
-                    title="Enviar (Enter)"
+                    aria-label={L.sendMessage}
+                    title={L.sendTitle}
                 >
                     {/* Ícono de avión de papel inline (no requiere lib externa) */}
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -288,9 +320,7 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId }) {
                     className={`nexusai-input__counter ${atLimit ? "nexusai-input__counter--limit" : "nexusai-input__counter--warning"}`}
                     role="status"
                 >
-                    {atLimit
-                        ? `Llegaste al límite de ${MAX_CHARS} caracteres`
-                        : `${value.length} / ${MAX_CHARS} caracteres`}
+                    {atLimit ? L.atLimit(MAX_CHARS) : L.counter(value.length, MAX_CHARS)}
                 </div>
             )}
         </div>

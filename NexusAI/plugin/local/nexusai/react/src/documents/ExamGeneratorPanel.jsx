@@ -56,20 +56,33 @@ async function fetchFocusTopicCandidates(courseId) {
     return merged.slice(0, MAX_FOCUS_TOPICS);
 }
 
-const QUESTION_TYPES = [
-    { value: "multiple_choice", label: "Opción múltiple" },
-    { value: "true_false", label: "Verdadero / Falso" },
-    { value: "open", label: "Preguntas abiertas" },
-    { value: "mix", label: "Mixto" },
-];
+function questionTypes(lang) {
+    return lang === "es" ? [
+        { value: "multiple_choice", label: "Opción múltiple" },
+        { value: "true_false", label: "Verdadero / Falso" },
+        { value: "open", label: "Preguntas abiertas" },
+        { value: "mix", label: "Mixto" },
+    ] : [
+        { value: "multiple_choice", label: "Multiple choice" },
+        { value: "true_false", label: "True / False" },
+        { value: "open", label: "Open questions" },
+        { value: "mix", label: "Mixed" },
+    ];
+}
 
-const DIFFICULTIES = [
-    { value: "easy", label: "Fácil" },
-    { value: "medium", label: "Media" },
-    { value: "hard", label: "Difícil" },
-];
+function difficulties(lang) {
+    return lang === "es" ? [
+        { value: "easy", label: "Fácil" },
+        { value: "medium", label: "Media" },
+        { value: "hard", label: "Difícil" },
+    ] : [
+        { value: "easy", label: "Easy" },
+        { value: "medium", label: "Medium" },
+        { value: "hard", label: "Hard" },
+    ];
+}
 
-export default function ExamGeneratorPanel({ courseId }) {
+export default function ExamGeneratorPanel({ courseId, lang = "es" }) {
     const [stage, setStage] = useState("setup"); // setup | loading | preview | error
     const [wizardStep, setWizardStep] = useState("files"); // files | configure (solo dentro de stage "setup")
     const [documents, setDocuments] = useState([]);
@@ -88,6 +101,68 @@ export default function ExamGeneratorPanel({ courseId }) {
     const [focusTopicsLoading, setFocusTopicsLoading] = useState(false);
     const [focusTopicsLoaded, setFocusTopicsLoaded] = useState(false);
     const [selectedFocusTopics, setSelectedFocusTopics] = useState({}); // key(label+source) -> bool
+
+    const L = lang === "es" ? {
+        intro:            "Elegí de qué archivos del curso querés generar preguntas de examen. El banco generado se puede editar acá mismo y exportar como .txt en formato GIFT para importarlo directamente al banco de preguntas de Moodle.",
+        stepFiles:        "Archivos",
+        stepConfigure:    "Configurar",
+        chooseFiles:      (n) => `Elegí los archivos (${n} seleccionados)`,
+        loadingMaterial:  "Cargando material del curso...",
+        noMaterialTitle:  "Todavía no hay material indexado en este curso.",
+        noMaterialSub:    "Subí archivos en la tab \"Material\" antes de generar un examen.",
+        next:             "Siguiente",
+        configureTitle:   "Configurá el examen",
+        topicLabel:       "Tema (opcional)",
+        topicPlaceholder: "Ej: derivadas, unidad 3...",
+        questionTypeLabel:"Tipo de pregunta",
+        difficultyLabel:  "Dificultad",
+        numQuestionsLabel:"Cantidad de preguntas",
+        includeFocus:     "Incluir temas con dificultad detectada (Gaps y preguntas frecuentes)",
+        searchingFocus:   "Buscando temas con dificultad detectada...",
+        noFocusTopics:    "No hay suficientes preguntas de alumnos (Gaps o FAQ) todavía para sugerir temas.",
+        back:             "Atrás",
+        generate:         "Generar examen",
+        loadingExam:      "Generando preguntas de examen...",
+        goBack:           "Volver",
+        bankGenerated:    (n) => `Banco generado (${n} preguntas)`,
+        backToConfigure:  "Volver a configurar",
+        exportGift:       "Exportar como GIFT (Moodle)",
+        removeQuestion:   "Eliminar pregunta",
+        explanationPlaceholder: "Explicación / respuesta modelo",
+        source:           (name) => `Fuente: ${name}`,
+        sourceTopic:      (topic) => `Tema con dificultad detectada: ${topic}`,
+        genericError:     "No se pudo generar el examen. Intentá de nuevo.",
+    } : {
+        intro:            "Choose which course files you want to generate exam questions from. You can edit the generated bank right here and export it as a .txt in GIFT format to import directly into Moodle's question bank.",
+        stepFiles:        "Files",
+        stepConfigure:    "Configure",
+        chooseFiles:      (n) => `Choose the files (${n} selected)`,
+        loadingMaterial:  "Loading course material...",
+        noMaterialTitle:  "There's no indexed material in this course yet.",
+        noMaterialSub:    "Upload files in the \"Material\" tab before generating an exam.",
+        next:             "Next",
+        configureTitle:   "Configure the exam",
+        topicLabel:       "Topic (optional)",
+        topicPlaceholder: "E.g.: derivatives, unit 3...",
+        questionTypeLabel:"Question type",
+        difficultyLabel:  "Difficulty",
+        numQuestionsLabel:"Number of questions",
+        includeFocus:     "Include topics with detected difficulty (Gaps and frequently asked questions)",
+        searchingFocus:   "Looking for topics with detected difficulty...",
+        noFocusTopics:    "There aren't enough student questions (Gaps or FAQ) yet to suggest topics.",
+        back:             "Back",
+        generate:         "Generate exam",
+        loadingExam:      "Generating exam questions...",
+        goBack:           "Go back",
+        bankGenerated:    (n) => `Bank generated (${n} questions)`,
+        backToConfigure:  "Back to configuration",
+        exportGift:       "Export as GIFT (Moodle)",
+        removeQuestion:   "Remove question",
+        explanationPlaceholder: "Explanation / model answer",
+        source:           (name) => `Source: ${name}`,
+        sourceTopic:      (topic) => `Topic with detected difficulty: ${topic}`,
+        genericError:     "Couldn't generate the exam. Try again.",
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -161,7 +236,7 @@ export default function ExamGeneratorPanel({ courseId }) {
             setQuestions(result.questions || []);
             setStage("preview");
         } catch (err) {
-            setError(getFriendlyErrorMessage(err, "No se pudo generar el examen. Intentá de nuevo."));
+            setError(getFriendlyErrorMessage(err, L.genericError, lang));
             setStage("error");
         }
     };
@@ -201,9 +276,7 @@ export default function ExamGeneratorPanel({ courseId }) {
     return (
         <div className="nexusai-exam">
             <p className="nexusai-documents__intro">
-                Elegí de qué archivos del curso querés generar preguntas de examen. El banco
-                generado se puede editar acá mismo y exportar como .txt en formato GIFT para
-                importarlo directamente al banco de preguntas de Moodle.
+                {L.intro}
             </p>
 
             {stage === "setup" && (
@@ -211,30 +284,30 @@ export default function ExamGeneratorPanel({ courseId }) {
                     <div className="nexusai-exam__steps">
                         <span className={`nexusai-exam__step ${wizardStep === "files" ? "nexusai-exam__step--active" : ""}`}>
                             <span className="nexusai-exam__step-num">1</span>
-                            Archivos
+                            {L.stepFiles}
                         </span>
                         <span className="nexusai-exam__step-arrow">→</span>
                         <span className={`nexusai-exam__step ${wizardStep === "configure" ? "nexusai-exam__step--active" : ""}`}>
                             <span className="nexusai-exam__step-num">2</span>
-                            Configurar
+                            {L.stepConfigure}
                         </span>
                     </div>
 
                     {wizardStep === "files" ? (
                         <>
                             <h3 className="nexusai-documents__heading">
-                                Elegí los archivos ({selectedIds.length} seleccionados)
+                                {L.chooseFiles(selectedIds.length)}
                             </h3>
 
                             {docsLoading ? (
-                                <div className="nexusai-loading">Cargando material del curso...</div>
+                                <div className="nexusai-loading">{L.loadingMaterial}</div>
                             ) : documents.length === 0 ? (
                                 <div className="nexusai-gaps__empty">
                                     <p className="nexusai-gaps__empty-title">
-                                        Todavía no hay material indexado en este curso.
+                                        {L.noMaterialTitle}
                                     </p>
                                     <p className="nexusai-gaps__empty-sub">
-                                        Subí archivos en la tab "Material" antes de generar un examen.
+                                        {L.noMaterialSub}
                                     </p>
                                 </div>
                             ) : (
@@ -261,44 +334,44 @@ export default function ExamGeneratorPanel({ courseId }) {
                                 disabled={!selectedIds.length}
                                 onClick={() => setWizardStep("configure")}
                             >
-                                Siguiente
+                                {L.next}
                             </button>
                         </>
                     ) : (
                         <>
-                            <h3 className="nexusai-documents__heading">Configurá el examen</h3>
+                            <h3 className="nexusai-documents__heading">{L.configureTitle}</h3>
                             <div className="nexusai-exam__form">
                                 <label className="nexusai-exam__field">
-                                    Tema (opcional)
+                                    {L.topicLabel}
                                     <input
                                         type="text"
                                         value={topic}
                                         onChange={(e) => setTopic(e.target.value)}
-                                        placeholder="Ej: derivadas, unidad 3..."
+                                        placeholder={L.topicPlaceholder}
                                         maxLength={200}
                                     />
                                 </label>
 
                                 <label className="nexusai-exam__field">
-                                    Tipo de pregunta
+                                    {L.questionTypeLabel}
                                     <select value={questionType} onChange={(e) => setQuestionType(e.target.value)}>
-                                        {QUESTION_TYPES.map((t) => (
+                                        {questionTypes(lang).map((t) => (
                                             <option key={t.value} value={t.value}>{t.label}</option>
                                         ))}
                                     </select>
                                 </label>
 
                                 <label className="nexusai-exam__field">
-                                    Dificultad
+                                    {L.difficultyLabel}
                                     <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
-                                        {DIFFICULTIES.map((d) => (
+                                        {difficulties(lang).map((d) => (
                                             <option key={d.value} value={d.value}>{d.label}</option>
                                         ))}
                                     </select>
                                 </label>
 
                                 <label className="nexusai-exam__field">
-                                    Cantidad de preguntas
+                                    {L.numQuestionsLabel}
                                     <input
                                         type="number"
                                         min={1}
@@ -316,16 +389,16 @@ export default function ExamGeneratorPanel({ courseId }) {
                                         checked={includeFocusTopics}
                                         onChange={(e) => toggleIncludeFocusTopics(e.target.checked)}
                                     />
-                                    Incluir temas con dificultad detectada (Gaps y preguntas frecuentes)
+                                    {L.includeFocus}
                                 </label>
 
                                 {includeFocusTopics && focusTopicsLoading && (
-                                    <div className="nexusai-loading">Buscando temas con dificultad detectada...</div>
+                                    <div className="nexusai-loading">{L.searchingFocus}</div>
                                 )}
 
                                 {includeFocusTopics && !focusTopicsLoading && focusTopicsLoaded && focusTopics.length === 0 && (
                                     <p className="nexusai-exam__focus-empty">
-                                        No hay suficientes preguntas de alumnos (Gaps o FAQ) todavía para sugerir temas.
+                                        {L.noFocusTopics}
                                     </p>
                                 )}
 
@@ -356,7 +429,7 @@ export default function ExamGeneratorPanel({ courseId }) {
                                     className="nexusai-btn"
                                     onClick={() => setWizardStep("files")}
                                 >
-                                    Atrás
+                                    {L.back}
                                 </button>
                                 <button
                                     type="button"
@@ -365,7 +438,7 @@ export default function ExamGeneratorPanel({ courseId }) {
                                     onClick={handleGenerate}
                                 >
                                     <IconClipboardList size={15} />
-                                    Generar examen
+                                    {L.generate}
                                 </button>
                             </div>
                         </>
@@ -374,13 +447,13 @@ export default function ExamGeneratorPanel({ courseId }) {
             )}
 
             {stage === "loading" && (
-                <div className="nexusai-loading">Generando preguntas de examen...</div>
+                <div className="nexusai-loading">{L.loadingExam}</div>
             )}
 
             {stage === "error" && (
                 <div className="nexusai-alert nexusai-alert--error" role="alert">
                     <span>{error}</span>
-                    <button type="button" className="nexusai-btn" onClick={handleReset}>Volver</button>
+                    <button type="button" className="nexusai-btn" onClick={handleReset}>{L.goBack}</button>
                 </div>
             )}
 
@@ -388,11 +461,11 @@ export default function ExamGeneratorPanel({ courseId }) {
                 <div className="nexusai-exam__preview">
                     <div className="nexusai-exam__preview-header">
                         <h3 className="nexusai-documents__heading">
-                            Banco generado ({questions.length} preguntas)
+                            {L.bankGenerated(questions.length)}
                         </h3>
                         <div className="nexusai-exam__preview-actions">
                             <button type="button" className="nexusai-btn" onClick={handleReset}>
-                                Volver a configurar
+                                {L.backToConfigure}
                             </button>
                             <button
                                 type="button"
@@ -401,7 +474,7 @@ export default function ExamGeneratorPanel({ courseId }) {
                                 onClick={handleExport}
                             >
                                 <IconDownload size={15} />
-                                Exportar como GIFT (Moodle)
+                                {L.exportGift}
                             </button>
                         </div>
                     </div>
@@ -414,7 +487,7 @@ export default function ExamGeneratorPanel({ courseId }) {
                                     type="button"
                                     className="nexusai-exam__remove"
                                     onClick={() => removeQuestion(i)}
-                                    aria-label="Eliminar pregunta"
+                                    aria-label={L.removeQuestion}
                                 >
                                     ×
                                 </button>
@@ -451,15 +524,15 @@ export default function ExamGeneratorPanel({ courseId }) {
                                 value={q.explanation}
                                 onChange={(e) => updateQuestion(i, "explanation", e.target.value)}
                                 rows={2}
-                                placeholder="Explicación / respuesta modelo"
+                                placeholder={L.explanationPlaceholder}
                             />
 
                             {q.source_filename && (
-                                <div className="nexusai-exam__source">Fuente: {q.source_filename}</div>
+                                <div className="nexusai-exam__source">{L.source(q.source_filename)}</div>
                             )}
                             {q.source_topic && (
                                 <div className="nexusai-exam__source nexusai-exam__source--topic">
-                                    Tema con dificultad detectada: {q.source_topic}
+                                    {L.sourceTopic(q.source_topic)}
                                 </div>
                             )}
                         </div>

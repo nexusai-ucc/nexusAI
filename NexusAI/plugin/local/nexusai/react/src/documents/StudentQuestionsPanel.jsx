@@ -11,8 +11,16 @@ import { useState } from "react";
 import FaqDashboardPanel from "./FaqDashboardPanel.jsx";
 import GapsPanel from "./GapsPanel.jsx";
 
-export default function StudentQuestionsPanel({ courseId }) {
+export default function StudentQuestionsPanel({ courseId, lang = "es" }) {
     const [mode, setMode] = useState("faq"); // "faq" | "gaps"
+
+    const L = lang === "es" ? {
+        faq:  "Frecuentes",
+        gaps: "Sin responder",
+    } : {
+        faq:  "Frequent",
+        gaps: "Unanswered",
+    };
 
     return (
         <div className="nexusai-questions">
@@ -22,21 +30,21 @@ export default function StudentQuestionsPanel({ courseId }) {
                     className={`nexusai-questions__modebtn ${mode === "faq" ? "nexusai-questions__modebtn--active" : ""}`}
                     onClick={() => setMode("faq")}
                 >
-                    Frecuentes
+                    {L.faq}
                 </button>
                 <button
                     type="button"
                     className={`nexusai-questions__modebtn ${mode === "gaps" ? "nexusai-questions__modebtn--active" : ""}`}
                     onClick={() => setMode("gaps")}
                 >
-                    Sin responder
+                    {L.gaps}
                 </button>
             </div>
 
             {mode === "faq" ? (
-                <FaqDashboardPanel courseId={courseId} />
+                <FaqDashboardPanel courseId={courseId} lang={lang} />
             ) : (
-                <GapsPanel courseId={courseId} />
+                <GapsPanel courseId={courseId} lang={lang} />
             )}
         </div>
     );

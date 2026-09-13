@@ -31,9 +31,9 @@ import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
 
 // UX-12 (#370): silueta de carga de la pestaña Material — párrafo de intro,
 // zona de subida y filas de la tabla de documentos indexados.
-function MaterialSkeleton() {
+function MaterialSkeleton({ lang = "es" }) {
     return (
-        <SkeletonScreen label="Cargando documentos...">
+        <SkeletonScreen label={lang === "es" ? "Cargando documentos..." : "Loading documents..."}>
             <Skeleton className="nexusai-skeleton-doc__intro" height={32} />
             <Skeleton className="nexusai-skeleton-doc__zone" />
             <Skeleton width="45%" height={15} style={{ marginBottom: 12 }} />
@@ -60,25 +60,43 @@ const PAGE_SIZE = 30;
 
 // RDS-05 (#404): nav lateral data-driven — reemplaza las 6 tabs
 // hardcodeadas de antes. ONB-07 (#430) suma "help".
-const NAV_ITEMS = [
-    { key: "material",  label: "Material",             Icon: IconBookOpen },
-    { key: "questions", label: "Preguntas de alumnos",  Icon: IconHelpCircle },
-    { key: "analytics", label: "Analytics",             Icon: IconBarChart },
-    { key: "exam",      label: "Generar examen",        Icon: IconClipboardList },
-    { key: "search",    label: "Buscar",                Icon: IconSearch },
-    { key: "help",      label: "Ayuda",                 Icon: IconInfo },
-];
-const NAV_KEYS = new Set(NAV_ITEMS.map((item) => item.key));
+function navItems(lang) {
+    return lang === "es" ? [
+        { key: "material",  label: "Material",             Icon: IconBookOpen },
+        { key: "questions", label: "Preguntas de alumnos",  Icon: IconHelpCircle },
+        { key: "analytics", label: "Analytics",             Icon: IconBarChart },
+        { key: "exam",      label: "Generar examen",        Icon: IconClipboardList },
+        { key: "search",    label: "Buscar",                Icon: IconSearch },
+        { key: "help",      label: "Ayuda",                 Icon: IconInfo },
+    ] : [
+        { key: "material",  label: "Material",             Icon: IconBookOpen },
+        { key: "questions", label: "Student questions",     Icon: IconHelpCircle },
+        { key: "analytics", label: "Analytics",             Icon: IconBarChart },
+        { key: "exam",      label: "Generate exam",         Icon: IconClipboardList },
+        { key: "search",    label: "Search",                Icon: IconSearch },
+        { key: "help",      label: "Help",                  Icon: IconInfo },
+    ];
+}
+const NAV_KEYS = new Set(navItems("es").map((item) => item.key));
 
 // UX-05 (#345): descripción corta por tab para el tooltip del nav lateral.
-const NAV_TOOLTIPS = {
-    material:  "Subir y gestionar el material indexado del curso",
-    questions: "Preguntas frecuentes y sin responder detectadas en el chat",
-    analytics: "Estadísticas de uso e interacciones de los alumnos",
-    exam:      "Generar un examen exportable a partir del material",
-    search:    "Buscar dentro del material indexado",
-    help:      "Qué hace cada herramienta de NexusAI",
-};
+function navTooltips(lang) {
+    return lang === "es" ? {
+        material:  "Subir y gestionar el material indexado del curso",
+        questions: "Preguntas frecuentes y sin responder detectadas en el chat",
+        analytics: "Estadísticas de uso e interacciones de los alumnos",
+        exam:      "Generar un examen exportable a partir del material",
+        search:    "Buscar dentro del material indexado",
+        help:      "Qué hace cada herramienta de NexusAI",
+    } : {
+        material:  "Upload and manage the course's indexed material",
+        questions: "Frequent and unanswered questions detected in the chat",
+        analytics: "Usage stats and student interactions",
+        exam:      "Generate an exportable exam from the material",
+        search:    "Search within the indexed material",
+        help:      "What each NexusAI tool does",
+    };
+}
 
 function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseFullname, initialTab }) {
     const [documents, setDocuments]       = useState([]);
@@ -103,6 +121,40 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
     const [uploadQueue, setUploadQueue]   = useState([]);
     const { showWarning } = useToast();
 
+    const L = lang === "es" ? {
+        loadDocsError:   "No se pudieron cargar los documentos.",
+        loadMoreError:   "No se pudieron cargar más documentos.",
+        uploadError:     "No se pudo subir el archivo.",
+        alreadyIndexed:  (name) => `"${name}" ya se encuentra indexado en este curso.`,
+        course:          "Curso",
+        assistantActive: "Asistente activo",
+        intro:           "Los archivos que subís acá quedan disponibles para el asistente NexusAI cuando los alumnos de este curso le hacen preguntas. Se aceptan PDF, DOCX, PPTX, XLSX, CSV, MD, HTML y TXT. La indexación tarda aproximadamente 30-60 segundos por archivo.",
+        sectionLabel:    "Unidad/sección (opcional)",
+        unassigned:      "Sin asignar",
+        uploading:       "Subiendo...",
+        queued:          "En cola...",
+        dismissUploadError: (name) => `Descartar error de ${name}`,
+        indexedMaterial: (n) => `Material indexado (${n})`,
+        loading:         "Cargando...",
+        loadMore:        (a, b) => `Cargar más (${a} de ${b})`,
+    } : {
+        loadDocsError:   "Couldn't load the documents.",
+        loadMoreError:   "Couldn't load more documents.",
+        uploadError:     "Couldn't upload the file.",
+        alreadyIndexed:  (name) => `"${name}" is already indexed in this course.`,
+        course:          "Course",
+        assistantActive: "Assistant active",
+        intro:           "Files you upload here become available to the NexusAI assistant when this course's students ask it questions. PDF, DOCX, PPTX, XLSX, CSV, MD, HTML and TXT are accepted. Indexing takes about 30-60 seconds per file.",
+        sectionLabel:    "Unit/section (optional)",
+        unassigned:      "Unassigned",
+        uploading:       "Uploading...",
+        queued:          "Queued...",
+        dismissUploadError: (name) => `Dismiss error for ${name}`,
+        indexedMaterial: (n) => `Indexed material (${n})`,
+        loading:         "Loading...",
+        loadMore:        (a, b) => `Load more (${a} of ${b})`,
+    };
+
     // Ref para acceder al estado actual desde el closure del setInterval
     // sin incluirlo como dependencia del effect (evita recrear el interval).
     const documentsRef = useRef([]);
@@ -121,7 +173,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                 }
             } catch (err) {
                 if (!cancelled) {
-                    setError(getFriendlyErrorMessage(err, "No se pudieron cargar los documentos.", lang));
+                    setError(getFriendlyErrorMessage(err, L.loadDocsError, lang));
                     setLoading(false);
                 }
             }
@@ -190,7 +242,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
             setDocuments((prev) => [...prev, ...(data?.items || [])]);
             setTotal(data?.total ?? total);
         } catch (err) {
-            setError(getFriendlyErrorMessage(err, "No se pudieron cargar más documentos.", lang));
+            setError(getFriendlyErrorMessage(err, L.loadMoreError, lang));
         } finally {
             setLoadingMore(false);
         }
@@ -224,7 +276,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                 // es idéntico (CONT-04). Si el id ya está en la lista, el doc está
                 // indexado — no sobreescribir con la respuesta que puede traer fecha nula.
                 if (documentsRef.current.some((d) => d.id === newDoc.id)) {
-                    showWarning(`"${item.filename}" ya se encuentra indexado en este curso.`);
+                    showWarning(L.alreadyIndexed(item.filename));
                 } else {
                     setDocuments((prev) => [newDoc, ...prev]);
                     setTotal((prev) => prev + 1);
@@ -233,10 +285,10 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
             } catch (err) {
                 const raw = err?.message || String(err);
                 if (/HTTP\s+409\b/.test(raw)) {
-                    showWarning(`"${item.filename}" ya se encuentra indexado en este curso.`);
+                    showWarning(L.alreadyIndexed(item.filename));
                     setUploadQueue((prev) => prev.filter((q) => q.key !== item.key));
                 } else {
-                    const msg = getFriendlyErrorMessage(err, "No se pudo subir el archivo.", lang);
+                    const msg = getFriendlyErrorMessage(err, L.uploadError, lang);
                     setUploadQueue((prev) =>
                         prev.map((q) => (q.key === item.key ? { ...q, status: "error", error: msg } : q))
                     );
@@ -253,11 +305,14 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
 
     // ── Render ─────────────────────────────────────────────────────────────
 
+    const NAV_ITEMS = navItems(lang);
+    const NAV_TOOLTIPS = navTooltips(lang);
+
     return (
         <>
             <aside className="nexusai-doc-sidebar">
                 <div className="nexusai-doc-sidebar__course">
-                    <span className="nexusai-doc-sidebar__course-label">Curso</span>
+                    <span className="nexusai-doc-sidebar__course-label">{L.course}</span>
                     <span className="nexusai-doc-sidebar__course-name">{courseFullname}</span>
                 </div>
 
@@ -281,7 +336,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
 
                 <div className="nexusai-doc-sidebar__status">
                     <IconCheck size={12} />
-                    Asistente activo
+                    {L.assistantActive}
                 </div>
             </aside>
 
@@ -294,26 +349,24 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                     lang={lang}
                 />
             ) : activeTab === "analytics" ? (
-                <AnalyticsDashboardPanel courseId={courseid} courseName={courseFullname} />
+                <AnalyticsDashboardPanel courseId={courseid} courseName={courseFullname} lang={lang} />
             ) : activeTab === "exam" ? (
-                <ExamGeneratorPanel courseId={courseid} />
+                <ExamGeneratorPanel courseId={courseid} lang={lang} />
             ) : activeTab === "help" ? (
                 <HelpPanel lang={lang} />
             ) : activeTab === "material" ? (
                 loading ? (
-                    <MaterialSkeleton />
+                    <MaterialSkeleton lang={lang} />
                 ) : (
                     <>
                         <p className="nexusai-documents__intro">
-                            Los archivos que subís acá quedan disponibles para el asistente NexusAI cuando los alumnos
-                            de este curso le hacen preguntas. Se aceptan PDF, DOCX, PPTX, XLSX, CSV, MD, HTML y TXT.
-                            La indexación tarda aproximadamente 30-60 segundos por archivo.
+                            {L.intro}
                         </p>
 
                         <div className="nexusai-doc-card">
                             {sections.length > 0 && (
                                 <div className="nexusai-documents__section-picker">
-                                    <label htmlFor="nexusai-upload-section">Unidad/sección (opcional)</label>
+                                    <label htmlFor="nexusai-upload-section">{L.sectionLabel}</label>
                                     <select
                                         id="nexusai-upload-section"
                                         className="nexusai-documents__section-select"
@@ -321,7 +374,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                                         onChange={(e) => setSelectedSection(e.target.value)}
                                         disabled={uploading}
                                     >
-                                        <option value="">Sin asignar</option>
+                                        <option value="">{L.unassigned}</option>
                                         {sections.map((s) => (
                                             <option key={s.section} value={s.section}>{s.name}</option>
                                         ))}
@@ -329,7 +382,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                                 </div>
                             )}
 
-                            <UploadZone onUpload={handleUpload} disabled={uploading} />
+                            <UploadZone onUpload={handleUpload} disabled={uploading} lang={lang} />
 
                             {uploadQueue.length > 0 && (
                                 <ul className="nexusai-upload-queue">
@@ -346,14 +399,14 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                                                         type="button"
                                                         className="nexusai-upload-queue__dismiss"
                                                         onClick={() => handleDismissUploadError(item.key)}
-                                                        aria-label={`Descartar error de ${item.filename}`}
+                                                        aria-label={L.dismissUploadError(item.filename)}
                                                     >
                                                         ×
                                                     </button>
                                                 </>
                                             ) : (
                                                 <span className="nexusai-upload-queue__status">
-                                                    {item.status === "uploading" ? "Subiendo..." : "En cola..."}
+                                                    {item.status === "uploading" ? L.uploading : L.queued}
                                                 </span>
                                             )}
                                         </li>
@@ -362,13 +415,14 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                             )}
 
                             <h3 className="nexusai-documents__heading">
-                                Material indexado ({total})
+                                {L.indexedMaterial(total)}
                             </h3>
 
                             <DocumentsTable
                                 courseId={courseid}
                                 documents={documents}
                                 onChange={handleDocumentsChange}
+                                lang={lang}
                             />
 
                             {hasMore && (
@@ -378,7 +432,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                                     onClick={handleLoadMore}
                                     disabled={loadingMore}
                                 >
-                                    {loadingMore ? "Cargando..." : `Cargar más (${documents.length} de ${total})`}
+                                    {loadingMore ? L.loading : L.loadMore(documents.length, total)}
                                 </button>
                             )}
                         </div>
@@ -387,12 +441,13 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                             <ErrorModal
                                 message={error}
                                 onClose={() => setError(null)}
+                                lang={lang}
                             />
                         )}
                     </>
                 )
             ) : (
-                <StudentQuestionsPanel courseId={courseid} />
+                <StudentQuestionsPanel courseId={courseid} lang={lang} />
             )}
             </div>
         </>
