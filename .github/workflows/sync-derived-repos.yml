@@ -113,11 +113,18 @@ jobs:
 
       - name: Push a development de ${{ matrix.repo }}
         working-directory: /tmp/wt-${{ matrix.repo }}
+        # --atomic: development y sync-bot-state se actualizan en una sola
+        # operación server-side -- o entran los dos, o no entra ninguno. Sin
+        # esto, un push exitoso a development seguido de una falla de red/
+        # rate-limit/cancelación antes del segundo push a sync-bot-state
+        # dejaba las dos ramas desincronizadas, y la próxima corrida
+        # confundía ese desfasaje del propio bot con un push manual ajeno
+        # (paso de detección de arriba) y se bloqueaba para siempre.
         run: |
           REMOTE="https://x-access-token:${{ secrets.SYNC_REPOS_TOKEN }}@github.com/nexusai-ucc/${{ matrix.repo }}.git"
-          git push "$REMOTE" HEAD:development --force
-          # Marca "hasta acá sincronizó el bot" -- ver paso de detección de arriba.
-          git push "$REMOTE" HEAD:sync-bot-state --force
+          git push "$REMOTE" --atomic --force \
+            HEAD:development \
+            HEAD:sync-bot-state
 
       - name: Limpiar worktree y rama temporal
         if: always()
