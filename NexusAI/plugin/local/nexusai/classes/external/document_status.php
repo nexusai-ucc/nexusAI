@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * External function `local_nexusai_document_status`.
@@ -19,8 +32,15 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
+/**
+ * Estado actual de un documento (pending | indexing | indexed | error).
+ */
 class document_status extends \external_api {
-
+    /**
+     * Parameters for execute().
+     *
+     * @return \external_function_parameters
+     */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'courseid'   => new \external_value(PARAM_INT, 'ID del curso (para validar capability)', VALUE_REQUIRED),
@@ -28,6 +48,11 @@ class document_status extends \external_api {
         ]);
     }
 
+    /**
+     * Return value for execute().
+     *
+     * @return \external_single_structure
+     */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'id'            => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento'),
@@ -40,6 +65,13 @@ class document_status extends \external_api {
         ]);
     }
 
+    /**
+     * Estado actual de un documento (pending | indexing | indexed | error).
+     *
+     * @param int $courseid ID del curso (para validar capability)
+     * @param string $documentid UUID del documento
+     * @return array
+     */
     public static function execute(int $courseid, string $documentid): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'   => $courseid,
@@ -58,7 +90,9 @@ class document_status extends \external_api {
         // un courseid distinto al UUID que le corresponde.
         if (((int) ($document['course_id'] ?? 0)) !== (int) $params['courseid']) {
             throw new \moodle_exception(
-                'errorbackend', 'local_nexusai', '',
+                'errorbackend',
+                'local_nexusai',
+                '',
                 'Document does not belong to the requested course'
             );
         }

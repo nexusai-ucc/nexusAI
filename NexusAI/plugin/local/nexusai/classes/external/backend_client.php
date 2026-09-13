@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Cliente HTTP autenticado contra el backend Python NexusAI (FastAPI).
@@ -27,10 +40,11 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
+/**
+ * Cliente HTTP al backend Python: firma cada request con HMAC de 3 capas (ADR-005) y expone
+ * un método por endpoint (chat, documentos, quiz, foros, calendario, analytics, privacidad, etc.).
+ */
 class backend_client {
-
     /** @var string Endpoint base del backend (ej: http://localhost:8001) */
     private string $endpoint;
 
@@ -54,17 +68,26 @@ class backend_client {
         // con un error claro en lugar de mandar requests rotas al backend.
         if (empty($endpoint)) {
             throw new \moodle_exception(
-                'errorconfigmissing', 'local_nexusai', '', 'API endpoint'
+                'errorconfigmissing',
+                'local_nexusai',
+                '',
+                'API endpoint'
             );
         }
         if (empty($apikey)) {
             throw new \moodle_exception(
-                'errorconfigmissing', 'local_nexusai', '', 'API key'
+                'errorconfigmissing',
+                'local_nexusai',
+                '',
+                'API key'
             );
         }
         if (empty($secret)) {
             throw new \moodle_exception(
-                'errorconfigmissing', 'local_nexusai', '', 'Shared secret'
+                'errorconfigmissing',
+                'local_nexusai',
+                '',
+                'Shared secret'
             );
         }
 
@@ -131,8 +154,8 @@ class backend_client {
         string $question,
         ?string $sessionid = null
     ): array {
-        // course_id principal: el primero de la lista (el schema lo exige > 0
-        // por compat con clientes single-curso).
+        // El ID de curso principal es el primero de la lista (el schema lo
+        // exige > 0 por compat con clientes single-curso).
         $primarycourseid = !empty($courseids) ? (int) $courseids[0] : 0;
 
         $payload = [
@@ -197,6 +220,30 @@ class backend_client {
     }
 
     /**
+     * Borra una sesión de chat puntual (ASIST-02, #350). El backend valida
+     * ownership (userid) antes de borrar; el cascade sobre los mensajes de
+     * la sesión ya está resuelto a nivel de FK en Postgres.
+     *
+     * POST en vez de un verbo DELETE real — mismo criterio que el resto de
+     * endpoints del módulo chat, para poder firmar el body con HMAC.
+     *
+     * @param int    $userid    $USER->id real (el backend valida ownership).
+     * @param string $sessionid UUID de la sesión a borrar.
+     * @return array{success: bool}
+     */
+    public function delete_chat_session(int $userid, string $sessionid): array {
+        $payload = [
+            'user_id'    => $userid,
+            'session_id' => $sessionid,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/chat/sessions/delete', $body);
+    }
+
+    /**
      * Lista los gaps del docente — preguntas que el material no pudo responder (Feature G).
      *
      * @param int $courseid ID del curso.
@@ -205,7 +252,13 @@ class backend_client {
      * @param bool $includearchived Incluir gaps ya archivados (DOC-D08, #383).
      * @return array{course_id:int, days:int, total:int, items:array}
      */
-    public function list_gaps(int $courseid, int $days = 30, int $limit = 20, bool $includearchived = false, int $offset = 0): array {
+    public function list_gaps(
+        int $courseid,
+        int $days = 30,
+        int $limit = 20,
+        bool $includearchived = false,
+        int $offset = 0
+    ): array {
         $payload = [
             'course_id'        => $courseid,
             'days'             => $days,
@@ -285,7 +338,14 @@ class backend_client {
      * @param string      $difficulty   Dificultad (easy|medium|hard).
      * @return array{course_id:int, topic:?string, questions:array}
      */
-    public function generate_quiz(int $courseid, int $userid, ?string $topic, int $numquestions, string $questiontype = 'multiple_choice', string $difficulty = 'medium'): array {
+    public function generate_quiz(
+        int $courseid,
+        int $userid,
+        ?string $topic,
+        int $numquestions,
+        string $questiontype = 'multiple_choice',
+        string $difficulty = 'medium'
+    ): array {
         $payload = [
             'course_id'     => $courseid,
             'user_id'       => $userid,
@@ -325,7 +385,8 @@ class backend_client {
         ?string $topic,
         int $numquestions,
         string $questiontype = 'multiple_choice',
-        string $difficulty = 'medium'
+        string $difficulty = 'medium',
+        array $focustopics = []
     ): array {
         $payload = [
             'course_id'     => $courseid,
@@ -337,6 +398,10 @@ class backend_client {
         ];
         if ($topic !== null && trim($topic) !== '') {
             $payload['topic'] = trim($topic);
+        }
+        if (!empty($focustopics)) {
+            // DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ).
+            $payload['focus_topics'] = array_values($focustopics);
         }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
@@ -355,7 +420,13 @@ class backend_client {
      * @param string $useranswer  Respuesta escrita por el alumno.
      * @return array{correct:bool, score:float, feedback:string}
      */
-    public function evaluate_quiz_answer(int $courseid, int $userid, string $question, string $modelanswer, string $useranswer): array {
+    public function evaluate_quiz_answer(
+        int $courseid,
+        int $userid,
+        string $question,
+        string $modelanswer,
+        string $useranswer
+    ): array {
         $payload = [
             'course_id'   => $courseid,
             'user_id'     => $userid,
@@ -398,14 +469,16 @@ class backend_client {
      * @param int $userid   $USER->id real.
      * @param int $days     Días hacia atrás (1..365).
      * @param int $limit    Máximo de items (1..200).
+     * @param int $offset   Cantidad de items a saltear (paginación, UX-19 #389).
      * @return array{course_id:int, total:int, items:array}
      */
-    public function list_quiz_errors(int $courseid, int $userid, int $days = 90, int $limit = 100): array {
+    public function list_quiz_errors(int $courseid, int $userid, int $days = 90, int $limit = 100, int $offset = 0): array {
         $payload = [
             'course_id' => $courseid,
             'user_id'   => $userid,
             'days'      => $days,
             'limit'     => $limit,
+            'offset'    => $offset,
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
@@ -445,7 +518,15 @@ class backend_client {
      * @param int         $correctcount   Cantidad de respuestas correctas.
      * @return array{id:string, created_at:string}
      */
-    public function save_quiz_attempt(int $courseid, int $userid, string $questiontype, string $difficulty, ?string $topic, int $totalquestions, int $correctcount): array {
+    public function save_quiz_attempt(
+        int $courseid,
+        int $userid,
+        string $questiontype,
+        string $difficulty,
+        ?string $topic,
+        int $totalquestions,
+        int $correctcount
+    ): array {
         $payload = [
             'course_id'       => $courseid,
             'user_id'         => $userid,
@@ -530,23 +611,200 @@ class backend_client {
     }
 
     /**
+     * SP-12 (#322): sugiere una dificultad de partida para el generador de
+     * quiz, basada en el historial de `quiz_attempts` del alumno.
+     *
+     * @param int         $courseid ID del curso.
+     * @param int         $userid   $USER->id real del alumno.
+     * @param string|null $topic    Tema elegido, o null para historial general.
+     * @return array{difficulty:?string, reason:?string, based_on_attempts:int, accuracy_pct:?int}
+     */
+    public function suggest_difficulty(int $courseid, int $userid, ?string $topic): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'topic'     => $topic,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/suggest-difficulty', $body);
+    }
+
+    /**
+     * SP-16 (#354): racha de días consecutivos de actividad del alumno en
+     * el curso (quiz_attempts + mensajes de chat, sin tabla nueva).
+     *
+     * @param int $courseid ID del curso.
+     * @param int $userid   $USER->id real del alumno.
+     * @return array{current_streak:int, practiced_today:bool}
+     */
+    public function get_streak(int $courseid, int $userid): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/streak', $body);
+    }
+
+    /**
+     * SP-13 (#323): descarta un tema puntual del plan de estudio del alumno
+     * (opera sobre IDs reales de fila, no sobre el texto del topic).
+     *
+     * @param int      $courseid       ID del curso.
+     * @param int      $userid         $USER->id real del alumno.
+     * @param string[] $quizerrorids   IDs de quiz_errors a descartar.
+     * @param string[] $gapquestionids IDs de unanswered_questions a descartar.
+     * @return array{affected:int}
+     */
+    public function dismiss_study_plan_topic(
+        int $courseid,
+        int $userid,
+        array $quizerrorids,
+        array $gapquestionids
+    ): array {
+        $payload = [
+            'course_id'        => $courseid,
+            'user_id'          => $userid,
+            'quiz_error_ids'   => $quizerrorids,
+            'gap_question_ids' => $gapquestionids,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/study-plan/dismiss', $body);
+    }
+
+    /**
+     * SP-11 (#315): cuántas flashcards ya generadas "tocan hoy" vs. el total.
+     *
+     * @param int         $courseid ID del curso.
+     * @param int         $userid   $USER->id real del alumno.
+     * @param string|null $topic    Tema (opcional).
+     * @return array{due_count:int, total_count:int}
+     */
+    public function flashcards_summary(int $courseid, int $userid, ?string $topic): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'topic'     => $topic,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/flashcards/summary', $body);
+    }
+
+    /**
+     * SP-11 (#315): flashcards ya generadas que "tocan hoy" (más vencidas
+     * primero) — no llama al LLM, sirve del banco ya persistido.
+     *
+     * @param int         $courseid ID del curso.
+     * @param int         $userid   $USER->id real del alumno.
+     * @param string|null $topic    Tema (opcional).
+     * @param int         $limit    Cantidad máxima.
+     * @return array{course_id:int, questions:array}
+     */
+    public function flashcards_due(int $courseid, int $userid, ?string $topic, int $limit): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'topic'     => $topic,
+            'limit'     => $limit,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/flashcards/due', $body);
+    }
+
+    /**
+     * SP-11 (#315): aplica repetición espaciada (SM-2) sobre el resultado de
+     * autoevaluación de una sesión de flashcards. Se llama una sola vez al
+     * final de la sesión (mismo patrón que save_quiz_attempt/record_quiz_errors).
+     *
+     * @param int   $courseid ID del curso.
+     * @param int   $userid   $USER->id real del alumno.
+     * @param array $reviews  [{flashcard_id: string, knew_it: bool}, ...]
+     * @return array{updated:int}
+     */
+    public function flashcards_review_batch(int $courseid, int $userid, array $reviews): array {
+        $payload = [
+            'course_id' => $courseid,
+            'user_id'   => $userid,
+            'reviews'   => $reviews,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/quiz/flashcards/review-batch', $body);
+    }
+
+    /**
+     * ASIST-01 (#321): guarda el voto 👍/👎 del alumno sobre una respuesta
+     * puntual del chat.
+     *
+     * @param string      $messageid ID del mensaje (UUID de `messages`).
+     * @param int         $courseid  ID del curso.
+     * @param int         $userid    $USER->id real del alumno.
+     * @param bool        $ishelpful true = 👍, false = 👎.
+     * @param string|null $comment   Comentario corto opcional (solo con 👎).
+     * @return array{ok:bool}
+     */
+    public function submit_message_feedback(
+        string $messageid,
+        int $courseid,
+        int $userid,
+        bool $ishelpful,
+        ?string $comment
+    ): array {
+        $payload = [
+            'message_id'  => $messageid,
+            'course_id'   => $courseid,
+            'user_id'     => $userid,
+            'is_helpful'  => $ishelpful,
+            'comment'     => $comment,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/chat/messages/feedback', $body);
+    }
+
+    /**
      * Búsqueda semántica en el material del curso (Feature A — sin LLM).
      *
-     * @param int    $courseid ID del curso de Moodle.
-     * @param int    $userid   $USER->id real del usuario.
-     * @param string $query    Consulta (1..500 chars).
-     * @param int    $topk     Resultados máximos (1..10).
+     * @param int $courseid ID del curso de Moodle.
+     * @param int $userid $USER->id real del usuario.
+     * @param string $query Consulta (1..500 chars).
+     * @param int $topk Resultados máximos (1..10).
+     * @param int[] $courseids Cuando no está vacío, reemplaza course_id para búsqueda multi-curso.
+     * @param string $materialtype Filtra por mime type del documento (BUS-02). Vacío = sin filtro.
+     * @param int|null $section Filtra por sección del curso. Null = sin filtro.
+     * @param bool $sectionunassigned Si es true, filtra solo material sin sección asignada.
      * @return array{query:string, results:array, total:int}
      *
      * @throws \moodle_exception Si el backend devuelve no-2xx o falla la red.
      */
-    /**
-     * @param int[]  $courseids    When non-empty, overrides course_id for multi-course search.
-     * @param string $materialtype Filtra por mime type del documento (BUS-02). Vacío = sin filtro.
-     */
     public function search(
-        int $courseid, int $userid, string $query, int $topk = 5, array $courseids = [],
-        string $materialtype = '', ?int $section = null, bool $sectionunassigned = false
+        int $courseid,
+        int $userid,
+        string $query,
+        int $topk = 5,
+        array $courseids = [],
+        string $materialtype = '',
+        ?int $section = null,
+        bool $sectionunassigned = false
     ): array {
         $payload = [
             'query'     => $query,
@@ -585,12 +843,17 @@ class backend_client {
      * @param string $filename     Nombre del archivo.
      * @param string $mimetype     MIME type (solo 'application/pdf' aceptado en MVP).
      * @param string $filebytes    Contenido binario del archivo (raw, NO base64).
-     * @return array{id:string, course_id:int, uploader_id:int, filename:string, mime_type:string, status:string, error_message:?string}
+     * @return array{id:string, course_id:int, uploader_id:int, filename:string, mime_type:string,
+     *     status:string, error_message:?string}
      *
      * @throws \moodle_exception Si el backend rechaza o la red falla.
      */
     public function upload_document(
-        int $courseid, int $uploaderid, string $filename, string $mimetype, string $filebytes,
+        int $courseid,
+        int $uploaderid,
+        string $filename,
+        string $mimetype,
+        string $filebytes,
         ?int $section = null
     ): array {
         $payload = [
@@ -612,9 +875,55 @@ class backend_client {
         return $this->post('/api/v1/documents', $body);
     }
 
-    // =========================================================
-    // Foros — Épica 06
-    // =========================================================
+    /**
+     * Transcribe un audio corto (pregunta hablada) a texto (VOICE-01, #314).
+     *
+     * @return array {text}
+     */
+    public function transcribe_audio(string $mimetype, string $audiobytes): array {
+        $payload = [
+            'mime_type'   => $mimetype,
+            'content_b64' => base64_encode($audiobytes),
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/voice/transcribe', $body);
+    }
+
+    /**
+     * CONT-07 (#356): reemplaza el archivo de un documento existente sin
+     * cambiar su document_id (las citas viejas del chat siguen apuntando al
+     * mismo id).
+     *
+     * @param string $documentid UUID del documento a reemplazar.
+     * @param string $filename   Nombre del archivo nuevo.
+     * @param string $mimetype   MIME type del archivo nuevo.
+     * @param string $filebytes  Contenido binario del archivo nuevo (raw, NO base64).
+     * @return array Document state después del reemplazo.
+     */
+    public function replace_document(
+        string $documentid,
+        string $filename,
+        string $mimetype,
+        string $filebytes
+    ): array {
+        $payload = [
+            'filename'    => $filename,
+            'mime_type'   => $mimetype,
+            'content_b64' => base64_encode($filebytes),
+        ];
+
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+
+        return $this->post('/api/v1/documents/' . $documentid . '/replace', $body);
+    }
+
+    // Foros — Épica 06.
 
     /**
      * Indexa (o re-indexa) el embedding de un post de foro.
@@ -717,6 +1026,56 @@ class backend_client {
     }
 
     /**
+     * Resumen semanal del foro (FOR-06, #367) + señal de urgencia por hilo
+     * (FOR-05, #366) — un solo endpoint combinado, ver docstring del router.
+     *
+     * @param int   $courseid    ID del curso.
+     * @param int   $days        Ventana de días hacia atrás.
+     * @param array $discussions Array de ['discussion_id', 'discussion_name', 'forum_name', 'posts' => [...]].
+     * @return array {course_id, period_days, discussion_count, discussions, summary}
+     */
+    public function weekly_digest(int $courseid, int $days, array $discussions): array {
+        $payload = [
+            'course_id'   => $courseid,
+            'days'        => $days,
+            'discussions' => $discussions,
+        ];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/weekly-digest', $body);
+    }
+
+    /**
+     * Guarda (o borra, con $url = '') la URL de webhook del curso para el
+     * digest semanal del foro (FOR-07, #378).
+     *
+     * @return array {webhook_url}
+     */
+    public function save_forum_webhook(int $courseid, string $url): array {
+        $payload = ['course_id' => $courseid, 'webhook_url' => $url];
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/webhook-config/save', $body);
+    }
+
+    /**
+     * Lee la URL de webhook configurada para el curso (FOR-07, #378).
+     *
+     * @return array {webhook_url}
+     */
+    public function get_forum_webhook(int $courseid): array {
+        $body = json_encode(['course_id' => $courseid], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        return $this->post('/api/v1/forums/webhook-config/get', $body);
+    }
+
+    /**
      * Genera una sugerencia de respuesta para un post de foro (F-05).
      *
      * @param int    $discussionid   ID de la discusión.
@@ -784,9 +1143,7 @@ class backend_client {
         return $this->post('/api/v1/documents/pre-exam-summary', $body);
     }
 
-    // =========================================================
-    // Documentos
-    // =========================================================
+    // Documentos.
 
     /**
      * Lista los documentos indexados de un curso.
@@ -813,6 +1170,16 @@ class backend_client {
     }
 
     /**
+     * Preview del texto extraído de un documento (CONT-08 / #357).
+     *
+     * @param string $documentid UUID del documento.
+     * @return array { document_id, filename, course_id, status, preview, char_count, truncated }
+     */
+    public function get_document_preview(string $documentid): array {
+        return $this->get('/api/v1/documents/' . $documentid . '/preview');
+    }
+
+    /**
      * Borra un documento. El backend hace CASCADE sobre los chunks asociados.
      *
      * @param string $documentid UUID del documento.
@@ -821,9 +1188,19 @@ class backend_client {
         $this->delete('/api/v1/documents/' . $documentid);
     }
 
-    // ----------------------------------------------------------------
-    // CAL-02 — Alertas de calendario configurables por el alumno
-    // ----------------------------------------------------------------
+    /**
+     * Re-corre la indexación de un documento ya subido, sin recibir contenido
+     * nuevo — el backend lee el archivo que ya tiene guardado en disco desde
+     * el upload original (CONT-09, #358).
+     *
+     * @param string $documentid UUID del documento.
+     * @return array Document state (mismo shape que upload/replace).
+     */
+    public function reindex_document(string $documentid): array {
+        return $this->post('/api/v1/documents/' . $documentid . '/reindex', '{}');
+    }
+
+    // CAL-02 — Alertas de calendario configurables por el alumno.
 
     /**
      * Upsert de alerta de calendario. days_before=0 elimina la alerta.
@@ -836,7 +1213,14 @@ class backend_client {
      * @param int    $daysbefore     0 = sin alerta, 1, 3 o 7 días antes.
      * @return array{id:string|null, days_before:int}
      */
-    public function save_calendar_alert(int $userid, int $courseid, int $eventid, string $eventname, int $eventtimestamp, int $daysbefore): array {
+    public function save_calendar_alert(
+        int $userid,
+        int $courseid,
+        int $eventid,
+        string $eventname,
+        int $eventtimestamp,
+        int $daysbefore
+    ): array {
         $payload = [
             'user_id'         => $userid,
             'course_id'       => $courseid,
@@ -896,9 +1280,7 @@ class backend_client {
         return $this->post('/api/v1/calendar/alerts/mark-notified', $body);
     }
 
-    // ----------------------------------------------------------------
-    // PRIV-01 — Exportación y eliminación de datos personales (issue #310)
-    // ----------------------------------------------------------------
+    // PRIV-01 — Exportación y eliminación de datos personales (issue #310).
 
     /**
      * Exporta todo el historial personal del alumno en un curso (mensajes
@@ -931,6 +1313,22 @@ class backend_client {
             '/api/v1/privacy/data?user_id=' . $userid . '&course_id=' . $courseid,
             ''
         );
+    }
+
+    // ONB-02 — Estado de setup del curso (issue #425).
+
+    /**
+     * Estadísticas de material indexado en NexusAI para un curso (BACK-13).
+     *
+     * Es la única señal del "estado de setup" que no vive en Moodle: cuántos
+     * documentos llegaron a `status='indexed'`. El caller (course_setup_state)
+     * degrada esta señal a "desconocida" si el backend no responde.
+     *
+     * @param int $courseid ID del curso de Moodle.
+     * @return array{course_id:int, document_count:int, chunk_count:int, last_indexed_at:?string, has_indexed_content:bool}
+     */
+    public function get_course_stats(int $courseid): array {
+        return $this->get('/api/v1/courses/' . $courseid . '/stats');
     }
 
     /**
@@ -1031,7 +1429,9 @@ class backend_client {
 
         if ($errno || empty($info['http_code'])) {
             throw new \moodle_exception(
-                'errorbackendunreachable', 'local_nexusai', '',
+                'errorbackendunreachable',
+                'local_nexusai',
+                '',
                 $curl->error ?? 'curl error #' . $errno
             );
         }
@@ -1045,7 +1445,9 @@ class backend_client {
                 $detail = substr($detail, 0, 500) . '...';
             }
             throw new \moodle_exception(
-                'errorbackend', 'local_nexusai', '',
+                'errorbackend',
+                'local_nexusai',
+                '',
                 'HTTP ' . $httpcode . ': ' . $detail
             );
         }
@@ -1062,7 +1464,10 @@ class backend_client {
         $decoded = json_decode($response, true);
         if (!is_array($decoded)) {
             throw new \moodle_exception(
-                'errorbackend', 'local_nexusai', '', 'Invalid JSON in response'
+                'errorbackend',
+                'local_nexusai',
+                '',
+                'Invalid JSON in response'
             );
         }
 
@@ -1097,5 +1502,43 @@ class backend_client {
     private static function compute_signature(string $secret, string $timestamp, string $nonce, string $body): string {
         $signedstring = $timestamp . $nonce . $body;
         return hash_hmac('sha256', $signedstring, $secret);
+    }
+
+    /**
+     * FEAT-06 (#481, límite diario): pela un mensaje apto para mostrar al
+     * alumno a partir del body crudo de un error HTTP del backend.
+     *
+     * Usado por chat_stream.php (proxy SSE) — a diferencia del path
+     * no-streaming (`request()` de más arriba, que deja pasar el JSON crudo
+     * dentro del mensaje de la `moodle_exception` y confía en que el
+     * frontend lo parsee con `errors.js`), el proxy SSE tiene que emitir un
+     * evento `data: {...}\n\n` ya armado — no hay una capa de parseo del
+     * lado del browser para un cuerpo que no vino en formato SSE.
+     *
+     * El backend propio (`services/api/app/shared/rate_limit.py`) manda un
+     * `detail` ESTRUCTURADO (objeto, no string) con un `message` ya pensado
+     * para el alumno — lo preferimos por sobre el JSON crudo cuando está
+     * presente.
+     *
+     * @param string $rawbody Body de la respuesta HTTP tal como llegó (se
+     *                        espera JSON, pero no se asume — puede venir
+     *                        vacío o roto si el backend cayó a mitad de
+     *                        respuesta).
+     * @param int    $httpstatus Status HTTP de la respuesta (usado solo
+     *                        para el fallback final, si no hay nada
+     *                        parseable).
+     * @return string Mensaje listo para mostrar al alumno.
+     */
+    public static function extract_stream_error_detail(string $rawbody, int $httpstatus): string {
+        $decoded = json_decode($rawbody, true);
+        $rawdetail = is_array($decoded) ? ($decoded['detail'] ?? null) : null;
+
+        if (is_array($rawdetail) && isset($rawdetail['message']) && is_string($rawdetail['message'])) {
+            return $rawdetail['message'];
+        }
+        if (is_string($rawdetail) && $rawdetail !== '') {
+            return $rawdetail;
+        }
+        return 'HTTP ' . $httpstatus;
     }
 }

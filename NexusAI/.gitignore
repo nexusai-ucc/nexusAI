@@ -85,6 +85,12 @@ behatdata/
 services/api/data/
 data/
 
+# Material subido por usuarios durante pruebas/uso — nunca commitear
+# (llegaron a subirse PDFs reales de una vez; este repo y sus derivados
+# -nexusai-backend- son públicos)
+services/api/uploads/*
+!services/api/uploads/.gitkeep
+
 # Logs
 *.log
 logs/

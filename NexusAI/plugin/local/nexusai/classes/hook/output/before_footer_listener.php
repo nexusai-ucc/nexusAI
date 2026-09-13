@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Listener para el hook `core\hook\output\before_footer_html_generation`.
@@ -15,13 +28,13 @@
 
 namespace local_nexusai\hook\output;
 
-defined('MOODLE_INTERNAL') || die();
-
 use core\hook\output\before_footer_html_generation;
 use local_nexusai\visibility_helper;
 
+/**
+ * Inyecta el widget de chat antes del footer en Moodle 4.4+ (reemplazo del callback legacy).
+ */
 class before_footer_listener {
-
     /**
      * Callback ejecutado por Moodle antes de generar el footer HTML.
      *
@@ -47,6 +60,10 @@ class before_footer_listener {
         $courseid  = $context['courseid'];
         $isteacher = $context['isteacher'];
 
+        // ONB-03: en la pantalla de crear un curso el widget muestra el
+        // tutorial de armado en vez del cartel de "no hay curso".
+        $onboarding = visibility_helper::onboarding_hint();
+
         // 2. Cargar el bundle React vía AMD/RequireJS.
         $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
             [
@@ -56,6 +73,7 @@ class before_footer_listener {
                 'wwwroot'    => (string) (new \moodle_url('/'))->out(false),
                 'lang'       => current_language(),
                 'isteacher'  => (int) $isteacher,
+                'onboarding' => $onboarding,
             ],
         ]);
 
@@ -92,12 +110,12 @@ class before_footer_listener {
                     'courseid'     => $courseid,
                 ];
                 $PAGE->requires->js_call_amd('local_nexusai/forum-thread-summarizer', 'init', [$amdparams]);
-                $PAGE->requires->js_call_amd('local_nexusai/forum-reply-suggester',   'init', [$amdparams]);
+                $PAGE->requires->js_call_amd('local_nexusai/forum-reply-suggester', 'init', [$amdparams]);
             }
         }
 
         // 3. Inyectar el contenedor donde React monta el componente.
-        //    En el sistema nuevo se usa $hook->add_html() en lugar de retornar string.
+        // En el sistema nuevo se usa $hook->add_html() en lugar de retornar string.
         $hook->add_html('<div id="local-nexusai-container" data-plugin="nexusai"></div>');
     }
 }

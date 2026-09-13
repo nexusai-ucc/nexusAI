@@ -23,7 +23,7 @@ import pytest
 os.environ.setdefault("ENV", "test")
 os.environ.setdefault("LLM_API_KEY", "test-llm-key")
 os.environ.setdefault("LLM_BASE_URL", "https://test.example/v1")
-os.environ.setdefault("LLM_MODEL", "gemini-2.0-flash")
+os.environ.setdefault("LLM_MODEL", "gemini-3.5-flash")
 os.environ.setdefault("LLM_FALLBACK_API_KEY", "test-llm-fallback-key")
 os.environ.setdefault("LLM_FALLBACK_BASE_URL", "https://test-fallback.example/v1")
 os.environ.setdefault("LLM_FALLBACK_MODEL", "gpt-4o-mini")
@@ -37,11 +37,16 @@ os.environ.setdefault("NEXUSAI_SHARED_SECRET", "test-shared-secret-32-chars-long
 os.environ.setdefault("NEXUSAI_API_KEY", "test-api-key-32-chars-long-okok")
 os.environ.setdefault("HMAC_REPLAY_WINDOW_SEC", "300")
 os.environ.setdefault("RATE_LIMIT_PER_USER_DAILY", "50")
+# Moderación deshabilitada por default en tests existentes (que no la
+# ejercitan) — test_moderation.py la habilita explícitamente vía
+# app.dependency_overrides / monkeypatch de get_settings donde corresponde.
+os.environ.setdefault("MODERATION_ENABLED", "false")
 
 
 # ============================================================
 # Fixtures
 # ============================================================
+
 
 @pytest.fixture
 def fake_redis() -> MagicMock:

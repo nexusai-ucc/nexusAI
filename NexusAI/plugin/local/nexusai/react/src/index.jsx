@@ -20,7 +20,15 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import ChatApp from './ChatApp.jsx';
+import OnboardingApp from './OnboardingApp.jsx';
 import './styles.css';
+
+// ONB-03: qué modo de onboarding pidió el plugin (o null para el widget normal).
+// 'create-course' → tutorial de armado al crear un curso nuevo.
+const ONBOARDING_MODES = {
+    'create-course': 'create',
+    'review-course': 'review',
+};
 
 export const init = (params = {}) => {
     const container = document.getElementById('local-nexusai-container');
@@ -30,15 +38,25 @@ export const init = (params = {}) => {
 
     try {
         const root = createRoot(container);
+        const onbMode = ONBOARDING_MODES[params.onboarding];
         root.render(
-            <ChatApp
-                courseid={params.courseid}
-                userid={params.userid}
-                sesskey={params.sesskey}
-                wwwroot={params.wwwroot}
-                lang={params.lang || 'es'}
-                isteacher={params.isteacher || 0}
-            />
+            onbMode ? (
+                <OnboardingApp
+                    mode={onbMode}
+                    courseid={params.courseid}
+                    wwwroot={params.wwwroot}
+                    lang={params.lang || 'es'}
+                />
+            ) : (
+                <ChatApp
+                    courseid={params.courseid}
+                    userid={params.userid}
+                    sesskey={params.sesskey}
+                    wwwroot={params.wwwroot}
+                    lang={params.lang || 'es'}
+                    isteacher={params.isteacher || 0}
+                />
+            )
         );
     } catch {
         // Mount failure is silent — widget simply won't appear

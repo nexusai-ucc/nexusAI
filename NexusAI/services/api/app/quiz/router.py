@@ -31,25 +31,39 @@ Uso del LLM:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import random
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Annotated, Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, ValidationError, field_validator
-from sqlalchemy import delete, desc, func, select
+from sqlalchemy import delete, desc, func, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.analytics.logger import log_moderation_block
 from app.auth.hmac import verify_hmac
-from app.db.models import Chunk, Document, QuizAttempt, QuizError, UnansweredQuestion
+from app.db.models import (
+    ChatSession,
+    Chunk,
+    Document,
+    Flashcard,
+    FlashcardReview,
+    Message,
+    QuizAttempt,
+    QuizError,
+    UnansweredQuestion,
+)
 from app.db.session import get_db
 from app.documents.retriever import retrieve_context
-from app.gaps.recorder import WEAK_MATCH_THRESHOLD
 from app.providers.embeddings import EmbeddingProvider, get_embedding_provider
 from app.providers.llm import LLMProvider, get_llm_provider
+from app.shared.config import get_settings
+from app.shared.moderation import moderate_text
 
 logger = logging.getLogger("nexusai.quiz")
 
@@ -57,7 +71,14 @@ logger = logging.getLogger("nexusai.quiz")
 # Higher than WEAK_MATCH_THRESHOLD (0.4) to reject spurious cross-lingual matches.
 QUIZ_TOPIC_MIN_SIMILARITY = 0.5
 
-_VALID_QUESTION_TYPES = {"multiple_choice", "true_false", "open", "mix", "flashcard", "fill_blank"}
+_VALID_QUESTION_TYPES = {
+    "multiple_choice",
+    "true_false",
+    "open",
+    "mix",
+    "flashcard",
+    "fill_blank",
+}
 _VALID_DIFFICULTIES = {"easy", "medium", "hard"}
 
 router = APIRouter()
@@ -66,6 +87,7 @@ router = APIRouter()
 # ============================================================
 # Schemas
 # ============================================================
+
 
 class QuizRequest(BaseModel):
     course_id: int = Field(gt=0)
@@ -91,13 +113,23 @@ class QuizRequest(BaseModel):
 
 
 class QuizQuestion(BaseModel):
+    # SP-11 (#315): id real de `flashcards`, solo poblado cuando
+    # question_type='flashcard' (persistidas para poder aplicar repetición
+    # espaciada). None para el resto de los tipos, que siguen siendo efímeros.
+    id: Optional[str] = Field(default=None)
     question_type: str = Field(default="multiple_choice")
     question: str = Field(min_length=1, max_length=500)
-    options: List[str] = Field(default=[])   # 4 for MC, 2 for T/F, [] for open
+    options: List[str] = Field(default=[])  # 4 for MC, 2 for T/F, [] for open
     correct_index: int = Field(default=-1, ge=-1, le=3)  # -1 for open questions
     explanation: str = Field(min_length=1, max_length=1500)
     source_filename: str = Field(default="")
-    source_document_id: Optional[str] = Field(default=None)  # filled after generation; Document.id is a UUID
+    source_document_id: Optional[str] = Field(
+        default=None
+    )  # filled after generation; Document.id is a UUID
+    # DOC-D09 (#390): tema débil (Gap/FAQ) del que salió esta pregunta, si
+    # el docente pidió incluir esos temas — texto exacto de FocusTopic.label,
+    # o None si la pregunta no cubre ninguno de los temas provistos.
+    source_topic: Optional[str] = Field(default=None, max_length=200)
 
 
 class QuizResponse(BaseModel):
@@ -107,6 +139,23 @@ class QuizResponse(BaseModel):
 
 
 _VALID_EXAM_QUESTION_TYPES = {"multiple_choice", "true_false", "open", "mix"}
+_VALID_FOCUS_TOPIC_SOURCES = {"gap", "faq"}
+
+
+class FocusTopic(BaseModel):
+    """Tema débil detectado (Gap sin responder o tópico de FAQ) que el
+    docente eligió incluir como contexto extra al generar el examen —
+    DOC-D09 (#390)."""
+
+    label: str = Field(min_length=1, max_length=200)
+    source: str = Field(default="gap")
+
+    @field_validator("source")
+    @classmethod
+    def check_source(cls, v: str) -> str:
+        if v not in _VALID_FOCUS_TOPIC_SOURCES:
+            raise ValueError(f"source must be one of {_VALID_FOCUS_TOPIC_SOURCES}")
+        return v
 
 
 class ExamGenerateRequest(BaseModel):
@@ -116,19 +165,28 @@ class ExamGenerateRequest(BaseModel):
     el docente elige explícitamente de qué archivos del curso quiere sacar las
     preguntas.
     """
+
     course_id: int = Field(gt=0)
-    user_id: int = Field(gt=0)  # docente — $USER->id real, validado por la capability del lado Moodle
+    user_id: int = Field(
+        gt=0
+    )  # docente — $USER->id real, validado por la capability del lado Moodle
     document_ids: List[str] = Field(min_length=1, max_length=20)
     topic: Optional[str] = Field(default=None, max_length=200)
     num_questions: int = Field(default=10, ge=1, le=20)
     question_type: str = Field(default="multiple_choice")
     difficulty: str = Field(default="medium")
+    # DOC-D09 (#390): temas con dificultad detectada (Gaps sin responder /
+    # FAQ agrupada) que el docente eligió priorizar. El caller (Moodle) es
+    # responsable de no mandar temas de gaps archivados — ver gaps/router.py.
+    focus_topics: List[FocusTopic] = Field(default_factory=list, max_length=15)
 
     @field_validator("question_type")
     @classmethod
     def check_question_type(cls, v: str) -> str:
         if v not in _VALID_EXAM_QUESTION_TYPES:
-            raise ValueError(f"question_type must be one of {_VALID_EXAM_QUESTION_TYPES}")
+            raise ValueError(
+                f"question_type must be one of {_VALID_EXAM_QUESTION_TYPES}"
+            )
         return v
 
     @field_validator("difficulty")
@@ -165,6 +223,7 @@ class EvaluateResponse(BaseModel):
 
 class QuizErrorItem(BaseModel):
     """Una pregunta que el alumno respondió mal, tal como la arma QuizPanel."""
+
     question_type: str = Field(default="multiple_choice", max_length=20)
     question: str = Field(min_length=1, max_length=1000)
     explanation: str = Field(default="", max_length=3000)
@@ -194,6 +253,7 @@ class ErrorsListRequest(BaseModel):
     user_id: int = Field(gt=0)
     days: int = Field(default=90, ge=1, le=365)
     limit: int = Field(default=100, ge=1, le=200)
+    offset: int = Field(default=0, ge=0)
 
 
 class StoredQuizError(QuizErrorItem):
@@ -239,6 +299,7 @@ class ReviewSuggestionsResponse(BaseModel):
 
 class RecordAttemptRequest(BaseModel):
     """Intento de quiz completado por el alumno (SP-09 + ANALYTICS-01)."""
+
     course_id: int = Field(gt=0)
     user_id: int = Field(gt=0)
     question_type: Optional[str] = Field(default=None, max_length=20)
@@ -285,6 +346,26 @@ class AttemptsListResponse(BaseModel):
     items: List[AttemptItem]
 
 
+class SuggestDifficultyRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    # Sin topic: sugerencia sobre el historial general del curso (alumno
+    # practicando "de lo que sea"). Con topic: solo cuenta el historial de
+    # ESE tema — sin match ahí, no hay sugerencia (SP-12, ver criterio de
+    # aceptación: "sin historial previo en ese tema, comportamiento actual").
+    topic: Optional[str] = Field(default=None, max_length=200)
+
+
+class SuggestDifficultyResponse(BaseModel):
+    difficulty: Optional[str] = None
+    reason: Optional[str] = None
+    based_on_attempts: int = 0
+    # % de aciertos redondeado — se manda aparte (además de embebido en
+    # `reason`, que está fijo en español) para que el front arme el texto en
+    # inglés sin tener que parsear el string.
+    accuracy_pct: Optional[int] = None
+
+
 class StudyPlanRequest(BaseModel):
     course_id: int = Field(gt=0)
     user_id: int = Field(gt=0)
@@ -297,6 +378,12 @@ class StudyPlanTopic(BaseModel):
     gap_count: int
     reason: str
     suggested_quiz_topic: str
+    # SP-13 (#323): IDs reales de fila que sustentan este tema — el `topic`
+    # es texto generado por el LLM en cada llamada, no una clave estable, así
+    # que "descartar este tema" opera sobre estos IDs (mismo patrón que
+    # `question_ids` en app/gaps/router.py::GapItem).
+    quiz_error_ids: List[str] = Field(default_factory=list)
+    gap_question_ids: List[str] = Field(default_factory=list)
 
 
 class StudyPlanResponse(BaseModel):
@@ -304,9 +391,150 @@ class StudyPlanResponse(BaseModel):
     topics: List[StudyPlanTopic]
 
 
+class StudyPlanDismissRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    quiz_error_ids: List[str] = Field(default_factory=list)
+    gap_question_ids: List[str] = Field(default_factory=list)
+
+
+class StudyPlanDismissResponse(BaseModel):
+    affected: int
+
+
+class FlashcardsSummaryRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    topic: Optional[str] = Field(default=None, max_length=200)
+
+
+class FlashcardsSummaryResponse(BaseModel):
+    due_count: int
+    total_count: int
+
+
+class FlashcardsDueRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    topic: Optional[str] = Field(default=None, max_length=200)
+    limit: int = Field(default=10, ge=1, le=50)
+
+
+class FlashcardsDueResponse(BaseModel):
+    course_id: int
+    questions: List[QuizQuestion]
+
+
+class FlashcardReviewItem(BaseModel):
+    flashcard_id: str
+    knew_it: bool
+
+
+class FlashcardsReviewBatchRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+    reviews: List[FlashcardReviewItem] = Field(min_length=1, max_length=50)
+
+
+class FlashcardsReviewBatchResponse(BaseModel):
+    updated: int
+
+
+class StreakRequest(BaseModel):
+    course_id: int = Field(gt=0)
+    user_id: int = Field(gt=0)
+
+
+class StreakResponse(BaseModel):
+    current_streak: int
+    practiced_today: bool
+
+
 # ============================================================
 # Helpers
 # ============================================================
+
+
+def _flashcard_content_hash(question: str, explanation: str) -> str:
+    return hashlib.sha256(
+        f"{question.strip()}\n{explanation.strip()}".encode()
+    ).hexdigest()
+
+
+async def _persist_flashcards(
+    db: AsyncSession,
+    course_id: int,
+    topic: Optional[str],
+    questions: list["QuizQuestion"],
+) -> None:
+    """Upsert de las flashcards generadas en `flashcards`, adjuntando el id real a cada una.
+
+    SP-11 (#315): les da identidad estable para poder aplicar repetición
+    espaciada. Dedup por (course_id, content_hash) vía ON CONFLICT DO NOTHING
+    — regenerar el mismo contenido no crea filas duplicadas.
+    """
+    hashes = [_flashcard_content_hash(q.question, q.explanation) for q in questions]
+    values = [
+        {
+            "id": uuid.uuid4(),
+            "course_id": course_id,
+            "topic": topic,
+            "content_hash": h,
+            "question": q.question,
+            "explanation": q.explanation,
+            "source_filename": q.source_filename or None,
+            "source_document_id": q.source_document_id,
+        }
+        for q, h in zip(questions, hashes)
+    ]
+    stmt = (
+        pg_insert(Flashcard)
+        .values(values)
+        .on_conflict_do_nothing(index_elements=["course_id", "content_hash"])
+    )
+    await db.execute(stmt)
+    await db.commit()
+
+    id_rows = await db.execute(
+        select(Flashcard.id, Flashcard.content_hash).where(
+            Flashcard.course_id == course_id,
+            Flashcard.content_hash.in_(hashes),
+        )
+    )
+    hash_to_id = {row.content_hash: str(row.id) for row in id_rows.all()}
+    for q, h in zip(questions, hashes):
+        q.id = hash_to_id.get(h)
+
+
+# SP-11 (#315): fórmula SM-2 estándar (el algoritmo detrás de Anki),
+# simplificada porque la UI de autoevaluación es binaria ("Sabía"/"No
+# sabía") en vez de una escala 0-5. Mapeo de quality: knew_it=True → 5,
+# knew_it=False → 2 (no 0, para no destruir ease_factor de un solo
+# tropiezo — mismo criterio de apps de repetición espaciada con 2 botones).
+def _apply_sm2(review: FlashcardReview, knew_it: bool, now: datetime) -> None:
+    quality = 5 if knew_it else 2
+    if knew_it:
+        if review.repetitions == 0:
+            review.interval_days = 1
+        elif review.repetitions == 1:
+            review.interval_days = 6
+        else:
+            review.interval_days = max(
+                1, round(review.interval_days * review.ease_factor)
+            )
+        review.repetitions += 1
+    else:
+        # Reseteo a corto plazo — criterio de aceptación explícito de SP-11.
+        review.repetitions = 0
+        review.interval_days = 1
+
+    new_ease = review.ease_factor + (
+        0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)
+    )
+    review.ease_factor = max(1.3, round(new_ease, 4))
+    review.last_reviewed_at = now
+    review.next_review_at = now + timedelta(days=review.interval_days)
+
 
 async def _sample_chunks_for_quiz(
     db: AsyncSession,
@@ -365,6 +593,7 @@ async def _run_quiz_generation(
     difficulty: str,
     db: AsyncSession,
     llm: LLMProvider,
+    focus_topics: Optional[list[FocusTopic]] = None,
 ) -> list[QuizQuestion]:
     """Llama al LLM con los chunks dados y devuelve preguntas validadas + enriquecidas.
 
@@ -373,15 +602,26 @@ async def _run_quiz_generation(
     prompt → JSON → validación → shuffle → mapeo a document_id, solo cambia
     de dónde salen los chunks.
     """
-    messages = _build_quiz_prompt(chunks, num_questions, topic, question_type, difficulty)
+    focus_labels = [t.label for t in focus_topics] if focus_topics else None
+    messages = _build_quiz_prompt(
+        chunks, num_questions, topic, question_type, difficulty, focus_labels
+    )
     try:
         result = await llm.chat_completion(
             messages,
             response_format={"type": "json_object"},
             temperature=0.6,
+            # PERF-01: única llamada del sistema que pisa el default global de
+            # thinking ("none"). Armar distractores plausibles y explicaciones
+            # correctas mejora con algo de razonamiento, y acá el alumno ya
+            # espera una pantalla de carga — no es una respuesta que se
+            # streamee token a token como el chat.
+            reasoning_effort=get_settings().llm_reasoning_effort_generation,
         )
     except Exception as exc:
-        logger.error("Quiz LLM call failed: %s: %s", type(exc).__name__, exc, exc_info=True)
+        logger.error(
+            "Quiz LLM call failed: %s: %s", type(exc).__name__, exc, exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="No se pudo generar el quiz en este momento. Intentá de nuevo.",
@@ -389,7 +629,9 @@ async def _run_quiz_generation(
 
     raw = result.text.strip()
     if raw.startswith("```"):
-        raw = "\n".join(raw.splitlines()[1:-1]) if raw.endswith("```") else raw.strip("`")
+        raw = (
+            "\n".join(raw.splitlines()[1:-1]) if raw.endswith("```") else raw.strip("`")
+        )
 
     try:
         parsed = json.loads(raw)
@@ -433,9 +675,24 @@ async def _run_quiz_generation(
     # Truncar al número pedido (el LLM a veces se pasa por uno).
     questions = questions[:num_questions]
 
+    # DOC-D09 (#390): descartar source_topic que no matchea ninguno de los
+    # temas provistos — evita citar un tema inventado por el LLM.
+    if focus_labels:
+        valid_labels = set(focus_labels)
+        for q in questions:
+            if q.source_topic and q.source_topic not in valid_labels:
+                q.source_topic = None
+    else:
+        for q in questions:
+            q.source_topic = None
+
     # Shuffle de opciones para no dejar siempre la correcta en el mismo lugar.
     for q in questions:
-        if q.question_type == "multiple_choice" and len(q.options) == 4 and q.correct_index >= 0:
+        if (
+            q.question_type == "multiple_choice"
+            and len(q.options) == 4
+            and q.correct_index >= 0
+        ):
             original_correct = q.options[q.correct_index]
             random.shuffle(q.options)
             q.correct_index = q.options.index(original_correct)
@@ -448,7 +705,9 @@ async def _run_quiz_generation(
             Document.filename.in_(source_filenames),
         )
         doc_rows = await db.execute(doc_stmt)
-        doc_id_map: dict[str, str] = {row.filename: str(row.id) for row in doc_rows.all()}
+        doc_id_map: dict[str, str] = {
+            row.filename: str(row.id) for row in doc_rows.all()
+        }
         for q in questions:
             if q.source_filename and q.source_filename in doc_id_map:
                 q.source_document_id = doc_id_map[q.source_filename]
@@ -469,6 +728,7 @@ def _build_quiz_prompt(
     topic: Optional[str],
     question_type: str = "multiple_choice",
     difficulty: str = "medium",
+    focus_topics: Optional[list[str]] = None,
 ) -> list[dict[str, str]]:
     """Arma los mensajes para el LLM según el tipo de pregunta solicitado."""
 
@@ -487,12 +747,12 @@ def _build_quiz_prompt(
             '      "correct_index": 0,\n'
             '      "explanation": "<por qué es verdadero o falso>",\n'
             '      "source_filename": "<nombre del archivo fuente>"\n'
-            '    }\n  ]\n}\n' + error_clause
+            "    }\n  ]\n}\n" + error_clause
         )
         rules = (
             "Reglas:\n"
             "1. Cada pregunta es una AFIRMACIÓN (sin signo de interrogación al final).\n"
-            "2. options SIEMPRE es exactamente [\"Verdadero\", \"Falso\"].\n"
+            '2. options SIEMPRE es exactamente ["Verdadero", "Falso"].\n'
             "3. correct_index es 0 si la afirmación es verdadera, 1 si es falsa.\n"
             "4. Las afirmaciones DEBEN basarse en el material entregado.\n"
             "5. Variá entre afirmaciones verdaderas y falsas en el conjunto.\n"
@@ -501,7 +761,9 @@ def _build_quiz_prompt(
             "8. source_filename DEBE ser uno de los nombres de archivo del material.\n"
             "9. NO usar markdown ni texto fuera del JSON.\n"
         )
-        type_instruction = f"Generá {num_questions} preguntas de Verdadero/Falso de práctica.\n\n"
+        type_instruction = (
+            f"Generá {num_questions} preguntas de Verdadero/Falso de práctica.\n\n"
+        )
 
     elif question_type == "open":
         schema_hint = (
@@ -513,7 +775,7 @@ def _build_quiz_prompt(
             '      "correct_index": -1,\n'
             '      "explanation": "<respuesta modelo completa y detallada, basada en el material>",\n'
             '      "source_filename": "<nombre del archivo fuente>"\n'
-            '    }\n  ]\n}\n' + error_clause
+            "    }\n  ]\n}\n" + error_clause
         )
         rules = (
             "Reglas:\n"
@@ -537,9 +799,9 @@ def _build_quiz_prompt(
             '      "correct_index": 0,\n'
             '      "explanation": "<explicación>",\n'
             '      "source_filename": "<archivo>"\n'
-            '    }\n  ]\n}\n'
+            "    }\n  ]\n}\n"
             "Cada pregunta puede ser de tipo 'multiple_choice', 'true_false' u 'open'.\n"
-            "Para true_false: options=[\"Verdadero\",\"Falso\"], correct_index 0 o 1.\n"
+            'Para true_false: options=["Verdadero","Falso"], correct_index 0 o 1.\n'
             "Para open: options=[], correct_index=-1, explanation=respuesta modelo.\n"
             + error_clause
         )
@@ -547,7 +809,7 @@ def _build_quiz_prompt(
             "Reglas:\n"
             "1. Incluí los tres tipos: multiple_choice, true_false y open. Distribuílos de forma pareja.\n"
             "2. Para multiple_choice: exactamente 4 opciones, correct_index 0-3.\n"
-            "3. Para true_false: options=[\"Verdadero\",\"Falso\"], correct_index 0 o 1.\n"
+            '3. Para true_false: options=["Verdadero","Falso"], correct_index 0 o 1.\n'
             "4. Para open: options=[], correct_index=-1, explanation=respuesta modelo completa.\n"
             "5. Todas las preguntas DEBEN basarse en el material entregado.\n"
             "6. source_filename DEBE ser uno de los nombres de archivo del material.\n"
@@ -568,7 +830,7 @@ def _build_quiz_prompt(
             '      "correct_index": -1,\n'
             '      "explanation": "<dorso de la tarjeta: respuesta corta y directa>",\n'
             '      "source_filename": "<nombre del archivo fuente>"\n'
-            '    }\n  ]\n}\n' + error_clause
+            "    }\n  ]\n}\n" + error_clause
         )
         rules = (
             "Reglas:\n"
@@ -593,7 +855,7 @@ def _build_quiz_prompt(
             '      "correct_index": -1,\n'
             '      "explanation": "<palabra_correcta> — <justificación breve basada en el material>",\n'
             '      "source_filename": "<nombre del archivo fuente>"\n'
-            '    }\n  ]\n}\n' + error_clause
+            "    }\n  ]\n}\n" + error_clause
         )
         rules = (
             "Reglas:\n"
@@ -604,12 +866,14 @@ def _build_quiz_prompt(
             "5. La oración debe tener suficiente contexto para que se pueda deducir la palabra correcta.\n"
             "6. NO uses oraciones ambiguas donde varias palabras serían igualmente correctas.\n"
             "7. El 'explanation' comienza con la palabra correcta, seguida de ' — ' y luego una justificación breve.\n"
-            "   Ejemplo: \"mitocondria — La mitocondria es el orgánulo encargado de la respiración celular aeróbica.\"\n"
+            '   Ejemplo: "mitocondria — La mitocondria es el orgánulo encargado de la respiración celular aeróbica."\n'
             "8. Las oraciones DEBEN basarse en el material entregado.\n"
             "9. source_filename DEBE ser uno de los nombres de archivo del material.\n"
             "10. NO usar markdown ni texto fuera del JSON.\n"
         )
-        type_instruction = f"Generá {num_questions} ejercicios de completar espacios en blanco.\n\n"
+        type_instruction = (
+            f"Generá {num_questions} ejercicios de completar espacios en blanco.\n\n"
+        )
 
     else:  # multiple_choice (default)
         schema_hint = (
@@ -621,7 +885,7 @@ def _build_quiz_prompt(
             '      "correct_index": 0,\n'
             '      "explanation": "<por qué la opción correcta es correcta>",\n'
             '      "source_filename": "<nombre del archivo del que sale la respuesta>"\n'
-            '    }\n  ]\n}\n' + error_clause
+            "    }\n  ]\n}\n" + error_clause
         )
         rules = (
             "Reglas:\n"
@@ -634,13 +898,33 @@ def _build_quiz_prompt(
             "7. source_filename DEBE ser uno de los nombres de archivo que aparecen en el material.\n"
             "8. NO usar markdown ni texto fuera del JSON.\n"
         )
-        type_instruction = f"Generá {num_questions} preguntas de opción múltiple de práctica.\n\n"
+        type_instruction = (
+            f"Generá {num_questions} preguntas de opción múltiple de práctica.\n\n"
+        )
 
     topic_line = (
         f"Tema solicitado: {topic.strip()}\n\n"
         if topic and topic.strip()
         else "El alumno no especificó tema — variá temas para cubrir el material disponible.\n\n"
     )
+
+    # DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ) que el
+    # docente pidió priorizar al generar un examen. Además del schema por
+    # tipo de pregunta de arriba, cada pregunta debe declarar de qué tema de
+    # esta lista salió (campo extra "source_topic", fuera del schema_hint
+    # porque aplica igual a los 6 tipos de pregunta).
+    focus_topics_block = ""
+    if focus_topics:
+        topics_list = "\n".join(f"- {t}" for t in focus_topics)
+        focus_topics_block = (
+            "TEMAS CON DIFICULTAD DETECTADA (priorizar cobertura de estos temas, "
+            "en base a preguntas de alumnos sin responder o frecuentes):\n"
+            f"{topics_list}\n\n"
+            "Además de los campos del schema de arriba, agregá en cada pregunta un "
+            'campo "source_topic": el texto EXACTO del tema de la lista anterior que '
+            'esa pregunta cubre, o "" si la pregunta no cubre ninguno de esos temas '
+            "puntualmente. No inventes un tema que no esté en la lista.\n\n"
+        )
 
     material_block = "\n\n".join(
         f'FRAGMENTO {i + 1} (de "{filename}"):\n{content[:600].strip()}'
@@ -656,7 +940,9 @@ def _build_quiz_prompt(
         "fill_blank": "completar espacios en blanco",
     }.get(question_type, "opción múltiple")
 
-    difficulty_line = _DIFFICULTY_INSTRUCTIONS.get(difficulty, _DIFFICULTY_INSTRUCTIONS["medium"])
+    difficulty_line = _DIFFICULTY_INSTRUCTIONS.get(
+        difficulty, _DIFFICULTY_INSTRUCTIONS["medium"]
+    )
 
     system = (
         f"Sos un generador de quizzes académicos de NexusAI. "
@@ -666,8 +952,8 @@ def _build_quiz_prompt(
         "REGLA CRÍTICA: Solo podés generar preguntas sobre contenido que esté "
         "explícita y directamente presente en el material entregado.\n"
         "- NO generes preguntas sobre la ausencia de un tema.\n"
-        "- NO generes preguntas del tipo \"¿Qué información sobre X se puede encontrar?\", "
-        "\"¿Se menciona X en el material?\" o \"¿Dónde se habla de X?\".\n"
+        '- NO generes preguntas del tipo "¿Qué información sobre X se puede encontrar?", '
+        '"¿Se menciona X en el material?" o "¿Dónde se habla de X?".\n'
         f"- Si el material no contiene suficiente contenido directo sobre el tema pedido "
         f"para formar {num_questions} preguntas legítimas, respondé con el objeto de error "
         "descripto en el formato de salida en lugar del array de preguntas."
@@ -676,6 +962,7 @@ def _build_quiz_prompt(
     user_msg = (
         f"{type_instruction}"
         f"{topic_line}"
+        f"{focus_topics_block}"
         f"{schema_hint}\n"
         f"{rules}\n"
         f"--- MATERIAL DEL CURSO ---\n\n{material_block}\n\n--- FIN DEL MATERIAL ---"
@@ -691,6 +978,7 @@ def _build_quiz_prompt(
 # Endpoint
 # ============================================================
 
+
 @router.post("/generate", response_model=QuizResponse)
 async def generate_quiz(
     payload: QuizRequest,
@@ -705,15 +993,17 @@ async def generate_quiz(
     Si el LLM devuelve JSON inválido o falla → 503.
     """
     # 1) Conseguir material para el quiz.
-    has_topic = bool(payload.topic and payload.topic.strip())
+    topic = payload.topic.strip() if payload.topic else None
+    has_topic = bool(topic)
 
     if has_topic:
+        assert topic is not None  # garantizado por has_topic.
         # Modo dirigido: el alumno pidió un tema específico.
         # Validación en dos pasos para evitar falsos positivos por similitud
         # semántica cruzada (ej. "derivadas" matchea débilmente contra cualquier PDF).
         try:
             retrieved = await retrieve_context(
-                question=payload.topic,
+                question=topic,
                 course_id=payload.course_id,
                 db=db,
                 embeddings=embeddings,
@@ -751,9 +1041,9 @@ async def generate_quiz(
             {
                 "role": "user",
                 "content": (
-                    f"Topic: {payload.topic.strip()}\n\n"
+                    f"Topic: {topic}\n\n"
                     f"Course material excerpts:\n{excerpts}\n\n"
-                    f"Is '{payload.topic.strip()}' meaningfully present in this course material — "
+                    f"Is '{topic}' meaningfully present in this course material — "
                     "either as a main subject, a key concept explained, or a named entity directly discussed?\n"
                     "Answer NO only if the topic has no real presence in the excerpts at all.\n"
                     "Answer only YES or NO."
@@ -768,14 +1058,16 @@ async def generate_quiz(
             )
             answer = relevance_result.text.strip().upper()
         except Exception as exc:
-            logger.warning("LLM relevance check failed, proceeding with generation: %s", exc)
+            logger.warning(
+                "LLM relevance check failed, proceeding with generation: %s", exc
+            )
             answer = "YES"
 
         if not answer.startswith("YES"):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=(
-                    f"No encontré material sobre '{payload.topic.strip()}' en los archivos del curso. "
+                    f"No encontré material sobre '{topic}' en los archivos del curso. "
                     "Intentá con un tema que esté cubierto en los archivos indexados."
                 ),
             )
@@ -802,6 +1094,13 @@ async def generate_quiz(
         db=db,
         llm=llm,
     )
+
+    # SP-11 (#315): persistir flashcards generadas para darles identidad
+    # estable — habilita repetición espaciada (/flashcards/*). Solo aplica
+    # a este endpoint (el alumno practicando); /generate-exam no admite
+    # question_type='flashcard'.
+    if payload.question_type == "flashcard" and questions:
+        await _persist_flashcards(db, payload.course_id, payload.topic, questions)
 
     return QuizResponse(
         course_id=payload.course_id,
@@ -848,6 +1147,7 @@ async def generate_exam(
         difficulty=payload.difficulty,
         db=db,
         llm=llm,
+        focus_topics=payload.focus_topics,
     )
 
     return QuizResponse(
@@ -867,6 +1167,21 @@ async def evaluate_open_answer(
 
     Devuelve { correct, score 0-1, feedback } con justificación detallada.
     """
+    # ----- Moderación de contenido — antes de gastar tokens evaluando la
+    # respuesta. Ver app/shared/moderation.py. -----
+    moderation = await moderate_text(payload.user_answer, llm=llm)
+    if not moderation.allowed:
+        log_moderation_block(
+            endpoint="quiz.evaluate",
+            course_id=payload.course_id,
+            user_id=payload.user_id,
+            source=moderation.source,
+            categories=moderation.categories,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=moderation.blocked_message
+        )
+
     messages = [
         {
             "role": "system",
@@ -900,7 +1215,9 @@ async def evaluate_open_answer(
             temperature=0.3,
         )
     except Exception as exc:
-        logger.error("Evaluate LLM call failed: %s: %s", type(exc).__name__, exc, exc_info=True)
+        logger.error(
+            "Evaluate LLM call failed: %s: %s", type(exc).__name__, exc, exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="No se pudo evaluar la respuesta en este momento. Intentá de nuevo.",
@@ -908,7 +1225,9 @@ async def evaluate_open_answer(
 
     raw = result.text.strip()
     if raw.startswith("```"):
-        raw = "\n".join(raw.splitlines()[1:-1]) if raw.endswith("```") else raw.strip("`")
+        raw = (
+            "\n".join(raw.splitlines()[1:-1]) if raw.endswith("```") else raw.strip("`")
+        )
 
     try:
         parsed = json.loads(raw)
@@ -928,6 +1247,7 @@ async def evaluate_open_answer(
 # ============================================================
 # Repaso de errores — SP-10
 # ============================================================
+
 
 @router.post("/errors", response_model=RecordErrorsResponse)
 async def record_quiz_errors(
@@ -970,15 +1290,29 @@ async def list_quiz_errors(
     _body: Annotated[bytes, Depends(verify_hmac)],
     db: AsyncSession = Depends(get_db),
 ) -> ErrorsListResponse:
-    """Historial de errores del alumno en un curso, más recientes primero."""
+    """Historial de errores del alumno en un curso, más recientes primero.
+
+    UX-19 (#389): `total` es el conteo real de errores en el rango de
+    `days` (no solo el tamaño de la página devuelta), para que el frontend
+    pueda saber si hay más resultados y pedirlos con `offset`.
+    """
     since = datetime.now(timezone.utc) - timedelta(days=payload.days)
+
+    base_filters = (
+        QuizError.course_id == payload.course_id,
+        QuizError.user_id == payload.user_id,
+        QuizError.created_at >= since,
+    )
+
+    total = await db.scalar(
+        select(func.count()).select_from(QuizError).where(*base_filters)
+    )
 
     stmt = (
         select(QuizError)
-        .where(QuizError.course_id == payload.course_id)
-        .where(QuizError.user_id == payload.user_id)
-        .where(QuizError.created_at >= since)
+        .where(*base_filters)
         .order_by(desc(QuizError.created_at))
+        .offset(payload.offset)
         .limit(payload.limit)
     )
     result = await db.execute(stmt)
@@ -1002,7 +1336,9 @@ async def list_quiz_errors(
         )
         for r in rows
     ]
-    return ErrorsListResponse(course_id=payload.course_id, total=len(items), items=items)
+    return ErrorsListResponse(
+        course_id=payload.course_id, total=total or 0, items=items
+    )
 
 
 @router.post("/errors/clear", response_model=ClearErrorsResponse)
@@ -1050,19 +1386,24 @@ async def review_suggestions(
     rows = result.scalars().all()
 
     if not rows:
-        return ReviewSuggestionsResponse(course_id=payload.course_id, total_errors=0, suggestions=[])
+        return ReviewSuggestionsResponse(
+            course_id=payload.course_id, total_errors=0, suggestions=[]
+        )
 
     # Agrupar por archivo fuente (fallback a "material general" si no hay filename).
     groups: dict[str, dict[str, Any]] = {}
     for r in rows:
         key = r.source_filename or "__general__"
-        g = groups.setdefault(key, {
-            "filename": r.source_filename,
-            "document_id": r.source_document_id,
-            "count": 0,
-            "last_at": r.created_at,
-            "samples": [],
-        })
+        g = groups.setdefault(
+            key,
+            {
+                "filename": r.source_filename,
+                "document_id": r.source_document_id,
+                "count": 0,
+                "last_at": r.created_at,
+                "samples": [],
+            },
+        )
         g["count"] += 1
         if r.created_at > g["last_at"]:
             g["last_at"] = r.created_at
@@ -1080,7 +1421,9 @@ async def review_suggestions(
             f'  - Pregunta: {s["question"]}\n    Respuesta correcta: {s["explanation"]}'
             for s in g["samples"]
         )
-        prompt_blocks.append(f'Grupo {i} — fuente: "{label}" ({g["count"]} errores)\n{samples_text}')
+        prompt_blocks.append(
+            f'Grupo {i} — fuente: "{label}" ({g["count"]} errores)\n{samples_text}'
+        )
 
     messages = [
         {
@@ -1112,7 +1455,12 @@ async def review_suggestions(
             temperature=0.3,
         )
     except Exception as exc:
-        logger.error("Review suggestions LLM call failed: %s: %s", type(exc).__name__, exc, exc_info=True)
+        logger.error(
+            "Review suggestions LLM call failed: %s: %s",
+            type(exc).__name__,
+            exc,
+            exc_info=True,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="No se pudieron generar las sugerencias de repaso en este momento. Intentá de nuevo.",
@@ -1120,11 +1468,15 @@ async def review_suggestions(
 
     raw = result_llm.text.strip()
     if raw.startswith("```"):
-        raw = "\n".join(raw.splitlines()[1:-1]) if raw.endswith("```") else raw.strip("`")
+        raw = (
+            "\n".join(raw.splitlines()[1:-1]) if raw.endswith("```") else raw.strip("`")
+        )
 
     try:
         parsed = json.loads(raw)
-        by_group = {int(item.get("group", -1)): item for item in parsed.get("suggestions", [])}
+        by_group = {
+            int(item.get("group", -1)): item for item in parsed.get("suggestions", [])
+        }
     except (json.JSONDecodeError, ValueError, TypeError, AttributeError) as exc:
         logger.error("Review suggestions JSON parse failed. Raw: %.300s", raw)
         raise HTTPException(
@@ -1138,7 +1490,9 @@ async def review_suggestions(
             source_document_id=g["document_id"],
             error_count=g["count"],
             last_error_at=g["last_at"],
-            topic=str(by_group.get(i, {}).get("topic") or (g["filename"] or "Repaso general")),
+            topic=str(
+                by_group.get(i, {}).get("topic") or (g["filename"] or "Repaso general")
+            ),
             suggestion=str(
                 by_group.get(i, {}).get("suggestion")
                 or "Revisá el material relacionado con estas preguntas."
@@ -1157,6 +1511,7 @@ async def review_suggestions(
 # ============================================================
 # Historial de quizzes — SP-09
 # ============================================================
+
 
 @router.post("/attempts", response_model=RecordAttemptResponse)
 async def record_quiz_attempt(
@@ -1220,8 +1575,71 @@ async def list_quiz_attempts(
         )
         for r in rows
     ]
-    return AttemptsListResponse(course_id=payload.course_id, total=len(items), items=items)
+    return AttemptsListResponse(
+        course_id=payload.course_id, total=len(items), items=items
+    )
 
+
+# SP-12 (#322): umbrales de sugerencia — el issue no fija un número exacto,
+# así que quedan documentados acá. >=80% de aciertos sugiere subir a hard,
+# <=40% sugiere bajar a easy; el resto se queda en medium (el default actual).
+_SUGGEST_HARD_THRESHOLD = 0.8
+_SUGGEST_EASY_THRESHOLD = 0.4
+_SUGGEST_ATTEMPT_LIMIT = 10
+
+
+@router.post("/suggest-difficulty", response_model=SuggestDifficultyResponse)
+async def suggest_difficulty(
+    payload: SuggestDifficultyRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> SuggestDifficultyResponse:
+    """Sugiere una dificultad de partida para el generador de quiz (SP-12).
+
+    Solo lectura sobre `quiz_attempts` (ya persistido, SP-09/ANALYTICS-01) —
+    no hay tabla ni migración nueva. Es una SUGERENCIA, nunca una
+    restricción: el alumno siempre puede elegir otra dificultad a mano.
+    """
+    stmt = (
+        select(QuizAttempt)
+        .where(QuizAttempt.course_id == payload.course_id)
+        .where(QuizAttempt.user_id == payload.user_id)
+        .order_by(desc(QuizAttempt.created_at))
+        .limit(_SUGGEST_ATTEMPT_LIMIT)
+    )
+    if payload.topic:
+        stmt = stmt.where(
+            func.lower(QuizAttempt.topic) == payload.topic.strip().lower()
+        )
+
+    rows = (await db.execute(stmt)).scalars().all()
+
+    if not rows:
+        return SuggestDifficultyResponse()
+
+    avg_score = sum(r.score for r in rows) / len(rows)
+    if avg_score >= _SUGGEST_HARD_THRESHOLD:
+        difficulty = "hard"
+    elif avg_score <= _SUGGEST_EASY_THRESHOLD:
+        difficulty = "easy"
+    else:
+        difficulty = "medium"
+
+    pct = round(avg_score * 100)
+    difficulty_label = {"easy": "fácil", "medium": "media", "hard": "difícil"}[
+        difficulty
+    ]
+    reason = (
+        f"Basado en tus últimos {len(rows)} intento{'s' if len(rows) != 1 else ''} "
+        f"({pct}% de aciertos), te sugerimos dificultad {difficulty_label}."
+    )
+
+    return SuggestDifficultyResponse(
+        difficulty=difficulty,
+        reason=reason,
+        based_on_attempts=len(rows),
+        accuracy_pct=pct,
+    )
 
 
 @router.post("/study-plan", response_model=StudyPlanResponse)
@@ -1251,6 +1669,7 @@ async def study_plan(
         .where(QuizError.course_id == payload.course_id)
         .where(QuizError.user_id == payload.user_id)
         .where(QuizError.created_at >= since)
+        .where(QuizError.dismissed_at.is_(None))  # SP-13: descartado por el alumno
         .order_by(desc(QuizError.created_at))
         .limit(300)
     )
@@ -1262,10 +1681,14 @@ async def study_plan(
             norm_question.label("question"),
             func.count().label("count"),
             func.max(UnansweredQuestion.created_at).label("last_asked_at"),
+            # SP-13: IDs reales detrás del grupo, para poder descartar el tema
+            # sin depender del texto (ver StudyPlanTopic.gap_question_ids).
+            func.array_agg(UnansweredQuestion.id).label("ids"),
         )
         .where(UnansweredQuestion.course_id == payload.course_id)
         .where(UnansweredQuestion.user_id == payload.user_id)
         .where(UnansweredQuestion.created_at >= since)
+        .where(UnansweredQuestion.student_dismissed_at.is_(None))
         .group_by(norm_question)
         .order_by(desc("count"), desc("last_asked_at"))
         .limit(20)
@@ -1279,13 +1702,25 @@ async def study_plan(
     quiz_groups: dict[str, dict[str, Any]] = {}
     for r in quiz_rows:
         key = r.source_filename or "__general__"
-        g = quiz_groups.setdefault(key, {"filename": r.source_filename, "count": 0, "samples": []})
+        g = quiz_groups.setdefault(
+            key, {"filename": r.source_filename, "count": 0, "samples": [], "ids": []}
+        )
         g["count"] += 1
+        g["ids"].append(str(r.id))
         if len(g["samples"]) < 3:
             g["samples"].append({"question": r.question, "explanation": r.explanation})
-    top_quiz_groups = sorted(quiz_groups.values(), key=lambda g: g["count"], reverse=True)[:5]
+    top_quiz_groups = sorted(
+        quiz_groups.values(), key=lambda g: g["count"], reverse=True
+    )[:5]
 
-    top_gap_groups = [{"question": row.question, "count": int(row.count)} for row in gap_rows]
+    top_gap_groups = [
+        {
+            "question": row.question,
+            "count": int(row.count),  # type: ignore[call-overload]
+            "ids": [str(i) for i in row.ids],
+        }
+        for row in gap_rows
+    ]
 
     prompt_blocks = []
     for i, g in enumerate(top_quiz_groups):
@@ -1294,9 +1729,13 @@ async def study_plan(
             f'  - Pregunta: {s["question"]}\n    Respuesta correcta: {s["explanation"]}'
             for s in g["samples"]
         )
-        prompt_blocks.append(f'Grupo Q{i} — errores de quiz, fuente: "{label}" ({g["count"]} errores)\n{samples_text}')
+        prompt_blocks.append(
+            f'Grupo Q{i} — errores de quiz, fuente: "{label}" ({g["count"]} errores)\n{samples_text}'
+        )
     for j, g in enumerate(top_gap_groups):
-        prompt_blocks.append(f'Grupo G{j} — pregunta del chat sin responder bien: "{g["question"]}" ({g["count"]} veces)')
+        prompt_blocks.append(
+            f'Grupo G{j} — pregunta del chat sin responder bien: "{g["question"]}" ({g["count"]} veces)'
+        )
 
     messages = [
         {
@@ -1332,7 +1771,9 @@ async def study_plan(
             temperature=0.3,
         )
     except Exception as exc:
-        logger.error("Study plan LLM call failed: %s: %s", type(exc).__name__, exc, exc_info=True)
+        logger.error(
+            "Study plan LLM call failed: %s: %s", type(exc).__name__, exc, exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="No se pudo generar el plan de estudio en este momento. Intentá de nuevo.",
@@ -1340,7 +1781,9 @@ async def study_plan(
 
     raw = result_llm.text.strip()
     if raw.startswith("```"):
-        raw = "\n".join(raw.splitlines()[1:-1]) if raw.endswith("```") else raw.strip("`")
+        raw = (
+            "\n".join(raw.splitlines()[1:-1]) if raw.endswith("```") else raw.strip("`")
+        )
 
     try:
         parsed = json.loads(raw)
@@ -1356,19 +1799,33 @@ async def study_plan(
     for item in llm_topics:
         if not isinstance(item, dict) or not item.get("topic"):
             continue
-        quiz_idx = [i for i in item.get("quiz_groups", []) if isinstance(i, int) and 0 <= i < len(top_quiz_groups)]
-        gap_idx = [j for j in item.get("gap_groups", []) if isinstance(j, int) and 0 <= j < len(top_gap_groups)]
+        quiz_idx = [
+            i
+            for i in item.get("quiz_groups", [])
+            if isinstance(i, int) and 0 <= i < len(top_quiz_groups)
+        ]
+        gap_idx = [
+            j
+            for j in item.get("gap_groups", [])
+            if isinstance(j, int) and 0 <= j < len(top_gap_groups)
+        ]
         quiz_error_count = sum(top_quiz_groups[i]["count"] for i in quiz_idx)
         gap_count = sum(top_gap_groups[j]["count"] for j in gap_idx)
         if quiz_error_count == 0 and gap_count == 0:
             continue
+        quiz_error_ids = [id_ for i in quiz_idx for id_ in top_quiz_groups[i]["ids"]]
+        gap_question_ids = [id_ for j in gap_idx for id_ in top_gap_groups[j]["ids"]]
         topics.append(
             StudyPlanTopic(
                 topic=str(item["topic"]),
                 quiz_error_count=quiz_error_count,
                 gap_count=gap_count,
                 reason=str(item.get("reason") or ""),
-                suggested_quiz_topic=str(item.get("suggested_quiz_topic") or item["topic"]),
+                suggested_quiz_topic=str(
+                    item.get("suggested_quiz_topic") or item["topic"]
+                ),
+                quiz_error_ids=quiz_error_ids,
+                gap_question_ids=gap_question_ids,
             )
         )
 
@@ -1376,3 +1833,317 @@ async def study_plan(
 
     return StudyPlanResponse(course_id=payload.course_id, topics=topics[:6])
 
+
+@router.post("/study-plan/dismiss", response_model=StudyPlanDismissResponse)
+async def study_plan_dismiss(
+    payload: StudyPlanDismissRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> StudyPlanDismissResponse:
+    """Descarta un tema puntual del plan de estudio (SP-13, issue #323).
+
+    Opera sobre los IDs reales de fila (`quiz_error_ids`/`gap_question_ids`,
+    devueltos por /study-plan) — el `topic` que ve el alumno es texto
+    generado por el LLM en cada llamada, no una clave estable. Mismo patrón
+    que app/gaps/router.py::gaps_archive, pero con columnas propias
+    (`QuizError.dismissed_at` / `UnansweredQuestion.student_dismissed_at`)
+    que NO tocan `archived_at` (archivado del docente, DOC-D08) — descartar
+    del lado del alumno no debe cambiar lo que ve el docente en Gaps/Analytics.
+    """
+    affected = 0
+
+    if payload.quiz_error_ids:
+        quiz_ids = [uuid.UUID(i) for i in payload.quiz_error_ids]
+        result = await db.execute(
+            update(QuizError)
+            .where(QuizError.course_id == payload.course_id)
+            .where(QuizError.user_id == payload.user_id)
+            .where(QuizError.id.in_(quiz_ids))
+            .values(dismissed_at=datetime.now(timezone.utc))
+        )
+        affected += result.rowcount
+
+    if payload.gap_question_ids:
+        gap_ids = [uuid.UUID(i) for i in payload.gap_question_ids]
+        result = await db.execute(
+            update(UnansweredQuestion)
+            .where(UnansweredQuestion.course_id == payload.course_id)
+            .where(UnansweredQuestion.user_id == payload.user_id)
+            .where(UnansweredQuestion.id.in_(gap_ids))
+            .values(student_dismissed_at=datetime.now(timezone.utc))
+        )
+        affected += result.rowcount
+
+    await db.commit()
+
+    return StudyPlanDismissResponse(affected=affected)
+
+
+# ============================================================
+# Repetición espaciada de flashcards — SP-11 (#315)
+# ============================================================
+
+
+def _flashcard_due_filter(user_id: int):
+    """Condición ON del LEFT JOIN + WHERE reusada por summary/due: "toca hoy"
+    significa sin fila de review, o next_review_at NULL, o ya vencido."""
+    join_cond = (
+        (FlashcardReview.flashcard_id == Flashcard.id)
+        & (FlashcardReview.user_id == user_id)
+        & (FlashcardReview.deleted_at.is_(None))
+    )
+    due_cond = (
+        FlashcardReview.id.is_(None)
+        | FlashcardReview.next_review_at.is_(None)
+        | (FlashcardReview.next_review_at <= func.now())
+    )
+    return join_cond, due_cond
+
+
+@router.post("/flashcards/summary", response_model=FlashcardsSummaryResponse)
+async def flashcards_summary(
+    payload: FlashcardsSummaryRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> FlashcardsSummaryResponse:
+    """Cuántas flashcards generadas hasta ahora "tocan hoy" vs. el total (SP-11)."""
+    base_filters = [Flashcard.course_id == payload.course_id]
+    if payload.topic:
+        base_filters.append(
+            func.lower(Flashcard.topic) == payload.topic.strip().lower()
+        )
+
+    total_count = await db.scalar(
+        select(func.count()).select_from(Flashcard).where(*base_filters)
+    )
+
+    join_cond, due_cond = _flashcard_due_filter(payload.user_id)
+    due_count = await db.scalar(
+        select(func.count())
+        .select_from(Flashcard)
+        .outerjoin(FlashcardReview, join_cond)
+        .where(*base_filters)
+        .where(due_cond)
+    )
+
+    return FlashcardsSummaryResponse(
+        due_count=due_count or 0, total_count=total_count or 0
+    )
+
+
+@router.post("/flashcards/due", response_model=FlashcardsDueResponse)
+async def flashcards_due(
+    payload: FlashcardsDueRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> FlashcardsDueResponse:
+    """Flashcards ya generadas que "tocan hoy", más vencidas primero (SP-11).
+
+    No llama al LLM — sirve del banco ya persistido por /generate. El
+    frontend completa con generación nueva solo si esto no alcanza para
+    la cantidad pedida (ver QuizPanel.jsx).
+    """
+    join_cond, due_cond = _flashcard_due_filter(payload.user_id)
+    stmt = (
+        select(Flashcard, FlashcardReview.next_review_at)
+        .outerjoin(FlashcardReview, join_cond)
+        .where(Flashcard.course_id == payload.course_id)
+        .where(due_cond)
+    )
+    if payload.topic:
+        stmt = stmt.where(func.lower(Flashcard.topic) == payload.topic.strip().lower())
+    stmt = stmt.order_by(FlashcardReview.next_review_at.asc().nulls_last()).limit(
+        payload.limit
+    )
+
+    rows = (await db.execute(stmt)).all()
+
+    questions = [
+        QuizQuestion(
+            id=str(fc.id),
+            question_type="flashcard",
+            question=fc.question,
+            options=[],
+            correct_index=-1,
+            explanation=fc.explanation,
+            source_filename=fc.source_filename or "",
+            source_document_id=fc.source_document_id,
+        )
+        for fc, _next_review_at in rows
+    ]
+
+    return FlashcardsDueResponse(course_id=payload.course_id, questions=questions)
+
+
+@router.post("/flashcards/review-batch", response_model=FlashcardsReviewBatchResponse)
+async def flashcards_review_batch(
+    payload: FlashcardsReviewBatchRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> FlashcardsReviewBatchResponse:
+    """Aplica SM-2 sobre el resultado de autoevaluación de una sesión de flashcards (SP-11).
+
+    Se llama una sola vez al final de la sesión (mismo patrón que
+    /attempts + /errors), no por-tarjeta.
+    """
+    now = datetime.now(timezone.utc)
+
+    parsed_ids: dict[str, uuid.UUID] = {}
+    for item in payload.reviews:
+        try:
+            parsed_ids[item.flashcard_id] = uuid.UUID(item.flashcard_id)
+        except ValueError:
+            continue
+
+    if not parsed_ids:
+        return FlashcardsReviewBatchResponse(updated=0)
+
+    # Solo se aplica repaso sobre flashcards que realmente pertenecen a este
+    # curso — flashcard_id es dato del cliente, no confiar ciegamente.
+    valid_rows = await db.execute(
+        select(Flashcard.id).where(
+            Flashcard.id.in_(parsed_ids.values()),
+            Flashcard.course_id == payload.course_id,
+        )
+    )
+    valid_ids = {row.id for row in valid_rows.all()}
+
+    # Un solo SELECT en bulk para todos los reviews existentes de este batch,
+    # en vez de uno por item — y la base para el upsert de abajo, que evita la
+    # race condition de un SELECT-luego-INSERT contra uq_flashcard_reviews_flashcard_user
+    # (dos requests idénticas concurrentes -p.ej. un retry- ya no chocan con
+    # un IntegrityError sin capturar).
+    existing_rows = await db.execute(
+        select(FlashcardReview).where(
+            FlashcardReview.flashcard_id.in_(valid_ids),
+            FlashcardReview.user_id == payload.user_id,
+        )
+    )
+    existing_by_flashcard = {r.flashcard_id: r for r in existing_rows.scalars().all()}
+
+    updated = 0
+    for item in payload.reviews:
+        flashcard_id = parsed_ids.get(item.flashcard_id)
+        if flashcard_id is None or flashcard_id not in valid_ids:
+            continue
+
+        review = existing_by_flashcard.get(flashcard_id)
+        if review is None:
+            # Los defaults de mapped_column solo se aplican al hacer INSERT
+            # (flush), no al construir el objeto — _apply_sm2 los necesita
+            # en memoria YA, antes del commit, así que se setean acá a mano
+            # (mismos valores que los defaults declarados en el modelo).
+            review = FlashcardReview(
+                flashcard_id=flashcard_id,
+                user_id=payload.user_id,
+                ease_factor=2.5,
+                interval_days=0,
+                repetitions=0,
+            )
+
+        _apply_sm2(review, item.knew_it, now)
+
+        upsert_values = {
+            "ease_factor": review.ease_factor,
+            "interval_days": review.interval_days,
+            "repetitions": review.repetitions,
+            "last_reviewed_at": review.last_reviewed_at,
+            "next_review_at": review.next_review_at,
+        }
+        stmt = (
+            pg_insert(FlashcardReview)
+            .values(
+                id=uuid.uuid4(),
+                flashcard_id=flashcard_id,
+                user_id=payload.user_id,
+                **upsert_values,
+            )
+            .on_conflict_do_update(
+                constraint="uq_flashcard_reviews_flashcard_user",
+                set_=upsert_values,
+            )
+        )
+        await db.execute(stmt)
+        updated += 1
+
+    await db.commit()
+    return FlashcardsReviewBatchResponse(updated=updated)
+
+
+# ============================================================
+# Racha de estudio — SP-16 (#354)
+# ============================================================
+
+
+def _compute_streak(active_dates: set[date], today: date) -> int:
+    """Días consecutivos de actividad terminando hoy o ayer.
+
+    Si la actividad más reciente es de hace 2+ días, la racha se considera
+    rota (0) — criterio de aceptación explícito ("se resetea si el alumno
+    deja de usar el asistente un día"). Si hubo actividad hoy o ayer
+    (el alumno puede no haber practicado TODAVÍA hoy y seguir con la racha
+    viva desde ayer), cuenta hacia atrás mientras los días sean consecutivos.
+    """
+    if not active_dates:
+        return 0
+
+    most_recent = max(active_dates)
+    if (today - most_recent).days > 1:
+        return 0
+
+    streak = 0
+    cursor = most_recent
+    while cursor in active_dates:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return streak
+
+
+@router.post("/streak", response_model=StreakResponse)
+async def study_streak(
+    payload: StreakRequest,
+    _body: Annotated[bytes, Depends(verify_hmac)],
+    db: AsyncSession = Depends(get_db),
+) -> StreakResponse:
+    """Días consecutivos de actividad del alumno en el curso (SP-16, #354).
+
+    Combina dos señales ya persistidas, sin tabla ni migración nueva:
+    - QuizAttempt.user_id/course_id/created_at — anonimizado por PRIV-01
+      cae solo del filtro (user_id queda NULL), mismo criterio que
+      suggest_difficulty/list_quiz_attempts.
+    - Message.created_at (role='user') join ChatSession.user_id/course_id.
+      InteractionLog NO sirve acá: es anónimo por diseño (solo
+      user_id_hash, sin user_id real) — no hay forma de agrupar por
+      alumno. Sesiones multi-curso (ChatSession.course_id == 0, Feature B)
+      se excluyen: no pertenecen a un curso puntual.
+    """
+    quiz_days_stmt = (
+        select(func.date_trunc("day", QuizAttempt.created_at, "UTC").label("day"))
+        .where(
+            QuizAttempt.user_id == payload.user_id,
+            QuizAttempt.course_id == payload.course_id,
+        )
+        .distinct()
+    )
+    chat_days_stmt = (
+        select(func.date_trunc("day", Message.created_at, "UTC").label("day"))
+        .join(ChatSession, Message.session_id == ChatSession.id)
+        .where(
+            ChatSession.user_id == payload.user_id,
+            ChatSession.course_id == payload.course_id,
+            Message.role == "user",
+        )
+        .distinct()
+    )
+
+    quiz_rows = (await db.execute(quiz_days_stmt)).all()
+    chat_rows = (await db.execute(chat_days_stmt)).all()
+
+    active_dates = {row.day.date() for row in quiz_rows} | {
+        row.day.date() for row in chat_rows
+    }
+
+    today = datetime.now(timezone.utc).date()
+    streak = _compute_streak(active_dates, today)
+
+    return StreakResponse(current_streak=streak, practiced_today=today in active_dates)

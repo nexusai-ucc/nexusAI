@@ -54,8 +54,9 @@ Compilar con ./build.sh
 
 \textbf{Directores:}
 \begin{itemize}
-  \item Nombre del director/a (completar)
-  \item Co-director/a, si corresponde (completar)
+  \item Ignacio Luciano Carreño
+  \item Federico Eduardo Porrini
+  \item Leandro Juarez
 \end{itemize}
 \end{flushleft}
 
@@ -199,10 +200,6 @@ necesarios para comprender el informe por parte de un lector no especializado en
   indexación y recuperación.
 - **Streaming:** entrega progresiva de la respuesta del modelo, token por token, para
   reducir la latencia percibida por el usuario.
-
-> **PENDIENTE —** agregar o quitar términos según el vocabulario que el tribunal
-> pueda desconocer. La guía recomienda incluir términos del dominio y evitar
-> tecnicismos generales de ingeniería (p. ej. *backend*, *frontend*, *SQL*).
 
 \newpage
 
@@ -477,6 +474,11 @@ continuó después de esa entrega, ampliando el alcance original.
 - Soporte de material en PPTX, XLSX, CSV, Markdown y HTML además de PDF, con
   reconocimiento óptico de caracteres (OCR) de respaldo para documentos
   escaneados.
+- Rediseño de la interfaz (agosto de 2026): el chat pasó de un *dropdown* flotante
+  a un panel lateral acoplado, y el panel del docente se unificó en un lenguaje
+  visual consistente de tipo *dashboard*, con paneles de material, vacíos de
+  contenido, preguntas frecuentes, generación de exámenes y búsqueda integrados
+  bajo la misma navegación.
 
 **Fuera de alcance (excluido conscientemente):** soporte multi-institución
 nativo, integración con mensajería externa, y contenido multimedia, entre otros
@@ -554,10 +556,13 @@ mediante variables de entorno, sin modificar el código de aplicación.
 
 ### Interfaz de usuario
 
-La interfaz de chat se embebe en las páginas del curso mediante un ícono en la barra
-de navegación de Moodle. Presenta la respuesta en *streaming*, citas clickeables que
-expanden el fragmento utilizado con su porcentaje de similitud, e historial de
-conversaciones por sesión.
+La interfaz de chat se dispara desde un ícono en la barra de navegación de Moodle y
+se despliega como un panel lateral acoplado al borde derecho de la pantalla, de
+ancho fijo y alto completo, en lugar del *dropdown* flotante de las primeras
+versiones. Presenta la respuesta en *streaming*, citas clickeables que expanden el
+fragmento utilizado con su porcentaje de similitud, e historial de conversaciones
+por sesión, todo dentro del mismo panel. En dispositivos móviles el panel se
+comporta como una hoja a pantalla completa (*bottom-sheet*).
 
 ![Figura 2a](img/chat-widget.png){width=48%} ![Figura 2b](img/search-widget.png){width=48%}
 
@@ -800,9 +805,6 @@ de recursos de cómputo:
 - **Sostenibilidad a largo plazo:** la abstracción multi-proveedor permite migrar a
   modelos de IA más eficientes a medida que estén disponibles, sin rediseñar el sistema.
 
-> **PENDIENTE —** esta sección es opcional según la plantilla; ampliar o suprimir según
-> el criterio de la cátedra.
-
 \newpage
 
 # Conclusión
@@ -837,7 +839,8 @@ En síntesis, el proyecto demuestra que es posible integrar asistencia académic
 contextualizada y auditable dentro del LMS institucional, amplificando el rol del docente
 en lugar de sustituirlo.
 
-> **PENDIENTE —** agregar reflexiones personales del equipo si la cátedra lo solicita.
+> *(Espacio reservado para reflexiones personales del equipo, a incorporar si la
+> cátedra lo solicita.)*
 
 \newpage
 
@@ -1050,9 +1053,9 @@ planificadas para post-MVP.
 
 | Métrica | Valor |
 |---|---|
-| Commits al repositorio | ~250 |
-| Issues cerradas | 70+ |
-| Pull requests mergeados | ~50 |
+| Commits al repositorio | ~290 |
+| Issues cerradas | 160+ |
+| Pull requests mergeados | 85+ |
 | Líneas de código backend Python | ~3.500 |
 | Líneas de código plugin PHP | ~2.500 |
 | Líneas de código React | ~3.200 |
@@ -1078,12 +1081,16 @@ planificadas para post-MVP.
   [github.com/nexusai-ucc/nexusAI/actions](https://github.com/nexusai-ucc/nexusAI/actions)
 - **Release del MVP:** `v0.8.0-mvp`
   ([github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp](https://github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp)).
-  El plugin siguió evolucionando después del MVP (versión actual `0.9.10` según
+  El plugin siguió evolucionando después del MVP (versión actual `0.14.2` según
   `plugin/local/nexusai/version.php`) sin un *tag* formal más reciente en el
   repositorio — pendiente etiquetar el próximo *release* (RNF-21).
 
-> **Nota:** este anexo no incluye un enlace a un despliegue en vivo. El repositorio
-> tuvo instancias de demo temporales durante el desarrollo (Railway, Fly.io) que no
-> se mantienen activas de forma permanente — el acceso reproducible al sistema es el
-> repositorio y sus instrucciones de instalación (`entrega-final/18_manual_instalacion.md`),
-> no una URL pública.
+> **Nota:** el backend está desplegado de forma permanente en dos ambientes sobre
+> Oracle Cloud (*Always Free*): *staging*, para pruebas del día a día
+> (`https://api-staging.146.181.62.67.nip.io`), y producción, solo para
+> funcionalidad ya validada (`https://api.159.112.139.166.nip.io`). Moodle no se
+> despliega junto al backend — cada integrante lo sigue corriendo localmente,
+> apuntando el plugin al ambiente correspondiente. El deploy a ambas VMs es
+> manual; para reducir el riesgo de acumular cambios sin probar, el equipo
+> concentra los merges a `main` al cierre de cada sprint, trabajando el resto
+> del tiempo contra `development` y *staging*.

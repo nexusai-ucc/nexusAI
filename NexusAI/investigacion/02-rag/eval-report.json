@@ -1,0 +1,229 @@
+{
+  "meta": {
+    "course_id": 990001,
+    "dataset": "/app/eval-dataset.json",
+    "material": "/app/eval-material.md",
+    "chat_top_k": 5,
+    "chat_min_similarity": 0.3,
+    "nota_infraestructura": "Durante esta corrida (2026-09-11), el modelo primario configurado en produccion (LLM_MODEL=gemini-2.5-flash) devolvio 503/429 en 6/8 preguntas de Nivel 2 y 4/4 de Nivel 3 por agotamiento de la cuota gratuita diaria de Gemini (GenerateRequestsPerDayPerProjectPerModel-FreeTier, limite: 20 requests/dia). El fallback automatico configurado (LLM_FALLBACK_MODEL=llama-3.3-70b-versatile via Groq) tambien fallo con 404 model_not_found (modelo deprecado/inexistente en la cuenta de Groq), por lo que el chat no pudo degradar de forma elegante y devolvio 503 al alumno. Ver evaluacion-rag.md, seccion 'Hallazgos de infraestructura'."
+  },
+  "summary": {
+    "nivel_1_retrieval": {
+      "n_preguntas": 8,
+      "recall_at_5": 1.0,
+      "precision_at_5": 0.27499999999999997,
+      "mrr": 0.9375,
+      "objetivo_recall_at_5": 0.85,
+      "objetivo_precision_at_5": 0.5,
+      "objetivo_mrr": 0.7
+    },
+    "nivel_2_generacion": {
+      "n_preguntas": 8,
+      "n_preguntas_evaluadas_por_judge": 2,
+      "n_preguntas_error_infraestructura": 6,
+      "fiel_rate": 0.5,
+      "objetivo_fiel_rate": 0.95,
+      "detalle_verdicts": {
+        "A1": null,
+        "A2": "FIEL",
+        "A3": null,
+        "A4": "PARCIAL",
+        "B1": null,
+        "B2": null,
+        "B3": null,
+        "B4": null
+      }
+    },
+    "nivel_3_fallback_honesto": {
+      "n_preguntas": 4,
+      "n_preguntas_respondidas": 0,
+      "n_preguntas_error_infraestructura": 4,
+      "fallback_rate": null,
+      "objetivo_fallback_rate": 0.9
+    }
+  },
+  "detalle": {
+    "retrieval": [
+      {
+        "question_id": "A1",
+        "recall_at_5": 1.0,
+        "precision_at_5": 0.4,
+        "reciprocal_rank": 1.0,
+        "retrieved_filenames": [
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md"
+        ]
+      },
+      {
+        "question_id": "A2",
+        "recall_at_5": 1.0,
+        "precision_at_5": 0.4,
+        "reciprocal_rank": 1.0,
+        "retrieved_filenames": [
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md"
+        ]
+      },
+      {
+        "question_id": "A3",
+        "recall_at_5": 1.0,
+        "precision_at_5": 0.2,
+        "reciprocal_rank": 1.0,
+        "retrieved_filenames": [
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md"
+        ]
+      },
+      {
+        "question_id": "A4",
+        "recall_at_5": 1.0,
+        "precision_at_5": 0.4,
+        "reciprocal_rank": 1.0,
+        "retrieved_filenames": [
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md"
+        ]
+      },
+      {
+        "question_id": "B1",
+        "recall_at_5": 1.0,
+        "precision_at_5": 0.2,
+        "reciprocal_rank": 1.0,
+        "retrieved_filenames": [
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md"
+        ]
+      },
+      {
+        "question_id": "B2",
+        "recall_at_5": 1.0,
+        "precision_at_5": 0.2,
+        "reciprocal_rank": 0.5,
+        "retrieved_filenames": [
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md"
+        ]
+      },
+      {
+        "question_id": "B3",
+        "recall_at_5": 1.0,
+        "precision_at_5": 0.2,
+        "reciprocal_rank": 1.0,
+        "retrieved_filenames": [
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md"
+        ]
+      },
+      {
+        "question_id": "B4",
+        "recall_at_5": 1.0,
+        "precision_at_5": 0.2,
+        "reciprocal_rank": 1.0,
+        "retrieved_filenames": [
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md",
+          "eval-material.md"
+        ]
+      }
+    ],
+    "generacion": [
+      {
+        "question_id": "A1",
+        "answer": "<error 503>",
+        "judge_verdict": null,
+        "context_used": ""
+      },
+      {
+        "question_id": "A2",
+        "answer": "En SQL, `DELETE`, `TRUNCATE` y `DROP` son comandos que se utilizan para eliminar datos o estructuras, pero operan de manera diferente:\n\n*   **DELETE:** Es un comando DML (Data Manipulation Language). Se usa para eliminar una o más filas de una tabla, y se puede aplicar de forma selectiva usando una cláusula `WHERE`. Cada fila eliminada se registra en el log de transacciones, lo que lo hace más lento en tablas grandes si no se usa `WHERE`. Las eliminaciones con `DELETE` son reversibles mediante `ROLLBACK` dentro de una transacción. [Fuente: \"eval-material.md\"]\n*   **TRUNCATE:** Es un comando DDL (Data Definition Language). Elimina todas las filas de una tabla de una sola vez, sin registrar cada fila individualmente en el log de transacciones. Es mucho más rápido que un `DELETE` sin `WHERE`. Generalmente, no dispara *triggers* y reinicia los contadores de autoincremento. [Fuente: \"eval-material.md\"]\n*   **DROP:** Elimina la tabla completa, incluyendo su estructura (columnas, índices, restricciones) y todos sus datos. Después de un `DROP TABLE`, la tabla deja de existir en el esquema y debe ser recreada con `CREATE TABLE` si se desea volver a usar. [Fuente: \"eval-material.md\"]\n\nEn resumen: `DELETE` borra filas (DML, selectivo, reversible), `TRUNCATE` borra todas las filas de una tabla (DDL, rápido, no reversible), y `DROP` elimina la tabla completa con su estructura (DDL, no reversible). [Fuente: \"eval-material.md\"]",
+        "judge_verdict": "FIEL",
+        "context_used": "DELETE` si existen. Es más lento que\n  `TRUNCATE` en tablas grandes porque el motor registra cada fila eliminada.\n- **TRUNCATE** es un comando DDL (Data Definition Language). Elimina todas\n  las filas de una tabla de una sola vez, sin registrar cada fila individual\n  en el log de transacciones. Es mucho más rápido que un `DELETE` sin\n  `WHERE`, pero en la mayoría de los motores no dispara triggers y reinicia\n  los contadores de autoincremento.\n- **DROP** elimina la tabla completa, incluyendo su estructura (columnas,\n  índices, restricciones) y todos sus datos. Después de un `DROP TABLE`, la\n  tabla deja de existir en el esquema; para volver a usarla hay que crearla\n  de nuevo con `CREATE TABLE`.\n\nEn resumen: `DELETE` borra filas (DML, selectivo, reversible dentro de la\ntransacción), `TRUNCATE` vacía la tabla entera de forma rápida (DDL), y\n`DROP` borra la tabla y su definición completa.\n\n### JOIN interno y externo\n\nUn **INNER JOIN** combina filas de dos tablas y devuelve únicamente las filas\ndonde existe coincidencia en ambas tablas según la condición de unión. Si un\ncliente no tiene pedidos, ese cliente no aparece en el resultado de un INNER\nJOIN entre `Clientes` y `Pedidos`.\n\nUn **LEFT JOIN** (o LEFT OUTER JOIN) devuelve todas las filas de la tabla de\nla izquierda, y para las filas donde no hay coincidencia en la tabla de la\nderecha, completa esas columnas con NULL. Por ejemplo, un `LEFT JOIN` de\n`Clientes` con `Pedidos` devuelve todos los clientes, incluso los que nunca\nhicieron un pedido, mostrando NULL en las columnas de `Pedidos` para esos\ncasos. El RIGHT JOIN es el caso simétrico: devuelve todas las filas de la\ntabla de la derecha, completando con NULL las columnas de la izquierda\ncuando no hay coincidencia.\n\n## Normalización\n\nLas **formas normales** (1FN, 2FN, 3FN, BCNF) son un conjunto de reglas\n\n# Introducción a las Bases de Datos Relacionales\n\n## El modelo relacional\n\nEl modelo relacional organiza los datos en tablas (también llamadas relaciones),\ndonde cada fila es un registro y cada columna es un atributo. Una tabla\nrepresenta una entidad del dominio, como `Alumnos`, `Cursos` o `Pedidos`.\n\n### Clave primaria\n\nUna **clave primaria** (primary key) es un atributo, o un conjunto de\natributos, que identifica de forma única cada fila de una tabla. Dos filas de\nla misma tabla nunca pueden tener el mismo valor de clave primaria. Además,\nla clave primaria no puede tener valores NULL: todo registro debe tener un\nidentificador válido desde el momento en que se inserta. Es común usar un\ncampo numérico autoincremental (`id`) como clave primaria, aunque también se\npuede usar una clave natural (por ejemplo, el DNI de una persona) si se\ngarantiza que es única y no nula.\n\n### Clave foránea\n\nUna **clave foránea** (foreign key) es un atributo en una tabla que referencia\nla clave primaria de otra tabla, estableciendo una relación entre ambas. Por\nejemplo, la tabla `Pedidos` puede tener una columna `cliente_id` que referencia\n`Clientes.id`. El motor de base de datos puede validar la integridad\nreferencial: no se puede insertar un pedido con un `cliente_id` que no exista\nen la tabla `Clientes`.\n\n## Comandos SQL para manipular datos y estructuras\n\n### DELETE, TRUNCATE y DROP\n\nEstos tres comandos eliminan datos, pero funcionan de forma muy distinta:\n\n- **DELETE** es un comando DML (Data Manipulation Language). Elimina filas de\n  una tabla según una condición `WHERE`. Es logueable fila por fila en la\n  transacción, por lo que se puede revertir con `ROLLBACK` antes del\n  `COMMIT`, y dispara los triggers `ON DELETE` si existen. Es más lento que\n  `TRUNCATE` en tablas grandes porque el motor registra cada fila eliminada.\n- **TRUNCATE** es un comando DDL (Data Definition Language). Elimina todas\n  las filas de una tabla de una sola vez,\n\nlas filas de la\ntabla de la derecha, completando con NULL las columnas de la izquierda\ncuando no hay coincidencia.\n\n## Normalización\n\nLas **formas normales** (1FN, 2FN, 3FN, BCNF) son un conjunto de reglas para\norganizar las tablas de una base de datos relacional de forma que se\nminimice la redundancia de datos y se eviten anomalías de inserción,\nactualización y eliminación.\n\n- **Primera Forma Normal (1FN):** cada celda de la tabla debe contener un\n  valor atómico (no listas ni grupos repetitivos), y cada fila debe ser\n  identificable de forma única.\n- **Segunda Forma Normal (2FN):** la tabla debe estar en 1FN, y además todos\n  los atributos que no son clave deben depender completamente de la clave\n  primaria (no de solo una parte de una clave compuesta).\n- **Tercera Forma Normal (3FN):** la tabla debe estar en 2FN, y además no\n  puede haber dependencias transitivas: un atributo no clave no puede\n  depender de otro atributo no clave, sino únicamente de la clave primaria.\n- **BCNF (Boyce-Codd):** una versión más estricta de 3FN que elimina ciertas\n  anomalías que 3FN no cubre, exigiendo que todo determinante funcional sea\n  una clave candidata.\n\n### Cuándo aplicar normalización\n\nSi una tabla tiene muchas columnas redundantes (por ejemplo, repite el\nnombre y la dirección del proveedor en cada fila de un pedido), el primer\npaso para arreglarlo es aplicar normalización, empezando por asegurar la\n1FN: eliminar los grupos repetitivos y garantizar que cada celda tenga un\núnico valor atómico. Una vez en 1FN, se puede avanzar a 2FN y 3FN separando\nla información redundante en tablas relacionadas por clave foránea.\n\n## Transacciones y propiedades ACID\n\nUna **transacción** es una unidad lógica de trabajo compuesta por una o más\noperaciones sobre la base de datos, que se ejecuta como un todo indivisible:\no se aplican todas sus oper\n\nbloquea una fila o tabla mientras la\n  modifica, y otras transacciones deben esperar a que se libere el bloqueo.\n- **MVCC (Multiversion Concurrency Control):** el motor mantiene varias\n  versiones de una misma fila, de forma que las lecturas no bloquean a las\n  escrituras ni viceversa; cada transacción ve una \"foto\" consistente de los\n  datos según su nivel de aislamiento.\n\nEl nivel de aislamiento configurado (READ COMMITTED, REPEATABLE READ,\nSERIALIZABLE, entre otros) determina qué tan estrictamente se previenen\nestos problemas, a costa de mayor o menor concurrencia real.\n\n## Índices\n\nUn **índice** es una estructura de datos auxiliar (típicamente un árbol\nB-Tree o un hash) que el motor de base de datos mantiene sobre una o más\ncolumnas de una tabla, para acelerar las búsquedas sin tener que recorrer\ntodas las filas.\n\n### Cuándo conviene usar un índice\n\nLos índices aceleran mucho las consultas que filtran o unen por columnas muy\nconsultadas, especialmente en cláusulas `WHERE` y `JOIN`, y en columnas\nusadas para ordenar (`ORDER BY`). Por ejemplo, indexar `cliente_id` en la\ntabla `Pedidos` acelera enormemente las búsquedas de \"todos los pedidos de\nun cliente\".\n\n### Cuándo un índice puede ser contraproducente\n\nUn índice no siempre conviene. Puede ser contraproducente en estos casos:\n\n- **Tablas muy pequeñas:** el motor puede tardar más en usar el índice que\n  en recorrer la tabla completa (full scan).\n- **Columnas con pocos valores distintos** (baja cardinalidad, como una\n  columna booleana `activo`): el índice aporta poca selectividad y el motor\n  puede preferir ignorarlo.\n- **Tablas con escrituras muy frecuentes:** cada `INSERT`, `UPDATE` o\n  `DELETE` obliga a actualizar también el índice, lo que agrega overhead.\n  Tener muchos índices en una tabla con alta tasa de escritura puede\n\ntablas relacionadas por clave foránea.\n\n## Transacciones y propiedades ACID\n\nUna **transacción** es una unidad lógica de trabajo compuesta por una o más\noperaciones sobre la base de datos, que se ejecuta como un todo indivisible:\no se aplican todas sus operaciones, o no se aplica ninguna. Las\ntransacciones garantizan la consistencia de los datos incluso ante fallas\ndel sistema o accesos concurrentes.\n\nLas propiedades **ACID** que debe cumplir toda transacción son:\n\n- **Atomicidad:** todas las operaciones de la transacción se ejecutan\n  completamente, o ninguna se ejecuta. Si una operación falla a mitad de\n  camino, se revierten (`ROLLBACK`) todas las anteriores.\n- **Consistencia:** la transacción lleva la base de datos de un estado\n  válido a otro estado válido, respetando todas las restricciones de\n  integridad definidas (claves, tipos, checks).\n- **Aislamiento (Isolation):** las transacciones concurrentes no deben\n  interferir entre sí; el resultado de ejecutar varias transacciones en\n  paralelo debe ser equivalente a ejecutarlas en algún orden secuencial.\n- **Durabilidad:** una vez que una transacción hace `COMMIT`, sus cambios\n  persisten incluso si el sistema falla inmediatamente después (por\n  ejemplo, un corte de energía).\n\n### Concurrencia entre transacciones\n\nCuando dos transacciones intentan modificar el mismo registro al mismo\ntiempo, pueden aparecer problemas de concurrencia como el **lost update**\n(una transacción sobrescribe el cambio de otra sin darse cuenta) o el\n**dirty read** (una transacción lee un dato modificado por otra que todavía\nno hizo `COMMIT`). Para evitar estas inconsistencias, los sistemas gestores\nde bases de datos (SGBD) usan mecanismos de control de concurrencia, como:\n\n- **Locks (bloqueos):** una transacción bloquea una fila o tabla mientras la\n  modifica, y otras transacciones deben esperar a que se libere el bloqueo.\n- **MVCC (Multiversion Concurrency Control):** el motor mantiene varias\n  versiones de una misma fila, de forma que las lecturas no"
+      },
+      {
+        "question_id": "A3",
+        "answer": "<error 503>",
+        "judge_verdict": null,
+        "context_used": ""
+      },
+      {
+        "question_id": "A4",
+        "answer": "Una **transacción** es una unidad lógica de trabajo que consta de una o más operaciones sobre la base de datos. Se ejecuta como un todo indivisible, lo que significa que todas sus operaciones se aplican o ninguna se aplica. Su propósito es garantizar la consistencia de los datos frente a fallas del sistema o accesos concurrentes [Fuente: \"eval-material.md\"].\n\nLas propiedades **ACID** que toda transacción debe cumplir son [Fuente: \"eval-material.md\"]:\n\n*   **Atomicidad:** Todas las operaciones dentro de una transacción se ejecutan completamente, o ninguna lo hace. Si alguna operación falla, todas las anteriores se revierten (`ROLLBACK`).\n*   **Consistencia:** Una transacción lleva la base de datos de un estado válido a otro estado válido, respetando todas las restricciones.",
+        "judge_verdict": "PARCIAL",
+        "context_used": "tablas relacionadas por clave foránea.\n\n## Transacciones y propiedades ACID\n\nUna **transacción** es una unidad lógica de trabajo compuesta por una o más\noperaciones sobre la base de datos, que se ejecuta como un todo indivisible:\no se aplican todas sus operaciones, o no se aplica ninguna. Las\ntransacciones garantizan la consistencia de los datos incluso ante fallas\ndel sistema o accesos concurrentes.\n\nLas propiedades **ACID** que debe cumplir toda transacción son:\n\n- **Atomicidad:** todas las operaciones de la transacción se ejecutan\n  completamente, o ninguna se ejecuta. Si una operación falla a mitad de\n  camino, se revierten (`ROLLBACK`) todas las anteriores.\n- **Consistencia:** la transacción lleva la base de datos de un estado\n  válido a otro estado válido, respetando todas las restricciones de\n  integridad definidas (claves, tipos, checks).\n- **Aislamiento (Isolation):** las transacciones concurrentes no deben\n  interferir entre sí; el resultado de ejecutar varias transacciones en\n  paralelo debe ser equivalente a ejecutarlas en algún orden secuencial.\n- **Durabilidad:** una vez que una transacción hace `COMMIT`, sus cambios\n  persisten incluso si el sistema falla inmediatamente después (por\n  ejemplo, un corte de energía).\n\n### Concurrencia entre transacciones\n\nCuando dos transacciones intentan modificar el mismo registro al mismo\ntiempo, pueden aparecer problemas de concurrencia como el **lost update**\n(una transacción sobrescribe el cambio de otra sin darse cuenta) o el\n**dirty read** (una transacción lee un dato modificado por otra que todavía\nno hizo `COMMIT`). Para evitar estas inconsistencias, los sistemas gestores\nde bases de datos (SGBD) usan mecanismos de control de concurrencia, como:\n\n- **Locks (bloqueos):** una transacción bloquea una fila o tabla mientras la\n  modifica, y otras transacciones deben esperar a que se libere el bloqueo.\n- **MVCC (Multiversion Concurrency Control):** el motor mantiene varias\n  versiones de una misma fila, de forma que las lecturas no\n\nlas filas de la\ntabla de la derecha, completando con NULL las columnas de la izquierda\ncuando no hay coincidencia.\n\n## Normalización\n\nLas **formas normales** (1FN, 2FN, 3FN, BCNF) son un conjunto de reglas para\norganizar las tablas de una base de datos relacional de forma que se\nminimice la redundancia de datos y se eviten anomalías de inserción,\nactualización y eliminación.\n\n- **Primera Forma Normal (1FN):** cada celda de la tabla debe contener un\n  valor atómico (no listas ni grupos repetitivos), y cada fila debe ser\n  identificable de forma única.\n- **Segunda Forma Normal (2FN):** la tabla debe estar en 1FN, y además todos\n  los atributos que no son clave deben depender completamente de la clave\n  primaria (no de solo una parte de una clave compuesta).\n- **Tercera Forma Normal (3FN):** la tabla debe estar en 2FN, y además no\n  puede haber dependencias transitivas: un atributo no clave no puede\n  depender de otro atributo no clave, sino únicamente de la clave primaria.\n- **BCNF (Boyce-Codd):** una versión más estricta de 3FN que elimina ciertas\n  anomalías que 3FN no cubre, exigiendo que todo determinante funcional sea\n  una clave candidata.\n\n### Cuándo aplicar normalización\n\nSi una tabla tiene muchas columnas redundantes (por ejemplo, repite el\nnombre y la dirección del proveedor en cada fila de un pedido), el primer\npaso para arreglarlo es aplicar normalización, empezando por asegurar la\n1FN: eliminar los grupos repetitivos y garantizar que cada celda tenga un\núnico valor atómico. Una vez en 1FN, se puede avanzar a 2FN y 3FN separando\nla información redundante en tablas relacionadas por clave foránea.\n\n## Transacciones y propiedades ACID\n\nUna **transacción** es una unidad lógica de trabajo compuesta por una o más\noperaciones sobre la base de datos, que se ejecuta como un todo indivisible:\no se aplican todas sus oper\n\nbloquea una fila o tabla mientras la\n  modifica, y otras transacciones deben esperar a que se libere el bloqueo.\n- **MVCC (Multiversion Concurrency Control):** el motor mantiene varias\n  versiones de una misma fila, de forma que las lecturas no bloquean a las\n  escrituras ni viceversa; cada transacción ve una \"foto\" consistente de los\n  datos según su nivel de aislamiento.\n\nEl nivel de aislamiento configurado (READ COMMITTED, REPEATABLE READ,\nSERIALIZABLE, entre otros) determina qué tan estrictamente se previenen\nestos problemas, a costa de mayor o menor concurrencia real.\n\n## Índices\n\nUn **índice** es una estructura de datos auxiliar (típicamente un árbol\nB-Tree o un hash) que el motor de base de datos mantiene sobre una o más\ncolumnas de una tabla, para acelerar las búsquedas sin tener que recorrer\ntodas las filas.\n\n### Cuándo conviene usar un índice\n\nLos índices aceleran mucho las consultas que filtran o unen por columnas muy\nconsultadas, especialmente en cláusulas `WHERE` y `JOIN`, y en columnas\nusadas para ordenar (`ORDER BY`). Por ejemplo, indexar `cliente_id` en la\ntabla `Pedidos` acelera enormemente las búsquedas de \"todos los pedidos de\nun cliente\".\n\n### Cuándo un índice puede ser contraproducente\n\nUn índice no siempre conviene. Puede ser contraproducente en estos casos:\n\n- **Tablas muy pequeñas:** el motor puede tardar más en usar el índice que\n  en recorrer la tabla completa (full scan).\n- **Columnas con pocos valores distintos** (baja cardinalidad, como una\n  columna booleana `activo`): el índice aporta poca selectividad y el motor\n  puede preferir ignorarlo.\n- **Tablas con escrituras muy frecuentes:** cada `INSERT`, `UPDATE` o\n  `DELETE` obliga a actualizar también el índice, lo que agrega overhead.\n  Tener muchos índices en una tabla con alta tasa de escritura puede\n\n# Introducción a las Bases de Datos Relacionales\n\n## El modelo relacional\n\nEl modelo relacional organiza los datos en tablas (también llamadas relaciones),\ndonde cada fila es un registro y cada columna es un atributo. Una tabla\nrepresenta una entidad del dominio, como `Alumnos`, `Cursos` o `Pedidos`.\n\n### Clave primaria\n\nUna **clave primaria** (primary key) es un atributo, o un conjunto de\natributos, que identifica de forma única cada fila de una tabla. Dos filas de\nla misma tabla nunca pueden tener el mismo valor de clave primaria. Además,\nla clave primaria no puede tener valores NULL: todo registro debe tener un\nidentificador válido desde el momento en que se inserta. Es común usar un\ncampo numérico autoincremental (`id`) como clave primaria, aunque también se\npuede usar una clave natural (por ejemplo, el DNI de una persona) si se\ngarantiza que es única y no nula.\n\n### Clave foránea\n\nUna **clave foránea** (foreign key) es un atributo en una tabla que referencia\nla clave primaria de otra tabla, estableciendo una relación entre ambas. Por\nejemplo, la tabla `Pedidos` puede tener una columna `cliente_id` que referencia\n`Clientes.id`. El motor de base de datos puede validar la integridad\nreferencial: no se puede insertar un pedido con un `cliente_id` que no exista\nen la tabla `Clientes`.\n\n## Comandos SQL para manipular datos y estructuras\n\n### DELETE, TRUNCATE y DROP\n\nEstos tres comandos eliminan datos, pero funcionan de forma muy distinta:\n\n- **DELETE** es un comando DML (Data Manipulation Language). Elimina filas de\n  una tabla según una condición `WHERE`. Es logueable fila por fila en la\n  transacción, por lo que se puede revertir con `ROLLBACK` antes del\n  `COMMIT`, y dispara los triggers `ON DELETE` si existen. Es más lento que\n  `TRUNCATE` en tablas grandes porque el motor registra cada fila eliminada.\n- **TRUNCATE** es un comando DDL (Data Definition Language). Elimina todas\n  las filas de una tabla de una sola vez,\n\nDELETE` si existen. Es más lento que\n  `TRUNCATE` en tablas grandes porque el motor registra cada fila eliminada.\n- **TRUNCATE** es un comando DDL (Data Definition Language). Elimina todas\n  las filas de una tabla de una sola vez, sin registrar cada fila individual\n  en el log de transacciones. Es mucho más rápido que un `DELETE` sin\n  `WHERE`, pero en la mayoría de los motores no dispara triggers y reinicia\n  los contadores de autoincremento.\n- **DROP** elimina la tabla completa, incluyendo su estructura (columnas,\n  índices, restricciones) y todos sus datos. Después de un `DROP TABLE`, la\n  tabla deja de existir en el esquema; para volver a usarla hay que crearla\n  de nuevo con `CREATE TABLE`.\n\nEn resumen: `DELETE` borra filas (DML, selectivo, reversible dentro de la\ntransacción), `TRUNCATE` vacía la tabla entera de forma rápida (DDL), y\n`DROP` borra la tabla y su definición completa.\n\n### JOIN interno y externo\n\nUn **INNER JOIN** combina filas de dos tablas y devuelve únicamente las filas\ndonde existe coincidencia en ambas tablas según la condición de unión. Si un\ncliente no tiene pedidos, ese cliente no aparece en el resultado de un INNER\nJOIN entre `Clientes` y `Pedidos`.\n\nUn **LEFT JOIN** (o LEFT OUTER JOIN) devuelve todas las filas de la tabla de\nla izquierda, y para las filas donde no hay coincidencia en la tabla de la\nderecha, completa esas columnas con NULL. Por ejemplo, un `LEFT JOIN` de\n`Clientes` con `Pedidos` devuelve todos los clientes, incluso los que nunca\nhicieron un pedido, mostrando NULL en las columnas de `Pedidos` para esos\ncasos. El RIGHT JOIN es el caso simétrico: devuelve todas las filas de la\ntabla de la derecha, completando con NULL las columnas de la izquierda\ncuando no hay coincidencia.\n\n## Normalización\n\nLas **formas normales** (1FN, 2FN, 3FN, BCNF) son un conjunto de reglas"
+      },
+      {
+        "question_id": "B1",
+        "answer": "<error 503>",
+        "judge_verdict": null,
+        "context_used": ""
+      },
+      {
+        "question_id": "B2",
+        "answer": "<error 503>",
+        "judge_verdict": null,
+        "context_used": ""
+      },
+      {
+        "question_id": "B3",
+        "answer": "<error 503>",
+        "judge_verdict": null,
+        "context_used": ""
+      },
+      {
+        "question_id": "B4",
+        "answer": "<error 503>",
+        "judge_verdict": null,
+        "context_used": ""
+      }
+    ],
+    "fallback": [
+      {
+        "question_id": "C1",
+        "answer": "<error 503>",
+        "fallback_triggered": false,
+        "answered": false
+      },
+      {
+        "question_id": "C2",
+        "answer": "<error 503>",
+        "fallback_triggered": false,
+        "answered": false
+      },
+      {
+        "question_id": "C3",
+        "answer": "<error 503>",
+        "fallback_triggered": false,
+        "answered": false
+      },
+      {
+        "question_id": "C4",
+        "answer": "<error 503>",
+        "fallback_triggered": false,
+        "answered": false
+      }
+    ]
+  }
+}

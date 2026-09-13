@@ -9,7 +9,32 @@
 
 import { useEffect, useState } from "react";
 import { getFaqTopics } from "./api.js";
-import { IconHelpCircle } from "../components/icons.jsx";
+import { downloadCsvFile } from "./csv.js";
+import { IconHelpCircle, IconDownload } from "../components/icons.jsx";
+import { getFriendlyErrorMessage } from "../components/errors.js";
+import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
+
+// UX-12 (#370): silueta de carga — grilla de cards de tema, cada una con
+// título + un par de líneas de preguntas de ejemplo.
+function FaqSkeleton() {
+    return (
+        <SkeletonScreen label="Cargando preguntas frecuentes...">
+            <div className="nexusai-skeleton-faq__grid">
+                {Array.from({ length: 6 }, (_, i) => (
+                    <div key={i} className="nexusai-skeleton-faq__card">
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <Skeleton width={14} height={14} radius="50%" />
+                            <Skeleton width="55%" height={13} />
+                            <Skeleton width={28} height={13} style={{ marginLeft: "auto" }} />
+                        </div>
+                        <Skeleton width="90%" height={10} />
+                        <Skeleton width="70%" height={10} />
+                    </div>
+                ))}
+            </div>
+        </SkeletonScreen>
+    );
+}
 
 export default function FaqDashboardPanel({ courseId }) {
     const [topics, setTopics] = useState([]);
@@ -32,12 +57,21 @@ export default function FaqDashboardPanel({ courseId }) {
             })
             .catch((err) => {
                 if (!cancelled) {
-                    setError(err.message || "Error cargando preguntas frecuentes");
+                    setError(getFriendlyErrorMessage(err, "No se pudieron cargar las preguntas frecuentes."));
                     setLoading(false);
                 }
             });
         return () => { cancelled = true; };
     }, [courseId, days]);
+
+    const handleExportCsv = () => {
+        const rows = topics.map((t) => [t.topic, t.count]);
+        downloadCsvFile(
+            ["Tema", "Cantidad de preguntas"],
+            rows,
+            `faq-nexusai-curso-${courseId}.csv`
+        );
+    };
 
     return (
         <div className="nexusai-faq">
@@ -46,7 +80,7 @@ export default function FaqDashboardPanel({ courseId }) {
                 detectar qué conceptos generan más dudas y priorizar el repaso en clase.
             </p>
 
-            <div className="nexusai-gaps__filter">
+            <div className="nexusai-gaps__filter" role="group" aria-label="Filtrar preguntas frecuentes por período">
                 <span className="nexusai-gaps__filter-label">Mostrar:</span>
                 {[7, 30, 90, 365].map((d) => (
                     <button
@@ -54,6 +88,7 @@ export default function FaqDashboardPanel({ courseId }) {
                         type="button"
                         className={`nexusai-gaps__filter-btn ${days === d ? "nexusai-gaps__filter-btn--active" : ""}`}
                         onClick={() => setDays(d)}
+                        aria-pressed={days === d}
                     >
                         {d === 7 && "Últimos 7 días"}
                         {d === 30 && "Último mes"}
@@ -63,7 +98,7 @@ export default function FaqDashboardPanel({ courseId }) {
                 ))}
             </div>
 
-            {loading && <div className="nexusai-loading">Cargando preguntas frecuentes...</div>}
+            {loading && <FaqSkeleton />}
 
             {error && (
                 <div className="nexusai-alert nexusai-alert--error" role="alert">
@@ -85,9 +120,15 @@ export default function FaqDashboardPanel({ courseId }) {
 
             {!loading && !error && topics.length > 0 && (
                 <div className="nexusai-faq__list">
-                    <h3 className="nexusai-documents__heading">
-                        Temas más consultados ({totalQuestions} preguntas)
-                    </h3>
+                    <div className="nexusai-gaps__list-header">
+                        <h3 className="nexusai-documents__heading">
+                            Temas más consultados ({totalQuestions} preguntas)
+                        </h3>
+                        <button type="button" className="nexusai-btn" onClick={handleExportCsv}>
+                            <IconDownload size={13} />
+                            Exportar CSV
+                        </button>
+                    </div>
                     <div className="nexusai-faq__grid">
                         {topics.map((t, i) => (
                             <div key={i} className="nexusai-faq-card">

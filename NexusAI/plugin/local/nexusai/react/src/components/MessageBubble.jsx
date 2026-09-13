@@ -17,15 +17,63 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import { IconFile, IconSparkles, IconX } from "./icons.jsx";
+import temml from "temml";
+import { IconFile, IconRefreshCw, IconSparkles, IconThumbsDown, IconThumbsUp, IconX } from "./icons.jsx";
+import { submitMessageFeedback } from "../api/chat.js";
 
 // Regex conservador para detectar archivos citados en el texto del LLM.
 const SOURCE_REGEX = /([\w\-]+\.(pdf|docx|txt))/gi;
 
-// Marked: GFM + links en nueva pestaña.
+// ASIST-04 (#360): notación matemática en LaTeX.
+//
+// El chat no usa react-markdown (el import está en package.json pero nadie lo
+// usa) — renderiza con `marked` + DOMPurify. Así que en vez de remark-math +
+// rehype-katex sumamos una extensión de `marked` que matchea $...$ / $$...$$ y
+// los renderiza con Temml (LaTeX → MathML).
+//
+// Temml en vez de KaTeX porque KaTeX pesa ~110KB más y necesita su CSS +
+// ~1MB de fuentes woff (webpack acá no tiene regla para assets de fuente, y
+// los chunks/publicPath de Moodle ya dieron problemas antes — ver
+// webpack.config.js). Temml genera MathML puro que el navegador dibuja
+// nativo, sin CSS ni fuentes. Cubre todo lo que el chat mostraría (pérdidas,
+// distancias, probabilidades, sumatorias, fracciones).
+const mathExtension = {
+    name: "nexusaiMath",
+    level: "inline",
+    start(src) {
+        const i = src.indexOf("$");
+        return i < 0 ? undefined : i;
+    },
+    tokenizer(src) {
+        const block = /^\$\$([\s\S]+?)\$\$/.exec(src);
+        if (block) {
+            return { type: "nexusaiMath", raw: block[0], text: block[1].trim(), display: true };
+        }
+        // Inline: sin espacio pegado a los $, sin $ ni saltos de línea adentro.
+        // Evita falsos positivos tipo "cuesta $5 o $10".
+        const inline = /^\$(?!\s)([^$\n]+?)(?<!\s)\$/.exec(src);
+        if (inline) {
+            return { type: "nexusaiMath", raw: inline[0], text: inline[1].trim(), display: false };
+        }
+        return undefined;
+    },
+    renderer(token) {
+        try {
+            return temml.renderToString(token.text, {
+                throwOnError: false,
+                displayMode: token.display,
+            });
+        } catch {
+            return token.raw;
+        }
+    },
+};
+
+// Marked: GFM + links en nueva pestaña + fórmulas LaTeX.
 marked.use({
     gfm: true,
     breaks: true,
+    extensions: [mathExtension],
     renderer: {
         link(href, title, text) {
             const titleAttr = title ? ` title="${title}"` : "";
@@ -33,6 +81,22 @@ marked.use({
         },
     },
 });
+
+// Tags/atributos de MathML que emite Temml. Se suman al allowlist de
+// DOMPurify para que las fórmulas sobrevivan al sanitizado sin abrir la
+// puerta a HTML arbitrario (no se permite `style` ni `class`: el MathML
+// renderiza igual sin ellos).
+const MATHML_TAGS = [
+    "math", "semantics", "annotation", "mrow", "mi", "mo", "mn", "ms", "mtext",
+    "mspace", "msup", "msub", "msubsup", "mfrac", "msqrt", "mroot", "mstyle",
+    "munder", "mover", "munderover", "mmultiscripts", "mprescripts", "none",
+    "mtable", "mtr", "mtd", "mpadded", "mphantom", "menclose", "mlabeledtr",
+];
+const MATHML_ATTR = [
+    "xmlns", "encoding", "display", "displaystyle", "mathvariant", "scriptlevel",
+    "stretchy", "accent", "accentunder", "movablelimits", "columnalign",
+    "rowalign", "width", "lspace", "rspace", "separator", "fence", "notation",
+];
 
 function renderMarkdown(text) {
     const rawHtml = marked.parse(text || "");
@@ -42,8 +106,9 @@ function renderMarkdown(text) {
             "ul", "ol", "li", "code", "pre", "blockquote",
             "h1", "h2", "h3", "h4", "h5", "h6",
             "a", "hr", "table", "thead", "tbody", "tr", "th", "td",
+            ...MATHML_TAGS,
         ],
-        ALLOWED_ATTR: ["href", "target", "rel", "title"],
+        ALLOWED_ATTR: ["href", "target", "rel", "title", ...MATHML_ATTR],
         FORCE_BODY: false,
     });
 }
@@ -132,7 +197,24 @@ function useCopyButtons(ref, htmlContent) {
     }, [htmlContent]);
 }
 
-export default function MessageBubble({ message, sesskey }) {
+const FEEDBACK_L = {
+    es: {
+        helpful:      "Respuesta útil",
+        notHelpful:   "Respuesta no útil",
+        commentHint:  "¿Qué estuvo mal? (opcional)",
+        send:         "Enviar",
+        thanks:       "¡Gracias por tu feedback!",
+    },
+    en: {
+        helpful:      "Helpful response",
+        notHelpful:   "Not helpful",
+        commentHint:  "What went wrong? (optional)",
+        send:         "Send",
+        thanks:       "Thanks for your feedback!",
+    },
+};
+
+export default function MessageBubble({ message, sesskey, courseId, lang = "es", canRegenerate = false, onRegenerate }) {
     if (!message || message.role === "system") return null;
     // Ocultar burbuja del asistente vacía (esperando primer token del stream).
     // El TypingIndicator se muestra en su lugar.
@@ -176,6 +258,37 @@ export default function MessageBubble({ message, sesskey }) {
 
     const [expandedIdx, setExpandedIdx] = useState(null);
     const markdownRef = useRef(null);
+
+    // ASIST-01 (#321): feedback 👍/👎 sobre esta respuesta puntual.
+    // `realId` lo asigna ChatApp cuando llega el evento `done` del stream
+    // (el id local `local-asst-...` no es un UUID real de `messages` todavía);
+    // los mensajes recargados desde el historial ya traen un UUID real en `id`.
+    const feedbackMessageId = message.realId || (!String(message.id || "").startsWith("local-") ? message.id : null);
+    const FL = FEEDBACK_L[lang] || FEEDBACK_L.es;
+    const [feedbackVote, setFeedbackVote] = useState(null); // null | "up" | "down"
+    const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+    const [showCommentBox, setShowCommentBox] = useState(false);
+    const [commentText, setCommentText] = useState("");
+
+    const submitVote = async (isHelpful, comment = "") => {
+        if (!feedbackMessageId || feedbackSubmitting) return;
+        setFeedbackSubmitting(true);
+        try {
+            await submitMessageFeedback({ messageId: feedbackMessageId, courseId, isHelpful, comment });
+            setFeedbackVote(isHelpful ? "up" : "down");
+            setShowCommentBox(false);
+            setCommentText("");
+        } catch {
+            // Best-effort: sin feedback visual de error, no bloquea el chat.
+        } finally {
+            setFeedbackSubmitting(false);
+        }
+    };
+
+    const handleThumbsDown = () => {
+        if (feedbackVote === "down") return;
+        setShowCommentBox(true);
+    };
 
     const htmlContent = useMemo(() => {
         if (isUser) return null;
@@ -340,9 +453,60 @@ export default function MessageBubble({ message, sesskey }) {
                 </div>
             )}
 
-            <div className="nexusai-msg__meta" style={{ paddingLeft: "34px" }}>
+            <div className="nexusai-msg__meta" style={{ paddingLeft: "34px", display: "flex", alignItems: "center", gap: "10px" }}>
                 {formatTimestamp(message.created_at)}
+                {canRegenerate && (
+                    <button
+                        type="button"
+                        className="nexusai-msg__regenerate-btn"
+                        onClick={onRegenerate}
+                    >
+                        <IconRefreshCw size={11} /> Regenerar
+                    </button>
+                )}
+                {!message.streaming && (
+                    <>
+                        <button
+                            type="button"
+                            className={`nexusai-msg__feedback-btn ${feedbackVote === "up" ? "nexusai-msg__feedback-btn--active-up" : ""}`}
+                            onClick={() => submitVote(true)}
+                            disabled={!feedbackMessageId || feedbackSubmitting || feedbackVote === "up"}
+                            title={FL.helpful}
+                            aria-label={FL.helpful}
+                        >
+                            <IconThumbsUp size={13} />
+                        </button>
+                        <button
+                            type="button"
+                            className={`nexusai-msg__feedback-btn ${feedbackVote === "down" ? "nexusai-msg__feedback-btn--active-down" : ""}`}
+                            onClick={handleThumbsDown}
+                            disabled={!feedbackMessageId || feedbackSubmitting || feedbackVote === "down"}
+                            title={FL.notHelpful}
+                            aria-label={FL.notHelpful}
+                        >
+                            <IconThumbsDown size={13} />
+                        </button>
+                    </>
+                )}
             </div>
+
+            {showCommentBox && (
+                <div className="nexusai-msg__feedback-comment">
+                    <textarea
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder={FL.commentHint}
+                        maxLength={1000}
+                        rows={2}
+                    />
+                    <button type="button" onClick={() => submitVote(false, commentText)} disabled={feedbackSubmitting}>
+                        {FL.send}
+                    </button>
+                </div>
+            )}
+            {feedbackVote && !showCommentBox && (
+                <p className="nexusai-msg__feedback-thanks">{FL.thanks}</p>
+            )}
         </div>
     );
 }

@@ -119,6 +119,34 @@ export async function getDocumentStatus(courseId, documentId) {
 }
 
 /**
+ * Preview del texto extraído de un documento (CONT-08 / #357).
+ *
+ * @param {number} courseId
+ * @param {string} documentId
+ * @returns {Promise<{document_id:string, filename:string, status:string, preview:?string, char_count:number, truncated:boolean}>}
+ */
+export async function getDocumentPreview(courseId, documentId) {
+    if (typeof window === "undefined" || !window.M?.cfg) {
+        await new Promise((r) => setTimeout(r, 200));
+        const doc = MOCK_DOCS.find((d) => d.id === documentId);
+        const sample = "Una derivada mide la tasa de cambio instantánea de una función. "
+            + "Formalmente, f'(x) = lim(h→0) [f(x+h) - f(x)] / h. ".repeat(12);
+        return {
+            document_id: documentId,
+            filename: doc?.filename || "",
+            status: doc?.status || "indexed",
+            preview: doc?.status === "indexed" ? sample.slice(0, 600) : null,
+            char_count: doc?.status === "indexed" ? 600 : 0,
+            truncated: doc?.status === "indexed",
+        };
+    }
+    return callMoodle("local_nexusai_document_preview", {
+        courseid: courseId,
+        documentid: documentId,
+    });
+}
+
+/**
  * Sube un archivo PDF — convierte a base64 y llama al External Function.
  *
  * @param {number} courseId
@@ -210,6 +238,59 @@ export async function uploadDocument(courseId, file, section = null) {
 }
 
 /**
+ * Reemplaza el archivo de un documento existente sin cambiar su document_id
+ * (CONT-07 / #356) — las citas viejas del chat siguen apuntando al mismo id.
+ *
+ * Mismas validaciones de tipo/tamaño que `uploadDocument`.
+ *
+ * @param {number} courseId
+ * @param {string} documentId
+ * @param {File} file
+ * @returns {Promise<object>} Document state después del reemplazo.
+ */
+export async function replaceDocument(courseId, documentId, file) {
+    if (!file) throw new Error("No file provided");
+
+    const mimeType = resolveMimeType(file);
+    if (!ACCEPTED_MIME_TYPES.has(mimeType)) {
+        throw new Error(
+            `Formato no soportado: ${file.type || "desconocido"}. `
+            + "Se aceptan PDF, DOCX, PPTX, XLSX, CSV, MD, HTML y TXT."
+        );
+    }
+    if (file.size > 20 * 1024 * 1024) {
+        throw new Error(`Archivo muy grande (${formatBytes(file.size)}). Máximo: 20 MB`);
+    }
+    if (file.size === 0) {
+        throw new Error("El archivo está vacío");
+    }
+
+    const contentB64 = await fileToBase64(file);
+
+    if (typeof window === "undefined" || !window.M?.cfg) {
+        await new Promise((r) => setTimeout(r, 600));
+        const mock = MOCK_DOCS.find((d) => d.id === documentId);
+        if (mock) {
+            mock.filename = file.name;
+            mock.mime_type = mimeType;
+            mock.status = "pending";
+            mock.error_message = null;
+            setTimeout(() => { mock.status = "indexing"; }, 1500);
+            setTimeout(() => { mock.status = "indexed"; }, 4000);
+        }
+        return mock || { id: documentId, filename: file.name, mime_type: mimeType, status: "pending" };
+    }
+
+    return callMoodle("local_nexusai_document_replace", {
+        courseid:    courseId,
+        documentid:  documentId,
+        filename:    file.name,
+        mimetype:    mimeType,
+        content_b64: contentB64,
+    });
+}
+
+/**
  * Borra un documento.
  *
  * @param {number} courseId
@@ -223,6 +304,31 @@ export async function deleteDocument(courseId, documentId) {
         return { success: true };
     }
     return callMoodle("local_nexusai_document_delete", {
+        courseid:   courseId,
+        documentid: documentId,
+    });
+}
+
+/**
+ * Reindexa un documento ya subido, sin pedir un archivo nuevo (CONT-09,
+ * #358) — reusa el archivo que ya está guardado en el servidor.
+ *
+ * @param {number} courseId
+ * @param {string} documentId
+ */
+export async function reindexDocument(courseId, documentId) {
+    if (typeof window === "undefined" || !window.M?.cfg) {
+        await new Promise((r) => setTimeout(r, 300));
+        const mock = MOCK_DOCS.find((d) => d.id === documentId);
+        if (mock) {
+            mock.status = "pending";
+            mock.error_message = null;
+            setTimeout(() => { mock.status = "indexing"; }, 1000);
+            setTimeout(() => { mock.status = "indexed"; }, 2500);
+        }
+        return mock || { id: documentId, status: "pending" };
+    }
+    return callMoodle("local_nexusai_document_reindex", {
         courseid:   courseId,
         documentid: documentId,
     });
@@ -428,6 +534,11 @@ const MOCK_ANALYTICS_DASHBOARD = {
         gaps_detected: 12,
         questions_answered: 78,
         ratio: 0.133,
+    },
+    feedback_ratio: {
+        helpful_count: 34,
+        total_rated: 41,
+        useful_pct: 82.9,
     },
     topics_consulted: 9,
 };

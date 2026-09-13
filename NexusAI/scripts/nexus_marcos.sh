@@ -198,6 +198,14 @@ cmd_status() {
     echo ""
 }
 
+cmd_moodle_upgrade() {
+    log "Corriendo upgrade del plugin en Moodle..."
+    moodle_compose exec -T webserver php admin/cli/upgrade.php --non-interactive
+    log "Purgando caches de Moodle..."
+    moodle_compose exec -T webserver php admin/cli/purge_caches.php
+    ok "Plugin actualizado y caches purgados."
+}
+
 cmd_logs() {
     local svc="${1:-}"
     if [[ -z "$svc" ]]; then
@@ -228,7 +236,8 @@ COMANDOS:
   status    Muestra estado de containers y URLs
   logs [s]  Sigue los logs (api, moodle, postgres, redis)
   --help        Muestra esta ayuda
-  moodle-reset  Borra TODOS los datos de Moodle (empezar de cero)
+  moodle-upgrade  Actualiza el plugin en Moodle + purga caches (correr tras cambios en db/*.php o version.php)
+  moodle-reset    Borra TODOS los datos de Moodle (empezar de cero)
 
 EOF
 }
@@ -240,6 +249,7 @@ case "${1:-}" in
     restart)        cmd_restart ;;
     status|ps)      cmd_status ;;
     logs)           cmd_logs "${2:-}" ;;
+    moodle-upgrade) cmd_moodle_upgrade ;;
     moodle-reset)   cmd_moodle_reset ;;
     --help|-h|help) cmd_help ;;
     "")             cmd_help ;;

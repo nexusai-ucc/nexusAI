@@ -1,9 +1,11 @@
 /**
  * Drop zone con drag-and-drop HTML5 + click para abrir el file picker.
  *
- * El componente padre (DocumentsManager) le pasa `onUpload(file)` y
- * `disabled` (true mientras hay un upload en curso para evitar race conditions
- * de múltiples uploads simultáneos al mismo backend).
+ * CONT-06 (#320): acepta varios archivos a la vez (drag-and-drop o picker).
+ * El componente padre (DocumentsManager) le pasa `onUpload(files)` — un
+ * array, aunque sea de un solo archivo — y `disabled` (true mientras hay
+ * una cola de uploads en curso, para evitar soltar una segunda tanda antes
+ * de que termine la primera).
  */
 
 import { useRef, useState } from "react";
@@ -32,9 +34,7 @@ export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES }
 
     const handleFiles = (files) => {
         if (!files || !files.length) return;
-        // MVP: un archivo a la vez. Si vienen varios, tomamos el primero.
-        // Sprint 3: soportar múltiples uploads en paralelo.
-        onUpload(files[0]);
+        onUpload(Array.from(files));
     };
 
     const onDragOver = (e) => {
@@ -82,6 +82,7 @@ export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES }
             <input
                 ref={inputRef}
                 type="file"
+                multiple
                 accept={accept}
                 onChange={onInputChange}
                 style={{ display: "none" }}
@@ -95,7 +96,7 @@ export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES }
                 )}
             </div>
             <div className="nexusai-dropzone__title">
-                {disabled ? "Subiendo archivo..." : "Arrastrá tu archivo acá"}
+                {disabled ? "Subiendo archivos..." : "Arrastrá uno o varios archivos acá"}
             </div>
             <div className="nexusai-dropzone__hint">
                 {disabled ? "Por favor esperá a que termine" : "o hacé click para seleccionar"}

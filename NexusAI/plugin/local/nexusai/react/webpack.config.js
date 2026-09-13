@@ -107,10 +107,13 @@ module.exports = (env, argv) => {
         devtool: isProd ? false : 'eval-source-map',
 
         // Performance hints: Moodle no tolera bundles gigantes en cada page load.
-        // Si superamos 500KB hay que pensar en code-splitting / lazy loading.
+        // Límite subido a 600KB en ASIST-04 (#360): el chat suma Temml (~200KB)
+        // para renderizar fórmulas LaTeX en MathML. El equipo aceptó el costo
+        // (ver la evaluación en el PR de #360). Si se vuelve a superar, ahí sí
+        // toca code-splitting / lazy loading — no seguir subiendo el número.
         performance: {
-            maxAssetSize: 500 * 1024,
-            maxEntrypointSize: 500 * 1024,
+            maxAssetSize: 600 * 1024,
+            maxEntrypointSize: 600 * 1024,
             hints: isProd ? 'warning' : false,
         },
 

@@ -152,6 +152,41 @@ export function resetMockState() {
     mockResponseIdx = 0;
 }
 
+/**
+ * Guarda el voto 👍/👎 del alumno sobre una respuesta puntual del chat
+ * (ASIST-01 / #321). Best-effort: si falla, no debe bloquear la UI del chat
+ * — el caller solo usa el resultado para actualizar el estado visual local.
+ *
+ * @param {Object} params
+ * @param {string} params.messageId  UUID real del mensaje (no el id local
+ *   temporal que usa el streaming antes de que llegue `done`).
+ * @param {number} params.courseId
+ * @param {boolean} params.isHelpful true = 👍, false = 👎.
+ * @param {string} [params.comment]  Comentario corto opcional (solo con 👎).
+ * @returns {Promise<{ok:boolean}>}
+ */
+export async function submitMessageFeedback({ messageId, courseId, isHelpful, comment = "" }) {
+    const fetchMany = await getMoodleAjax();
+    if (!fetchMany) {
+        // Modo mock (fuera de Moodle): no hay backend real para persistir.
+        return { ok: true };
+    }
+
+    const [response] = await fetchMany([
+        {
+            methodname: "local_nexusai_chat_message_feedback",
+            args: {
+                courseid:  courseId,
+                messageid: messageId,
+                ishelpful: isHelpful,
+                comment:   comment || "",
+            },
+        },
+    ]);
+
+    return response;
+}
+
 
 // ============================================================
 // STREAMING — Server-Sent Events vía endpoint PHP proxy
@@ -223,6 +258,30 @@ export async function sendMessageStream(
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
+    // Si el stream se corta (proxy con timeout, conexión perdida) sin que
+    // llegue nunca un evento "done" o "error", antes no se disparaba ningún
+    // callback: el alumno se quedaba viendo la burbuja de respuesta vacía
+    // para siempre, sin error visible. Lo trackeamos para poder avisar.
+    let receivedTerminalEvent = false;
+
+    const processRawEvent = (rawEvent) => {
+        for (const line of rawEvent.split("\n")) {
+            if (!line.startsWith("data:")) continue;
+            const json = line.slice(5).trim();
+            if (!json) continue;
+            let parsed;
+            try { parsed = JSON.parse(json); }
+            catch { continue; }
+
+            switch (parsed.type) {
+                case "meta":        onMeta?.(parsed); break;
+                case "token":       onToken?.(parsed.content || ""); break;
+                case "answer_meta": onAnswerMeta?.(parsed); break;
+                case "done":        receivedTerminalEvent = true; onDone?.(parsed); break;
+                case "error":       receivedTerminalEvent = true; onError?.(parsed.detail || "stream error"); break;
+            }
+        }
+    };
 
     while (true) {
         const { value, done } = await reader.read();
@@ -236,23 +295,21 @@ export async function sendMessageStream(
         while ((idx = buffer.indexOf("\n\n")) >= 0) {
             const rawEvent = buffer.slice(0, idx);
             buffer = buffer.slice(idx + 2);
-
-            for (const line of rawEvent.split("\n")) {
-                if (!line.startsWith("data:")) continue;
-                const json = line.slice(5).trim();
-                if (!json) continue;
-                let parsed;
-                try { parsed = JSON.parse(json); }
-                catch { continue; }
-
-                switch (parsed.type) {
-                    case "meta":        onMeta?.(parsed); break;
-                    case "token":       onToken?.(parsed.content || ""); break;
-                    case "answer_meta": onAnswerMeta?.(parsed); break;
-                    case "done":        onDone?.(parsed); break;
-                    case "error":       onError?.(parsed.detail || "stream error"); break;
-                }
-            }
+            processRawEvent(rawEvent);
         }
+    }
+
+    // El reader terminó. Si quedó un evento sin el "\n\n" final en el buffer
+    // (la conexión se cortó a mitad de un evento), lo procesamos igual —
+    // mejor esfuerzo, pero recupera el caso común de que solo faltaba el
+    // delimitador de cierre.
+    if (buffer.trim()) {
+        processRawEvent(buffer);
+    }
+
+    // Nadie disparó "done" ni "error": la conexión se cerró sin ningún
+    // indicio explícito. Avisamos para que la UI no quede colgada.
+    if (!receivedTerminalEvent) {
+        onError?.("La conexión se cerró antes de terminar la respuesta.");
     }
 }

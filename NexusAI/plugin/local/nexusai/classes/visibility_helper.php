@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Regla de visibilidad compartida del widget (UX-02).
@@ -19,10 +32,11 @@
 
 namespace local_nexusai;
 
-defined('MOODLE_INTERNAL') || die();
-
+/**
+ * Regla única de visibilidad del widget de NexusAI, compartida por before_footer_listener
+ * y primary_extend_listener para que nunca haya un ícono clickeable sin panel detrás.
+ */
 class visibility_helper {
-
     /**
      * Resuelve si el usuario actual debe ver el widget en la página actual y,
      * si es dentro de un curso real, si tiene la capability para usarlo.
@@ -61,5 +75,70 @@ class visibility_helper {
             'courseid'  => 0,
             'isteacher' => false,
         ];
+    }
+
+    /**
+     * ONB-03: detecta si la página actual es la de **crear un curso nuevo** y
+     * el usuario puede crearlo. En ese caso el widget muestra el tutorial de
+     * armado de curso en vez del cartel de "no hay curso".
+     *
+     * La pantalla de crear y la de editar comparten `$PAGE->pagetype`
+     * (`course-edit`, verificado contra Moodle 4.1 — ver ADR-010). La
+     * distinción es por parámetro: sin `id` = crear, con `id` = editar
+     * (modo revisión, ONB-04).
+     *
+     * @return string|null 'create-course', 'review-course' o null.
+     */
+    public static function onboarding_hint(): ?string {
+        global $PAGE, $COURSE;
+
+        if ($PAGE->pagetype !== 'course-edit') {
+            return null;
+        }
+
+        $editid = optional_param('id', 0, PARAM_INT);
+
+        if ($editid > 0) {
+            // ONB-04: editar un curso existente. require_login($course) en
+            // course/edit.php ya deja $COURSE seteado al curso editado antes
+            // de que corra el hook de footer — mismo mecanismo del que
+            // depende resolve() para el widget normal.
+            if (empty($COURSE->id) || (int) $COURSE->id !== $editid) {
+                return null;
+            }
+
+            $context = \context_course::instance($COURSE->id);
+            if (!has_capability('local/nexusai:manage', $context)) {
+                return null;
+            }
+
+            // ONB-05: si el docente ya cerró el tutorial para este curso, no
+            // se vuelve a mostrar solo — sigue accesible a mano desde el tab
+            // "Revisión del curso" del widget normal (ONB-06). Sin esto, esta
+            // página caería en el widget normal (ChatApp) para ese curso.
+            // Se reusa el mismo accessor que la external function, en vez de
+            // reconstruir a mano la key de user_preferences, para que ambos
+            // no puedan divergir si el storage del dismissal cambia.
+            if (\local_nexusai\external\onboarding_state_get::read_state((int) $COURSE->id)['dismissed']) {
+                return null;
+            }
+
+            return 'review-course';
+        }
+
+        $categoryid = optional_param('category', 0, PARAM_INT);
+        try {
+            $catcontext = $categoryid > 0
+                ? \context_coursecat::instance($categoryid, IGNORE_MISSING)
+                : \context_system::instance();
+        } catch (\Throwable $e) {
+            $catcontext = \context_system::instance();
+        }
+
+        if ($catcontext && has_capability('moodle/course:create', $catcontext)) {
+            return 'create-course';
+        }
+
+        return null;
     }
 }

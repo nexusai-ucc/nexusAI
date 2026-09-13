@@ -1,5 +1,18 @@
 <?php
 // This file is part of the NexusAI plugin for Moodle.
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Listener para el hook `core\hook\navigation\primary_extend` (UX-02).
@@ -24,13 +37,13 @@
 
 namespace local_nexusai\hook\navigation;
 
-defined('MOODLE_INTERNAL') || die();
-
 use core\hook\navigation\primary_extend;
 use local_nexusai\visibility_helper;
 
+/**
+ * Agrega el disparador del widget a la navegación primaria de Moodle (UX-02).
+ */
 class primary_extend_listener {
-
     /**
      * Callback ejecutado por Moodle al armar la navegación primaria.
      *
