@@ -104,7 +104,14 @@ class provider implements
         foreach ($courses as $course) {
             $context = \context_course::instance((int) $course->id);
             if (has_capability('local/nexusai:use', $context, $userid)) {
-                $contextlist->add_user_context($userid, $context);
+                // Ojo: contextlist::add_user_context(int $userid) agrega el
+                // contexto PERSONAL del usuario (CONTEXT_USER) -- no acepta un
+                // $context de curso como segundo argumento (se ignoraba en silencio).
+                // Hay que agregar el contexto de curso explícitamente por id.
+                $contextlist->add_from_sql(
+                    'SELECT id FROM {context} WHERE id = :contextid',
+                    ['contextid' => $context->id]
+                );
             }
         }
 
@@ -125,13 +132,17 @@ class provider implements
             return;
         }
 
-        $client = new backend_client();
+        // Instanciado sólo si hay al menos un contexto de curso a procesar --
+        // backend_client valida la config del plugin en su constructor y
+        // tira excepción si falta, aunque no haya nada que exportar.
+        $client = null;
 
         foreach ($contextlist->get_contexts() as $context) {
             if ($context->contextlevel !== CONTEXT_COURSE) {
                 continue;
             }
 
+            $client ??= new backend_client();
             $courseid = (int) $context->instanceid;
             $data = $client->privacy_export($userid, $courseid);
 
@@ -154,13 +165,14 @@ class provider implements
             return;
         }
 
-        $client = new backend_client();
+        $client = null;
 
         foreach ($contextlist->get_contexts() as $context) {
             if ($context->contextlevel !== CONTEXT_COURSE) {
                 continue;
             }
 
+            $client ??= new backend_client();
             $client->privacy_delete($userid, (int) $context->instanceid);
         }
     }
@@ -180,10 +192,11 @@ class provider implements
         }
 
         $courseid = (int) $context->instanceid;
-        $client = new backend_client();
+        $client = null;
 
         $users = get_enrolled_users($context, 'local/nexusai:use', 0, 'u.id');
         foreach ($users as $user) {
+            $client ??= new backend_client();
             $client->privacy_delete((int) $user->id, $courseid);
         }
     }
@@ -220,9 +233,10 @@ class provider implements
         }
 
         $courseid = (int) $context->instanceid;
-        $client = new backend_client();
+        $client = null;
 
         foreach ($userlist->get_userids() as $userid) {
+            $client ??= new backend_client();
             $client->privacy_delete((int) $userid, $courseid);
         }
     }
