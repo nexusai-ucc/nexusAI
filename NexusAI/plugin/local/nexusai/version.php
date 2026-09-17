@@ -31,7 +31,8 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
 $plugin->version   = 2026091200;
-// Feat: Privacy API admin (plugin\provider + core_userlist_provider) + MySQL en CI.
+// Feat: Privacy API admin (plugin\provider + core_userlist_provider). CI ahora
+// también corre contra MySQL, además de PostgreSQL (requisito de Marketplace).
 $plugin->release   = '0.17.10';
 $plugin->maturity  = MATURITY_ALPHA;
 
