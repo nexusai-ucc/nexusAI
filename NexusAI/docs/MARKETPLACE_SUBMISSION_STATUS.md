@@ -1,6 +1,6 @@
 # Estado de la publicación en Moodle Marketplace
 
-> Última actualización: 2026-09-17. Para compartir con el equipo — resume qué se validó, qué se hizo y qué falta antes de subir `nexusai.zip`.
+> Última actualización: 2026-09-18. Para compartir con el equipo — resume qué se validó, qué se hizo y qué falta antes de subir `nexusai.zip`.
 
 ## Contexto
 
@@ -50,39 +50,52 @@ campo de notas al reviewer del formulario:
 
 ## Pipeline de sync — estado actual
 
-- ✅ Mergeado a `development` del monorepo (PR #495, 4 commits).
+- ✅ Mergeado a `development` del monorepo (PR #495, 4 commits + fix de phpcs).
 - ✅ Sincronizado a `development` de `moodle-local_nexusai` (automático).
-- ⚠️ **`main` de `moodle-local_nexusai` todavía NO está promovido** — sigue
-  mostrando el código viejo (solo el fix de MySQL, todavía en español). Esa
-  rama es un snapshot manual a propósito (no se auto-sincroniza) y es lo
-  que un reviewer va a ver como código fuente. Falta correr:
-  ```
-  gh api repos/nexusai-ucc/moodle-local_nexusai/git/refs/heads/main \
-    -X PATCH -f sha=990b6db06660a5576fabe1e8dd0da913c0a9e44f -F force=true
-  ```
-  (ya verificado que es seguro — `main` no tiene contenido único que se
-  vaya a perder).
-- ⚠️ **Imagen de Docker todavía no publicada** — `docker-publish.yml` se
-  dispara con push a `main` del monorepo (que sigue el ciclo
-  `development → staging → main`), o se puede correr a mano ahora mismo
-  desde la pestaña Actions de GitHub (tiene `workflow_dispatch`).
-- ⚠️ **Paquete de GHCR nace privado** — después del primer run, alguien con
-  admin del org (Santi) tiene que entrar a la config del paquete y
-  marcarlo público, si no el `docker pull` de un reviewer externo da 403.
+- 🟡 **PR #6** (`development → main` de `moodle-local_nexusai`) — CI en
+  verde (9/9), lista para mergear:
+  https://github.com/nexusai-ucc/moodle-local_nexusai/pull/6. Falta que
+  alguien la apruebe/mergee.
+- ⚠️ **Imagen de Docker todavía no publicada, y ni siquiera se puede
+  disparar a mano todavía** — `docker-publish.yml` solo existe en
+  `development` del **monorepo**; GitHub no lo registra como workflow
+  corrible (ni por `workflow_dispatch`) hasta que llegue a `main` del
+  monorepo, que sigue su propio ciclo `development → staging → main`
+  (separado del PR #6, que es sobre el repo del plugin, no el monorepo).
+- ⚠️ **Paquete de GHCR nace privado** — una vez publicada la imagen,
+  alguien con admin del org (Santi) tiene que entrar a la config del
+  paquete y marcarlo público, si no el `docker pull` de un reviewer
+  externo da 403.
+
+## Decisión tomada: `lang/es/` se queda en el ZIP
+
+La guía de Marketplace sugiere que la publicación inicial incluya solo
+strings en inglés (las traducciones se suben después vía AMOS). Se decidió
+mantener `lang/es/` de todos modos — no es un bloqueante de la guía, solo
+una recomendación.
+
+## Cómo se arma el ZIP (nuevo)
+
+`./scripts/package-plugin-from-repo.sh [rama]` — clona
+`moodle-local_nexusai` (default: `main`) y empaqueta directo desde ahí, en
+vez de usar el working tree local del monorepo. Es más fiel: garantiza que
+el ZIP sea exactamente lo que cualquiera ve en el repo público (que es
+justamente por lo que se separó el repo del monorepo). No necesita
+Node/npm — el bundle de React ya viene commiteado en ese repo.
+
+`./scripts/package-plugin.sh` (el anterior, arma desde el working tree
+local) sigue existiendo para probar cambios locales antes de pushear.
 
 ## Falta antes de subir el ZIP
 
-1. Santi pasa las credenciales reales de producción → completar los
+1. Mergear el PR #6 (CI ya verde).
+2. El monorepo sigue su ciclo normal `development → staging → main` — recién
+   ahí `docker-publish.yml` queda activo.
+3. Publicar la imagen de Docker + marcarla pública en GHCR (Santi).
+4. Santi pasa las credenciales reales de producción → completar los
    placeholders de `docs/REVIEWER_TESTING.md`.
-2. Promover `main` de `moodle-local_nexusai` (comando arriba).
-3. Publicar la imagen de Docker + marcarla pública en GHCR.
-4. **Decisión pendiente**: ¿sacamos `lang/es/` del ZIP inicial? La guía de
-   Marketplace dice que la publicación inicial debe incluir solo strings en
-   inglés, y que las traducciones se suben después vía AMOS (el sistema de
-   traducción propio de Moodle). Hoy el plugin ya trae `lang/es/` completo
-   — no es un error, pero técnicamente no debería ir en el ZIP inicial.
-5. Rebuild del ZIP: `./scripts/package-plugin.sh --clean` desde la raíz del
-   monorepo (necesita Node/npm para el bundle de React).
+5. Rebuild del ZIP: `./scripts/package-plugin-from-repo.sh` desde la raíz
+   del monorepo, una vez mergeado el PR #6.
 6. Completar el formulario de Marketplace: pegar las descripciones en
    inglés, el link al issue tracker
    (https://github.com/nexusai-ucc/moodle-local_nexusai/issues), y las
