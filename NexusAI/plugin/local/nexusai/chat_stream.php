@@ -177,7 +177,7 @@ while (ob_get_level() > 0) {
 }
 @ob_implicit_flush(true);
 
-// cURL call to the Python backend with WRITEFUNCTION.
+// A cURL call to the Python backend with WRITEFUNCTION.
 // We use PHP's curl_* directly (not Moodle's \curl class) because we need
 // CURLOPT_WRITEFUNCTION to forward chunks as they arrive.
 //

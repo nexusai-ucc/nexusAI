@@ -244,7 +244,7 @@ final class manage_capability_test extends \advanced_testcase {
         $result = \local_nexusai\external\dismiss_pending_upload::execute(55);
         $this->assertTrue($result['success']);
 
-        // "owner"'s preference wasn't touched — dismiss_pending_upload only
+        // The "owner"'s preference wasn't touched — dismiss_pending_upload only
         // operates on the logged-in user's preference (the current $USER),
         // never on another user's even if they share the same cmid.
         $ownerpref = json_decode(

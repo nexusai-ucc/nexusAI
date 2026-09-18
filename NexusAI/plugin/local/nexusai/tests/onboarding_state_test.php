@@ -47,7 +47,7 @@ final class onboarding_state_test extends \advanced_testcase {
 
         $state = \local_nexusai\external\onboarding_state_get::read_state($course->id);
 
-        // assertEquals is used, not assertSame: $course->id as returned by the test
+        // Using assertEquals, not assertSame: $course->id as returned by the test
         // generator comes as a numeric string; read_state() types it to int via its
         // signature (int $courseid) -- it's the same course, the exact PHP
         // representation isn't what this test is meant to check.

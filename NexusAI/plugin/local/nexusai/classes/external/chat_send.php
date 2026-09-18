@@ -65,7 +65,7 @@ class chat_send extends \external_api {
                 'Moodle course ID where the question is asked',
                 VALUE_REQUIRED
             ),
-            // userid arrives only as a client hint. We IGNORE it and use the
+            // The userid arrives only as a client hint. We IGNORE it and use the
             // real server-side $USER->id (defense against impersonation).
             // We declare it to avoid breaking backwards compat with old clients.
             'userid'    => new \external_value(
@@ -160,7 +160,7 @@ class chat_send extends \external_api {
             throw new \invalid_parameter_exception('Question too long (max 2000 characters)');
         }
 
-        // sessionid has to be a UUID v4 or empty. PARAM_ALPHANUMEXT already
+        // The sessionid has to be a UUID v4 or empty. PARAM_ALPHANUMEXT already
         // blocks injection; we check for a reasonable length here.
         $cleansessionid = trim($params['sessionid']);
         if ($cleansessionid !== '' && (strlen($cleansessionid) < 8 || strlen($cleansessionid) > 64)) {

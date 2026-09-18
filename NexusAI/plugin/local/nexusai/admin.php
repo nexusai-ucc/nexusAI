@@ -200,7 +200,8 @@ echo '
                     <table class="table table-sm mb-0">
                         <tbody>
                             <tr>
-                                <td class="text-muted" style="width:180px">' . get_string('admin_plugin_enabled', 'local_nexusai') . '</td>
+                                <td class="text-muted" style="width:180px">'
+                                    . get_string('admin_plugin_enabled', 'local_nexusai') . '</td>
                                 <td>' . $enabledlabel . '</td>
                             </tr>
                             <tr>

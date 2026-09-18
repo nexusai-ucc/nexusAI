@@ -87,7 +87,7 @@ echo $OUTPUT->heading(get_string('documents_page_title', 'local_nexusai'));
 // Container where React mounts the app.
 echo '<div id="local-nexusai-documents-app" data-plugin="nexusai"></div>';
 
-// noscript fallback for users without JS enabled.
+// Noscript fallback for users without JS enabled.
 echo '<noscript><div class="alert alert-warning">' .
     get_string('documents_page_noscript', 'local_nexusai') .
     '</div></noscript>';
