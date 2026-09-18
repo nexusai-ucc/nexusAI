@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_quiz_attempt_list`.
  *
- * Devuelve el historial de quizzes completados por el alumno en un curso
- * (SP-09 — historial por alumno). Cada alumno ve solo su propio historial
- * ($USER->id, nunca un parámetro del cliente).
+ * Returns the history of quizzes completed by the student in a course
+ * (SP-09 — per-student history). Each student only sees their own history
+ * ($USER->id, never a client parameter).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Devuelve el historial de quizzes completados por el alumno en un curso (SP-09 — historial por alumno).
+ * Returns the history of quizzes completed by the student in a course (SP-09 — per-student history).
  */
 class quiz_attempt_list extends \external_api {
     /**
@@ -42,9 +42,9 @@ class quiz_attempt_list extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_DEFAULT, 90),
-            'limit'    => new \external_value(PARAM_INT, 'Máximo de items (1..100)', VALUE_DEFAULT, 20),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'days'     => new \external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 90),
+            'limit'    => new \external_value(PARAM_INT, 'Max items (1..100)', VALUE_DEFAULT, 20),
         ]);
     }
 
@@ -55,23 +55,23 @@ class quiz_attempt_list extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
-            'total'     => new \external_value(PARAM_INT, 'Cantidad de items'),
+            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
+            'total'     => new \external_value(PARAM_INT, 'Number of items'),
             'items'     => new \external_multiple_structure(
                 new \external_single_structure([
-                    'id'              => new \external_value(PARAM_RAW, 'UUID del intento'),
+                    'id'              => new \external_value(PARAM_RAW, 'Attempt UUID'),
                     'question_type'   => new \external_value(
                         PARAM_ALPHANUMEXT,
-                        'Tipo de quiz (opcional)',
+                        'Quiz type (optional)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'difficulty'      => new \external_value(PARAM_ALPHA, 'Dificultad'),
-                    'topic'           => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'total_questions' => new \external_value(PARAM_INT, 'Total de preguntas'),
-                    'correct_answers' => new \external_value(PARAM_INT, 'Respuestas correctas'),
-                    'score'           => new \external_value(PARAM_FLOAT, 'Score 0.0-1.0 calculado server-side'),
+                    'difficulty'      => new \external_value(PARAM_ALPHA, 'Difficulty'),
+                    'topic'           => new \external_value(PARAM_RAW, 'Topic (optional)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'total_questions' => new \external_value(PARAM_INT, 'Total questions'),
+                    'correct_answers' => new \external_value(PARAM_INT, 'Correct answers'),
+                    'score'           => new \external_value(PARAM_FLOAT, 'Score 0.0-1.0 computed server-side'),
                     'created_at'      => new \external_value(PARAM_RAW, 'ISO timestamp'),
                 ])
             ),
@@ -79,11 +79,12 @@ class quiz_attempt_list extends \external_api {
     }
 
     /**
-     * Devuelve el historial de quizzes completados por el alumno en un curso (SP-09 — historial por alumno).
+     * Returns the history of quizzes completed by the student in a course (SP-09 — per-student
+     * history).
      *
-     * @param int $courseid ID del curso
-     * @param int $days Días hacia atrás (1..365)
-     * @param int $limit Máximo de items (1..100)
+     * @param int $courseid Course ID
+     * @param int $days Days back (1..365)
+     * @param int $limit Max items (1..100)
      * @return array
      */
     public static function execute(int $courseid, int $days = 90, int $limit = 20): array {

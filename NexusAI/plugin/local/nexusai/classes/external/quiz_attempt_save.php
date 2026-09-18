@@ -17,10 +17,10 @@
 /**
  * External function `local_nexusai_quiz_attempt_save`.
  *
- * Persiste el resultado de un quiz completado por el alumno (SP-09 — historial
- * de quizzes). Cada alumno guarda su propio historial ($USER->id, nunca un
- * parámetro del cliente). Llamado best-effort desde el frontend al llegar a
- * la pantalla de resultado final; los errores no bloquean el flujo del quiz.
+ * Persists the result of a quiz completed by the student (SP-09 — quiz
+ * history). Each student saves their own history ($USER->id, never a
+ * client parameter). Called best-effort from the frontend when reaching the
+ * final results screen; errors don't block the quiz flow.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -33,7 +33,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Persiste el resultado de un quiz completado por el alumno (SP-09 — historial de quizzes).
+ * Persists the result of a quiz completed by the student (SP-09 — quiz history).
  */
 class quiz_attempt_save extends \external_api {
     /**
@@ -43,12 +43,12 @@ class quiz_attempt_save extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'       => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'questiontype'   => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de quiz generado', VALUE_REQUIRED),
-            'difficulty'     => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
-            'topic'          => new \external_value(PARAM_RAW, 'Tema (opcional)', VALUE_DEFAULT, ''),
-            'totalquestions' => new \external_value(PARAM_INT, 'Cantidad total de preguntas (1..10)', VALUE_REQUIRED),
-            'correctcount'   => new \external_value(PARAM_INT, 'Cantidad de respuestas correctas (0..10)', VALUE_REQUIRED),
+            'courseid'       => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'questiontype'   => new \external_value(PARAM_ALPHANUMEXT, 'Generated quiz type', VALUE_REQUIRED),
+            'difficulty'     => new \external_value(PARAM_ALPHA, 'Difficulty (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
+            'topic'          => new \external_value(PARAM_RAW, 'Topic (optional)', VALUE_DEFAULT, ''),
+            'totalquestions' => new \external_value(PARAM_INT, 'Total number of questions (1..10)', VALUE_REQUIRED),
+            'correctcount'   => new \external_value(PARAM_INT, 'Number of correct answers (0..10)', VALUE_REQUIRED),
         ]);
     }
 
@@ -59,20 +59,20 @@ class quiz_attempt_save extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'id'    => new \external_value(PARAM_RAW, 'UUID del intento guardado'),
-            'score' => new \external_value(PARAM_FLOAT, 'Score 0.0-1.0 calculado server-side'),
+            'id'    => new \external_value(PARAM_RAW, 'UUID of the saved attempt'),
+            'score' => new \external_value(PARAM_FLOAT, 'Score 0.0-1.0 computed server-side'),
         ]);
     }
 
     /**
-     * Persiste el resultado de un quiz completado por el alumno (SP-09 — historial de quizzes).
+     * Persists the result of a quiz completed by the student (SP-09 — quiz history).
      *
-     * @param int $courseid ID del curso
-     * @param string $questiontype Tipo de quiz generado
-     * @param string $difficulty Dificultad (easy|medium|hard)
-     * @param string $topic Tema (opcional)
-     * @param int $totalquestions Cantidad total de preguntas (1..10)
-     * @param int $correctcount Cantidad de respuestas correctas (0..10)
+     * @param int $courseid Course ID
+     * @param string $questiontype Generated quiz type
+     * @param string $difficulty Difficulty (easy|medium|hard)
+     * @param string $topic Topic (optional)
+     * @param int $totalquestions Total number of questions (1..10)
+     * @param int $correctcount Number of correct answers (0..10)
      * @return array
      */
     public static function execute(

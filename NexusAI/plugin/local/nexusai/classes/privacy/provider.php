@@ -15,32 +15,33 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Privacy API provider para local_nexusai.
+ * Privacy API provider for local_nexusai.
  *
- * Moodle 3.5+ exige que todo plugin declare qué datos personales maneja, para cumplir
- * GDPR/Ley 25.326. Ver docs/adr/006-privacy-strategy.md para el contexto completo de
- * esta decisión (estrategia en dos etapas: null_provider mientras no había forma de
- * exportar/borrar el dato remoto, metadata\provider una vez que el backend expone esa
- * API — ver la tabla de triggers de ADR-006, "El backend NexusAI expone API de
- * export/delete por user").
+ * Moodle 3.5+ requires every plugin to declare what personal data it handles, to comply
+ * with GDPR/Law 25.326. See docs/adr/006-privacy-strategy.md for the full context of
+ * this decision (two-stage strategy: null_provider while there was no way to
+ * export/delete the remote data, metadata\provider once the backend exposed that
+ * API — see ADR-006's trigger table, "The NexusAI backend exposes an
+ * export/delete API per user").
  *
- * El plugin en sí sigue sin almacenar datos personales en tablas de Moodle — todo el
- * historial (mensajes de chat, intentos y errores de quiz) vive en el backend NexusAI
- * externo (Postgres). PRIV-01 (issue #310) implementó `metadata\provider` y el
- * autoservicio del alumno (external functions `local_nexusai_privacy_export`/
- * `local_nexusai_privacy_delete`, ver classes/external/).
+ * The plugin itself still doesn't store personal data in Moodle tables — all the
+ * history (chat messages, quiz attempts and errors) lives in the external NexusAI
+ * backend (Postgres). PRIV-01 (issue #310) implemented `metadata\provider` and the
+ * student self-service (external functions `local_nexusai_privacy_export`/
+ * `local_nexusai_privacy_delete`, see classes/external/).
  *
- * Este archivo agrega el paso que ADR-006 dejaba pendiente: `plugin\provider` y
- * `core_userlist_provider`, que enganchan con la herramienta de admin de Moodle
- * (Site administration → Users → Privacy → Data requests) para que un ADMIN pueda
- * procesar un pedido GDPR sin depender de que el alumno use el autoservicio.
+ * This file adds the step ADR-006 left pending: `plugin\provider` and
+ * `core_userlist_provider`, which hook into Moodle's admin tool
+ * (Site administration → Users → Privacy → Data requests) so an ADMIN can
+ * process a GDPR request without depending on the student using self-service.
  *
- * El backend NexusAI no tiene un endpoint "listame los cursos con datos de este
- * user" — solo export/delete por user_id+course_id ya conocido. Por eso
- * `get_contexts_for_userid()`/`get_users_in_context()` aproximan vía lo que Moodle
- * sabe localmente: cursos donde el usuario está inscripto y tiene la capability
- * `local/nexusai:use`. Sobre-incluir es seguro (un curso sin actividad real da un
- * export/delete vacío); sub-incluir sería un incumplimiento real.
+ * The NexusAI backend has no "list me the courses with this user's data"
+ * endpoint — only export/delete by an already-known user_id+course_id. That's why
+ * `get_contexts_for_userid()`/`get_users_in_context()` approximate via what Moodle
+ * knows locally: courses where the user is enrolled and has the
+ * `local/nexusai:use` capability. Over-including is safe (a course with no real
+ * activity gives an empty export/delete); under-including would be a real
+ * non-compliance.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -57,19 +58,19 @@ use core_privacy\local\request\userlist;
 use local_nexusai\external\backend_client;
 
 /**
- * Declara vía metadata\provider qué datos personales viajan al backend NexusAI externo,
- * y vía plugin\provider/core_userlist_provider engancha con el flujo admin de
- * Data requests.
+ * Declares via metadata\provider what personal data travels to the external NexusAI
+ * backend, and via plugin\provider/core_userlist_provider hooks into the admin
+ * Data requests flow.
  */
 class provider implements
     \core_privacy\local\metadata\provider,
     \core_privacy\local\request\core_userlist_provider,
     \core_privacy\local\request\plugin\provider {
     /**
-     * Describe qué datos personales viajan al backend NexusAI externo.
+     * Describes what personal data travels to the external NexusAI backend.
      *
-     * @param collection $collection Colección de metadata a completar.
-     * @return collection La misma colección, completa.
+     * @param collection $collection Metadata collection to fill in.
+     * @return collection The same collection, completed.
      */
     public static function get_metadata(collection $collection): collection {
         $collection->add_external_location_link(
@@ -87,15 +88,15 @@ class provider implements
     }
 
     /**
-     * Cursos (contextos) donde el usuario tiene datos personales en el backend.
+     * Courses (contexts) where the user has personal data in the backend.
      *
-     * Aproximación: todo curso donde está inscripto y conserva la capability
-     * `local/nexusai:use` — el backend no expone un índice propio de "en qué
-     * cursos tiene historial este user", así que sobre-incluimos en vez de
-     * arriesgar dejar afuera un contexto real.
+     * Approximation: every course where they're enrolled and still hold the
+     * `local/nexusai:use` capability — the backend doesn't expose its own
+     * index of "which courses does this user have history in", so we
+     * over-include rather than risk leaving out a real context.
      *
-     * @param int $userid ID del usuario.
-     * @return contextlist Contextos de curso a incluir en el pedido.
+     * @param int $userid User ID.
+     * @return contextlist Course contexts to include in the request.
      */
     public static function get_contexts_for_userid(int $userid): contextlist {
         $contextlist = new contextlist();
@@ -104,10 +105,10 @@ class provider implements
         foreach ($courses as $course) {
             $context = \context_course::instance((int) $course->id);
             if (has_capability('local/nexusai:use', $context, $userid)) {
-                // Ojo: contextlist::add_user_context(int $userid) agrega el
-                // contexto PERSONAL del usuario (CONTEXT_USER) -- no acepta un
-                // $context de curso como segundo argumento (se ignoraba en silencio).
-                // Hay que agregar el contexto de curso explícitamente por id.
+                // Careful: contextlist::add_user_context(int $userid) adds the
+                // user's PERSONAL context (CONTEXT_USER) -- it doesn't accept a
+                // course $context as a second argument (it was silently ignored).
+                // The course context has to be added explicitly by id.
                 $contextlist->add_from_sql(
                     'SELECT id FROM {context} WHERE id = :contextid',
                     ['contextid' => $context->id]
@@ -119,12 +120,12 @@ class provider implements
     }
 
     /**
-     * Exporta los datos personales del usuario en cada contexto aprobado.
+     * Exports the user's personal data in each approved context.
      *
-     * Reusa `backend_client::privacy_export()` (el mismo que el autoservicio del
-     * alumno), una llamada por curso aprobado.
+     * Reuses `backend_client::privacy_export()` (the same one used by the
+     * student's self-service), one call per approved course.
      *
-     * @param approved_contextlist $contextlist Contextos aprobados para exportar.
+     * @param approved_contextlist $contextlist Approved contexts to export.
      */
     public static function export_user_data(approved_contextlist $contextlist): void {
         $userid = (int) $contextlist->get_user()->id;
@@ -132,9 +133,9 @@ class provider implements
             return;
         }
 
-        // Instanciado sólo si hay al menos un contexto de curso a procesar --
-        // backend_client valida la config del plugin en su constructor y
-        // tira excepción si falta, aunque no haya nada que exportar.
+        // Only instantiated if there's at least one course context to process --
+        // backend_client validates the plugin config in its constructor and
+        // throws if it's missing, even if there's nothing to export.
         $client = null;
 
         foreach ($contextlist->get_contexts() as $context) {
@@ -155,9 +156,9 @@ class provider implements
     }
 
     /**
-     * Borra los datos personales del usuario en cada contexto aprobado.
+     * Deletes the user's personal data in each approved context.
      *
-     * @param approved_contextlist $contextlist Contextos aprobados para borrar.
+     * @param approved_contextlist $contextlist Approved contexts to delete.
      */
     public static function delete_data_for_user(approved_contextlist $contextlist): void {
         $userid = (int) $contextlist->get_user()->id;
@@ -178,13 +179,13 @@ class provider implements
     }
 
     /**
-     * Borra los datos de TODOS los usuarios en un contexto (ej. al borrar un curso).
+     * Deletes the data of ALL users in a context (e.g. when deleting a course).
      *
-     * Sin endpoint bulk en el backend: itera los usuarios inscriptos con la
-     * capability `local/nexusai:use` y llama `privacy_delete()` uno por uno.
-     * Aceptable para el tamaño típico de un curso (decenas/cientos de alumnos).
+     * No bulk endpoint on the backend: iterates enrolled users with the
+     * `local/nexusai:use` capability and calls `privacy_delete()` one by one.
+     * Acceptable for a course's typical size (tens/hundreds of students).
      *
-     * @param \context $context Contexto (debe ser de curso; se ignora si no lo es).
+     * @param \context $context Context (must be a course; ignored otherwise).
      */
     public static function delete_data_for_all_users_in_context(\context $context): void {
         if ($context->contextlevel !== CONTEXT_COURSE) {
@@ -202,12 +203,12 @@ class provider implements
     }
 
     /**
-     * Lista los usuarios con datos personales en un contexto de curso.
+     * Lists the users with personal data in a course context.
      *
-     * Mismo criterio de sobre-inclusión que get_contexts_for_userid(): todo
-     * inscripto con la capability `local/nexusai:use`.
+     * Same over-inclusion criterion as get_contexts_for_userid(): everyone
+     * enrolled with the `local/nexusai:use` capability.
      *
-     * @param userlist $userlist Colección de usuarios a completar.
+     * @param userlist $userlist User collection to fill in.
      */
     public static function get_users_in_context(userlist $userlist): void {
         $context = $userlist->get_context();
@@ -222,9 +223,9 @@ class provider implements
     }
 
     /**
-     * Borra los datos de un conjunto aprobado de usuarios en un contexto.
+     * Deletes the data of an approved set of users in a context.
      *
-     * @param approved_userlist $userlist Usuarios aprobados para borrar, con su contexto.
+     * @param approved_userlist $userlist Approved users to delete, with their context.
      */
     public static function delete_data_for_users(approved_userlist $userlist): void {
         $context = $userlist->get_context();

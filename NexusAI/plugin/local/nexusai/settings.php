@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Página de settings de admin para local_nexusai.
+ * Admin settings page for local_nexusai.
  *
- * Aparece en: Site administration → Plugins → Local plugins → NexusAI
+ * Appears in: Site administration → Plugins → Local plugins → NexusAI
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,14 +32,14 @@ if ($hassiteconfig) {
         get_string('settings', 'local_nexusai')
     );
 
-    // Sección general.
+    // General section.
     $settings->add(new admin_setting_heading(
         'local_nexusai/section_general',
         get_string('section_general', 'local_nexusai'),
         ''
     ));
 
-    // Switch maestro on/off.
+    // Master on/off switch.
     $settings->add(new admin_setting_configcheckbox(
         'local_nexusai/enabled',
         get_string('apienabled', 'local_nexusai'),
@@ -47,14 +47,14 @@ if ($hassiteconfig) {
         1
     ));
 
-    // Sección backend.
+    // Backend section.
     $settings->add(new admin_setting_heading(
         'local_nexusai/section_backend',
         get_string('section_backend', 'local_nexusai'),
         get_string('section_backend_desc', 'local_nexusai')
     ));
 
-    // URL del backend Python.
+    // Python backend URL.
     $settings->add(new admin_setting_configtext(
         'local_nexusai/api_endpoint',
         get_string('apiendpoint', 'local_nexusai'),
@@ -63,8 +63,8 @@ if ($hassiteconfig) {
         PARAM_RAW
     ));
 
-    // Bearer API key del backend (capa 1 de auth — ver ADR-005).
-    // Usamos passwordunmask para que el valor quede oculto en la UI tras guardar.
+    // Backend bearer API key (auth layer 1 — see ADR-005).
+    // We use passwordunmask so the value stays hidden in the UI after saving.
     $settings->add(new admin_setting_configpasswordunmask(
         'local_nexusai/api_key',
         get_string('apikey', 'local_nexusai'),
@@ -72,7 +72,7 @@ if ($hassiteconfig) {
         ''
     ));
 
-    // Shared secret HMAC (capa 2 de auth — ver ADR-005).
+    // HMAC shared secret (auth layer 2 — see ADR-005).
     $settings->add(new admin_setting_configpasswordunmask(
         'local_nexusai/shared_secret',
         get_string('sharedsecret', 'local_nexusai'),
@@ -80,15 +80,15 @@ if ($hassiteconfig) {
         ''
     ));
 
-    // Sección notificaciones.
+    // Notifications section.
     $settings->add(new admin_setting_heading(
         'local_nexusai/section_notifications',
         get_string('section_notifications', 'local_nexusai'),
         get_string('section_notifications_desc', 'local_nexusai')
     ));
 
-    // Email remitente de las alertas de calendario y notificaciones NexusAI.
-    // Si se deja vacío usa el noreplyaddress global de Moodle.
+    // Sender email for calendar alerts and NexusAI notifications.
+    // If left empty, Moodle's global noreplyaddress is used.
     $settings->add(new admin_setting_configtext(
         'local_nexusai/alert_from_email',
         get_string('alert_from_email', 'local_nexusai'),
@@ -99,7 +99,7 @@ if ($hassiteconfig) {
 
     $ADMIN->add('localplugins', $settings);
 
-    // Página de administración con health check del backend.
+    // Administration page with backend health check.
     $ADMIN->add('localplugins', new admin_externalpage(
         'local_nexusai_admin',
         get_string('admin_page_title', 'local_nexusai'),

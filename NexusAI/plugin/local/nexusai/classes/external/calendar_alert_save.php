@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_calendar_alert_save`.
  *
- * Guarda o actualiza la alerta de un alumno para un evento de calendario.
- * Si days_before=0, elimina la alerta. Accesible para usuarios con capability
- * `local/nexusai:use` (alumnos matriculados).
+ * Saves or updates a student's alert for a calendar event.
+ * If days_before=0, removes the alert. Accessible to users with the
+ * `local/nexusai:use` capability (enrolled students).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Guarda o actualiza la alerta de un alumno para un evento de calendario.
+ * Saves or updates a student's alert for a calendar event.
  */
 class calendar_alert_save extends \external_api {
     /**
@@ -42,12 +42,12 @@ class calendar_alert_save extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'userid'         => new \external_value(PARAM_INT, 'ID del usuario', VALUE_REQUIRED),
-            'courseid'       => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'eventid'        => new \external_value(PARAM_INT, 'ID del evento en Moodle', VALUE_REQUIRED),
-            'eventname'      => new \external_value(PARAM_TEXT, 'Nombre del evento', VALUE_REQUIRED),
-            'eventtimestamp' => new \external_value(PARAM_INT, 'Unix timestamp del evento', VALUE_REQUIRED),
-            'daysbefore'     => new \external_value(PARAM_INT, '0 = sin alerta, 1, 3 o 7 días antes', VALUE_REQUIRED),
+            'userid'         => new \external_value(PARAM_INT, 'User ID', VALUE_REQUIRED),
+            'courseid'       => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'eventid'        => new \external_value(PARAM_INT, 'Event ID in Moodle', VALUE_REQUIRED),
+            'eventname'      => new \external_value(PARAM_TEXT, 'Event name', VALUE_REQUIRED),
+            'eventtimestamp' => new \external_value(PARAM_INT, 'Unix timestamp of the event', VALUE_REQUIRED),
+            'daysbefore'     => new \external_value(PARAM_INT, '0 = no alert, 1, 3 or 7 days before', VALUE_REQUIRED),
         ]);
     }
 
@@ -60,24 +60,24 @@ class calendar_alert_save extends \external_api {
         return new \external_single_structure([
             'id'          => new \external_value(
                 PARAM_TEXT,
-                'UUID de la alerta (null si se eliminó)',
+                'Alert UUID (null if deleted)',
                 VALUE_OPTIONAL,
                 null,
                 NULL_ALLOWED
             ),
-            'days_before' => new \external_value(PARAM_INT, 'Días configurados'),
+            'days_before' => new \external_value(PARAM_INT, 'Configured days'),
         ]);
     }
 
     /**
-     * Guarda o actualiza la alerta de un alumno para un evento de calendario.
+     * Saves or updates a student's alert for a calendar event.
      *
-     * @param int $userid ID del usuario
-     * @param int $courseid ID del curso
-     * @param int $eventid ID del evento en Moodle
-     * @param string $eventname Nombre del evento
-     * @param int $eventtimestamp Unix timestamp del evento
-     * @param int $daysbefore 0 = sin alerta, 1, 3 o 7 días antes
+     * @param int $userid User ID
+     * @param int $courseid Course ID
+     * @param int $eventid Event ID in Moodle
+     * @param string $eventname Event name
+     * @param int $eventtimestamp Unix timestamp of the event
+     * @param int $daysbefore 0 = no alert, 1, 3 or 7 days before
      * @return array
      */
     public static function execute(

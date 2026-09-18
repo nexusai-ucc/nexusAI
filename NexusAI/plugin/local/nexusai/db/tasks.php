@@ -17,9 +17,9 @@
 /**
  * Scheduled tasks for local_nexusai.
  *
- * El cron de Moodle ejecuta estas tareas automáticamente según la frecuencia
- * definida. `send_calendar_alerts` corre cada hora para enviar notificaciones
- * de vencimiento próximo a los alumnos.
+ * Moodle's cron runs these tasks automatically according to the defined
+ * frequency. `send_calendar_alerts` runs every hour to send students
+ * upcoming due-date notifications.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC

@@ -15,22 +15,22 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Notificaciones de NexusAI — CAL-03 (issue #239).
+ * NexusAI notifications — CAL-03 (issue #239).
  *
- * Notifica a los usuarios de un curso (alumnos + docentes, cualquiera con
- * `local/nexusai:use`) cuando se sube material nuevo, usando el sistema
- * nativo de mensajería de Moodle (`message_send()` + `db/messages.php`) en
- * vez de un mecanismo propio — así los usuarios heredan gratis la campanita,
- * el email y las preferencias de notificación por canal que Moodle ya tiene.
+ * Notifies a course's users (students + teachers, anyone with
+ * `local/nexusai:use`) when new material is uploaded, using Moodle's native
+ * messaging system (`message_send()` + `db/messages.php`) instead of a
+ * custom mechanism — this way users get the notification bell, email, and
+ * per-channel notification preferences Moodle already has, for free.
  *
- * Se dispara al CONFIRMAR la subida (document_upload / confirm_pending_upload),
- * no cuando termina de indexarse en el backend — la indexación es asíncrona
- * del lado Python y no hay callback hacia PHP cuando termina. Ver limitación
- * documentada en el PR de este feature.
+ * Fires when the upload is CONFIRMED (document_upload / confirm_pending_upload),
+ * not when it finishes indexing in the backend — indexing is asynchronous on
+ * the Python side and there's no callback to PHP when it finishes. See the
+ * limitation documented in this feature's PR.
  *
- * Comportamiento de errores: best-effort. Un fallo acá (ej. message_send
- * rechazado, curso con 500 inscriptos y timeout) NUNCA debe romper el flujo
- * de subida del docente — se loguea con debugging() y se sigue.
+ * Error behavior: best-effort. A failure here (e.g. message_send rejected,
+ * a course with 500 enrolled users and a timeout) must NEVER break the
+ * teacher's upload flow — it's logged with debugging() and execution continues.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -40,47 +40,47 @@
 namespace local_nexusai;
 
 /**
- * Notifica a los usuarios de un curso cuando se sube material nuevo (CAL-03, #239).
+ * Notifies a course's users when new material is uploaded (CAL-03, #239).
  */
 class notifier {
     /**
-     * Notifica a los usuarios del curso que hay material nuevo (best-effort).
+     * Notifies the course's users that there's new material (best-effort).
      *
-     * @param int    $courseid  ID del curso donde se subió el archivo.
-     * @param string $filename  Nombre del archivo subido.
-     * @param int    $teacherid $USER->id del docente que subió (se excluye de los destinatarios).
+     * @param int    $courseid  ID of the course where the file was uploaded.
+     * @param string $filename  Name of the uploaded file.
+     * @param int    $teacherid $USER->id of the teacher who uploaded it (excluded from recipients).
      */
     public static function notify_new_material(int $courseid, string $filename, int $teacherid): void {
         try {
             self::send_notifications($courseid, $filename, $teacherid);
         } catch (\Throwable $e) {
-            // Nunca interrumpir la subida del docente por un fallo de notificación.
+            // Never interrupt the teacher's upload because a notification failed.
             debugging(
-                'local_nexusai: fallo notificando material nuevo (courseid=' . $courseid . '): ' . $e->getMessage(),
+                'local_nexusai: failed to notify about new material (courseid=' . $courseid . '): ' . $e->getMessage(),
                 DEBUG_DEVELOPER
             );
         }
     }
 
     /**
-     * Resuelve destinatarios y les manda la notificación, uno por uno.
+     * Resolves recipients and sends them the notification, one by one.
      *
-     * @param int    $courseid  ID del curso donde se subió el archivo.
-     * @param string $filename  Nombre del archivo subido.
-     * @param int    $teacherid $USER->id del docente que subió (se excluye de los destinatarios).
+     * @param int    $courseid  ID of the course where the file was uploaded.
+     * @param string $filename  Name of the uploaded file.
+     * @param int    $teacherid $USER->id of the teacher who uploaded it (excluded from recipients).
      */
     private static function send_notifications(int $courseid, string $filename, int $teacherid): void {
         if (empty(get_config('local_nexusai', 'enabled'))) {
-            return; // Switch maestro apagado — sin efectos secundarios.
+            return; // Master switch off — no side effects.
         }
 
         $course = get_course($courseid);
         $context = \context_course::instance($courseid);
 
-        // Todos los que pueden usar el asistente en este curso (alumnos +
-        // docentes) — misma capability que gatea el chat, así no hace falta
-        // filtrar por rol a mano. onlyactive=true excluye inscripciones
-        // suspendidas/vencidas.
+        // Everyone who can use the assistant in this course (students +
+        // teachers) — same capability that gates the chat, so there's no
+        // need to filter by role by hand. onlyactive=true excludes
+        // suspended/expired enrolments.
         $recipients = get_enrolled_users($context, 'local/nexusai:use', 0, 'u.*', null, 0, 0, true);
         if (empty($recipients)) {
             return;
@@ -91,20 +91,20 @@ class notifier {
 
         foreach ($recipients as $recipient) {
             if ((int) $recipient->id === $teacherid) {
-                continue; // No notificarse a uno mismo.
+                continue; // Don't notify yourself.
             }
             self::send_one($course, $courseurl, $recipient, $teacher, $filename);
         }
     }
 
     /**
-     * Arma y envía una notificación de material nuevo a un destinatario puntual.
+     * Builds and sends a new-material notification to a specific recipient.
      *
-     * @param \stdClass  $course    Curso donde se subió el material.
-     * @param \moodle_url $courseurl URL del curso, para el link de la notificación.
-     * @param \stdClass  $recipient Usuario destinatario.
-     * @param \stdClass  $teacher   Usuario remitente (docente que subió el material).
-     * @param string     $filename  Nombre del archivo subido.
+     * @param \stdClass  $course    Course where the material was uploaded.
+     * @param \moodle_url $courseurl Course URL, for the notification's link.
+     * @param \stdClass  $recipient Recipient user.
+     * @param \stdClass  $teacher   Sender user (teacher who uploaded the material).
+     * @param string     $filename  Name of the uploaded file.
      */
     private static function send_one(
         \stdClass $course,

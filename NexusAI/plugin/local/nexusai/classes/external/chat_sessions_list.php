@@ -17,8 +17,8 @@
 /**
  * External function `local_nexusai_chat_sessions_list`.
  *
- * Lista las sesiones previas del alumno para el sidebar de historial.
- * Filtro opcional por curso (default: solo el curso actual).
+ * Lists the student's previous sessions for the history sidebar.
+ * Optional filter by course (default: only the current course).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -31,7 +31,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Lista las sesiones previas del alumno para el sidebar de historial.
+ * Lists the student's previous sessions for the history sidebar.
  */
 class chat_sessions_list extends \external_api {
     /**
@@ -41,14 +41,14 @@ class chat_sessions_list extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'   => new \external_value(PARAM_INT, 'Curso para validar capability', VALUE_REQUIRED),
+            'courseid'   => new \external_value(PARAM_INT, 'Course to validate the capability against', VALUE_REQUIRED),
             'scopecourse' => new \external_value(
                 PARAM_BOOL,
-                'Si true, lista solo sesiones del curso actual. Si false, todas las del user.',
+                'If true, lists only sessions from the current course. If false, all of the user\'s.',
                 VALUE_DEFAULT,
                 true
             ),
-            'limit'      => new \external_value(PARAM_INT, 'Máximo (1..100)', VALUE_DEFAULT, 20),
+            'limit'      => new \external_value(PARAM_INT, 'Maximum (1..100)', VALUE_DEFAULT, 20),
         ]);
     }
 
@@ -61,29 +61,29 @@ class chat_sessions_list extends \external_api {
         return new \external_single_structure([
             'sessions' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'id'                   => new \external_value(PARAM_RAW, 'UUID de la sesión'),
-                    'course_id'            => new \external_value(PARAM_INT, 'Curso de la sesión'),
-                    'created_at'           => new \external_value(PARAM_RAW, 'ISO timestamp creación'),
-                    'updated_at'           => new \external_value(PARAM_RAW, 'ISO timestamp última actividad'),
+                    'id'                   => new \external_value(PARAM_RAW, 'Session UUID'),
+                    'course_id'            => new \external_value(PARAM_INT, 'Session\'s course'),
+                    'created_at'           => new \external_value(PARAM_RAW, 'Creation ISO timestamp'),
+                    'updated_at'           => new \external_value(PARAM_RAW, 'Last-activity ISO timestamp'),
                     'last_message_preview' => new \external_value(
                         PARAM_RAW,
-                        'Preview del primer mensaje',
+                        'Preview of the first message',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'message_count'        => new \external_value(PARAM_INT, 'Cantidad de mensajes'),
+                    'message_count'        => new \external_value(PARAM_INT, 'Number of messages'),
                 ])
             ),
         ]);
     }
 
     /**
-     * Lista las sesiones previas del alumno para el sidebar de historial.
+     * Lists the student's previous sessions for the history sidebar.
      *
-     * @param int $courseid Curso para validar capability
-     * @param bool $scopecourse Si true, lista solo sesiones del curso actual. Si false, todas las del user.
-     * @param int $limit Máximo (1..100)
+     * @param int $courseid Course to validate the capability against
+     * @param bool $scopecourse If true, lists only sessions from the current course. If false, all of the user's.
+     * @param int $limit Maximum (1..100)
      * @return array
      */
     public static function execute(int $courseid, bool $scopecourse = true, int $limit = 20): array {

@@ -15,15 +15,15 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Tests del privacy\provider — `plugin\provider` y `core_userlist_provider`
- * agregados sobre PRIV-01 (issue #310) para el flujo admin de Data requests.
+ * Tests for privacy\provider — `plugin\provider` and `core_userlist_provider`
+ * added on top of PRIV-01 (issue #310) for the admin Data requests flow.
  *
- * `backend_client` no es mockeable/inyectable (`new backend_client()`
- * hardcodeado, ver docstring de manage_capability_test.php) — así que, como
- * el resto de la suite, este archivo cubre lo que SÍ es testable sin tocar
- * HTTP real: la resolución local de contextos/usuarios
- * (get_contexts_for_userid, get_users_in_context) y los short-circuits que
- * evitan llegar a backend_client (contextos vacíos, contexto no-curso).
+ * `backend_client` isn't mockable/injectable (`new backend_client()` is
+ * hardcoded, see manage_capability_test.php's docstring) — so, like the
+ * rest of the suite, this file covers what IS testable without touching
+ * real HTTP: local context/user resolution (get_contexts_for_userid,
+ * get_users_in_context) and the short-circuits that avoid reaching
+ * backend_client (empty contexts, non-course context).
  *
  * @package    local_nexusai
  * @category   test
@@ -39,12 +39,12 @@ use core_privacy\local\request\userlist;
 use local_nexusai\privacy\provider;
 
 /**
- * Tests del privacy\provider de local_nexusai.
+ * Tests for local_nexusai's privacy\provider.
  *
  * @covers \local_nexusai\privacy\provider
  */
 final class privacy_provider_test extends \advanced_testcase {
-    // Tests de get_contexts_for_userid().
+    // Tests for get_contexts_for_userid().
 
     public function test_get_contexts_for_userid_empty_when_not_enrolled(): void {
         $this->resetAfterTest();
@@ -82,7 +82,7 @@ final class privacy_provider_test extends \advanced_testcase {
         $this->assertCount(0, $contextlist->get_contextids());
     }
 
-    // Tests de get_users_in_context().
+    // Tests for get_users_in_context().
 
     public function test_get_users_in_context_returns_enrolled_users_with_capability(): void {
         $this->resetAfterTest();
@@ -107,14 +107,14 @@ final class privacy_provider_test extends \advanced_testcase {
         $this->assertCount(0, $userlist->get_userids());
     }
 
-    // Short-circuits que evitan llegar a backend_client (sin HTTP real).
+    // Short-circuits that avoid reaching backend_client (no real HTTP).
 
     public function test_delete_data_for_all_users_in_context_ignores_non_course_context(): void {
         $this->resetAfterTest();
         $systemcontext = \context_system::instance();
 
-        // Contexto no-curso: retorna antes de llamar a backend_client, así
-        // que no hay HTTP real involucrado — no debería tirar excepción.
+        // Non-course context: returns before calling backend_client, so
+        // there's no real HTTP involved — it shouldn't throw an exception.
         provider::delete_data_for_all_users_in_context($systemcontext);
         $this->assertTrue(true);
     }
@@ -123,8 +123,8 @@ final class privacy_provider_test extends \advanced_testcase {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
 
-        // Sin contextos aprobados: el foreach nunca ejecuta, así que nunca
-        // se instancia una llamada HTTP real a backend_client.
+        // With no approved contexts: the foreach never runs, so a real
+        // HTTP call to backend_client is never instantiated.
         $approvedlist = new approved_contextlist($user, 'local_nexusai', []);
         provider::export_user_data($approvedlist);
         $this->assertTrue(true);
@@ -152,9 +152,9 @@ final class privacy_provider_test extends \advanced_testcase {
     // Helper.
 
     /**
-     * ID del rol archetype 'student'.
+     * ID of the 'student' archetype role.
      *
-     * @return int ID del rol archetype 'student'.
+     * @return int ID of the 'student' archetype role.
      */
     private function get_student_role_id(): int {
         global $DB;

@@ -15,11 +15,11 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Listener para el hook `core\hook\output\before_footer_html_generation`.
+ * Listener for the `core\hook\output\before_footer_html_generation` hook.
  *
- * Este es el reemplazo del callback viejo `local_nexusai_before_footer()`.
- * En Moodle 4.4+, el sistema de hooks invoca este método antes de cerrar
- * el </body>, permitiendo inyectar HTML/JS al footer de cualquier página.
+ * This is the replacement for the old `local_nexusai_before_footer()`
+ * callback. On Moodle 4.4+, the hooks system invokes this method before
+ * closing </body>, allowing HTML/JS to be injected into any page's footer.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,22 +32,22 @@ use core\hook\output\before_footer_html_generation;
 use local_nexusai\visibility_helper;
 
 /**
- * Inyecta el widget de chat antes del footer en Moodle 4.4+ (reemplazo del callback legacy).
+ * Injects the chat widget before the footer on Moodle 4.4+ (replaces the legacy callback).
  */
 class before_footer_listener {
     /**
-     * Callback ejecutado por Moodle antes de generar el footer HTML.
+     * Callback executed by Moodle before generating the footer HTML.
      *
-     * La regla de visibilidad (logueado, no invitado, capability en curso
-     * real) vive en visibility_helper::resolve() — compartida con el ícono
-     * de la navbar primaria (primary_extend_listener.php, UX-02) para que
-     * nunca haya un ícono clickeable sin panel detrás. Fuera de un curso
-     * real, courseid llega en 0 y el panel entra a un estado vacío.
+     * The visibility rule (logged in, not a guest, capability in a real
+     * course) lives in visibility_helper::resolve() — shared with the
+     * primary navbar icon (primary_extend_listener.php, UX-02) so there's
+     * never a clickable icon without a panel behind it. Outside a real
+     * course, courseid arrives as 0 and the panel enters an empty state.
      *
-     * Si corresponde mostrar el widget, inyecta el div contenedor y le pide
-     * a Moodle que cargue el bundle AMD `local_nexusai/chatwidget-lazy`.
+     * If the widget should be shown, injects the container div and asks
+     * Moodle to load the `local_nexusai/chatwidget-lazy` AMD bundle.
      *
-     * @param before_footer_html_generation $hook El hook con métodos add_html() etc.
+     * @param before_footer_html_generation $hook The hook, with methods like add_html() etc.
      */
     public static function callback(before_footer_html_generation $hook): void {
         global $PAGE, $USER;
@@ -60,11 +60,11 @@ class before_footer_listener {
         $courseid  = $context['courseid'];
         $isteacher = $context['isteacher'];
 
-        // ONB-03: en la pantalla de crear un curso el widget muestra el
-        // tutorial de armado en vez del cartel de "no hay curso".
+        // ONB-03: on the create-course screen the widget shows the
+        // setup tutorial instead of the "no course" placeholder.
         $onboarding = visibility_helper::onboarding_hint();
 
-        // 2. Cargar el bundle React vía AMD/RequireJS.
+        // 2. Load the React bundle via AMD/RequireJS.
         $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
             [
                 'courseid'   => $courseid,
@@ -77,20 +77,20 @@ class before_footer_listener {
             ],
         ]);
 
-        // Para docentes: cargar el módulo que muestra el prompt de confirmación
-        // cuando suben un archivo a una sección del curso.
+        // For teachers: load the module that shows the confirmation prompt
+        // when they upload a file to a course section.
         if ($isteacher && $courseid > 0) {
             $PAGE->requires->js_call_amd('local_nexusai/upload-prompt', 'init', [
                 ['courseid' => $courseid],
             ]);
         }
 
-        // F-08: detector de posts similares en formularios de foro.
-        // Se carga en cualquier página de foro (mod-forum-*): en Moodle 5.x el
-        // formulario de nueva discusión puede mostrarse inline en mod-forum-view,
-        // no solo en mod-forum-post. El JS se auto-limita si no hay input[name="subject"].
-        // $courseid > 0 preserva el comportamiento pre-UX-02 (un foro de sitio en
-        // el frontpage, courseid=1, nunca disparaba esto).
+        // F-08: similar-posts detector in forum forms.
+        // Loaded on any forum page (mod-forum-*): on Moodle 5.x the new-discussion
+        // form can be shown inline in mod-forum-view, not just in mod-forum-post.
+        // The JS self-limits if there's no input[name="subject"].
+        // $courseid > 0 preserves the pre-UX-02 behavior (a site forum on the
+        // frontpage, courseid=1, never triggered this).
         if ($courseid > 0 && strpos($PAGE->pagetype, 'mod-forum') === 0) {
             $PAGE->requires->js_call_amd('local_nexusai/forum-duplicate-checker', 'init', [
                 [
@@ -100,8 +100,8 @@ class before_footer_listener {
             ]);
         }
 
-        // F-10/F-11: resumen de hilo + sugerencia de respuesta con IA.
-        // Solo en mod-forum-discuss (discuss.php?d=X) — páginas de discusión abierta.
+        // F-10/F-11: thread summary + AI reply suggestion.
+        // Only on mod-forum-discuss (discuss.php?d=X) — open discussion pages.
         if ($courseid > 0 && $PAGE->pagetype === 'mod-forum-discuss') {
             $discussionid = (int) optional_param('d', 0, PARAM_INT);
             if ($discussionid > 0) {
@@ -114,8 +114,8 @@ class before_footer_listener {
             }
         }
 
-        // 3. Inyectar el contenedor donde React monta el componente.
-        // En el sistema nuevo se usa $hook->add_html() en lugar de retornar string.
+        // 3. Inject the container where React mounts the component.
+        // The new system uses $hook->add_html() instead of returning a string.
         $hook->add_html('<div id="local-nexusai-container" data-plugin="nexusai"></div>');
     }
 }

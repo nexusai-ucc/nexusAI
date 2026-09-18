@@ -17,14 +17,14 @@
 /**
  * External function `local_nexusai_chat_send`.
  *
- * Es el proxy entre el frontend React (que llega vía core/ajax) y el backend
- * Python NexusAI. Hace 5 cosas:
+ * This is the proxy between the React frontend (which arrives via core/ajax)
+ * and the NexusAI Python backend. It does 5 things:
  *
- *   1. Valida la sesión de Moodle (require_login + capability del curso).
- *   2. Sanitiza la entrada con los external_value declarados.
- *   3. Resuelve el USERID real desde $USER (NO del cliente — sería falsificable).
- *   4. Llama a backend_client::send_message() que firma y POST-ea con HMAC.
- *   5. Devuelve la respuesta tipada según execute_returns().
+ *   1. Validates the Moodle session (require_login + course capability).
+ *   2. Sanitizes the input with the declared external_value.
+ *   3. Resolves the real USERID from $USER (NOT from the client — it would be forgeable).
+ *   4. Calls backend_client::send_message(), which signs and POSTs with HMAC.
+ *   5. Returns the typed response according to execute_returns().
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -35,54 +35,54 @@ namespace local_nexusai\external;
 
 defined('MOODLE_INTERNAL') || die();
 
-// Compatibilidad Moodle 4.1 LTS hasta 4.5: las clases legacy globales
-// `external_api`, `external_function_parameters`, etc. siguen disponibles
-// en todo el rango. El namespace `core_external\*` solo existe a partir de
-// 4.2, así que evitamos depender de él.
+// Compat with Moodle 4.1 LTS through 4.5: the legacy global classes
+// `external_api`, `external_function_parameters`, etc. remain available
+// across the whole range. The `core_external\*` namespace only exists from
+// 4.2 onward, so we avoid depending on it.
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Es el proxy entre el frontend React (que llega vía core/ajax) y el backend Python NexusAI.
+ * This is the proxy between the React frontend (which arrives via core/ajax) and the NexusAI Python backend.
  */
 class chat_send extends \external_api {
     /**
-     * Define el contrato de entrada (lo que React envía vía core/ajax).
+     * Defines the input contract (what React sends via core/ajax).
      *
-     * Moodle valida estos parámetros automáticamente:
-     *   - Tipos correctos (PARAM_*)
+     * Moodle validates these parameters automatically:
+     *   - Correct types (PARAM_*)
      *   - Required vs optional
-     *   - Aplicar VALUE_DEFAULT si falta
+     *   - Applying VALUE_DEFAULT if missing
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
             'question'  => new \external_value(
                 PARAM_RAW,
-                'Pregunta del alumno al asistente (1..2000 caracteres)',
+                'Student\'s question to the assistant (1..2000 characters)',
                 VALUE_REQUIRED
             ),
             'courseid'  => new \external_value(
                 PARAM_INT,
-                'ID del curso de Moodle donde se hace la pregunta',
+                'Moodle course ID where the question is asked',
                 VALUE_REQUIRED
             ),
-            // El userid llega solo como hint del cliente. Lo IGNORAMOS y usamos
-            // $USER->id real del lado del server (defensa contra impersonation).
-            // Lo declaramos para no romper backwards compat con clientes viejos.
+            // userid arrives only as a client hint. We IGNORE it and use the
+            // real server-side $USER->id (defense against impersonation).
+            // We declare it to avoid breaking backwards compat with old clients.
             'userid'    => new \external_value(
                 PARAM_INT,
-                'IGNORADO. El backend usa $USER->id del server. Se acepta solo por compat.',
+                'IGNORED. The backend uses the server\'s $USER->id. Accepted only for compat.',
                 VALUE_DEFAULT,
                 0
             ),
             'sessionid' => new \external_value(
                 PARAM_ALPHANUMEXT,
-                'UUID de sesión existente, o vacío para crear una nueva',
+                'Existing session UUID, or empty to create a new one',
                 VALUE_DEFAULT,
                 ''
             ),
             'multicourse' => new \external_value(
                 PARAM_BOOL,
-                'Si true, busca en TODOS los cursos del alumno con material indexado (Feature B)',
+                'If true, searches across ALL the student\'s courses with indexed material (Feature B)',
                 VALUE_DEFAULT,
                 false
             ),
@@ -90,39 +90,39 @@ class chat_send extends \external_api {
     }
 
     /**
-     * Define el contrato de salida (lo que devolvemos a React).
+     * Defines the output contract (what we return to React).
      *
-     * El cliente React (chat.js) usa estas mismas claves: session_id, answer, messages.
+     * The React client (chat.js) uses these same keys: session_id, answer, messages.
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'session_id' => new \external_value(
                 PARAM_ALPHANUMEXT,
-                'UUID de la sesión (nueva o existente)'
+                'Session UUID (new or existing)'
             ),
             'answer' => new \external_value(
                 PARAM_RAW,
-                'Respuesta del asistente'
+                'Assistant\'s answer'
             ),
             'messages' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'id'         => new \external_value(PARAM_ALPHANUMEXT, 'UUID del mensaje'),
+                    'id'         => new \external_value(PARAM_ALPHANUMEXT, 'Message UUID'),
                     'role'       => new \external_value(PARAM_ALPHA, 'user | assistant | system'),
-                    'content'    => new \external_value(PARAM_RAW, 'Texto del mensaje'),
-                    'created_at' => new \external_value(PARAM_RAW, 'ISO 8601 timestamp del mensaje'),
+                    'content'    => new \external_value(PARAM_RAW, 'Message text'),
+                    'created_at' => new \external_value(PARAM_RAW, 'Message ISO 8601 timestamp'),
                 ]),
-                'Lista completa de mensajes de la sesión, ordenados cronológicamente'
+                'Full list of the session\'s messages, in chronological order'
             ),
         ]);
     }
 
     /**
-     * Lógica del endpoint.
+     * Endpoint logic.
      *
      * @param string $question
      * @param int    $courseid
-     * @param int|null $userid    Ignorado — usamos $USER->id real
-     * @param string|null $sessionid UUID o ''
+     * @param int|null $userid    Ignored — we use the real $USER->id
+     * @param string|null $sessionid UUID or ''
      * @return array{session_id: string, answer: string, messages: array}
      */
     public static function execute(
@@ -134,7 +134,7 @@ class chat_send extends \external_api {
     ): array {
         global $USER;
 
-        // 1. Validar parámetros (Moodle ya hizo validación de tipos).
+        // 1. Validate parameters (Moodle already did type validation).
         $params = self::validate_parameters(self::execute_parameters(), [
             'question'    => $question,
             'courseid'    => $courseid,
@@ -143,15 +143,15 @@ class chat_send extends \external_api {
             'multicourse' => $multicourse,
         ]);
 
-        // 2. Validar contexto del curso + capability.
-        // El curso tiene que existir Y el usuario tiene que tener acceso.
-        // validate_context() también dispara require_login() internamente y
-        // levanta el contexto correcto en $PAGE.
+        // 2. Validate the course context + capability.
+        // The course has to exist AND the user has to have access.
+        // validate_context() also fires require_login() internally and
+        // sets up the correct context on $PAGE.
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
 
-        // 3. Validaciones de negocio.
+        // 3. Business-rule validation.
         $cleanquestion = trim($params['question']);
         if ($cleanquestion === '') {
             throw new \invalid_parameter_exception('Question cannot be empty');
@@ -160,25 +160,25 @@ class chat_send extends \external_api {
             throw new \invalid_parameter_exception('Question too long (max 2000 characters)');
         }
 
-        // El sessionid tiene que ser un UUID v4 o vacío. PARAM_ALPHANUMEXT ya
-        // bloquea injection; chequeamos largo razonable acá.
+        // sessionid has to be a UUID v4 or empty. PARAM_ALPHANUMEXT already
+        // blocks injection; we check for a reasonable length here.
         $cleansessionid = trim($params['sessionid']);
         if ($cleansessionid !== '' && (strlen($cleansessionid) < 8 || strlen($cleansessionid) > 64)) {
             throw new \invalid_parameter_exception('Invalid session id format');
         }
         if ($cleansessionid === '') {
-            $cleansessionid = null;  // El backend acepta null para crear sesión nueva.
+            $cleansessionid = null;  // The backend accepts null to create a new session.
         }
 
-        // 4. Llamar al backend Python.
-        // userid SIEMPRE de $USER, NUNCA del parámetro. Si el atacante manda
-        // un userid distinto al suyo, lo ignoramos silenciosamente.
+        // 4. Call the Python backend.
+        // userid is ALWAYS from $USER, NEVER from the parameter. If an
+        // attacker sends a userid other than their own, we silently ignore it.
         $client = new backend_client();
 
         if (!empty($params['multicourse'])) {
-            // Feature B: resolver los cursos donde el alumno está inscripto.
-            // enrol_get_users_courses() es nativa de Moodle 4.1-4.5 y respeta
-            // visibilidad de cursos y enrolments activos.
+            // Feature B: resolve the courses the student is enrolled in.
+            // enrol_get_users_courses() is native to Moodle 4.1-4.5 and respects
+            // course visibility and active enrolments.
             $enrolledcourses = enrol_get_users_courses(
                 (int) $USER->id,
                 true,
@@ -193,7 +193,7 @@ class chat_send extends \external_api {
                     ?? $course->shortname
                     ?? 'Materia';
             }
-            // Fallback defensivo: si no se pudo resolver, usar el curso actual.
+            // Defensive fallback: if it couldn't be resolved, use the current course.
             if (empty($courseids)) {
                 $courseids   = [(int) $params['courseid']];
                 $coursenames = [(string) $params['courseid'] => 'Materia actual'];
@@ -215,10 +215,10 @@ class chat_send extends \external_api {
             );
         }
 
-        // 5. Validar shape de la respuesta.
-        // El backend ya validó internamente con Pydantic, pero como external
-        // function tenemos que devolver exactamente el shape declarado en
-        // execute_returns() o Moodle nos pega.
+        // 5. Validate the response's shape.
+        // The backend already validated internally with Pydantic, but as an
+        // external function we have to return exactly the shape declared in
+        // execute_returns() or Moodle will reject it.
         if (!isset($response['session_id'], $response['answer'], $response['messages'])) {
             throw new \moodle_exception(
                 'errorbackend',

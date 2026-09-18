@@ -18,13 +18,13 @@
  * Library functions for local_nexusai.
  *
  * Hook system:
- *   - Moodle 4.4+ → usa db/hooks.php + classes/hook/output/before_footer_listener.php
- *   - Moodle 4.1-4.3 → usa la función `local_nexusai_before_footer()` de este archivo
+ *   - Moodle 4.4+ → uses db/hooks.php + classes/hook/output/before_footer_listener.php
+ *   - Moodle 4.1-4.3 → uses this file's `local_nexusai_before_footer()` function
  *
- * En Moodle 4.4+, la función vieja todavía se invoca por backward compat pero su
- * valor de retorno se ignora (solo emite un warning de deprecación). Por eso acá
- * detectamos la versión de Moodle y skipeamos en 4.4+ para no duplicar lógica
- * ni generar warnings inútiles.
+ * In Moodle 4.4+, the old function is still invoked for backward compat but its
+ * return value is ignored (it only emits a deprecation warning). That's why we
+ * detect the Moodle version here and skip on 4.4+ to avoid duplicating logic
+ * or generating useless warnings.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,56 +32,57 @@
  */
 
 /**
- * Normaliza el idioma de Moodle al código que entiende el frontend React.
+ * Normalizes Moodle's language into the code the React frontend understands.
  *
- * current_language() puede devolver variantes regionales (es_ar, es_mx,
- * en_us, en_gb) o idiomas sin paquete propio en el frontend (fr, pt_br...).
- * Los diccionarios del widget solo distinguen "es" vs "en" (todo lo que no
- * sea exactamente "es" cae al inglés) — sin esta normalización, un Moodle
- * instalado con una variante regional se ve en inglés aunque el sitio esté
- * en español.
+ * current_language() can return regional variants (es_ar, es_mx, en_us,
+ * en_gb) or languages without their own package in the frontend
+ * (fr, pt_br...). The widget's dictionaries only distinguish "es" vs "en"
+ * (anything that isn't exactly "es" falls back to English) — without this
+ * normalization, a Moodle installed with a regional variant shows up in
+ * English even if the site is in Spanish.
  *
- * @return string "es" o "en".
+ * @return string "es" or "en".
  */
 function local_nexusai_frontend_lang(): string {
     $lang = strtolower((string) current_language());
-    // Nos quedamos con el subtag principal: "es_ar" -> "es", "en_us" -> "en".
+    // Keep only the primary subtag: "es_ar" -> "es", "en_us" -> "en".
     $primary = explode('_', $lang)[0];
     return $primary === 'es' ? 'es' : 'en';
 }
 
 /**
- * Hook ejecutado por Moodle 4.1-4.3 antes de cerrar el </body>.
+ * Hook run by Moodle 4.1-4.3 before closing </body>.
  *
- * En Moodle 4.4+ el hook handling se hace en classes/hook/output/before_footer_listener.php,
- * así que esta función retorna vacío para evitar duplicación.
+ * In Moodle 4.4+ hook handling happens in
+ * classes/hook/output/before_footer_listener.php, so this function returns
+ * empty to avoid duplication.
  *
- * @return string HTML que Moodle inserta antes del footer (Moodle ≤ 4.3).
+ * @return string HTML that Moodle inserts before the footer (Moodle ≤ 4.3).
  */
 function local_nexusai_before_footer(): string {
     global $CFG, $PAGE, $USER, $COURSE;
 
-    // En Moodle 4.4+ el sistema de hooks nuevo se encarga.
-    // Build 2024042200 = 4.4 LTS / 4.5. Más arriba de 2024 → usar nuevo sistema.
+    // In Moodle 4.4+ the new hook system takes care of it.
+    // Build 2024042200 = 4.4 LTS / 4.5. Anything from 2024 onward → use the new system.
     if ((int)$CFG->version >= 2024041600) {
         return '';
     }
 
-    // Lógica para Moodle 4.1-4.3 (legacy hook system).
+    // Logic for Moodle 4.1-4.3 (legacy hook system).
 
     if (!isloggedin() || isguestuser()) {
         return '';
     }
 
-    // ONB-03: en la pantalla de crear un curso el widget muestra el tutorial
-    // de armado. Se evalúa antes del guard de curso real porque justamente ahí
-    // todavía no hay curso ($COURSE->id === 1).
+    // ONB-03: on the course-creation screen the widget shows the setup
+    // tutorial. It's evaluated before the real-course guard because that's
+    // precisely where there's no course yet ($COURSE->id === 1).
     $onboarding = \local_nexusai\visibility_helper::onboarding_hint();
 
     if (empty($COURSE->id) || $COURSE->id <= 1) {
         if ($onboarding === null) {
-            // Resto de páginas sin curso: la experiencia out-of-course completa
-            // es solo 4.4+ (hook nuevo). En 4.1-4.3 queda como antes.
+            // Other course-less pages: the full out-of-course experience is
+            // 4.4+ only (new hook). On 4.1-4.3 it stays as before.
             return '';
         }
 
@@ -121,24 +122,10 @@ function local_nexusai_before_footer(): string {
 }
 
 /**
- * Hook ejecutado por Moodle cuando arma el navbar de un curso.
- *
- * Agregamos un link "📚 NexusAI" que lleva a la página de gestión de documentos,
- * SOLO visible para usuarios con capability local/nexusai:manage (docentes y admins).
- * Los alumnos no ven este link — interactúan con el chat flotante únicamente.
- *
- * Este hook funciona en TODAS las versiones soportadas (Moodle 4.1 LTS hasta
- * 4.5) — no fue migrado a Hook API nuevo.
- *
- * @param navigation_node $navigation Nodo del curso al que sumamos el item.
- * @param stdClass        $course     Objeto del curso actual.
- * @param context_course  $context    Contexto del curso.
- */
-/**
- * Permite a Moodle servir archivos del area 'documents' del plugin.
+ * Allows Moodle to serve files from the plugin's 'documents' area.
  *
  * URL: /pluginfile.php/{contextid}/local_nexusai/documents/{courseid}/{filename}
- * Acceso: requiere local/nexusai:use (alumnos y docentes del curso).
+ * Access: requires local/nexusai:use (course students and teachers).
  */
 function local_nexusai_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = []) {
     if ($filearea !== 'documents') {
@@ -166,32 +153,19 @@ function local_nexusai_pluginfile($course, $cm, $context, $filearea, $args, $for
 }
 
 /**
- * Hook ejecutado por Moodle cuando arma el navbar de un curso.
- *
- * Agregamos un link "📚 NexusAI" que lleva a la página de gestión de documentos,
- * SOLO visible para usuarios con capability local/nexusai:manage (docentes y admins).
- * Los alumnos no ven este link — interactúan con el chat flotante únicamente.
- *
- * Este hook funciona en TODAS las versiones soportadas (Moodle 4.1 LTS hasta
- * 4.5) — no fue migrado a Hook API nuevo.
- *
- * @param navigation_node $navigation Nodo del curso al que sumamos el item.
- * @param stdClass        $course     Objeto del curso actual.
- * @param context_course  $context    Contexto del curso.
- */
-/**
- * Nombre de la user preference donde vive el token del feed de calendario (CAL-07).
+ * Name of the user preference where the calendar feed token lives (CAL-07).
  */
 define('LOCAL_NEXUSAI_CALFEED_PREF', 'local_nexusai_calfeedtoken');
 
 /**
- * Devuelve el token del feed de calendario del alumno, creándolo si no existe.
+ * Returns the student's calendar feed token, creating it if it doesn't exist.
  *
- * El token es per-alumno (no per-curso): una sola suscripción cubre todos sus
- * cursos, y revocarlo corta todas. Se guarda como user preference — sin tabla.
+ * The token is per-student (not per-course): a single subscription covers
+ * all their courses, and revoking it cuts all of them off. Stored as a user
+ * preference — no table.
  *
  * @param int $userid
- * @return string Token de 44 caracteres.
+ * @return string 44-character token.
  */
 function local_nexusai_calfeed_get_or_create_token(int $userid): string {
     $token = get_user_preferences(LOCAL_NEXUSAI_CALFEED_PREF, null, $userid);
@@ -202,10 +176,10 @@ function local_nexusai_calfeed_get_or_create_token(int $userid): string {
 }
 
 /**
- * Genera un token nuevo para el alumno y descarta el anterior (revocación).
+ * Generates a new token for the student and discards the previous one (revocation).
  *
  * @param int $userid
- * @return string El token nuevo.
+ * @return string The new token.
  */
 function local_nexusai_calfeed_rotate_token(int $userid): string {
     $token = random_string(44);
@@ -214,7 +188,7 @@ function local_nexusai_calfeed_rotate_token(int $userid): string {
 }
 
 /**
- * URL absoluta del feed .ics de un curso para un alumno.
+ * Absolute URL of a course's .ics feed for a student.
  *
  * @param int $userid
  * @param int $courseid
@@ -229,14 +203,18 @@ function local_nexusai_calfeed_url(int $userid, int $courseid): string {
 }
 
 /**
- * Hook ejecutado por Moodle cuando arma el navbar de un curso.
+ * Hook run by Moodle when building a course's navbar.
  *
- * Agregamos un link "📚 NexusAI" que lleva a la página de gestión de documentos,
- * SOLO visible para usuarios con capability local/nexusai:manage (docentes y admins).
+ * We add a "📚 NexusAI" link to the document management page, ONLY visible
+ * to users with the local/nexusai:manage capability (teachers and admins).
+ * Students don't see this link — they interact with the floating chat only.
  *
- * @param navigation_node $navigation Nodo del curso al que sumamos el item.
- * @param stdClass        $course     Objeto del curso actual.
- * @param context_course  $context    Contexto del curso.
+ * This hook works on ALL supported versions (Moodle 4.1 LTS through 4.5) —
+ * it was not migrated to the new Hook API.
+ *
+ * @param navigation_node $navigation Course node we add the item to.
+ * @param stdClass        $course     Current course object.
+ * @param context_course  $context    Course context.
  */
 function local_nexusai_extend_navigation_course($navigation, $course, $context): void {
     if (!has_capability('local/nexusai:manage', $context)) {

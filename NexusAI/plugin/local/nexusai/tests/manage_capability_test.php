@@ -15,29 +15,28 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Enforcement de `local/nexusai:manage` en las external functions que
- * todavía no tenían test (QA-02, issue #312).
+ * Enforcement of `local/nexusai:manage` on the external functions that
+ * still had no test (QA-02, issue #312).
  *
- * De las 47 external functions registradas en db/services.php, 43 no
- * tenían ningún test antes de este archivo — ninguno de los 5 tests
- * preexistentes invoca execute() de punta a punta ni mockea
- * backend_client (no es mockeable/inyectable: `new backend_client()` está
- * hardcodeado inline en cada clase, sin factory ni service locator —
- * refactorizar eso es un cambio mucho más grande que esta issue).
+ * Of the 47 external functions registered in db/services.php, 43 had no
+ * test at all before this file — none of the 5 pre-existing tests invoke
+ * execute() end-to-end or mock backend_client (it's not mockable/injectable:
+ * `new backend_client()` is hardcoded inline in every class, with no
+ * factory or service locator — refactoring that is a much bigger change
+ * than this issue).
  *
- * Lo que SÍ es 100% testable sin tocar backend_client, porque corre ANTES
- * en execute(): validate_parameters(), validate_context() y
- * require_capability(). Este archivo cubre exactamente eso — que un
- * alumno (sin :manage) no pueda invocar ninguna de las funciones
- * reservadas a docentes — que es lo que el issue pide priorizar primero
- * ("enforcement de capability").
+ * What IS 100% testable without touching backend_client, because it runs
+ * BEFORE it in execute(): validate_parameters(), validate_context() and
+ * require_capability(). This file covers exactly that — that a student
+ * (without :manage) can't invoke any of the teacher-reserved functions —
+ * which is what the issue asks to prioritize first ("capability enforcement").
  *
- * dismiss_pending_upload es la única función `:manage`-adyacente que se
- * excluye a propósito de la lista de abajo: no tiene courseid ni
- * capability check — opera solo sobre la user preference del propio
- * caller (ver comentario en el archivo), así que el test correspondiente
- * (más abajo) confirma lo contrario: que CUALQUIER usuario logueado puede
- * llamarla sin excepción, y que está aislada por usuario.
+ * dismiss_pending_upload is the only `:manage`-adjacent function
+ * deliberately excluded from the list below: it has no courseid or
+ * capability check — it only operates on the caller's own user preference
+ * (see the comment in that file), so the corresponding test (further down)
+ * confirms the opposite: that ANY logged-in user can call it without
+ * exception, and that it's scoped per user.
  *
  * @package    local_nexusai
  * @category   test
@@ -48,7 +47,7 @@
 namespace local_nexusai;
 
 /**
- * Enforcement de local/nexusai:manage en external functions que todavía no tenían test (QA-02, #312).
+ * Enforcement of local/nexusai:manage on external functions that still had no test (QA-02, #312).
  *
  * @covers \local_nexusai\external\exam_generate
  * @covers \local_nexusai\external\analytics_dashboard
@@ -67,7 +66,7 @@ namespace local_nexusai;
  */
 final class manage_capability_test extends \advanced_testcase {
     /**
-     * Curso + alumno matriculado (rol student, SIN local/nexusai:manage).
+     * Course + enrolled student (student role, WITHOUT local/nexusai:manage).
      *
      * @return array{0: \stdClass, 1: \stdClass} [$course, $student]
      */
@@ -80,7 +79,7 @@ final class manage_capability_test extends \advanced_testcase {
     }
 
     /**
-     * Curso + docente matriculado (rol editingteacher, CON local/nexusai:manage).
+     * Course + enrolled teacher (editingteacher role, WITH local/nexusai:manage).
      *
      * @return array{0: \stdClass, 1: \stdClass} [$course, $teacher]
      */
@@ -92,7 +91,7 @@ final class manage_capability_test extends \advanced_testcase {
         return [$course, $teacher];
     }
 
-    // Un test por clase :manage sin cobertura previa.
+    // One test per :manage class with no prior coverage.
 
     public function test_exam_generate_requires_manage(): void {
         $this->resetAfterTest();
@@ -103,10 +102,10 @@ final class manage_capability_test extends \advanced_testcase {
     }
 
     /**
-     * exam_generate valida "al menos un documento" ANTES de llegar a
-     * backend_client (línea ~98 de exam_generate.php) — 100% testable sin
-     * mockear nada, siempre que el usuario SÍ tenga :manage (si no,
-     * require_capability tira primero — ver test de arriba).
+     * exam_generate validates "at least one document" BEFORE reaching
+     * backend_client (line ~98 of exam_generate.php) — 100% testable
+     * without mocking anything, as long as the user DOES have :manage (if
+     * not, require_capability throws first — see the test above).
      */
     public function test_exam_generate_rejects_empty_document_ids_before_reaching_backend(): void {
         $this->resetAfterTest();
@@ -210,15 +209,15 @@ final class manage_capability_test extends \advanced_testcase {
         \local_nexusai\external\confirm_pending_upload::execute($course->id, 1);
     }
 
-    // La función dismiss_pending_upload es diseño deliberado, sin capability check.
+    // The dismiss_pending_upload function is deliberately designed with no capability check.
 
     /**
-     * Confirma el diseño documentado en dismiss_pending_upload.php: opera
-     * únicamente sobre la user preference del usuario LOGUEADO ($USER
-     * actual, nunca un parámetro), así que (a) no requiere ninguna
-     * capability puntual — cualquier alumno logueado puede llamarla sin
-     * excepción — y (b) está aislada por usuario: dos alumnos con
-     * entradas "pendientes" bajo el mismo cmid no se pisan entre sí.
+     * Confirms the design documented in dismiss_pending_upload.php: it
+     * operates solely on the LOGGED-IN user's preference (the current
+     * $USER, never a parameter), so (a) it requires no specific capability
+     * — any logged-in student can call it without exception — and (b)
+     * it's scoped per user: two students with "pending" entries under the
+     * same cmid don't step on each other.
      */
     public function test_dismiss_pending_upload_does_not_require_manage_and_is_scoped_per_user(): void {
         $this->resetAfterTest();
@@ -238,16 +237,16 @@ final class manage_capability_test extends \advanced_testcase {
         ]);
         set_user_preference(\local_nexusai\observer::PENDING_PREF, $pending, $owner->id);
 
-        // El usuario "other" no tiene ningún rol especial y llama dismiss para el
-        // MISMO cmid que "owner" tiene pendiente — no debería tirar
-        // ninguna excepción de capability (ni de ningún tipo).
+        // The "other" user has no special role and calls dismiss for the
+        // SAME cmid "owner" has pending — it shouldn't throw any capability
+        // exception (or any exception at all).
         $this->setUser($other);
         $result = \local_nexusai\external\dismiss_pending_upload::execute(55);
         $this->assertTrue($result['success']);
 
-        // La preference de "owner" no se tocó — dismiss_pending_upload solo
-        // opera sobre la preference del usuario logueado ($USER actual),
-        // nunca sobre la de otro usuario aunque comparta el mismo cmid.
+        // "owner"'s preference wasn't touched — dismiss_pending_upload only
+        // operates on the logged-in user's preference (the current $USER),
+        // never on another user's even if they share the same cmid.
         $ownerpref = json_decode(
             get_user_preferences(\local_nexusai\observer::PENDING_PREF, '{}', $owner->id),
             true
@@ -255,7 +254,7 @@ final class manage_capability_test extends \advanced_testcase {
         $this->assertArrayHasKey(
             '55',
             $ownerpref,
-            'dismiss_pending_upload no debe afectar la preference de otro usuario'
+            'dismiss_pending_upload must not affect another user\'s preference'
         );
     }
 }

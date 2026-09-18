@@ -17,15 +17,15 @@
 /**
  * External Functions registry for local_nexusai.
  *
- * Cada entrada de `$functions` declara una función expuesta a JavaScript a través
- * del módulo AMD `core/ajax`. Moodle se encarga de:
- *   - Validar la sesskey automáticamente (CSRF).
- *   - Aplicar require_login() antes del execute.
- *   - Verificar capabilities declaradas acá.
- *   - Convertir parámetros y returns con los external_value/structure declarados.
+ * Each entry in `$functions` declares a function exposed to JavaScript through
+ * the `core/ajax` AMD module. Moodle takes care of:
+ *   - Automatically validating the sesskey (CSRF).
+ *   - Applying require_login() before execute.
+ *   - Checking the capabilities declared here.
+ *   - Converting params and returns with the declared external_value/structure.
  *
- * Convención de nombres: `<plugin>_<accion>` — el cliente JS lo usa como
- * `methodname: 'local_nexusai_chat_send'` en `core/ajax::call()`.
+ * Naming convention: `<plugin>_<action>` — the JS client uses it as
+ * `methodname: 'local_nexusai_chat_send'` in `core/ajax::call()`.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -36,10 +36,10 @@ defined('MOODLE_INTERNAL') || die();
 
 $functions = [
 
-    // Alumno.
+    // Student.
 
-    // Enviar un mensaje del alumno al asistente y recibir la respuesta del LLM.
-    // Esta es la función que invoca React vía core/ajax.
+    // Send a student message to the assistant and get the LLM's response.
+    // This is the function React calls via core/ajax.
     'local_nexusai_chat_send' => [
         'classname'     => '\local_nexusai\external\chat_send',
         'methodname'    => 'execute',
@@ -50,7 +50,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // VOICE-01 (#314): transcribe un audio corto a texto para el composer del chat.
+    // VOICE-01 (#314): transcribes a short audio clip to text for the chat composer.
     'local_nexusai_chat_voice_transcribe' => [
         'classname'     => '\local_nexusai\external\chat_voice_transcribe',
         'methodname'    => 'execute',
@@ -61,7 +61,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Feedback 👍/👎 del alumno sobre una respuesta puntual del chat (ASIST-01).
+    // Student 👍/👎 feedback on a specific chat response (ASIST-01).
     'local_nexusai_chat_message_feedback' => [
         'classname'     => '\local_nexusai\external\chat_message_feedback',
         'methodname'    => 'execute',
@@ -72,7 +72,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Resumen automático de un documento indexado usando el LLM (BUS-03).
+    // Automatic summary of an indexed document using the LLM (BUS-03).
     'local_nexusai_document_summarize' => [
         'classname'     => '\local_nexusai\external\document_summarize',
         'methodname'    => 'execute',
@@ -83,8 +83,8 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Resumen de repaso pre-parcial combinando todo el material indexado
-    // relevante, opcionalmente acotado a una unidad/sección (BUS-04).
+    // Pre-exam review summary combining all relevant indexed material,
+    // optionally scoped to a unit/section (BUS-04).
     'local_nexusai_document_pre_exam_summary' => [
         'classname'     => '\local_nexusai\external\document_pre_exam_summary',
         'methodname'    => 'execute',
@@ -95,7 +95,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Búsqueda semántica en el material del curso (retrieval sin LLM — Feature A).
+    // Semantic search over the course material (retrieval without LLM — Feature A).
     'local_nexusai_search_query' => [
         'classname'     => '\local_nexusai\external\search_query',
         'methodname'    => 'execute',
@@ -117,8 +117,8 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // ONB-02 (#425): estado de setup del curso para el tutorial/onboarding
-    // al docente — secciones, grupos, alumnos, foros, calendario y material.
+    // ONB-02 (#425): course setup state for the teacher tutorial/onboarding
+    // — sections, groups, students, forums, calendar and material.
     'local_nexusai_course_setup_state' => [
         'classname'     => '\local_nexusai\external\course_setup_state',
         'methodname'    => 'execute',
@@ -130,8 +130,8 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // ONB-05 (#428): estado de dismissal/progreso del tutorial de onboarding
-    // (persistido en user_preferences de core, no en tablas propias del plugin).
+    // ONB-05 (#428): onboarding tutorial dismissal/progress state
+    // (persisted in core's user_preferences, not in the plugin's own tables).
     'local_nexusai_onboarding_state_get' => [
         'classname'     => '\local_nexusai\external\onboarding_state_get',
         'methodname'    => 'execute',
@@ -151,7 +151,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Historial de conversaciones — lista de sesiones previas del alumno (Feature E).
+    // Conversation history — list of the student's previous sessions (Feature E).
     'local_nexusai_chat_sessions_list' => [
         'classname'     => '\local_nexusai\external\chat_sessions_list',
         'methodname'    => 'execute',
@@ -162,7 +162,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Mensajes de una sesión específica para retomar conversación (Feature E).
+    // Messages of a specific session to resume the conversation (Feature E).
     'local_nexusai_chat_session_messages' => [
         'classname'     => '\local_nexusai\external\chat_session_messages',
         'methodname'    => 'execute',
@@ -173,7 +173,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Borrar una sesión puntual del historial del alumno (ASIST-02, #350).
+    // Delete a single session from the student's history (ASIST-02, #350).
     'local_nexusai_chat_session_delete' => [
         'classname'     => '\local_nexusai\external\chat_session_delete',
         'methodname'    => 'execute',
@@ -184,7 +184,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Quiz generator — preguntas de práctica desde el material (Feature F / SP-03).
+    // Quiz generator — practice questions from the material (Feature F / SP-03).
     'local_nexusai_quiz_generate' => [
         'classname'     => '\local_nexusai\external\quiz_generate',
         'methodname'    => 'execute',
@@ -195,7 +195,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Sugiere una dificultad de partida según el historial del alumno (SP-12).
+    // Suggests a starting difficulty based on the student's history (SP-12).
     'local_nexusai_quiz_suggest_difficulty' => [
         'classname'     => '\local_nexusai\external\quiz_suggest_difficulty',
         'methodname'    => 'execute',
@@ -206,7 +206,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Racha de días consecutivos de actividad del alumno en el curso (SP-16).
+    // Student's consecutive-day activity streak in the course (SP-16).
     'local_nexusai_quiz_streak' => [
         'classname'     => '\local_nexusai\external\quiz_streak',
         'methodname'    => 'execute',
@@ -217,7 +217,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Quiz evaluator — evalúa respuestas abiertas con IA (SP-05).
+    // Quiz evaluator — evaluates open answers with AI (SP-05).
     'local_nexusai_quiz_evaluate' => [
         'classname'     => '\local_nexusai\external\quiz_evaluate',
         'methodname'    => 'execute',
@@ -228,8 +228,8 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Generador de exámenes — banco de preguntas desde archivos elegidos por el
-    // docente (EVAL-01 / issue #235, DOC-D04). Solo docentes (capability :manage).
+    // Exam generator — question bank from files chosen by the teacher
+    // (EVAL-01 / issue #235, DOC-D04). Teachers only (capability :manage).
     'local_nexusai_exam_generate' => [
         'classname'     => '\local_nexusai\external\exam_generate',
         'methodname'    => 'execute',
@@ -240,7 +240,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Repaso de errores — persiste preguntas mal respondidas en un quiz (SP-10).
+    // Error review — persists questions answered wrong in a quiz (SP-10).
     'local_nexusai_quiz_errors_record' => [
         'classname'     => '\local_nexusai\external\quiz_errors_record',
         'methodname'    => 'execute',
@@ -251,7 +251,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Repaso de errores — historial del alumno en un curso (SP-10).
+    // Error review — student's history in a course (SP-10).
     'local_nexusai_quiz_errors_list' => [
         'classname'     => '\local_nexusai\external\quiz_errors_list',
         'methodname'    => 'execute',
@@ -262,7 +262,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Repaso de errores — borra el historial del alumno (SP-10).
+    // Error review — clears the student's history (SP-10).
     'local_nexusai_quiz_errors_clear' => [
         'classname'     => '\local_nexusai\external\quiz_errors_clear',
         'methodname'    => 'execute',
@@ -273,7 +273,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Repaso de errores — sugerencias de repaso basadas en errores frecuentes (SP-10).
+    // Error review — review suggestions based on frequent errors (SP-10).
     'local_nexusai_quiz_review_suggestions' => [
         'classname'     => '\local_nexusai\external\quiz_review_suggestions',
         'methodname'    => 'execute',
@@ -284,7 +284,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Historial de quizzes — guarda el resultado de un quiz completado (SP-09).
+    // Quiz history — saves the result of a completed quiz (SP-09).
     'local_nexusai_quiz_attempt_save' => [
         'classname'     => '\local_nexusai\external\quiz_attempt_save',
         'methodname'    => 'execute',
@@ -295,7 +295,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Historial de quizzes — lista el historial del alumno en un curso (SP-09).
+    // Quiz history — lists the student's history in a course (SP-09).
     'local_nexusai_quiz_attempt_list' => [
         'classname'     => '\local_nexusai\external\quiz_attempt_list',
         'methodname'    => 'execute',
@@ -306,7 +306,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Plan de estudio personalizado — combina errores de quiz y gaps del chat (STUDY-01).
+    // Personalized study plan — combines quiz errors and chat gaps (STUDY-01).
     'local_nexusai_quiz_study_plan' => [
         'classname'     => '\local_nexusai\external\quiz_study_plan',
         'methodname'    => 'execute',
@@ -317,7 +317,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Descartar un tema puntual del plan de estudio, sin borrar el historial (SP-13).
+    // Dismiss a specific study-plan topic, without deleting the history (SP-13).
     'local_nexusai_quiz_study_plan_dismiss' => [
         'classname'     => '\local_nexusai\external\quiz_study_plan_dismiss',
         'methodname'    => 'execute',
@@ -328,7 +328,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Repetición espaciada de flashcards — cuántas tocan hoy vs. el total (SP-11).
+    // Flashcards spaced repetition — how many are due today vs. the total (SP-11).
     'local_nexusai_quiz_flashcards_summary' => [
         'classname'     => '\local_nexusai\external\quiz_flashcards_summary',
         'methodname'    => 'execute',
@@ -339,7 +339,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Repetición espaciada de flashcards — las que tocan hoy, del banco ya generado (SP-11).
+    // Flashcards spaced repetition — the ones due today, from the already-generated bank (SP-11).
     'local_nexusai_quiz_flashcards_due' => [
         'classname'     => '\local_nexusai\external\quiz_flashcards_due',
         'methodname'    => 'execute',
@@ -350,7 +350,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Repetición espaciada de flashcards — aplica SM-2 al final de una sesión (SP-11).
+    // Flashcards spaced repetition — applies SM-2 at the end of a session (SP-11).
     'local_nexusai_quiz_flashcards_review_batch' => [
         'classname'     => '\local_nexusai\external\quiz_flashcards_review_batch',
         'methodname'    => 'execute',
@@ -361,8 +361,8 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Detección de gaps — preguntas que el material no respondió (Feature G).
-    // Solo docentes ven sus gaps (capability :manage).
+    // Gap detection — questions the material didn't answer (Feature G).
+    // Only teachers see their gaps (capability :manage).
     'local_nexusai_gaps_list' => [
         'classname'     => '\local_nexusai\external\gaps_list',
         'methodname'    => 'execute',
@@ -373,7 +373,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Archivar/desarchivar un gap detectado (DOC-D08, issue #383).
+    // Archive/unarchive a detected gap (DOC-D08, issue #383).
     'local_nexusai_gaps_archive' => [
         'classname'     => '\local_nexusai\external\gaps_archive',
         'methodname'    => 'execute',
@@ -384,8 +384,8 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Dashboard de preguntas frecuentes agrupadas por tema (DOC-D02).
-    // Solo docentes/admins (capability :manage).
+    // Frequent-questions dashboard grouped by topic (DOC-D02).
+    // Teachers/admins only (capability :manage).
     'local_nexusai_analytics_faq_topics' => [
         'classname'     => '\local_nexusai\external\analytics_faq_topics',
         'methodname'    => 'execute',
@@ -396,8 +396,8 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Dashboard agregado: top queries, uso diario, distribución de puntajes
-    // de quiz y ratio de gaps (ANALYTICS-01/02). Solo docentes/admins.
+    // Aggregated dashboard: top queries, daily usage, quiz score
+    // distribution and gaps ratio (ANALYTICS-01/02). Teachers/admins only.
     'local_nexusai_analytics_dashboard' => [
         'classname'     => '\local_nexusai\external\analytics_dashboard',
         'methodname'    => 'execute',
@@ -408,9 +408,9 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Calendario — CAL-02.
+    // Calendar — CAL-02.
 
-    // Guarda / actualiza la alerta de un evento de calendario para el alumno.
+    // Saves / updates the alert on a calendar event for the student.
     'local_nexusai_calendar_alert_save' => [
         'classname'     => '\local_nexusai\external\calendar_alert_save',
         'methodname'    => 'execute',
@@ -421,7 +421,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Lista las alertas activas del alumno en el curso.
+    // Lists the student's active alerts in the course.
     'local_nexusai_calendar_alerts_list' => [
         'classname'     => '\local_nexusai\external\calendar_alerts_list',
         'methodname'    => 'execute',
@@ -432,7 +432,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // URL del feed .ics suscribible del alumno para un curso (CAL-07).
+    // URL of the student's subscribable .ics feed for a course (CAL-07).
     'local_nexusai_calendar_feed_url' => [
         'classname'     => '\local_nexusai\external\calendar_feed_url',
         'methodname'    => 'execute',
@@ -443,7 +443,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Rota el token del feed .ics del alumno (revoca la URL anterior).
+    // Rotates the student's .ics feed token (revokes the previous URL).
     'local_nexusai_calendar_feed_revoke' => [
         'classname'     => '\local_nexusai\external\calendar_feed_revoke',
         'methodname'    => 'execute',
@@ -454,10 +454,10 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Foros — Épica 06.
+    // Forums — Epic 06.
 
-    // Detecta posts similares al texto que el alumno está escribiendo (F-07).
-    // Usado por el forum-duplicate-checker AMD module antes de publicar.
+    // Detects posts similar to the text the student is writing (F-07).
+    // Used by the forum-duplicate-checker AMD module before posting.
     'local_nexusai_forum_search_similar' => [
         'classname'     => '\local_nexusai\external\forum_search_similar',
         'methodname'    => 'execute',
@@ -468,8 +468,8 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Resume una discusión de foro con el LLM (F-04/F-10).
-    // Usado por el forum-thread-summarizer AMD module en mod-forum-discuss.
+    // Summarizes a forum discussion with the LLM (F-04/F-10).
+    // Used by the forum-thread-summarizer AMD module in mod-forum-discuss.
     'local_nexusai_forum_summarize_thread' => [
         'classname'     => '\local_nexusai\external\forum_summarize_thread',
         'methodname'    => 'execute',
@@ -480,8 +480,8 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Genera una sugerencia de respuesta para un post de foro con RAG + LLM (F-05/F-11).
-    // Usado por el forum-reply-suggester AMD module cuando el usuario abre el formulario de reply.
+    // Generates a reply suggestion for a forum post with RAG + LLM (F-05/F-11).
+    // Used by the forum-reply-suggester AMD module when the user opens the reply form.
     'local_nexusai_forum_suggest_reply' => [
         'classname'     => '\local_nexusai\external\forum_suggest_reply',
         'methodname'    => 'execute',
@@ -492,9 +492,9 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Resumen semanal del foro + señal de urgencia por hilo, para el
-    // docente (FOR-06 / #367, FOR-05 / #366). Panel del widget React
-    // (teacherOnly), no un AMD module nativo como las otras 3 funciones de foro.
+    // Weekly forum digest + per-thread urgency signal, for the teacher
+    // (FOR-06 / #367, FOR-05 / #366). Part of the React widget panel
+    // (teacherOnly), not a native AMD module like the other 3 forum functions.
     'local_nexusai_forum_weekly_digest' => [
         'classname'     => '\local_nexusai\external\forum_weekly_digest',
         'methodname'    => 'execute',
@@ -525,11 +525,11 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Docente.
+    // Teacher.
 
-    // Subir un documento (PDF) del curso para indexarlo en el backend RAG.
-    // Recibe un `draftitemid` del file picker de Moodle, lee el archivo del
-    // file API, lo encodea en base64 y POSTea al backend.
+    // Uploads a course document (PDF) to index it in the RAG backend.
+    // Receives a `draftitemid` from Moodle's file picker, reads the file
+    // from the file API, base64-encodes it and POSTs it to the backend.
     'local_nexusai_document_upload' => [
         'classname'     => '\local_nexusai\external\document_upload',
         'methodname'    => 'execute',
@@ -540,7 +540,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Listar todos los documentos indexados de un curso (para la tabla docente).
+    // Lists all indexed documents of a course (for the teacher table).
     'local_nexusai_document_list' => [
         'classname'     => '\local_nexusai\external\document_list',
         'methodname'    => 'execute',
@@ -551,7 +551,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Estado de un documento individual (para polling durante indexación).
+    // Status of a single document (for polling during indexing).
     'local_nexusai_document_status' => [
         'classname'     => '\local_nexusai\external\document_status',
         'methodname'    => 'execute',
@@ -562,7 +562,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Borrar un documento (cascada borra los chunks asociados).
+    // Deletes a document (cascade deletes the associated chunks).
     'local_nexusai_document_delete' => [
         'classname'     => '\local_nexusai\external\document_delete',
         'methodname'    => 'execute',
@@ -573,7 +573,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Reindexar un documento ya subido, sin pedir un archivo nuevo (CONT-09).
+    // Reindexes an already-uploaded document, without requesting a new file (CONT-09).
     'local_nexusai_document_reindex' => [
         'classname'     => '\local_nexusai\external\document_reindex',
         'methodname'    => 'execute',
@@ -584,7 +584,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Preview del texto extraído de un documento (CONT-08).
+    // Preview of the text extracted from a document (CONT-08).
     'local_nexusai_document_preview' => [
         'classname'     => '\local_nexusai\external\document_preview',
         'methodname'    => 'execute',
@@ -595,7 +595,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Reemplazar el archivo de un documento existente sin cambiar su id (CONT-07).
+    // Replaces the file of an existing document without changing its id (CONT-07).
     'local_nexusai_document_replace' => [
         'classname'     => '\local_nexusai\external\document_replace',
         'methodname'    => 'execute',
@@ -606,9 +606,9 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // Confirmación de carga desde sección del curso.
+    // Upload confirmation from a course section.
 
-    // Lista los archivos subidos al curso (tab general) pendientes de confirmación.
+    // Lists files uploaded to the course (general tab) pending confirmation.
     'local_nexusai_get_pending_uploads' => [
         'classname'     => '\local_nexusai\external\get_pending_uploads',
         'methodname'    => 'execute',
@@ -619,7 +619,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // El docente confirmó que quiere indexar el archivo en NexusAI.
+    // The teacher confirmed they want to index the file in NexusAI.
     'local_nexusai_confirm_pending_upload' => [
         'classname'     => '\local_nexusai\external\confirm_pending_upload',
         'methodname'    => 'execute',
@@ -630,7 +630,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // El docente eligió no indexar el archivo en NexusAI.
+    // The teacher chose not to index the file in NexusAI.
     'local_nexusai_dismiss_pending_upload' => [
         'classname'     => '\local_nexusai\external\dismiss_pending_upload',
         'methodname'    => 'execute',
@@ -640,7 +640,7 @@ $functions = [
         'loginrequired' => true,
     ],
 
-    // PRIV-01 — Exportación y eliminación de datos personales (issue #310).
+    // PRIV-01 — Export and deletion of personal data (issue #310).
     'local_nexusai_privacy_export' => [
         'classname'     => '\local_nexusai\external\privacy_export',
         'methodname'    => 'execute',
@@ -663,7 +663,7 @@ $functions = [
 
 ];
 
-// El array $services queda vacío: no exponemos un service preconfigurado todavía. La
-// función es invocable solo desde el plugin (vía core/ajax). Si en el futuro
-// queremos permitir llamadas externas con token, agregar acá un service.
+// The $services array stays empty: we don't expose a preconfigured service yet. The
+// function is only callable from within the plugin (via core/ajax). If in the future
+// we want to allow external token-based calls, add a service here.
 $services = [];

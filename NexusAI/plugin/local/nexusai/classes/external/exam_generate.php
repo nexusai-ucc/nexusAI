@@ -17,10 +17,10 @@
 /**
  * External function `local_nexusai_exam_generate`.
  *
- * Proxy entre React y el endpoint /api/v1/quiz/generate-exam del backend Python.
- * Genera un banco de preguntas de examen a partir de archivos elegidos por el
- * docente (EVAL-01, issue #235 / DOC-D04). A diferencia de `quiz_generate`
- * (alumno), este requiere la capability `local/nexusai:manage`.
+ * Proxy between React and the Python backend's /api/v1/quiz/generate-exam endpoint.
+ * Generates an exam question bank from files chosen by the teacher
+ * (EVAL-01, issue #235 / DOC-D04). Unlike `quiz_generate`
+ * (student), this one requires the `local/nexusai:manage` capability.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -33,7 +33,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Proxy entre React y el endpoint /api/v1/quiz/generate-exam del backend Python.
+ * Proxy between React and the Python backend's /api/v1/quiz/generate-exam endpoint.
  */
 class exam_generate extends \external_api {
     /**
@@ -43,28 +43,28 @@ class exam_generate extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'     => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid'     => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
             'documentids'  => new \external_multiple_structure(
-                new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento fuente'),
-                'Archivos del curso de los que sacar las preguntas (al menos 1)'
+                new \external_value(PARAM_ALPHANUMEXT, 'Source document UUID'),
+                'Course files to draw the questions from (at least 1)'
             ),
-            'topic'        => new \external_value(PARAM_RAW, 'Tema opcional', VALUE_DEFAULT, ''),
-            'numquestions' => new \external_value(PARAM_INT, 'Cantidad de preguntas (1..20)', VALUE_DEFAULT, 10),
+            'topic'        => new \external_value(PARAM_RAW, 'Optional topic', VALUE_DEFAULT, ''),
+            'numquestions' => new \external_value(PARAM_INT, 'Number of questions (1..20)', VALUE_DEFAULT, 10),
             'questiontype' => new \external_value(
                 PARAM_ALPHANUMEXT,
-                'Tipo de pregunta (multiple_choice|true_false|open|mix)',
+                'Question type (multiple_choice|true_false|open|mix)',
                 VALUE_DEFAULT,
                 'multiple_choice'
             ),
-            'difficulty'   => new \external_value(PARAM_ALPHA, 'Dificultad (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
-            // DOC-D09 (#390): temas con dificultad detectada (Gaps/FAQ) que el
-            // docente eligió priorizar como contexto extra de generación.
+            'difficulty'   => new \external_value(PARAM_ALPHA, 'Difficulty (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
+            // DOC-D09 (#390): topics with detected difficulty (Gaps/FAQ) that
+            // the teacher chose to prioritize as extra generation context.
             'topics'       => new \external_multiple_structure(
                 new \external_single_structure([
-                    'label'  => new \external_value(PARAM_TEXT, 'Texto del tema (gap o FAQ)'),
-                    'source' => new \external_value(PARAM_ALPHA, 'Origen del tema: gap|faq'),
+                    'label'  => new \external_value(PARAM_TEXT, 'Topic text (gap or FAQ)'),
+                    'source' => new \external_value(PARAM_ALPHA, 'Topic origin: gap|faq'),
                 ]),
-                'Temas con dificultad detectada a priorizar (máx 15)',
+                'Topics with detected difficulty to prioritize (max 15)',
                 VALUE_OPTIONAL,
                 []
             ),
@@ -78,28 +78,28 @@ class exam_generate extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
-            'topic'     => new \external_value(PARAM_RAW, 'Tema solicitado', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
+            'topic'     => new \external_value(PARAM_RAW, 'Requested topic', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'questions' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'question_type'      => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta'),
-                    'question'           => new \external_value(PARAM_RAW, 'Texto de la pregunta'),
+                    'question_type'      => new \external_value(PARAM_ALPHANUMEXT, 'Question type'),
+                    'question'           => new \external_value(PARAM_RAW, 'Question text'),
                     'options'            => new \external_multiple_structure(
-                        new \external_value(PARAM_RAW, 'Opción')
+                        new \external_value(PARAM_RAW, 'Option')
                     ),
-                    'correct_index'      => new \external_value(PARAM_INT, 'Índice de la opción correcta (-1..3)'),
-                    'explanation'        => new \external_value(PARAM_RAW, 'Explicación / respuesta modelo'),
-                    'source_filename'    => new \external_value(PARAM_TEXT, 'Archivo del que sale la pregunta'),
+                    'correct_index'      => new \external_value(PARAM_INT, 'Index of the correct option (-1..3)'),
+                    'explanation'        => new \external_value(PARAM_RAW, 'Explanation / model answer'),
+                    'source_filename'    => new \external_value(PARAM_TEXT, 'File the question comes from'),
                     'source_document_id' => new \external_value(
                         PARAM_ALPHANUMEXT,
-                        'ID del documento fuente (UUID)',
+                        'Source document ID (UUID)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
                     'source_topic'       => new \external_value(
                         PARAM_TEXT,
-                        'Tema de dificultad detectada del que sale la pregunta (DOC-D09)',
+                        'Detected-difficulty topic the question comes from (DOC-D09)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
@@ -110,15 +110,15 @@ class exam_generate extends \external_api {
     }
 
     /**
-     * Proxy entre React y el endpoint /api/v1/quiz/generate-exam del backend Python.
+     * Proxy between React and the Python backend's /api/v1/quiz/generate-exam endpoint.
      *
-     * @param int $courseid ID del curso
-     * @param array $documentids Archivos del curso de los que sacar las preguntas (al menos 1)
-     * @param string $topic Tema opcional
-     * @param int $numquestions Cantidad de preguntas (1..20)
-     * @param string $questiontype Tipo de pregunta (multiple_choice|true_false|open|mix)
-     * @param string $difficulty Dificultad (easy|medium|hard)
-     * @param array $topics Temas con dificultad detectada a priorizar (máx 15)
+     * @param int $courseid Course ID
+     * @param array $documentids Course files to draw the questions from (at least 1)
+     * @param string $topic Optional topic
+     * @param int $numquestions Number of questions (1..20)
+     * @param string $questiontype Question type (multiple_choice|true_false|open|mix)
+     * @param string $difficulty Difficulty (easy|medium|hard)
+     * @param array $topics Topics with detected difficulty to prioritize (max 15)
      * @return array
      */
     public static function execute(
@@ -144,9 +144,9 @@ class exam_generate extends \external_api {
 
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
-        // Solo docentes/admins — a diferencia del quiz de práctica (local/nexusai:use),
-        // el generador de exámenes usa la misma capability que gatea el resto del
-        // dashboard docente (documents.php).
+        // Teachers/admins only — unlike the practice quiz (local/nexusai:use),
+        // the exam generator uses the same capability that gates the rest of
+        // the teacher dashboard (documents.php).
         require_capability('local/nexusai:manage', $context);
 
         if (empty($params['documentids'])) {
@@ -165,8 +165,8 @@ class exam_generate extends \external_api {
         $alloweddifficulties = ['easy', 'medium', 'hard'];
         $difficulty = in_array($params['difficulty'], $alloweddifficulties, true) ? $params['difficulty'] : 'medium';
 
-        // DOC-D09 (#390): sanitizar la lista de temas — origen restringido a
-        // gap|faq, label recortado, y se ignora cualquier fila vacía.
+        // DOC-D09 (#390): sanitize the topics list — origin restricted to
+        // gap|faq, label trimmed, and any empty row is ignored.
         $allowedtopicsources = ['gap', 'faq'];
         $focustopics = [];
         foreach (array_slice($params['topics'], 0, 15) as $t) {
