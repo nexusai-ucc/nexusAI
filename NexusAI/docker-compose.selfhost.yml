@@ -13,9 +13,10 @@
 #   docker compose -f docker-compose.selfhost.yml up -d
 #   curl http://localhost:8001/health
 #
-# The image is built and published by .github/workflows/docker-publish.yml
-# on every push to main — it's the exact same image the project's own
-# staging/production deployments run.
+# The image is built and published by the nexusai-backend repo's own
+# docker-publish.yml, on every push to ITS main
+# (https://github.com/nexusai-ucc/nexusai-backend) — it's the exact same
+# image the project's own staging/production deployments run.
 
 name: nexusai-selfhost
 
