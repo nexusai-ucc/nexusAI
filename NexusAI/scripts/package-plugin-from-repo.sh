@@ -13,6 +13,11 @@
 # El bundle de React (amd/build/*.min.js) ya viene commiteado en ese repo
 # (ver su .gitignore), así que no hace falta Node/npm para nada acá.
 #
+# lang/es/ se excluye SOLO del ZIP (queda intacto en el repo, para quien
+# quiera clonar y usar el plugin en local en español). La guía de
+# Marketplace dice explícitamente que la publicación inicial debe incluir
+# solo strings en inglés -- las traducciones se suben después vía AMOS.
+#
 # Uso:
 #   ./scripts/package-plugin-from-repo.sh            # clona main y empaqueta
 #   ./scripts/package-plugin-from-repo.sh development # o cualquier otra rama/tag
@@ -85,6 +90,7 @@ zip -r "${REPO_ROOT}/${DIST_DIR}/${ZIP_NAME}" "local_nexusai" \
     -x "local_nexusai/react/scripts/*" \
     -x "local_nexusai/react/.eslintrc*" \
     -x "local_nexusai/react/README.md" \
+    -x "local_nexusai/lang/es/*" \
     -x "*.gitignore" \
     -x "*.gitkeep" \
     -x "*.DS_Store" \
@@ -97,3 +103,5 @@ SIZE=$(du -h "${DIST_DIR}/${ZIP_NAME}" | cut -f1)
 ok "ZIP generado: ${DIST_DIR}/${ZIP_NAME} (${SIZE})"
 echo ""
 echo "Fuente: https://github.com/nexusai-ucc/moodle-local_nexusai @ ${REF}"
+echo "Nota: lang/es/ NO va en este ZIP (solo inglés, por la guía de Marketplace)."
+echo "      Sigue disponible clonando el repo directamente."

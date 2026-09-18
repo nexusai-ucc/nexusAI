@@ -44,8 +44,8 @@ if (isguestuser()) {
 }
 require_sesskey();
 
-$courseid = isset($_GET['courseid']) ? (int) $_GET['courseid'] : 0;
-$filename = isset($_GET['filename']) ? trim((string) $_GET['filename']) : '';
+$courseid = optional_param('courseid', 0, PARAM_INT);
+$filename = optional_param('filename', '', PARAM_FILE);
 
 if ($courseid <= 0) {
     http_response_code(400);
