@@ -1,15 +1,12 @@
 # NexusAI backend — standalone self-host using the prebuilt image
 #
-# For anyone who wants to run the backend WITHOUT cloning the whole
-# monorepo or building the image themselves (e.g. a Marketplace reviewer,
-# or an institution self-hosting for real). Needs only this file + a `.env`
-# next to it — see .env.example in the main repository for the full list
-# of variables (LLM_API_KEY, EMBEDDING_API_KEY, NEXUSAI_API_KEY,
-# NEXUSAI_SHARED_SECRET, POSTGRES_PASSWORD are required; the rest have
-# working defaults).
+# For anyone who wants to run the backend WITHOUT cloning any repository or
+# building the image themselves (e.g. a Marketplace reviewer, or an
+# institution self-hosting for real). Needs only this file + a `.env` next
+# to it (copy .env.example, fill in the REPLACE_ME values).
 #
 # Usage:
-#   cp .env.example .env   # fill in the REPLACE_ME / CHANGE_ME_DEV_ONLY values
+#   cp .env.example .env
 #   docker compose -f docker-compose.selfhost.yml up -d
 #   curl http://localhost:8001/health
 #

@@ -45,8 +45,9 @@ campo de notas al reviewer del formulario:
 - **Opción B — self-host con imagen prearmada**: se agregó un workflow de
   CI (`docker-publish.yml`) que publica a
   `ghcr.io/nexusai-ucc/nexusai-backend` en cada push a `main`. Con eso +
-  `docker-compose.selfhost.yml`, cualquiera levanta el backend con 2
-  archivos, sin clonar ningún repo ni compilar nada.
+  `docker-compose.selfhost.yml` + `.env.example` (ambos en la raíz de
+  `nexusai-backend`), cualquiera levanta el backend con 2 archivos, sin
+  clonar ningún repo ni compilar nada.
 
   Vive en el repo separado **`nexusai-backend`**, no en el monorepo — mismo
   criterio que el ZIP del plugin: no tiene sentido que publicar una imagen
