@@ -28,7 +28,7 @@ reales. Este documento cubre el trabajo hecho sobre esos 4 gaps.
   "Documentation URL" de la publicación) estaba 100% en español y tenía 2
   links relativos que solo funcionan dentro del monorepo, rotos en el repo
   público real.
-- **`CHANGES.md` nuevo**: arranca en la versión actual (0.17.10, la de esta
+- **`CHANGES.md` nuevo**: arranca en la versión actual (0.18.0, la de esta
   publicación), no reconstruye el historial completo del monorepo (mezcla
   cosas de backend/CI sin interés para un usuario del plugin).
 - **Issue tracker**: ya estaba activo en `moodle-local_nexusai` (0 issues
@@ -43,36 +43,45 @@ campo de notas al reviewer del formulario:
   reales. Falta un solo dato: **las credenciales las tiene que pasar
   Santi** (solo él tiene acceso SSH a la VM de producción).
 - **Opción B — self-host con imagen prearmada**: se agregó un workflow de
-  CI (`docker-publish.yml`) que publica el backend a
+  CI (`docker-publish.yml`) que publica a
   `ghcr.io/nexusai-ucc/nexusai-backend` en cada push a `main`. Con eso +
   `docker-compose.selfhost.yml`, cualquiera levanta el backend con 2
-  archivos, sin clonar el monorepo ni compilar nada.
+  archivos, sin clonar ningún repo ni compilar nada.
+
+  Vive en el repo separado **`nexusai-backend`**, no en el monorepo — mismo
+  criterio que el ZIP del plugin: no tiene sentido que publicar una imagen
+  para uso externo dependa del ciclo interno
+  `development → staging → main` del monorepo (ese ciclo mueve las VMs
+  reales de staging/prod, no es para esto). Publicar ahora depende solo de
+  `nexusai-backend`, que tiene su propio ciclo igual de simple que
+  `moodle-local_nexusai`.
 
 ## Pipeline de sync — estado actual
 
 - ✅ Mergeado a `development` del monorepo (PR #495, 4 commits + fix de phpcs).
 - ✅ Sincronizado a `development` de `moodle-local_nexusai` (automático).
-- 🟡 **PR #6** (`development → main` de `moodle-local_nexusai`) — CI en
-  verde (9/9), lista para mergear:
-  https://github.com/nexusai-ucc/moodle-local_nexusai/pull/6. Falta que
-  alguien la apruebe/mergee.
-- ⚠️ **Imagen de Docker todavía no publicada, y ni siquiera se puede
-  disparar a mano todavía** — `docker-publish.yml` solo existe en
-  `development` del **monorepo**; GitHub no lo registra como workflow
-  corrible (ni por `workflow_dispatch`) hasta que llegue a `main` del
-  monorepo, que sigue su propio ciclo `development → staging → main`
-  (separado del PR #6, que es sobre el repo del plugin, no el monorepo).
+- ✅ **PR #6 mergeada** — `main` de `moodle-local_nexusai` ya tiene todo,
+  aprobada por Delfi y verificada con un clone fresco.
+- 🟡 **Workflow de publish agregado a `nexusai-backend`** (vía overlay del
+  monorepo) — falta que se sincronice a su `development` y se promueva a
+  `main` (mismo paso que se hizo para el plugin). Recién ahí se puede
+  correr (push a `main` o `workflow_dispatch`).
 - ⚠️ **Paquete de GHCR nace privado** — una vez publicada la imagen,
   alguien con admin del org (Santi) tiene que entrar a la config del
   paquete y marcarlo público, si no el `docker pull` de un reviewer
   externo da 403.
 
-## Decisión tomada: `lang/es/` se queda en el ZIP
+## Decisión tomada: `lang/es/` se queda en el repo, no en el ZIP
 
-La guía de Marketplace sugiere que la publicación inicial incluya solo
-strings en inglés (las traducciones se suben después vía AMOS). Se decidió
-mantener `lang/es/` de todos modos — no es un bloqueante de la guía, solo
-una recomendación.
+La guía de Marketplace es explícita: "Only English strings should be
+included in the plugin" (las traducciones se suben después vía AMOS).
+`lang/es/` queda intacto en `moodle-local_nexusai` para uso local en
+español, y `package-plugin-from-repo.sh` lo excluye solo al armar el ZIP.
+
+## Madurez: beta
+
+`version.php` pasó de `MATURITY_ALPHA` a `MATURITY_BETA` (release
+`0.18.0`), como ya anticipaba `investigacion/01-moodle/publicacion-marketplace.md`.
 
 ## Cómo se arma el ZIP (nuevo)
 
@@ -88,16 +97,20 @@ local) sigue existiendo para probar cambios locales antes de pushear.
 
 ## Falta antes de subir el ZIP
 
-1. Mergear el PR #6 (CI ya verde).
-2. El monorepo sigue su ciclo normal `development → staging → main` — recién
-   ahí `docker-publish.yml` queda activo.
-3. Publicar la imagen de Docker + marcarla pública en GHCR (Santi).
-4. Santi pasa las credenciales reales de producción → completar los
-   placeholders de `docs/REVIEWER_TESTING.md`.
-5. Rebuild del ZIP: `./scripts/package-plugin-from-repo.sh` desde la raíz
-   del monorepo, una vez mergeado el PR #6.
-6. Completar el formulario de Marketplace: pegar las descripciones en
-   inglés, el link al issue tracker
+1. ~~Mergear el PR #6~~ — hecho.
+2. Mergear la PR #496 (review de Delfi/Santi) — lleva el fix de `$_GET`, el
+   bump a beta y el workflow de publish.
+3. Promover `development → main` en `moodle-local_nexusai` (lleva el fix y
+   el bump a beta) y en `nexusai-backend` (activa el workflow de publish).
+4. Publicar la imagen de Docker + marcarla pública en GHCR (Santi).
+5. Decidir producción vs staging para las credenciales del reviewer (ver
+   nota de privacidad en `reviewer-simulation/HALLAZGOS.md`), y completar
+   los placeholders de `docs/REVIEWER_TESTING.md`.
+6. Rebuild del ZIP: `./scripts/package-plugin-from-repo.sh` desde la raíz
+   del monorepo.
+7. Completar el formulario de Marketplace
+   (https://marketplace.moodle.com/plugins/submit/step1?type=free): pegar
+   las descripciones en inglés, el link al issue tracker
    (https://github.com/nexusai-ucc/moodle-local_nexusai/issues), y las
    notas para el reviewer de `docs/REVIEWER_TESTING.md`.
 
