@@ -3,10 +3,12 @@
 All notable changes to the NexusAI Moodle plugin are documented in this
 file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.17.10] — 2026-09-17
+## [0.18.0] — 2026-09-19
 
-Initial submission to the Moodle Plugins directory.
+Initial submission to the Moodle Plugins directory. Maturity: beta.
 
+- Document downloads read their parameters through `optional_param()`
+  instead of `$_GET`.
 - Full feature set: RAG-powered chat, semantic search, practice quizzes and
   flashcards, course calendar with `.ics` export, AI-assisted forums,
   teacher analytics dashboard, exam generator, weekly forum digest.
