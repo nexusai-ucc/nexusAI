@@ -69,28 +69,28 @@ mkdir -p "$DIST_DIR"
 ZIP_NAME="local_nexusai-v${VERSION}.zip"
 log "Generando $ZIP_NAME..."
 
-# Renombramos el checkout a "nexusai" (ya se llama así por el --branch de arriba)
-# para que la raíz del ZIP sea "local_nexusai/", como espera Moodle.
+# La carpeta raíz del ZIP tiene que llamarse "nexusai" (el nombre del plugin
+# SIN el prefijo del tipo): Moodle la descomprime dentro de local/. El
+# checkout ya se llama así, así que solo hay que sacarle el .git.
 rm -rf "$WORKDIR/nexusai/.git"
-mv "$WORKDIR/nexusai" "$WORKDIR/local_nexusai"
 
 cd "$WORKDIR"
-zip -r "${REPO_ROOT}/${DIST_DIR}/${ZIP_NAME}" "local_nexusai" \
-    -x "local_nexusai/.github/*" \
-    -x "local_nexusai/.gitignore" \
-    -x "local_nexusai/react/node_modules/*" \
-    -x "local_nexusai/react/.cache/*" \
-    -x "local_nexusai/react/src/*" \
-    -x "local_nexusai/react/package-lock.json" \
-    -x "local_nexusai/react/webpack.config.js" \
-    -x "local_nexusai/react/babel.config.json" \
-    -x "local_nexusai/react/.babelrc" \
-    -x "local_nexusai/react/vitest.setup.js" \
-    -x "local_nexusai/react/vitest.config.js" \
-    -x "local_nexusai/react/scripts/*" \
-    -x "local_nexusai/react/.eslintrc*" \
-    -x "local_nexusai/react/README.md" \
-    -x "local_nexusai/lang/es/*" \
+zip -r "${REPO_ROOT}/${DIST_DIR}/${ZIP_NAME}" "nexusai" \
+    -x "nexusai/.github/*" \
+    -x "nexusai/.gitignore" \
+    -x "nexusai/react/node_modules/*" \
+    -x "nexusai/react/.cache/*" \
+    -x "nexusai/react/src/*" \
+    -x "nexusai/react/package-lock.json" \
+    -x "nexusai/react/webpack.config.js" \
+    -x "nexusai/react/babel.config.json" \
+    -x "nexusai/react/.babelrc" \
+    -x "nexusai/react/vitest.setup.js" \
+    -x "nexusai/react/vitest.config.js" \
+    -x "nexusai/react/scripts/*" \
+    -x "nexusai/react/.eslintrc*" \
+    -x "nexusai/react/README.md" \
+    -x "nexusai/lang/es/*" \
     -x "*.gitignore" \
     -x "*.gitkeep" \
     -x "*.DS_Store" \
