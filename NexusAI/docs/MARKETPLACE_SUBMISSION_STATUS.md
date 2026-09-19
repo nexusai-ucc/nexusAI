@@ -28,7 +28,7 @@ reales. Este documento cubre el trabajo hecho sobre esos 4 gaps.
   "Documentation URL" de la publicación) estaba 100% en español y tenía 2
   links relativos que solo funcionan dentro del monorepo, rotos en el repo
   público real.
-- **`CHANGES.md` nuevo**: arranca en la versión actual (0.17.10, la de esta
+- **`CHANGES.md` nuevo**: arranca en la versión actual (0.18.0, la de esta
   publicación), no reconstruye el historial completo del monorepo (mezcla
   cosas de backend/CI sin interés para un usuario del plugin).
 - **Issue tracker**: ya estaba activo en `moodle-local_nexusai` (0 issues
@@ -71,12 +71,17 @@ campo de notas al reviewer del formulario:
   paquete y marcarlo público, si no el `docker pull` de un reviewer
   externo da 403.
 
-## Decisión tomada: `lang/es/` se queda en el ZIP
+## Decisión tomada: `lang/es/` se queda en el repo, no en el ZIP
 
-La guía de Marketplace sugiere que la publicación inicial incluya solo
-strings en inglés (las traducciones se suben después vía AMOS). Se decidió
-mantener `lang/es/` de todos modos — no es un bloqueante de la guía, solo
-una recomendación.
+La guía de Marketplace es explícita: "Only English strings should be
+included in the plugin" (las traducciones se suben después vía AMOS).
+`lang/es/` queda intacto en `moodle-local_nexusai` para uso local en
+español, y `package-plugin-from-repo.sh` lo excluye solo al armar el ZIP.
+
+## Madurez: beta
+
+`version.php` pasó de `MATURITY_ALPHA` a `MATURITY_BETA` (release
+`0.18.0`), como ya anticipaba `investigacion/01-moodle/publicacion-marketplace.md`.
 
 ## Cómo se arma el ZIP (nuevo)
 
@@ -93,15 +98,17 @@ local) sigue existiendo para probar cambios locales antes de pushear.
 ## Falta antes de subir el ZIP
 
 1. ~~Mergear el PR #6~~ — hecho.
-2. Promover `development → main` de `nexusai-backend` (para que el
-   workflow de publish quede activo ahí).
-3. Publicar la imagen de Docker + marcarla pública en GHCR (Santi).
-4. Decidir producción vs staging para las credenciales del reviewer (ver
+2. Mergear la PR #496 (review de Delfi/Santi) — lleva el fix de `$_GET`, el
+   bump a beta y el workflow de publish.
+3. Promover `development → main` en `moodle-local_nexusai` (lleva el fix y
+   el bump a beta) y en `nexusai-backend` (activa el workflow de publish).
+4. Publicar la imagen de Docker + marcarla pública en GHCR (Santi).
+5. Decidir producción vs staging para las credenciales del reviewer (ver
    nota de privacidad en `reviewer-simulation/HALLAZGOS.md`), y completar
    los placeholders de `docs/REVIEWER_TESTING.md`.
-5. Rebuild del ZIP: `./scripts/package-plugin-from-repo.sh` desde la raíz
+6. Rebuild del ZIP: `./scripts/package-plugin-from-repo.sh` desde la raíz
    del monorepo.
-6. Completar el formulario de Marketplace
+7. Completar el formulario de Marketplace
    (https://marketplace.moodle.com/plugins/submit/step1?type=free): pegar
    las descripciones en inglés, el link al issue tracker
    (https://github.com/nexusai-ucc/moodle-local_nexusai/issues), y las
