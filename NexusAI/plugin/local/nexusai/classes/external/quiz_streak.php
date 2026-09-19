@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_quiz_streak`.
  *
- * SP-16 (#354): racha de días consecutivos de actividad del alumno en el
- * curso (intentos de quiz o preguntas al chat), derivada de datos ya
- * persistidos en el backend — sin tabla ni migración nueva.
+ * SP-16 (#354): the student's consecutive-day activity streak in the
+ * course (quiz attempts or chat questions), derived from data already
+ * persisted in the backend — no new table or migration.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,8 +32,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * SP-16 (#354): racha de días consecutivos de actividad del alumno en el curso (intentos de quiz o preguntas
- * al chat), derivada de datos ya persistidos en el backend — sin tabla ni migración nueva.
+ * SP-16 (#354): the student's consecutive-day activity streak in the course (quiz attempts or
+ * chat questions), derived from data already persisted in the backend — no new table or migration.
  */
 class quiz_streak extends \external_api {
     /**
@@ -43,7 +43,7 @@ class quiz_streak extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
@@ -54,16 +54,17 @@ class quiz_streak extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'currentstreak'  => new \external_value(PARAM_INT, 'Días consecutivos de actividad'),
-            'practicedtoday' => new \external_value(PARAM_BOOL, 'true si ya hubo actividad hoy'),
+            'currentstreak'  => new \external_value(PARAM_INT, 'Consecutive days of activity'),
+            'practicedtoday' => new \external_value(PARAM_BOOL, 'true if there was already activity today'),
         ]);
     }
 
     /**
-     * SP-16 (#354): racha de días consecutivos de actividad del alumno en el curso (intentos de quiz o
-     * preguntas al chat), derivada de datos ya persistidos en el backend — sin tabla ni migración nueva.
+     * SP-16 (#354): the student's consecutive-day activity streak in the course (quiz attempts or
+     * chat questions), derived from data already persisted in the backend — no new table or
+     * migration.
      *
-     * @param int $courseid ID del curso
+     * @param int $courseid Course ID
      * @return array
      */
     public static function execute(int $courseid): array {

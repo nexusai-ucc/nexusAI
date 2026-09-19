@@ -17,11 +17,11 @@
 /**
  * External function `local_nexusai_quiz_suggest_difficulty`.
  *
- * SP-12 (#322): sugiere una dificultad de partida para el generador de quiz
- * de práctica, basada en el promedio de `score` de los últimos intentos del
- * alumno en ese tema/curso (`quiz_attempts`, ya persistido — sin tabla ni
- * migración nueva). Es una sugerencia, nunca una restricción: el alumno
- * siempre puede elegir otra dificultad a mano.
+ * SP-12 (#322): suggests a starting difficulty for the practice quiz
+ * generator, based on the average `score` of the student's last attempts
+ * in that topic/course (`quiz_attempts`, already persisted — no new table
+ * or migration). It's a suggestion, never a restriction: the student can
+ * always choose a different difficulty by hand.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -34,9 +34,9 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * SP-12 (#322): sugiere una dificultad de partida para el generador de quiz de práctica, basada en el
- * promedio de `score` de los últimos intentos del alumno en ese tema/curso (`quiz_attempts`, ya persistido —
- * sin tabla ni migración nueva).
+ * SP-12 (#322): suggests a starting difficulty for the practice quiz generator, based on the
+ * average `score` of the student's last attempts in that topic/course (`quiz_attempts`, already
+ * persisted — no new table or migration).
  */
 class quiz_suggest_difficulty extends \external_api {
     /**
@@ -46,10 +46,10 @@ class quiz_suggest_difficulty extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
             'topic'    => new \external_value(
                 PARAM_TEXT,
-                'Tema elegido por el alumno (vacío = historial general)',
+                'Topic chosen by the student (empty = general history)',
                 VALUE_DEFAULT,
                 ''
             ),
@@ -64,19 +64,19 @@ class quiz_suggest_difficulty extends \external_api {
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
             'difficulty'       => new \external_value(PARAM_ALPHA, 'easy | medium | hard', VALUE_OPTIONAL, null, NULL_ALLOWED),
-            'reason'           => new \external_value(PARAM_TEXT, 'Motivo de la sugerencia', VALUE_OPTIONAL, null, NULL_ALLOWED),
-            'basedonattempts'  => new \external_value(PARAM_INT, 'Cantidad de intentos usados para la sugerencia'),
-            'accuracypct'      => new \external_value(PARAM_INT, '% de aciertos redondeado', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'reason'           => new \external_value(PARAM_TEXT, 'Reason for the suggestion', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'basedonattempts'  => new \external_value(PARAM_INT, 'Number of attempts used for the suggestion'),
+            'accuracypct'      => new \external_value(PARAM_INT, 'Rounded accuracy %', VALUE_OPTIONAL, null, NULL_ALLOWED),
         ]);
     }
 
     /**
-     * SP-12 (#322): sugiere una dificultad de partida para el generador de quiz de práctica, basada en el
-     * promedio de `score` de los últimos intentos del alumno en ese tema/curso (`quiz_attempts`, ya
-     * persistido — sin tabla ni migración nueva).
+     * SP-12 (#322): suggests a starting difficulty for the practice quiz generator, based on the
+     * average `score` of the student's last attempts in that topic/course (`quiz_attempts`,
+     * already persisted — no new table or migration).
      *
-     * @param int $courseid ID del curso
-     * @param string $topic Tema elegido por el alumno (vacío = historial general)
+     * @param int $courseid Course ID
+     * @param string $topic Topic chosen by the student (empty = general history)
      * @return array
      */
     public static function execute(int $courseid, string $topic = ''): array {

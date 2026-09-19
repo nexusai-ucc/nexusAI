@@ -17,8 +17,8 @@
 /**
  * External function `local_nexusai_calendar_alerts_list`.
  *
- * Devuelve las alertas de calendario activas del alumno en el curso.
- * Accesible para usuarios con capability `local/nexusai:use`.
+ * Returns the student's active calendar alerts in the course.
+ * Accessible to users with the `local/nexusai:use` capability.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -31,7 +31,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Devuelve las alertas de calendario activas del alumno en el curso.
+ * Returns the student's active calendar alerts in the course.
  */
 class calendar_alerts_list extends \external_api {
     /**
@@ -41,8 +41,8 @@ class calendar_alerts_list extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'userid'   => new \external_value(PARAM_INT, 'ID del usuario', VALUE_REQUIRED),
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'userid'   => new \external_value(PARAM_INT, 'User ID', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
@@ -55,19 +55,19 @@ class calendar_alerts_list extends \external_api {
         return new \external_single_structure([
             'alerts' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'event_id'    => new \external_value(PARAM_INT, 'ID del evento en Moodle'),
-                    'days_before' => new \external_value(PARAM_INT, 'Días de anticipación configurados'),
-                    'notified'    => new \external_value(PARAM_BOOL, 'True si el cron ya envió la notificación'),
+                    'event_id'    => new \external_value(PARAM_INT, 'Event ID in Moodle'),
+                    'days_before' => new \external_value(PARAM_INT, 'Configured lead days'),
+                    'notified'    => new \external_value(PARAM_BOOL, 'True if the cron already sent the notification'),
                 ])
             ),
         ]);
     }
 
     /**
-     * Devuelve las alertas de calendario activas del alumno en el curso.
+     * Returns the student's active calendar alerts in the course.
      *
-     * @param int $userid ID del usuario
-     * @param int $courseid ID del curso
+     * @param int $userid User ID
+     * @param int $courseid Course ID
      * @return array
      */
     public static function execute(int $userid, int $courseid): array {

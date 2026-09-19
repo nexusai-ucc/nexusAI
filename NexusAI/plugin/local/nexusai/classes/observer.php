@@ -17,20 +17,20 @@
 /**
  * Event observer for local_nexusai — auto-sync on course module creation.
  *
- * Cuando un docente crea un módulo de tipo "resource" (Archivo) que contiene
- * un formato soportado (PDF, DOCX, PPTX, XLSX, CSV, MD, HTML o TXT), este
- * observer lo envía automáticamente al backend NexusAI para indexación RAG.
+ * When a teacher creates a "resource" module (File) containing a supported
+ * format (PDF, DOCX, PPTX, XLSX, CSV, MD, HTML or TXT), this observer
+ * automatically sends it to the NexusAI backend for RAG indexing.
  *
- * Comportamiento de errores:
- *   - Si el plugin está deshabilitado → skip silencioso.
- *   - Si el módulo no es del tipo "resource" → skip silencioso.
- *   - Si el archivo no tiene un formato soportado → skip silencioso.
- *   - Si el backend falla → log error, NO interrumpe Moodle (excepción atrapada).
+ * Error behavior:
+ *   - If the plugin is disabled → silent skip.
+ *   - If the module isn't of type "resource" → silent skip.
+ *   - If the file isn't in a supported format → silent skip.
+ *   - If the backend fails → log error, does NOT interrupt Moodle (exception caught).
  *
- * Dependencias:
- *   - `local_nexusai\external\backend_client` — envía el archivo al backend.
- *   - Filestore de Moodle — lee los bytes del archivo subido.
- *   - `get_config('local_nexusai', 'enabled')` — switch maestro.
+ * Dependencies:
+ *   - `local_nexusai\external\backend_client` — sends the file to the backend.
+ *   - Moodle's filestore — reads the bytes of the uploaded file.
+ *   - `get_config('local_nexusai', 'enabled')` — master switch.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -40,10 +40,10 @@
 namespace local_nexusai;
 
 /**
- * Sincroniza automáticamente con el backend NexusAI cuando se crea/edita contenido en Moodle.
+ * Automatically syncs with the NexusAI backend when content is created/edited in Moodle.
  */
 class observer {
-    /** MIME types soportados por el backend (sincronizado con extractor.py). */
+    /** MIME types supported by the backend (kept in sync with extractor.py). */
     const SUPPORTED_MIME_TYPES = [
         'application/pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -56,22 +56,22 @@ class observer {
     ];
 
     /**
-     * Callback para el evento course_module_created.
+     * Callback for the course_module_created event.
      *
-     * Solo procesa módulos de tipo "resource" (Archivo de Moodle). Otros tipos
-     * (forum, quiz, label, etc.) se ignoran silenciosamente.
+     * Only processes modules of type "resource" (Moodle File). Other types
+     * (forum, quiz, label, etc.) are silently ignored.
      *
      * @param \core\event\course_module_created $event
      */
     public static function course_module_created(\core\event\course_module_created $event): void {
-        // Switch maestro: si el plugin está deshabilitado, no hacer nada.
+        // Master switch: if the plugin is disabled, do nothing.
         if (!get_config('local_nexusai', 'enabled')) {
             return;
         }
 
         $data = $event->get_data();
 
-        // Solo módulos del tipo "resource" tienen un archivo adjunto.
+        // Only "resource"-type modules have an attached file.
         if (($data['other']['modulename'] ?? '') !== 'resource') {
             return;
         }
@@ -83,7 +83,7 @@ class observer {
         try {
             self::index_resource_module($cmid, $courseid, $userid);
         } catch (\Throwable $e) {
-            // Nunca interrumpir Moodle por un error de indexación.
+            // Never interrupt Moodle because of an indexing error.
             debugging(
                 '[NexusAI] Auto-indexing failed for cmid=' . $cmid . ': ' . $e->getMessage(),
                 DEBUG_NORMAL
@@ -92,18 +92,18 @@ class observer {
     }
 
     /**
-     * Nombre de la user preference donde se acumulan los uploads pendientes de confirmación.
-     * Valor: JSON object {cmid: {courseid, context_id, filename, mimetype}}.
+     * Name of the user preference where pending-confirmation uploads accumulate.
+     * Value: JSON object {cmid: {courseid, context_id, filename, mimetype}}.
      */
     const PENDING_PREF = 'local_nexusai_pending_uploads';
 
-    // Foros — Épica 06.
+    // Forums — Epic 06.
 
     /**
-     * Indexa el primer post de una nueva discusión de foro.
+     * Indexes the first post of a new forum discussion.
      *
-     * En Moodle 5.x crear una discusión dispara discussion_created pero NO post_created.
-     * Leemos el firstpost de la tabla m_forum_discussions para indexar el contenido.
+     * On Moodle 5.x, creating a discussion fires discussion_created but NOT post_created.
+     * We read the firstpost from the m_forum_discussions table to index the content.
      *
      * @param \mod_forum\event\discussion_created $event
      */
@@ -132,7 +132,7 @@ class observer {
     }
 
     /**
-     * Indexa el embedding de un post de foro recién creado (respuestas a discusiones existentes).
+     * Indexes the embedding of a newly created forum post (replies to existing discussions).
      *
      * @param \mod_forum\event\post_created $event
      */
@@ -148,9 +148,9 @@ class observer {
     }
 
     /**
-     * Re-indexa el embedding de un post editado.
+     * Re-indexes the embedding of an edited post.
      *
-     * El backend compara el content_hash y hace skip si el contenido no cambió.
+     * The backend compares the content_hash and skips it if the content didn't change.
      *
      * @param \mod_forum\event\post_updated $event
      */
@@ -166,10 +166,10 @@ class observer {
     }
 
     /**
-     * Elimina el embedding de un post borrado.
+     * Removes the embedding of a deleted post.
      *
-     * El post ya no está en la DB cuando este evento dispara, así que solo
-     * necesitamos el post_id para llamar al backend.
+     * The post is no longer in the DB by the time this event fires, so we
+     * only need the post_id to call the backend.
      *
      * @param \mod_forum\event\post_deleted $event
      */
@@ -192,13 +192,13 @@ class observer {
     }
 
     /**
-     * Lee el contenido del post desde la DB y llama al backend para indexarlo.
+     * Reads the post's content from the DB and calls the backend to index it.
      *
-     * Lógica compartida entre forum_post_created y forum_post_updated.
+     * Logic shared between forum_post_created and forum_post_updated.
      *
-     * @param int $postid       ID de mdl_forum_posts.
-     * @param int $courseid     ID del curso.
-     * @param int $discussionid ID de mdl_forum_discussions.
+     * @param int $postid       mdl_forum_posts ID.
+     * @param int $courseid     Course ID.
+     * @param int $discussionid mdl_forum_discussions ID.
      */
     private static function index_forum_post_from_event(int $postid, int $courseid, int $discussionid): void {
         global $DB;
@@ -209,10 +209,10 @@ class observer {
                 return;
             }
 
-            // El mensaje se guarda como HTML — strip para texto limpio.
+            // The message is stored as HTML — strip it for clean text.
             $content = trim(strip_tags($post->message ?? ''));
 
-            // Posts muy cortos (botones de "Gracias", etc.) no aportan al RAG.
+            // Very short posts ("Thanks" buttons, etc.) add nothing to RAG.
             if (strlen($content) < 10) {
                 return;
             }
@@ -227,14 +227,14 @@ class observer {
         }
     }
 
-    // Módulos de recurso (documentos).
+    // Resource modules (documents).
 
     /**
-     * Lee el archivo adjunto del módulo resource y guarda un upload pendiente de confirmación.
+     * Reads the resource module's attached file and saves a pending-confirmation upload.
      *
      * @param int $cmid     Course module ID.
      * @param int $courseid Course ID.
-     * @param int $userid   ID del usuario que creó el módulo (el docente).
+     * @param int $userid   ID of the user who created the module (the teacher).
      */
     private static function index_resource_module(int $cmid, int $courseid, int $userid): void {
         global $CFG, $USER;
@@ -259,8 +259,8 @@ class observer {
 
         $filename = $file->get_filename();
 
-        // En lugar de indexar automáticamente, guardamos la info en una user preference
-        // para que el docente confirme en el próximo page load (modal de confirmación).
+        // Instead of indexing automatically, we save the info in a user preference
+        // so the teacher can confirm it on the next page load (confirmation modal).
         $raw     = get_user_preferences(self::PENDING_PREF, '{}', $userid);
         $pending = json_decode($raw, true);
         if (!is_array($pending)) {

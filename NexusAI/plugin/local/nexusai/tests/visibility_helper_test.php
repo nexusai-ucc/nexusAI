@@ -15,16 +15,16 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Tests de `visibility_helper::onboarding_hint()` — modo revisión (ONB-04 / #427).
+ * Tests for `visibility_helper::onboarding_hint()` — review mode (ONB-04 / #427).
  *
- * Qué se verifica:
- *  1. Docente editando un curso existente (`course/edit.php?id=X`) → 'review-course'.
- *  2. Alumno (sin `local/nexusai:manage`) en la misma pantalla → null.
- *  3. `id` del query string que no matchea el curso real de $PAGE/$COURSE → null.
- *  4. La pantalla de crear curso (sin `id`) sigue devolviendo 'create-course' —
- *     ONB-04 no debe romper ONB-03.
- *  5. Curso dismisseado (ONB-05 / #428) → null aunque sea el propio docente
- *     editando su curso — no vuelve a aparecer solo.
+ * What's verified:
+ *  1. Teacher editing an existing course (`course/edit.php?id=X`) → 'review-course'.
+ *  2. Student (without `local/nexusai:manage`) on the same screen → null.
+ *  3. Query-string `id` that doesn't match $PAGE/$COURSE's real course → null.
+ *  4. The create-course screen (no `id`) still returns 'create-course' —
+ *     ONB-04 must not break ONB-03.
+ *  5. Dismissed course (ONB-05 / #428) → null even for the teacher
+ *     themselves editing their own course — it doesn't auto-reappear.
  *
  * @package    local_nexusai
  * @category   test
@@ -35,7 +35,7 @@
 namespace local_nexusai;
 
 /**
- * Tests de visibility_helper::onboarding_hint() en modo revisión (ONB-04, #427).
+ * Tests for visibility_helper::onboarding_hint() in review mode (ONB-04, #427).
  *
  * @covers \local_nexusai\visibility_helper
  * @runTestsInSeparateProcesses
@@ -47,10 +47,10 @@ final class visibility_helper_test extends \advanced_testcase {
     }
 
     /**
-     * Simula estar parado en course/edit.php?id=$editid con $course como curso actual.
+     * Simulates standing on course/edit.php?id=$editid with $course as the current course.
      *
-     * @param \stdClass $course Curso actual ($COURSE/$PAGE->course).
-     * @param int $editid ID que aparece en el query string de la URL simulada.
+     * @param \stdClass $course Current course ($COURSE/$PAGE->course).
+     * @param int $editid ID that appears in the simulated URL's query string.
      */
     private function set_course_edit_page(\stdClass $course, int $editid): void {
         global $PAGE;
@@ -92,7 +92,7 @@ final class visibility_helper_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $othercourse = $this->getDataGenerator()->create_course();
 
-        // El $COURSE/$PAGE actual queda en $course, pero el ?id= de la URL apunta a otro.
+        // The current $COURSE/$PAGE stays at $course, but the URL's ?id= points to another one.
         $this->set_course_edit_page($course, $othercourse->id);
 
         $this->assertNull(\local_nexusai\visibility_helper::onboarding_hint());
@@ -109,7 +109,7 @@ final class visibility_helper_test extends \advanced_testcase {
 
         $this->assertNull(
             \local_nexusai\visibility_helper::onboarding_hint(),
-            'Un curso dismisseado no debe volver a mostrar el tutorial solo'
+            'A dismissed course must not auto-show the tutorial again'
         );
     }
 

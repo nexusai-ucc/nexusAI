@@ -15,12 +15,12 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Scheduled task — envía notificaciones de calendario NexusAI (CAL-02).
+ * Scheduled task — sends NexusAI calendar notifications (CAL-02).
  *
- * Corre cada hora. Consulta al backend FastAPI las alertas cuyo momento de
- * notificación ya llegó (now >= event_timestamp - days_before * 1 día), envía
- * la notificación nativa de Moodle a cada alumno y luego marca la alerta como
- * notificada para evitar duplicados.
+ * Runs every hour. Queries the FastAPI backend for alerts whose notification
+ * time has already arrived (now >= event_timestamp - days_before * 1 day), sends
+ * Moodle's native notification to each student, and then marks the alert as
+ * notified to avoid duplicates.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -30,11 +30,11 @@
 namespace local_nexusai\task;
 
 /**
- * Envía notificaciones de calendario NexusAI cuya hora de aviso ya llegó (CAL-02).
+ * Sends NexusAI calendar notifications whose alert time has arrived (CAL-02).
  */
 class send_calendar_alerts extends \core\task\scheduled_task {
     /**
-     * Nombre visible de la tarea en Site administration → Server → Scheduled tasks.
+     * Task's visible name in Site administration → Server → Scheduled tasks.
      *
      * @return string
      */
@@ -43,7 +43,7 @@ class send_calendar_alerts extends \core\task\scheduled_task {
     }
 
     /**
-     * Consulta las alertas vencidas al backend, notifica a cada alumno y las marca como enviadas.
+     * Queries the backend for due alerts, notifies each student and marks them as sent.
      */
     public function execute(): void {
         $client = new \local_nexusai\external\backend_client();

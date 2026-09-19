@@ -17,11 +17,11 @@
 /**
  * External function `local_nexusai_quiz_flashcards_due`.
  *
- * SP-11 (#315): flashcards ya generadas que "tocan hoy" según repetición
- * espaciada (SM-2), más vencidas primero. No llama al LLM — sirve del
- * banco ya persistido por `local_nexusai_quiz_generate`. Mismo shape de
- * pregunta que `quiz_generate` para poder renderizarse con el mismo
- * componente de flashcards del lado de React.
+ * SP-11 (#315): already-generated flashcards that are "due today" according
+ * to spaced repetition (SM-2), most overdue first. Doesn't call the LLM —
+ * serves from the bank already persisted by `local_nexusai_quiz_generate`.
+ * Same question shape as `quiz_generate` so it can render with the same
+ * flashcards component on the React side.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -34,8 +34,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * SP-11 (#315): flashcards ya generadas que "tocan hoy" según repetición espaciada (SM-2), más vencidas
- * primero.
+ * SP-11 (#315): already-generated flashcards that are "due today" according to spaced
+ * repetition (SM-2), most overdue first.
  */
 class quiz_flashcards_due extends \external_api {
     /**
@@ -45,9 +45,9 @@ class quiz_flashcards_due extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'topic'    => new \external_value(PARAM_TEXT, 'Tema (opcional)', VALUE_DEFAULT, ''),
-            'limit'    => new \external_value(PARAM_INT, 'Cantidad máxima (1..50)', VALUE_DEFAULT, 10),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'topic'    => new \external_value(PARAM_TEXT, 'Topic (optional)', VALUE_DEFAULT, ''),
+            'limit'    => new \external_value(PARAM_INT, 'Maximum amount (1..50)', VALUE_DEFAULT, 10),
         ]);
     }
 
@@ -58,27 +58,27 @@ class quiz_flashcards_due extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
+            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
             'questions' => new \external_multiple_structure(
                 new \external_single_structure([
                     'id'                  => new \external_value(
                         PARAM_ALPHANUMEXT,
-                        'ID de la flashcard (UUID)',
+                        'Flashcard ID (UUID)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'question_type'       => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta'),
-                    'question'            => new \external_value(PARAM_RAW, 'Frente de la tarjeta'),
+                    'question_type'       => new \external_value(PARAM_ALPHANUMEXT, 'Question type'),
+                    'question'            => new \external_value(PARAM_RAW, 'Front of the card'),
                     'options'             => new \external_multiple_structure(
-                        new \external_value(PARAM_RAW, 'Opción')
+                        new \external_value(PARAM_RAW, 'Option')
                     ),
-                    'correct_index'       => new \external_value(PARAM_INT, 'Siempre -1 para flashcards'),
-                    'explanation'         => new \external_value(PARAM_RAW, 'Dorso de la tarjeta'),
-                    'source_filename'     => new \external_value(PARAM_TEXT, 'Archivo fuente'),
+                    'correct_index'       => new \external_value(PARAM_INT, 'Always -1 for flashcards'),
+                    'explanation'         => new \external_value(PARAM_RAW, 'Back of the card'),
+                    'source_filename'     => new \external_value(PARAM_TEXT, 'Source file'),
                     'source_document_id'  => new \external_value(
                         PARAM_ALPHANUMEXT,
-                        'ID del documento fuente',
+                        'Source document ID',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
@@ -89,12 +89,12 @@ class quiz_flashcards_due extends \external_api {
     }
 
     /**
-     * SP-11 (#315): flashcards ya generadas que "tocan hoy" según repetición espaciada (SM-2), más vencidas
-     * primero.
+     * SP-11 (#315): already-generated flashcards that are "due today" according to spaced
+     * repetition (SM-2), most overdue first.
      *
-     * @param int $courseid ID del curso
-     * @param string $topic Tema (opcional)
-     * @param int $limit Cantidad máxima (1..50)
+     * @param int $courseid Course ID
+     * @param string $topic Topic (optional)
+     * @param int $limit Maximum amount (1..50)
      * @return array
      */
     public static function execute(int $courseid, string $topic = '', int $limit = 10): array {

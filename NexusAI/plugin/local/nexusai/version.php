@@ -30,12 +30,13 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026091200;
-// Feat: Privacy API admin (plugin\provider + core_userlist_provider) + MySQL en CI.
-$plugin->release   = '0.17.10';
-$plugin->maturity  = MATURITY_ALPHA;
+$plugin->version   = 2026091900;
+// Beta: feature complete, CI on PostgreSQL and MySQL, English-only strings and
+// comments, input handling hardened for the Marketplace submission.
+$plugin->release   = '0.18.0';
+$plugin->maturity  = MATURITY_BETA;
 
-// Soportamos Moodle 4.1 LTS (build 2022112800) en adelante hasta 4.5.
-// Si alguien intenta instalar en una versión vieja, Moodle lo bloquea solo.
+// We support Moodle 4.1 LTS (build 2022112800) up to 4.5.
+// If someone tries to install on an older version, Moodle blocks it on its own.
 $plugin->requires  = 2022112800;        // Moodle 4.1 LTS.
-$plugin->supported = [401, 405];        // 4.1 a 4.5
+$plugin->supported = [401, 405];        // 4.1 to 4.5

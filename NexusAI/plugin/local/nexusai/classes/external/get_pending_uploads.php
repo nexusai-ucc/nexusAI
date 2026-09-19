@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_get_pending_uploads`.
  *
- * Devuelve la lista de archivos pendientes de confirmación para el docente actual
- * en un curso dado. Estos archivos fueron subidos a una sección del curso (mod_resource)
- * y están esperando que el docente decida si indexarlos en NexusAI.
+ * Returns the list of files pending confirmation for the current teacher
+ * in a given course. These files were uploaded to a course section
+ * (mod_resource) and are waiting for the teacher to decide whether to index them in NexusAI.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -33,7 +33,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Devuelve la lista de archivos pendientes de confirmación para el docente actual en un curso dado.
+ * Returns the list of files pending confirmation for the current teacher in a given course.
  */
 class get_pending_uploads extends \external_api {
     /**
@@ -43,7 +43,7 @@ class get_pending_uploads extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
@@ -55,17 +55,17 @@ class get_pending_uploads extends \external_api {
     public static function execute_returns(): \external_multiple_structure {
         return new \external_multiple_structure(
             new \external_single_structure([
-                'cmid'     => new \external_value(PARAM_INT, 'Course module ID del recurso'),
-                'filename' => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
-                'mimetype' => new \external_value(PARAM_TEXT, 'MIME type del archivo'),
+                'cmid'     => new \external_value(PARAM_INT, 'Course module ID of the resource'),
+                'filename' => new \external_value(PARAM_TEXT, 'File name'),
+                'mimetype' => new \external_value(PARAM_TEXT, 'File MIME type'),
             ])
         );
     }
 
     /**
-     * Devuelve la lista de archivos pendientes de confirmación para el docente actual en un curso dado.
+     * Returns the list of files pending confirmation for the current teacher in a given course.
      *
-     * @param int $courseid ID del curso
+     * @param int $courseid Course ID
      * @return array
      */
     public static function execute(int $courseid): array {

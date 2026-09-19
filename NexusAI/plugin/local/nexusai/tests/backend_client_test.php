@@ -15,17 +15,17 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Tests de backend_client — autenticación HMAC.
+ * Tests for backend_client — HMAC authentication.
  *
- * Qué se verifica:
- *  1. compute_signature() produce un string hex de 64 caracteres (SHA-256).
- *  2. La firma cambia cuando cambia el body (integridad).
- *  3. La firma cambia cuando cambia el secret (aislamiento de tenants).
- *  4. El algoritmo PHP es compatible con el Python:
+ * What's verified:
+ *  1. compute_signature() produces a 64-character hex string (SHA-256).
+ *  2. The signature changes when the body changes (integrity).
+ *  3. The signature changes when the secret changes (tenant isolation).
+ *  4. The PHP algorithm is compatible with the Python one:
  *     signed_string = timestamp + nonce + body → hmac-sha256(secret, signed_string).
  *
- * Los métodos privados se acceden mediante ReflectionMethod para poder
- * testearlos sin exponer la API pública ni levantar HTTP.
+ * Private methods are accessed via ReflectionMethod so they can be tested
+ * without exposing the public API or making real HTTP calls.
  *
  * @package    local_nexusai
  * @category   test
@@ -38,19 +38,19 @@ namespace local_nexusai;
 use local_nexusai\external\backend_client;
 
 /**
- * Tests de autenticación HMAC del backend_client.
+ * Tests for backend_client's HMAC authentication.
  *
  * @covers \local_nexusai\external\backend_client
  */
 final class backend_client_test extends \advanced_testcase {
-    // Helper de reflexión.
+    // Reflection helper.
 
     /**
-     * Invoca un método estático privado/protegido via ReflectionMethod.
+     * Invokes a private/protected static method via ReflectionMethod.
      *
-     * @param string $method Nombre del método.
-     * @param array  $args   Argumentos posicionales.
-     * @return mixed Valor de retorno del método.
+     * @param string $method Method name.
+     * @param array  $args   Positional arguments.
+     * @return mixed The method's return value.
      */
     private function invoke_static(string $method, array $args = []): mixed {
         $ref = new \ReflectionMethod(backend_client::class, $method);
@@ -58,12 +58,12 @@ final class backend_client_test extends \advanced_testcase {
         return $ref->invoke(null, ...$args);
     }
 
-    // Test 1: formato de la firma HMAC.
+    // Test 1: HMAC signature format.
 
     /**
-     * compute_signature() debe retornar una cadena hex de 64 caracteres,
-     * el formato estándar de SHA-256 como hexadecimal.
-     * Este valor va en el header X-Signature de cada request al backend.
+     * compute_signature() must return a 64-character hex string,
+     * the standard format for SHA-256 as hexadecimal.
+     * This value goes in the X-Signature header of every request to the backend.
      */
     public function test_compute_signature_returns_64_char_hex(): void {
         $sig = $this->invoke_static('compute_signature', [
@@ -77,20 +77,20 @@ final class backend_client_test extends \advanced_testcase {
         $this->assertEquals(
             64,
             strlen($sig),
-            'SHA-256 en hexadecimal debe tener exactamente 64 caracteres'
+            'SHA-256 in hexadecimal must be exactly 64 characters long'
         );
         $this->assertMatchesRegularExpression(
             '/^[0-9a-f]{64}$/',
             $sig,
-            'La firma debe contener solo caracteres hexadecimales en minúscula'
+            'The signature must contain only lowercase hex characters'
         );
     }
 
-    // Test 2: integridad — la firma cambia con el body.
+    // Test 2: integrity — the signature changes with the body.
 
     /**
-     * Si el body cambia (incluso un solo byte), la firma debe ser distinta.
-     * Esto garantiza que el backend puede detectar body tampering.
+     * If the body changes (even a single byte), the signature must be different.
+     * This guarantees the backend can detect body tampering.
      */
     public function test_compute_signature_differs_when_body_changes(): void {
         $common = ['sharedsecret32chars', '1716649200', 'nonce-test-abc'];
@@ -107,15 +107,15 @@ final class backend_client_test extends \advanced_testcase {
         $this->assertNotEquals(
             $sig1,
             $sig2,
-            'La firma debe cambiar si el body cambia'
+            'The signature must change if the body changes'
         );
     }
 
-    // Test 3: aislamiento — la firma cambia con el secret.
+    // Test 3: isolation — the signature changes with the secret.
 
     /**
-     * Dos instancias con distinto shared_secret producen firmas distintas
-     * para el mismo body, garantizando aislamiento entre tenants.
+     * Two instances with a different shared_secret produce different
+     * signatures for the same body, guaranteeing isolation between tenants.
      */
     public function test_compute_signature_differs_when_secret_changes(): void {
         $common = ['1716649200', 'nonce-test-abc', '{"hello":"world"}'];
@@ -132,23 +132,23 @@ final class backend_client_test extends \advanced_testcase {
         $this->assertNotEquals(
             $sig1,
             $sig2,
-            'La firma debe cambiar si el shared_secret cambia'
+            'The signature must change if the shared_secret changes'
         );
     }
 
-    // Test 4: compatibilidad PHP ↔ Python.
+    // Test 4: PHP ↔ Python compatibility.
 
     /**
-     * El algoritmo PHP debe producir exactamente el mismo resultado que Python:
+     * The PHP algorithm must produce exactly the same result as Python:
      *   signed_string = (timestamp + nonce).encode("utf-8") + body.encode("utf-8")
      *   signature = hmac.new(secret.encode(), signed_string, sha256).hexdigest()
      *
-     * En PHP:
+     * In PHP:
      *   $signedstring = $timestamp . $nonce . $body;
      *   return hash_hmac('sha256', $signedstring, $secret);
      *
-     * Ambas concatenaciones producen el mismo byte sequence, así que el
-     * resultado debe ser idéntico.
+     * Both concatenations produce the same byte sequence, so the result
+     * must be identical.
      */
     public function test_compute_signature_compatible_with_python_algorithm(): void {
         $secret    = 'test-shared-secret-32chars';
@@ -156,7 +156,7 @@ final class backend_client_test extends \advanced_testcase {
         $nonce     = 'testnonce9876';
         $body      = '{"course_id":1,"uploader_id":42}';
 
-        // Cálculo esperado (mismo algoritmo que Python side).
+        // Expected calculation (same algorithm as the Python side).
         $signedstring = $timestamp . $nonce . $body;
         $expected = hash_hmac('sha256', $signedstring, $secret);
 
@@ -168,15 +168,15 @@ final class backend_client_test extends \advanced_testcase {
         $this->assertEquals(
             $expected,
             $actual,
-            'El algoritmo PHP de firma debe producir el mismo resultado que el Python'
+            'The PHP signing algorithm must produce the same result as the Python one'
         );
     }
 
-    // Test 5: generate_nonce — formato y unicidad.
+    // Test 5: generate_nonce — format and uniqueness.
 
     /**
-     * generate_nonce() debe retornar un string hex de 32 caracteres
-     * y dos llamadas consecutivas no deben producir el mismo valor.
+     * generate_nonce() must return a 32-character hex string,
+     * and two consecutive calls must not produce the same value.
      */
     public function test_generate_nonce_returns_unique_hex_strings(): void {
         $nonce1 = $this->invoke_static('generate_nonce');
@@ -185,12 +185,12 @@ final class backend_client_test extends \advanced_testcase {
         $this->assertMatchesRegularExpression(
             '/^[0-9a-f]{32}$/',
             $nonce1,
-            'El nonce debe ser un string hex de 32 caracteres (16 bytes)'
+            'The nonce must be a 32-character hex string (16 bytes)'
         );
         $this->assertNotEquals(
             $nonce1,
             $nonce2,
-            'Dos nonces consecutivos no deben ser iguales'
+            'Two consecutive nonces must not be equal'
         );
     }
 }

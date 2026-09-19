@@ -17,10 +17,10 @@
 /**
  * External function `local_nexusai_course_sections_list`.
  *
- * Lista las secciones/unidades de un curso (número + nombre visible) para
- * poblar el selector de sección al subir material y el filtro de búsqueda
- * (BUS-05). Es de lectura y no requiere `local/nexusai:manage` — los
- * alumnos también la necesitan para filtrar resultados de búsqueda.
+ * Lists a course's sections/units (number + display name) to populate the
+ * section picker when uploading material and the search filter (BUS-05).
+ * It's read-only and doesn't require `local/nexusai:manage` — students
+ * need it too, to filter search results.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -33,8 +33,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Lista las secciones/unidades de un curso (número + nombre visible) para poblar el selector de sección al
- * subir material y el filtro de búsqueda (BUS-05).
+ * Lists a course's sections/units (number + display name) to populate the section picker when
+ * uploading material and the search filter (BUS-05).
  */
 class course_sections_list extends \external_api {
     /**
@@ -44,7 +44,7 @@ class course_sections_list extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
@@ -56,17 +56,17 @@ class course_sections_list extends \external_api {
     public static function execute_returns(): \external_multiple_structure {
         return new \external_multiple_structure(
             new \external_single_structure([
-                'section' => new \external_value(PARAM_INT, 'Número de sección'),
-                'name'    => new \external_value(PARAM_TEXT, 'Nombre visible de la sección'),
+                'section' => new \external_value(PARAM_INT, 'Section number'),
+                'name'    => new \external_value(PARAM_TEXT, 'Section display name'),
             ])
         );
     }
 
     /**
-     * Lista las secciones/unidades de un curso (número + nombre visible) para poblar el selector de sección
-     * al subir material y el filtro de búsqueda (BUS-05).
+     * Lists a course's sections/units (number + display name) to populate the section picker
+     * when uploading material and the search filter (BUS-05).
      *
-     * @param int $courseid ID del curso
+     * @param int $courseid Course ID
      * @return array
      */
     public static function execute(int $courseid): array {

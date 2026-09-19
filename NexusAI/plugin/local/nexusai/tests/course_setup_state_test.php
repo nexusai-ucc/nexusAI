@@ -15,16 +15,16 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Tests de la External Function `local_nexusai_course_setup_state` (ONB-02 / #425).
+ * Tests for the `local_nexusai_course_setup_state` External Function (ONB-02 / #425).
  *
- * Qué se verifica:
- *  1. execute_returns() declara las 6 señales con la forma { present, count }.
- *  2. signal() marca present según el conteo (incluye borde: 0 y negativos).
- *  3. material_signal() traduce la respuesta del backend y degrada a null
- *     cuando el backend no respondió.
- *  4. gather_moodle_signals() sobre un curso recién creado → todo en false.
- *  5. gather_moodle_signals() detecta sección con contenido, foro, grupo,
- *     alumno matriculado y evento de calendario cuando existen.
+ * What's verified:
+ *  1. execute_returns() declares the 6 signals with the { present, count } shape.
+ *  2. signal() sets present based on the count (including edge cases: 0 and negatives).
+ *  3. material_signal() translates the backend response and degrades to null
+ *     when the backend didn't respond.
+ *  4. gather_moodle_signals() on a freshly created course → everything false.
+ *  5. gather_moodle_signals() detects a section with content, forum, group,
+ *     enrolled student and calendar event when they exist.
  *
  * @package    local_nexusai
  * @category   test
@@ -35,13 +35,13 @@
 namespace local_nexusai;
 
 /**
- * Tests de la external function course_setup_state (ONB-02, #425).
+ * Tests for the course_setup_state external function (ONB-02, #425).
  *
  * @covers \local_nexusai\external\course_setup_state
  * @runTestsInSeparateProcesses
  */
 final class course_setup_state_test extends \advanced_testcase {
-    // Test 1: estructura de execute_returns().
+    // Test 1: execute_returns() structure.
 
     public function test_execute_returns_declares_all_signals(): void {
         $returns = \local_nexusai\external\course_setup_state::execute_returns();
@@ -50,21 +50,21 @@ final class course_setup_state_test extends \advanced_testcase {
 
         $keys = $returns->keys;
         foreach (['courseid', 'sections', 'groups', 'students', 'forums', 'calendar', 'material'] as $key) {
-            $this->assertArrayHasKey($key, $keys, "execute_returns() debe declarar '$key'");
+            $this->assertArrayHasKey($key, $keys, "execute_returns() must declare '$key'");
         }
 
         foreach (['sections', 'groups', 'students', 'forums', 'calendar', 'material'] as $signal) {
             $this->assertInstanceOf(
                 \external_single_structure::class,
                 $keys[$signal],
-                "'$signal' debe ser una estructura { present, count }"
+                "'$signal' must be a { present, count } structure"
             );
             $this->assertArrayHasKey('present', $keys[$signal]->keys);
             $this->assertArrayHasKey('count', $keys[$signal]->keys);
         }
     }
 
-    // Test 2: signal() — present según el conteo.
+    // Test 2: signal() — present based on the count.
 
     public function test_signal_present_reflects_count(): void {
         $cls = \local_nexusai\external\course_setup_state::class;
@@ -72,15 +72,15 @@ final class course_setup_state_test extends \advanced_testcase {
         $this->assertSame(['present' => false, 'count' => 0], $cls::signal(0));
         $this->assertSame(['present' => true, 'count' => 1], $cls::signal(1));
         $this->assertSame(['present' => true, 'count' => 42], $cls::signal(42));
-        // Un conteo negativo (no debería pasar) se normaliza a 0 / false.
+        // A negative count (shouldn't happen) is normalized to 0 / false.
         $this->assertSame(['present' => false, 'count' => 0], $cls::signal(-3));
     }
 
-    // Test 3: material_signal() — traducción y degradación.
+    // Test 3: material_signal() — translation and degradation.
 
     public function test_material_signal_null_when_backend_absent(): void {
         $result = \local_nexusai\external\course_setup_state::material_signal(null);
-        $this->assertNull($result['present'], 'Backend caído → present desconocido (null)');
+        $this->assertNull($result['present'], 'Backend down → present unknown (null)');
         $this->assertSame(0, $result['count']);
     }
 
@@ -101,13 +101,13 @@ final class course_setup_state_test extends \advanced_testcase {
         $this->assertFalse($empty['present']);
         $this->assertSame(0, $empty['count']);
 
-        // Sin la clave has_indexed_content: se infiere del conteo.
+        // Without the has_indexed_content key: it's inferred from the count.
         $inferred = $cls::material_signal(['document_count' => 3]);
         $this->assertTrue($inferred['present']);
         $this->assertSame(3, $inferred['count']);
     }
 
-    // Test 4: curso vacío → todas las señales de Moodle en false.
+    // Test 4: empty course → all Moodle signals false.
 
     public function test_gather_moodle_signals_empty_course(): void {
         $this->resetAfterTest();
@@ -118,12 +118,12 @@ final class course_setup_state_test extends \advanced_testcase {
         $signals = \local_nexusai\external\course_setup_state::gather_moodle_signals($course->id, $context);
 
         foreach (['sections', 'groups', 'students', 'forums', 'calendar'] as $key) {
-            $this->assertFalse($signals[$key]['present'], "Curso vacío: '$key' no debería estar presente");
+            $this->assertFalse($signals[$key]['present'], "Empty course: '$key' shouldn't be present");
             $this->assertSame(0, $signals[$key]['count']);
         }
     }
 
-    // Test 5: curso armado → señales detectadas.
+    // Test 5: set-up course → signals detected.
 
     public function test_gather_moodle_signals_detects_content(): void {
         global $DB;
@@ -132,17 +132,17 @@ final class course_setup_state_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course(['numsections' => 3]);
         $context = \context_course::instance($course->id);
 
-        // Foro en la sección 1 → activa 'forums' y 'sections'.
+        // Forum in section 1 → activates 'forums' and 'sections'.
         $this->getDataGenerator()->create_module('forum', ['course' => $course->id], ['section' => 1]);
 
-        // Grupo.
+        // Group.
         $this->getDataGenerator()->create_group(['courseid' => $course->id]);
 
-        // Alumno matriculado (rol student por defecto).
+        // Enrolled student (default student role).
         $student = $this->getDataGenerator()->create_user();
         $this->getDataGenerator()->enrol_user($student->id, $course->id);
 
-        // Evento de calendario propio del curso.
+        // Calendar event of the course's own.
         $DB->insert_record('event', (object) [
             'name'         => 'Parcial 1',
             'description'  => '',
@@ -159,7 +159,7 @@ final class course_setup_state_test extends \advanced_testcase {
 
         $signals = \local_nexusai\external\course_setup_state::gather_moodle_signals($course->id, $context);
 
-        $this->assertTrue($signals['sections']['present'], 'La sección con el foro debería contar');
+        $this->assertTrue($signals['sections']['present'], 'The section with the forum should count');
         $this->assertTrue($signals['forums']['present']);
         $this->assertSame(1, $signals['forums']['count']);
         $this->assertTrue($signals['groups']['present']);

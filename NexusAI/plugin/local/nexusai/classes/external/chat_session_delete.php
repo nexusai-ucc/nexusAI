@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_chat_session_delete`.
  *
- * Borra una sesión de chat puntual del alumno (ASIST-02, #350). El backend
- * valida ownership de la sesión contra el user_id real de Moodle antes de
- * borrar — el user_id nunca se acepta como parámetro del cliente.
+ * Deletes a single chat session of the student (ASIST-02, #350). The backend
+ * validates the session's ownership against Moodle's real user_id before
+ * deleting — the user_id is never accepted as a client parameter.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Borra una sesión de chat puntual del alumno (ASIST-02, #350).
+ * Deletes a single chat session of the student (ASIST-02, #350).
  */
 class chat_session_delete extends \external_api {
     /**
@@ -42,8 +42,8 @@ class chat_session_delete extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'  => new \external_value(PARAM_INT, 'Curso (para capability check)', VALUE_REQUIRED),
-            'sessionid' => new \external_value(PARAM_ALPHANUMEXT, 'UUID de sesión a borrar', VALUE_REQUIRED),
+            'courseid'  => new \external_value(PARAM_INT, 'Course (for capability check)', VALUE_REQUIRED),
+            'sessionid' => new \external_value(PARAM_ALPHANUMEXT, 'Session UUID to delete', VALUE_REQUIRED),
         ]);
     }
 
@@ -54,15 +54,15 @@ class chat_session_delete extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'success' => new \external_value(PARAM_BOOL, 'true si se borró correctamente'),
+            'success' => new \external_value(PARAM_BOOL, 'true if deleted successfully'),
         ]);
     }
 
     /**
-     * Borra una sesión de chat puntual del alumno (ASIST-02, #350).
+     * Deletes a single chat session of the student (ASIST-02, #350).
      *
-     * @param int $courseid Curso (para capability check)
-     * @param string $sessionid UUID de sesión a borrar
+     * @param int $courseid Course (for capability check)
+     * @param string $sessionid Session UUID to delete
      * @return array
      */
     public static function execute(int $courseid, string $sessionid): array {

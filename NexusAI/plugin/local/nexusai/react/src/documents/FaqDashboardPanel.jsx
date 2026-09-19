@@ -16,9 +16,9 @@ import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
 
 // UX-12 (#370): silueta de carga — grilla de cards de tema, cada una con
 // título + un par de líneas de preguntas de ejemplo.
-function FaqSkeleton() {
+function FaqSkeleton({ lang = "es" }) {
     return (
-        <SkeletonScreen label="Cargando preguntas frecuentes...">
+        <SkeletonScreen label={lang === "es" ? "Cargando preguntas frecuentes..." : "Loading frequently asked questions..."}>
             <div className="nexusai-skeleton-faq__grid">
                 {Array.from({ length: 6 }, (_, i) => (
                     <div key={i} className="nexusai-skeleton-faq__card">
@@ -36,12 +36,44 @@ function FaqSkeleton() {
     );
 }
 
-export default function FaqDashboardPanel({ courseId }) {
+export default function FaqDashboardPanel({ courseId, lang = "es" }) {
     const [topics, setTopics] = useState([]);
     const [totalQuestions, setTotalQuestions] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [days, setDays] = useState(30);
+
+    const L = lang === "es" ? {
+        intro:        "Preguntas más repetidas de tus alumnos, agrupadas por tema. Útil para detectar qué conceptos generan más dudas y priorizar el repaso en clase.",
+        filterAria:   "Filtrar preguntas frecuentes por período",
+        show:         "Mostrar:",
+        last7:        "Últimos 7 días",
+        last30:       "Último mes",
+        last90:       "Últimos 3 meses",
+        last365:      "Último año",
+        loadError:    "No se pudieron cargar las preguntas frecuentes.",
+        emptyTitle:   "No hay suficientes preguntas registradas en este período.",
+        emptySub:     "A medida que tus alumnos usen el chat, vas a ver acá los temas que más consultan.",
+        topicsHeading:(n) => `Temas más consultados (${n} preguntas)`,
+        exportCsv:    "Exportar CSV",
+        csvTopic:     "Tema",
+        csvCount:     "Cantidad de preguntas",
+    } : {
+        intro:        "The most repeated questions from your students, grouped by topic. Useful to spot which concepts cause the most confusion and prioritize what to review in class.",
+        filterAria:   "Filter frequently asked questions by period",
+        show:         "Show:",
+        last7:        "Last 7 days",
+        last30:       "Last month",
+        last90:       "Last 3 months",
+        last365:      "Last year",
+        loadError:    "Couldn't load the frequently asked questions.",
+        emptyTitle:   "Not enough questions recorded for this period yet.",
+        emptySub:     "As your students use the chat, you'll see the topics they ask about most here.",
+        topicsHeading:(n) => `Most consulted topics (${n} questions)`,
+        exportCsv:    "Export CSV",
+        csvTopic:     "Topic",
+        csvCount:     "Number of questions",
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -57,7 +89,7 @@ export default function FaqDashboardPanel({ courseId }) {
             })
             .catch((err) => {
                 if (!cancelled) {
-                    setError(getFriendlyErrorMessage(err, "No se pudieron cargar las preguntas frecuentes."));
+                    setError(getFriendlyErrorMessage(err, L.loadError, lang));
                     setLoading(false);
                 }
             });
@@ -67,7 +99,7 @@ export default function FaqDashboardPanel({ courseId }) {
     const handleExportCsv = () => {
         const rows = topics.map((t) => [t.topic, t.count]);
         downloadCsvFile(
-            ["Tema", "Cantidad de preguntas"],
+            [L.csvTopic, L.csvCount],
             rows,
             `faq-nexusai-curso-${courseId}.csv`
         );
@@ -76,12 +108,11 @@ export default function FaqDashboardPanel({ courseId }) {
     return (
         <div className="nexusai-faq">
             <p className="nexusai-documents__intro">
-                Preguntas más repetidas de tus alumnos, agrupadas por tema. Útil para
-                detectar qué conceptos generan más dudas y priorizar el repaso en clase.
+                {L.intro}
             </p>
 
-            <div className="nexusai-gaps__filter" role="group" aria-label="Filtrar preguntas frecuentes por período">
-                <span className="nexusai-gaps__filter-label">Mostrar:</span>
+            <div className="nexusai-gaps__filter" role="group" aria-label={L.filterAria}>
+                <span className="nexusai-gaps__filter-label">{L.show}</span>
                 {[7, 30, 90, 365].map((d) => (
                     <button
                         key={d}
@@ -90,15 +121,15 @@ export default function FaqDashboardPanel({ courseId }) {
                         onClick={() => setDays(d)}
                         aria-pressed={days === d}
                     >
-                        {d === 7 && "Últimos 7 días"}
-                        {d === 30 && "Último mes"}
-                        {d === 90 && "Últimos 3 meses"}
-                        {d === 365 && "Último año"}
+                        {d === 7 && L.last7}
+                        {d === 30 && L.last30}
+                        {d === 90 && L.last90}
+                        {d === 365 && L.last365}
                     </button>
                 ))}
             </div>
 
-            {loading && <FaqSkeleton />}
+            {loading && <FaqSkeleton lang={lang} />}
 
             {error && (
                 <div className="nexusai-alert nexusai-alert--error" role="alert">
@@ -111,9 +142,9 @@ export default function FaqDashboardPanel({ courseId }) {
                     <div className="nexusai-gaps__empty-icon">
                         <IconHelpCircle size={20} />
                     </div>
-                    <p className="nexusai-gaps__empty-title">No hay suficientes preguntas registradas en este período.</p>
+                    <p className="nexusai-gaps__empty-title">{L.emptyTitle}</p>
                     <p className="nexusai-gaps__empty-sub">
-                        A medida que tus alumnos usen el chat, vas a ver acá los temas que más consultan.
+                        {L.emptySub}
                     </p>
                 </div>
             )}
@@ -122,11 +153,11 @@ export default function FaqDashboardPanel({ courseId }) {
                 <div className="nexusai-faq__list">
                     <div className="nexusai-gaps__list-header">
                         <h3 className="nexusai-documents__heading">
-                            Temas más consultados ({totalQuestions} preguntas)
+                            {L.topicsHeading(totalQuestions)}
                         </h3>
                         <button type="button" className="nexusai-btn" onClick={handleExportCsv}>
                             <IconDownload size={13} />
-                            Exportar CSV
+                            {L.exportCsv}
                         </button>
                     </div>
                     <div className="nexusai-faq__grid">

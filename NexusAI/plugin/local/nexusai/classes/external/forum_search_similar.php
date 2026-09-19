@@ -17,10 +17,10 @@
 /**
  * External function `local_nexusai_forum_search_similar`.
  *
- * Recibe el texto que el alumno está escribiendo en el editor de foro y devuelve
- * los posts existentes en el mismo curso que sean semánticamente similares.
- * El frontend lo usa para avisar al alumno antes de publicar si ya existe una
- * discusión similar.
+ * Receives the text the student is writing in the forum editor and returns
+ * existing posts in the same course that are semantically similar.
+ * The frontend uses it to warn the student before posting if a similar
+ * discussion already exists.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -33,13 +33,13 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Recibe el texto que el alumno está escribiendo en el editor de foro y devuelve los posts existentes en el
- * mismo curso que sean semánticamente similares.
+ * Receives the text the student is writing in the forum editor and returns existing posts in the
+ * same course that are semantically similar.
  */
 class forum_search_similar extends \external_api {
     /**
-     * @var float Umbral de similitud hardcodeado en PHP para evitar problemas de conversión de
-     *     float en Moodle 5.x (PARAM_FLOAT convierte 0.75 a 1 via clean_param).
+     * @var float Similarity threshold hardcoded in PHP to avoid float conversion issues
+     *     in Moodle 5.x (PARAM_FLOAT converts 0.75 to 1 via clean_param).
      */
     const SIMILARITY_THRESHOLD = 0.65;
 
@@ -50,10 +50,10 @@ class forum_search_similar extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'text'          => new \external_value(PARAM_RAW, 'Texto del post en redacción (mín 10 chars)', VALUE_REQUIRED),
-            'courseid'      => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
-            'excludepostid' => new \external_value(PARAM_INT, 'Post a excluir (al editar)', VALUE_DEFAULT, 0),
-            'topk'          => new \external_value(PARAM_INT, 'Resultados máximos (1–10)', VALUE_DEFAULT, 3),
+            'text'          => new \external_value(PARAM_RAW, 'Text of the post being drafted (min 10 chars)', VALUE_REQUIRED),
+            'courseid'      => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+            'excludepostid' => new \external_value(PARAM_INT, 'Post to exclude (when editing)', VALUE_DEFAULT, 0),
+            'topk'          => new \external_value(PARAM_INT, 'Max results (1-10)', VALUE_DEFAULT, 3),
         ]);
     }
 
@@ -66,24 +66,24 @@ class forum_search_similar extends \external_api {
         return new \external_single_structure([
             'similar_posts' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'forum_post_id' => new \external_value(PARAM_INT, 'ID de mdl_forum_posts'),
-                    'discussion_id' => new \external_value(PARAM_INT, 'ID de mdl_forum_discussions'),
-                    'similarity'    => new \external_value(PARAM_FLOAT, 'Score de similitud 0.0–1.0'),
-                    'preview'       => new \external_value(PARAM_RAW, 'Primeros 200 chars del post'),
+                    'forum_post_id' => new \external_value(PARAM_INT, 'mdl_forum_posts ID'),
+                    'discussion_id' => new \external_value(PARAM_INT, 'mdl_forum_discussions ID'),
+                    'similarity'    => new \external_value(PARAM_FLOAT, 'Similarity score 0.0-1.0'),
+                    'preview'       => new \external_value(PARAM_RAW, 'First 200 chars of the post'),
                 ])
             ),
-            'threshold_used' => new \external_value(PARAM_FLOAT, 'Umbral usado en la búsqueda'),
+            'threshold_used' => new \external_value(PARAM_FLOAT, 'Threshold used in the search'),
         ]);
     }
 
     /**
-     * Recibe el texto que el alumno está escribiendo en el editor de foro y devuelve los posts existentes en
-     * el mismo curso que sean semánticamente similares.
+     * Receives the text the student is writing in the forum editor and returns existing posts in
+     * the same course that are semantically similar.
      *
-     * @param string $text Texto del post en redacción (mín 10 chars)
-     * @param int $courseid ID del curso de Moodle
-     * @param int $excludepostid Post a excluir (al editar)
-     * @param int $topk Resultados máximos (1–10)
+     * @param string $text Text of the post being drafted (min 10 chars)
+     * @param int $courseid Moodle course ID
+     * @param int $excludepostid Post to exclude (when editing)
+     * @param int $topk Max results (1-10)
      * @return array
      */
     public static function execute(string $text, int $courseid, int $excludepostid = 0, int $topk = 3): array {

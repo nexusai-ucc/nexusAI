@@ -17,14 +17,13 @@
 /**
  * External function `local_nexusai_gaps_archive`.
  *
- * Archiva o desarchiva un gap detectado (DOC-D08, issue #383). Opera sobre
- * los IDs reales de fila (`question_ids`, devueltos por `gaps_list`) — el
- * texto de la pregunta que ve el docente es solo el representante más
- * reciente del cluster semántico (DOC-D06), no una clave estable para
- * identificar qué filas archivar.
+ * Archives or unarchives a detected gap (DOC-D08, issue #383). Operates on
+ * the real row IDs (`question_ids`, returned by `gaps_list`) — the question
+ * text the teacher sees is just the most recent representative of the
+ * semantic cluster (DOC-D06), not a stable key to identify which rows to archive.
  *
- * Solo accesible para usuarios con capability `local/nexusai:manage`
- * (docentes y admins) — mismo criterio que `gaps_list`.
+ * Only accessible to users with the `local/nexusai:manage` capability
+ * (teachers and admins) — same criterion as `gaps_list`.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -37,7 +36,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Archiva o desarchiva un gap detectado (DOC-D08, issue #383).
+ * Archives or unarchives a detected gap (DOC-D08, issue #383).
  */
 class gaps_archive extends \external_api {
     /**
@@ -47,12 +46,12 @@ class gaps_archive extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'    => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid'    => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
             'questionids' => new \external_multiple_structure(
-                new \external_value(PARAM_ALPHANUMEXT, 'UUID de una fila de unanswered_questions'),
-                'IDs de las filas a archivar/desarchivar (al menos 1)'
+                new \external_value(PARAM_ALPHANUMEXT, 'UUID of an unanswered_questions row'),
+                'IDs of the rows to archive/unarchive (at least 1)'
             ),
-            'archived'    => new \external_value(PARAM_BOOL, 'true para archivar, false para desarchivar', VALUE_REQUIRED),
+            'archived'    => new \external_value(PARAM_BOOL, 'true to archive, false to unarchive', VALUE_REQUIRED),
         ]);
     }
 
@@ -63,18 +62,18 @@ class gaps_archive extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
-            'archived'  => new \external_value(PARAM_BOOL, 'Estado aplicado'),
-            'affected'  => new \external_value(PARAM_INT, 'Cantidad de filas actualizadas'),
+            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
+            'archived'  => new \external_value(PARAM_BOOL, 'Applied state'),
+            'affected'  => new \external_value(PARAM_INT, 'Number of rows updated'),
         ]);
     }
 
     /**
-     * Archiva o desarchiva un gap detectado (DOC-D08, issue #383).
+     * Archives or unarchives a detected gap (DOC-D08, issue #383).
      *
-     * @param int $courseid ID del curso
-     * @param array $questionids IDs de las filas a archivar/desarchivar (al menos 1)
-     * @param bool $archived true para archivar, false para desarchivar
+     * @param int $courseid Course ID
+     * @param array $questionids IDs of the rows to archive/unarchive (at least 1)
+     * @param bool $archived true to archive, false to unarchive
      * @return array
      */
     public static function execute(int $courseid, array $questionids, bool $archived): array {

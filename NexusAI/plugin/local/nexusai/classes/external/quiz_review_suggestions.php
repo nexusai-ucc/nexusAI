@@ -17,8 +17,8 @@
 /**
  * External function `local_nexusai_quiz_review_suggestions`.
  *
- * Analiza el historial de errores de quiz del alumno y devuelve sugerencias
- * de qué repasar, agrupadas por archivo fuente del curso (SP-10).
+ * Analyzes the student's quiz error history and returns review suggestions,
+ * grouped by the course's source file (SP-10).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -31,8 +31,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Analiza el historial de errores de quiz del alumno y devuelve sugerencias de qué repasar, agrupadas por
- * archivo fuente del curso (SP-10).
+ * Analyzes the student's quiz error history and returns review suggestions, grouped by the
+ * course's source file (SP-10).
  */
 class quiz_review_suggestions extends \external_api {
     /**
@@ -42,8 +42,8 @@ class quiz_review_suggestions extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_DEFAULT, 90),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'days'     => new \external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 90),
         ]);
     }
 
@@ -54,33 +54,33 @@ class quiz_review_suggestions extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'course_id'    => new \external_value(PARAM_INT, 'ID del curso'),
-            'total_errors' => new \external_value(PARAM_INT, 'Total de errores considerados'),
+            'course_id'    => new \external_value(PARAM_INT, 'Course ID'),
+            'total_errors' => new \external_value(PARAM_INT, 'Total errors considered'),
             'suggestions'  => new \external_multiple_structure(
                 new \external_single_structure([
-                    'source_filename'    => new \external_value(PARAM_TEXT, 'Archivo fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_filename'    => new \external_value(PARAM_TEXT, 'Source file', VALUE_OPTIONAL, null, NULL_ALLOWED),
                     'source_document_id' => new \external_value(
                         PARAM_RAW,
-                        'ID del documento fuente (best-effort)',
+                        'Source document ID (best-effort)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'error_count'        => new \external_value(PARAM_INT, 'Cantidad de errores del grupo'),
-                    'last_error_at'      => new \external_value(PARAM_RAW, 'ISO timestamp del último error del grupo'),
-                    'topic'              => new \external_value(PARAM_RAW, 'Subtema identificado por la IA'),
-                    'suggestion'         => new \external_value(PARAM_RAW, 'Sugerencia de repaso'),
+                    'error_count'        => new \external_value(PARAM_INT, 'Number of errors in the group'),
+                    'last_error_at'      => new \external_value(PARAM_RAW, 'ISO timestamp of the group\'s last error'),
+                    'topic'              => new \external_value(PARAM_RAW, 'Sub-topic identified by the AI'),
+                    'suggestion'         => new \external_value(PARAM_RAW, 'Review suggestion'),
                 ])
             ),
         ]);
     }
 
     /**
-     * Analiza el historial de errores de quiz del alumno y devuelve sugerencias de qué repasar, agrupadas por
-     * archivo fuente del curso (SP-10).
+     * Analyzes the student's quiz error history and returns review suggestions, grouped by the
+     * course's source file (SP-10).
      *
-     * @param int $courseid ID del curso
-     * @param int $days Días hacia atrás (1..365)
+     * @param int $courseid Course ID
+     * @param int $days Days back (1..365)
      * @return array
      */
     public static function execute(int $courseid, int $days = 90): array {

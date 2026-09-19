@@ -17,8 +17,8 @@
 /**
  * External function `local_nexusai_quiz_evaluate`.
  *
- * Evalúa la respuesta libre de un alumno a una pregunta abierta usando LLM
- * (SP-05: preguntas abiertas con evaluación por IA).
+ * Evaluates a student's free-text answer to an open question using an LLM
+ * (SP-05: open questions with AI-based evaluation).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -31,8 +31,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Evalúa la respuesta libre de un alumno a una pregunta abierta usando LLM (SP-05: preguntas abiertas con
- * evaluación por IA).
+ * Evaluates a student's free-text answer to an open question using an LLM (SP-05: open
+ * questions with AI-based evaluation).
  */
 class quiz_evaluate extends \external_api {
     /**
@@ -42,10 +42,10 @@ class quiz_evaluate extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'    => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'question'    => new \external_value(PARAM_RAW, 'Texto de la pregunta', VALUE_REQUIRED),
-            'modelanswer' => new \external_value(PARAM_RAW, 'Respuesta modelo (explanation del quiz)', VALUE_REQUIRED),
-            'useranswer'  => new \external_value(PARAM_RAW, 'Respuesta escrita por el alumno', VALUE_REQUIRED),
+            'courseid'    => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'question'    => new \external_value(PARAM_RAW, 'Question text', VALUE_REQUIRED),
+            'modelanswer' => new \external_value(PARAM_RAW, 'Model answer (quiz explanation)', VALUE_REQUIRED),
+            'useranswer'  => new \external_value(PARAM_RAW, 'Answer written by the student', VALUE_REQUIRED),
         ]);
     }
 
@@ -56,20 +56,20 @@ class quiz_evaluate extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'correct'  => new \external_value(PARAM_BOOL, '¿La respuesta es correcta?'),
-            'score'    => new \external_value(PARAM_FLOAT, 'Puntaje 0.0 a 1.0'),
-            'feedback' => new \external_value(PARAM_RAW, 'Feedback detallado del evaluador IA'),
+            'correct'  => new \external_value(PARAM_BOOL, 'Is the answer correct?'),
+            'score'    => new \external_value(PARAM_FLOAT, 'Score 0.0 to 1.0'),
+            'feedback' => new \external_value(PARAM_RAW, 'Detailed feedback from the AI evaluator'),
         ]);
     }
 
     /**
-     * Evalúa la respuesta libre de un alumno a una pregunta abierta usando LLM (SP-05: preguntas abiertas con
-     * evaluación por IA).
+     * Evaluates a student's free-text answer to an open question using an LLM (SP-05: open
+     * questions with AI-based evaluation).
      *
-     * @param int $courseid ID del curso
-     * @param string $question Texto de la pregunta
-     * @param string $modelanswer Respuesta modelo (explanation del quiz)
-     * @param string $useranswer Respuesta escrita por el alumno
+     * @param int $courseid Course ID
+     * @param string $question Question text
+     * @param string $modelanswer Model answer (quiz explanation)
+     * @param string $useranswer Answer written by the student
      * @return array
      */
     public static function execute(int $courseid, string $question, string $modelanswer, string $useranswer): array {

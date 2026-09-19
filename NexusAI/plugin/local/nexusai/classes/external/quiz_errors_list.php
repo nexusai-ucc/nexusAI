@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_quiz_errors_list`.
  *
- * Devuelve el historial de preguntas que el alumno respondió mal en quizes
- * de un curso (SP-10 — repaso basado en errores). Cada alumno ve solo su
- * propio historial ($USER->id, nunca un parámetro del cliente).
+ * Returns the history of questions the student answered wrong in quizzes
+ * of a course (SP-10 — error-based review). Each student only sees their
+ * own history ($USER->id, never a client parameter).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,8 +32,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Devuelve el historial de preguntas que el alumno respondió mal en quizes de un curso (SP-10 — repaso basado
- * en errores).
+ * Returns the history of questions the student answered wrong in quizzes of a course (SP-10 —
+ * error-based review).
  */
 class quiz_errors_list extends \external_api {
     /**
@@ -43,10 +43,10 @@ class quiz_errors_list extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_DEFAULT, 90),
-            'limit'    => new \external_value(PARAM_INT, 'Máximo de items (1..200)', VALUE_DEFAULT, 100),
-            'offset'   => new \external_value(PARAM_INT, 'Items a saltear (paginación)', VALUE_DEFAULT, 0),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'days'     => new \external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 90),
+            'limit'    => new \external_value(PARAM_INT, 'Max items (1..200)', VALUE_DEFAULT, 100),
+            'offset'   => new \external_value(PARAM_INT, 'Items to skip (pagination)', VALUE_DEFAULT, 0),
         ]);
     }
 
@@ -57,51 +57,51 @@ class quiz_errors_list extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'ID del curso'),
-            'total'     => new \external_value(PARAM_INT, 'Cantidad de items'),
+            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
+            'total'     => new \external_value(PARAM_INT, 'Number of items'),
             'items'     => new \external_multiple_structure(
                 new \external_single_structure([
-                    'id'                   => new \external_value(PARAM_RAW, 'ID del registro'),
+                    'id'                   => new \external_value(PARAM_RAW, 'Record ID'),
                     'created_at'           => new \external_value(PARAM_RAW, 'ISO timestamp'),
-                    'question_type'        => new \external_value(PARAM_ALPHANUMEXT, 'Tipo de pregunta'),
-                    'question'             => new \external_value(PARAM_RAW, 'Texto de la pregunta'),
-                    'explanation'          => new \external_value(PARAM_RAW, 'Explicación / respuesta modelo'),
-                    'source_filename'      => new \external_value(PARAM_TEXT, 'Archivo fuente', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'question_type'        => new \external_value(PARAM_ALPHANUMEXT, 'Question type'),
+                    'question'             => new \external_value(PARAM_RAW, 'Question text'),
+                    'explanation'          => new \external_value(PARAM_RAW, 'Explanation / model answer'),
+                    'source_filename'      => new \external_value(PARAM_TEXT, 'Source file', VALUE_OPTIONAL, null, NULL_ALLOWED),
                     'source_document_id'   => new \external_value(
                         PARAM_RAW,
-                        'ID del documento fuente (best-effort)',
+                        'Source document ID (best-effort)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
                     'options'              => new \external_multiple_structure(
-                        new \external_value(PARAM_RAW, 'Opción')
+                        new \external_value(PARAM_RAW, 'Option')
                     ),
-                    'correct_index'        => new \external_value(PARAM_INT, 'Índice de la opción correcta'),
+                    'correct_index'        => new \external_value(PARAM_INT, 'Index of the correct option'),
                     'user_selected_index'  => new \external_value(
                         PARAM_INT,
-                        'Índice elegido por el alumno',
+                        'Index chosen by the student',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
                     'user_answer'          => new \external_value(
                         PARAM_RAW,
-                        'Respuesta libre del alumno',
+                        'Student\'s free-text answer',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
                     'ai_feedback'          => new \external_value(
                         PARAM_RAW,
-                        'Feedback del evaluador IA',
+                        'AI evaluator feedback',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
                     'ai_score'             => new \external_value(
                         PARAM_FLOAT,
-                        'Puntaje del evaluador IA',
+                        'AI evaluator score',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
@@ -112,13 +112,13 @@ class quiz_errors_list extends \external_api {
     }
 
     /**
-     * Devuelve el historial de preguntas que el alumno respondió mal en quizes de un curso (SP-10 — repaso
-     * basado en errores).
+     * Returns the history of questions the student answered wrong in quizzes of a course (SP-10 —
+     * error-based review).
      *
-     * @param int $courseid ID del curso
-     * @param int $days Días hacia atrás (1..365)
-     * @param int $limit Máximo de items (1..200)
-     * @param int $offset Items a saltear (paginación)
+     * @param int $courseid Course ID
+     * @param int $days Days back (1..365)
+     * @param int $limit Max items (1..200)
+     * @param int $offset Items to skip (pagination)
      * @return array
      */
     public static function execute(int $courseid, int $days = 90, int $limit = 100, int $offset = 0): array {

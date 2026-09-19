@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_quiz_flashcards_summary`.
  *
- * SP-11 (#315): cuántas flashcards ya generadas hasta ahora "tocan hoy"
- * (repetición espaciada SM-2) vs. el total generado — para el banner del
- * Modo Estudio antes de empezar a practicar.
+ * SP-11 (#315): how many of the flashcards generated so far are "due today"
+ * (SM-2 spaced repetition) vs. the total generated — for the Study Mode
+ * banner before starting to practice.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,7 +32,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * SP-11 (#315): cuántas flashcards ya generadas hasta ahora "tocan hoy" (repetición espaciada SM-2) vs.
+ * SP-11 (#315): how many of the flashcards generated so far are "due today" (SM-2 spaced
+ * repetition) vs. the total generated.
  */
 class quiz_flashcards_summary extends \external_api {
     /**
@@ -42,8 +43,8 @@ class quiz_flashcards_summary extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'topic'    => new \external_value(PARAM_TEXT, 'Tema (opcional)', VALUE_DEFAULT, ''),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'topic'    => new \external_value(PARAM_TEXT, 'Topic (optional)', VALUE_DEFAULT, ''),
         ]);
     }
 
@@ -54,16 +55,17 @@ class quiz_flashcards_summary extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'duecount'   => new \external_value(PARAM_INT, 'Flashcards que tocan hoy'),
-            'totalcount' => new \external_value(PARAM_INT, 'Total de flashcards generadas'),
+            'duecount'   => new \external_value(PARAM_INT, 'Flashcards due today'),
+            'totalcount' => new \external_value(PARAM_INT, 'Total flashcards generated'),
         ]);
     }
 
     /**
-     * SP-11 (#315): cuántas flashcards ya generadas hasta ahora "tocan hoy" (repetición espaciada SM-2) vs.
+     * SP-11 (#315): how many of the flashcards generated so far are "due today" (SM-2 spaced
+     * repetition) vs. the total generated.
      *
-     * @param int $courseid ID del curso
-     * @param string $topic Tema (opcional)
+     * @param int $courseid Course ID
+     * @param string $topic Topic (optional)
      * @return array
      */
     public static function execute(int $courseid, string $topic = ''): array {

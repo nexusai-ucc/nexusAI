@@ -17,8 +17,8 @@
 /**
  * External function `local_nexusai_document_list`.
  *
- * Lista todos los documentos NexusAI-indexados de un curso. La vista docente
- * la usa para mostrar la tabla con estados.
+ * Lists all NexusAI-indexed documents of a course. The teacher view uses it
+ * to show the status table.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Lista todos los documentos NexusAI-indexados de un curso.
+ * Lists all NexusAI-indexed documents of a course.
  */
 class document_list extends \external_api {
     /**
@@ -42,18 +42,18 @@ class document_list extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
-            // UX-17 (#387): opcionales — sin limit, el backend devuelve todo
-            // hasta su tope interno (lo usa ExamGeneratorPanel.jsx, que
-            // necesita elegir entre todos los documentos indexados).
+            'courseid' => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+            // UX-17 (#387): optional — without limit, the backend returns
+            // everything up to its internal cap (used by ExamGeneratorPanel.jsx,
+            // which needs to choose among all indexed documents).
             'limit'    => new \external_value(
                 PARAM_INT,
-                'Máximo de items por página (sin valor: sin paginar, tope interno)',
+                'Max items per page (no value: unpaginated, internal cap)',
                 VALUE_DEFAULT,
                 null,
                 NULL_ALLOWED
             ),
-            'offset'   => new \external_value(PARAM_INT, 'Desde qué posición paginar', VALUE_DEFAULT, 0),
+            'offset'   => new \external_value(PARAM_INT, 'Position to paginate from', VALUE_DEFAULT, 0),
         ]);
     }
 
@@ -66,31 +66,31 @@ class document_list extends \external_api {
         return new \external_single_structure([
             'total' => new \external_value(
                 PARAM_INT,
-                'Cantidad total de documentos del curso (para paginar, no la cantidad ya recortada por limit)'
+                'Total number of course documents (for pagination, not the count already trimmed by limit)'
             ),
             'items' => new \external_multiple_structure(
                 new \external_single_structure([
-                    'id'            => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento'),
-                    'course_id'     => new \external_value(PARAM_INT, 'ID del curso'),
-                    'uploader_id'   => new \external_value(PARAM_INT, 'ID del docente que subió'),
-                    'filename'      => new \external_value(PARAM_RAW, 'Nombre del archivo'),
+                    'id'            => new \external_value(PARAM_ALPHANUMEXT, 'Document UUID'),
+                    'course_id'     => new \external_value(PARAM_INT, 'Course ID'),
+                    'uploader_id'   => new \external_value(PARAM_INT, 'ID of the teacher who uploaded it'),
+                    'filename'      => new \external_value(PARAM_RAW, 'File name'),
                     'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
                     'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
-                    'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si aplica', VALUE_OPTIONAL),
-                    'created_at'    => new \external_value(PARAM_TEXT, 'Fecha de subida (ISO 8601)', VALUE_OPTIONAL),
-                    'updated_at'    => new \external_value(PARAM_TEXT, 'Fecha de última actualización (ISO 8601)', VALUE_OPTIONAL),
+                    'error_message' => new \external_value(PARAM_RAW, 'Error message, if applicable', VALUE_OPTIONAL),
+                    'created_at'    => new \external_value(PARAM_TEXT, 'Upload date (ISO 8601)', VALUE_OPTIONAL),
+                    'updated_at'    => new \external_value(PARAM_TEXT, 'Last update date (ISO 8601)', VALUE_OPTIONAL),
                 ]),
-                'Documentos del curso, ordenados por fecha de subida descendente'
+                'Course documents, ordered by upload date descending'
             ),
         ]);
     }
 
     /**
-     * Lista todos los documentos NexusAI-indexados de un curso.
+     * Lists all NexusAI-indexed documents of a course.
      *
-     * @param int $courseid ID del curso de Moodle
-     * @param int $limit Máximo de items por página (sin valor: sin paginar, tope interno)
-     * @param int $offset Desde qué posición paginar
+     * @param int $courseid Moodle course ID
+     * @param int $limit Max items per page (no value: unpaginated, internal cap)
+     * @param int $offset Position to paginate from
      * @return array
      */
     public static function execute(int $courseid, ?int $limit = null, int $offset = 0): array {

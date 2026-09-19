@@ -17,17 +17,17 @@
 /**
  * External function `local_nexusai_document_upload`.
  *
- * Recibe el contenido del archivo en base64 directamente desde React (FileReader
- * sobre drag-and-drop HTML5), valida y reenvía al backend Python.
+ * Receives the file content as base64 directly from React (FileReader over
+ * HTML5 drag-and-drop), validates it and forwards it to the Python backend.
  *
- * Decisión: NO usamos el draft area de Moodle ni el filepicker tradicional.
- * Razones:
- *   - El draft area + filepicker es server-rendered y requiere page reload.
- *     React + FileReader → base64 → AJAX da una UX fluida sin reload.
- *   - El backend Python ya espera base64 (ver app/documents/router.py),
- *     así que no agregamos overhead.
- *   - Tamaño máximo aceptado: 20 MB → en base64 dentro del JSON de la request
- *     ~27 MB. Bajo el post_max_size típico de Moodle (64 MB).
+ * Decision: we do NOT use Moodle's draft area or the traditional filepicker.
+ * Reasons:
+ *   - The draft area + filepicker is server-rendered and requires a page reload.
+ *     React + FileReader → base64 → AJAX gives a smooth UX with no reload.
+ *   - The Python backend already expects base64 (see app/documents/router.py),
+ *     so we're not adding overhead.
+ *   - Maximum accepted size: 20 MB → in base64 within the request's JSON,
+ *     ~27 MB. Under Moodle's typical post_max_size (64 MB).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -41,8 +41,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Recibe el contenido del archivo en base64 directamente desde React (FileReader sobre drag-and-drop HTML5),
- * valida y reenvía al backend Python.
+ * Receives the file content as base64 directly from React (FileReader over HTML5
+ * drag-and-drop), validates it and forwards it to the Python backend.
  */
 class document_upload extends \external_api {
     /**
@@ -52,13 +52,13 @@ class document_upload extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'    => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
-            'filename'    => new \external_value(PARAM_FILE, 'Nombre del archivo (con extensión)', VALUE_REQUIRED),
-            'mimetype'    => new \external_value(PARAM_RAW, 'MIME type detectado por el browser', VALUE_REQUIRED),
-            'content_b64' => new \external_value(PARAM_RAW, 'Contenido binario en base64', VALUE_REQUIRED),
+            'courseid'    => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+            'filename'    => new \external_value(PARAM_FILE, 'File name (with extension)', VALUE_REQUIRED),
+            'mimetype'    => new \external_value(PARAM_RAW, 'MIME type detected by the browser', VALUE_REQUIRED),
+            'content_b64' => new \external_value(PARAM_RAW, 'Binary content in base64', VALUE_REQUIRED),
             'section'     => new \external_value(
                 PARAM_INT,
-                'Sección/unidad del curso (-1 = no asignada, BUS-05)',
+                'Course section/unit (-1 = unassigned, BUS-05)',
                 VALUE_DEFAULT,
                 -1
             ),
@@ -72,18 +72,18 @@ class document_upload extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'id'            => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento creado'),
-            'course_id'     => new \external_value(PARAM_INT, 'ID del curso'),
-            'uploader_id'   => new \external_value(PARAM_INT, 'ID del docente que subió'),
-            'filename'      => new \external_value(PARAM_RAW, 'Nombre del archivo'),
+            'id'            => new \external_value(PARAM_ALPHANUMEXT, 'UUID of the created document'),
+            'course_id'     => new \external_value(PARAM_INT, 'Course ID'),
+            'uploader_id'   => new \external_value(PARAM_INT, 'ID of the teacher who uploaded it'),
+            'filename'      => new \external_value(PARAM_RAW, 'File name'),
             'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
-            'section'       => new \external_value(PARAM_INT, 'Sección asignada', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'section'       => new \external_value(PARAM_INT, 'Assigned section', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
-            'error_message' => new \external_value(PARAM_RAW, 'Mensaje de error si status=error', VALUE_OPTIONAL),
+            'error_message' => new \external_value(PARAM_RAW, 'Error message if status=error', VALUE_OPTIONAL),
         ]);
     }
 
-    /** MIME types permitidos → validador de magic bytes. */
+    /** Allowed MIME types → magic-bytes validator. */
     private const ALLOWED_MIME_TYPES = [
         'application/pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -96,14 +96,14 @@ class document_upload extends \external_api {
     ];
 
     /**
-     * Recibe el contenido de un archivo en base64 desde React, lo valida y lo reenvía al backend.
+     * Receives a file's content as base64 from React, validates it and forwards it to the backend.
      *
-     * @param int    $courseid    ID del curso (el contexto del curso valida acceso).
-     * @param string $filename    Nombre del archivo subido.
-     * @param string $mimetype    MIME type: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML o TXT.
-     * @param string $contentb64  Contenido binario del archivo en base64.
-     * @param int    $section     Sección/unidad del curso (-1 = no asignada, BUS-05).
-     * @return array Document state después del upload.
+     * @param int    $courseid    Course ID (the course context validates access).
+     * @param string $filename    Uploaded file's name.
+     * @param string $mimetype    MIME type: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML or TXT.
+     * @param string $contentb64  File's binary content in base64.
+     * @param int    $section     Course section/unit (-1 = unassigned, BUS-05).
+     * @return array Document state after the upload.
      */
     public static function execute(
         int $courseid,
@@ -122,12 +122,12 @@ class document_upload extends \external_api {
             'section'     => $section,
         ]);
 
-        // Validar contexto del curso + capability manage.
+        // Validate the course context + manage capability.
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:manage', $context);
 
-        // Validar tipo MIME contra la lista de tipos permitidos.
+        // Validate the MIME type against the list of allowed types.
         if (!in_array($params['mimetype'], self::ALLOWED_MIME_TYPES, true)) {
             throw new \invalid_parameter_exception(
                 'Unsupported file type. Allowed: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML, TXT. '
@@ -135,46 +135,46 @@ class document_upload extends \external_api {
             );
         }
 
-        // Defensa: el filename no puede tener path traversal ni caracteres raros.
-        // PARAM_FILE ya filtra la mayoría, pero re-chequeamos largo.
+        // Defense: the filename can't have path traversal or weird characters.
+        // PARAM_FILE already filters most of it, but we re-check the length.
         if (strlen($params['filename']) === 0 || strlen($params['filename']) > 255) {
             throw new \invalid_parameter_exception('Invalid filename length');
         }
 
-        // Validar tamaño base64 antes de decodear (ahorra memoria si está desbordado).
-        // base64 inflate ~33%, así que 20 MB de archivo = ~27 MB en base64.
-        // Le damos margen y rechazamos > 30 MB de base64.
+        // Validate the base64 size before decoding (saves memory if it's oversized).
+        // base64 inflates by ~33%, so a 20 MB file = ~27 MB in base64.
+        // We give it margin and reject > 30 MB of base64.
         if (strlen($params['content_b64']) > 30 * 1024 * 1024) {
             throw new \invalid_parameter_exception('File too large (max 20MB)');
         }
 
-        // Decodear base64 para obtener el binary y validar magic bytes.
-        // base64_decode con strict=true rechaza caracteres no válidos.
+        // Decode base64 to get the binary content and validate magic bytes.
+        // base64_decode with strict=true rejects invalid characters.
         $filebytes = base64_decode($params['content_b64'], true);
         if ($filebytes === false || $filebytes === '') {
             throw new \invalid_parameter_exception('Invalid base64 content');
         }
 
-        // Validar magic bytes según tipo MIME declarado.
+        // Validate magic bytes against the declared MIME type.
         self::validate_magic_bytes($filebytes, $params['mimetype']);
 
-        // Un valor de -1 significa que el docente no eligió sección (BUS-05) → se envía null al backend.
+        // A value of -1 means the teacher didn't pick a section (BUS-05) → null is sent to the backend.
         $section = $params['section'] >= 0 ? (int) $params['section'] : null;
 
-        // POST al backend con HMAC. El cliente backend re-encodea a base64
-        // (sí, doble encode/decode, pero el contrato del backend está en
-        // services/api/app/documents/router.py y queda más limpio así).
+        // POST to the backend with HMAC. The backend client re-encodes to
+        // base64 (yes, double encode/decode, but the backend's contract
+        // lives in services/api/app/documents/router.py and it's cleaner this way).
         $client = new backend_client();
         $response = $client->upload_document(
             (int) $params['courseid'],
-            (int) $USER->id, // Siempre del server, no del cliente.
+            (int) $USER->id, // Always from the server, never from the client.
             $params['filename'],
             $params['mimetype'],
             $filebytes,
             $section
         );
 
-        // Validar shape de la respuesta.
+        // Validate the response's shape.
         if (!isset($response['id'], $response['status'])) {
             throw new \moodle_exception(
                 'errorbackend',
@@ -184,10 +184,10 @@ class document_upload extends \external_api {
             );
         }
 
-        // Guardar una copia en el file storage de Moodle para poder servirla via
-        // pluginfile.php sin depender del disco del backend Python.
-        // itemid = course_id para agrupar por curso. Filename único por curso
-        // (ya validado por el backend con chequeo de colisión).
+        // Save a copy in Moodle's file storage so it can be served via
+        // pluginfile.php without depending on the Python backend's disk.
+        // itemid = course_id to group by course. Filename unique per course
+        // (already validated by the backend with a collision check).
         $fs = get_file_storage();
         $existing = $fs->get_file(
             $context->id,
@@ -198,7 +198,7 @@ class document_upload extends \external_api {
             $params['filename']
         );
         if ($existing) {
-            $existing->delete();  // Reemplaza si ya existía (re-upload).
+            $existing->delete();  // Replaces it if it already existed (re-upload).
         }
         $filerecord = [
             'contextid' => $context->id,
@@ -210,8 +210,8 @@ class document_upload extends \external_api {
         ];
         $fs->create_file_from_string($filerecord, $filebytes);
 
-        // CAL-03 (issue #239): notificar a los usuarios del curso que hay
-        // material nuevo. Best-effort — nunca puede romper la respuesta del upload.
+        // CAL-03 (issue #239): notify the course's users that there's new
+        // material. Best-effort — must never break the upload's response.
         \local_nexusai\notifier::notify_new_material(
             (int) $params['courseid'],
             $params['filename'],
@@ -231,8 +231,8 @@ class document_upload extends \external_api {
     }
 
     /**
-     * Verifica magic bytes contra el MIME type declarado.
-     * Lanza invalid_parameter_exception si no coinciden.
+     * Verifies magic bytes against the declared MIME type.
+     * Throws invalid_parameter_exception if they don't match.
      */
     private static function validate_magic_bytes(string $bytes, string $mimetype): void {
         switch ($mimetype) {
@@ -243,19 +243,19 @@ class document_upload extends \external_api {
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                // DOCX es un ZIP: magic bytes PK\x03\x04.
+                // DOCX is a ZIP: magic bytes PK\x03\x04.
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
                     throw new \invalid_parameter_exception('File does not look like a valid DOCX');
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-                // PPTX es un ZIP, igual que DOCX.
+                // PPTX is a ZIP, same as DOCX.
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
                     throw new \invalid_parameter_exception('File does not look like a valid PPTX');
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                // XLSX es un ZIP, igual que DOCX.
+                // XLSX is a ZIP, same as DOCX.
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
                     throw new \invalid_parameter_exception('File does not look like a valid XLSX');
                 }
@@ -264,7 +264,7 @@ class document_upload extends \external_api {
             case 'text/csv':
             case 'text/markdown':
             case 'text/html':
-                // Formatos de texto: verificar que sea UTF-8 válido (mb_check_encoding).
+                // Text formats: verify it's valid UTF-8 (mb_check_encoding).
                 if (!mb_check_encoding($bytes, 'UTF-8')) {
                     throw new \invalid_parameter_exception('Text file is not valid UTF-8');
                 }
