@@ -37,8 +37,8 @@ We publish a ready-to-run image of the backend on every release. You only
 need two files, not the whole repository — no `git clone`, no local build:
 
 ```bash
-curl -O https://raw.githubusercontent.com/nexusai-ucc/nexusAI/main/NexusAI/docker-compose.selfhost.yml
-curl -O https://raw.githubusercontent.com/nexusai-ucc/nexusAI/main/NexusAI/.env.example
+curl -O https://raw.githubusercontent.com/nexusai-ucc/nexusai-backend/main/docker-compose.selfhost.yml
+curl -O https://raw.githubusercontent.com/nexusai-ucc/nexusai-backend/main/.env.example
 cp .env.example .env
 ```
 
