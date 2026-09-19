@@ -34,7 +34,16 @@ site at directly, no setup required on your side.
 ## Option B — Self-host the backend (no shared credentials needed)
 
 We publish a ready-to-run image of the backend on every release. You only
-need two files, not the whole repository — no `git clone`, no local build:
+need two files, not the whole repository — no `git clone`, no local build.
+
+**Requirements:** Docker with the Compose plugin. On Windows and macOS that
+means [Docker Desktop](https://www.docker.com/products/docker-desktop/) (start
+it before running the commands below); on Linux, Docker Engine with the
+`docker compose` plugin.
+
+### 1. Download the two files
+
+**Linux / macOS (bash or zsh)**
 
 ```bash
 curl -O https://raw.githubusercontent.com/nexusai-ucc/nexusai-backend/main/docker-compose.selfhost.yml
@@ -42,28 +51,72 @@ curl -O https://raw.githubusercontent.com/nexusai-ucc/nexusai-backend/main/.env.
 cp .env.example .env
 ```
 
-Edit `.env` and fill in:
+**Windows (PowerShell)** — note the `curl.exe`: in PowerShell, plain `curl`
+is an alias of a different command and does not accept `-O`.
+
+```powershell
+curl.exe -O https://raw.githubusercontent.com/nexusai-ucc/nexusai-backend/main/docker-compose.selfhost.yml
+curl.exe -O https://raw.githubusercontent.com/nexusai-ucc/nexusai-backend/main/.env.example
+Copy-Item .env.example .env
+```
+
+### 2. Fill in `.env`
+
+Open `.env` in any text editor and set:
 - `LLM_API_KEY` and `EMBEDDING_API_KEY` — a free Gemini key from
-  https://aistudio.google.com/apikey (same key works for both)
-- `NEXUSAI_SHARED_SECRET` and `NEXUSAI_API_KEY` — generate with
-  `openssl rand -hex 32` (run it twice, once per value)
-- `POSTGRES_PASSWORD` — any value
+  https://aistudio.google.com/apikey (the same key works for both).
+- `NEXUSAI_API_KEY` and `NEXUSAI_SHARED_SECRET` — two random 64-character
+  hex strings, one per variable. Generate each one with:
 
-Then:
+  **Linux / macOS**
+  ```bash
+  openssl rand -hex 32
+  ```
 
-```bash
+  **Windows (PowerShell)**
+  ```powershell
+  $b = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); -join ($b | ForEach-Object { $_.ToString('x2') })
+  ```
+- `POSTGRES_PASSWORD` — any value.
+
+### 3. Start it
+
+Same command on every system:
+
+```
 docker compose -f docker-compose.selfhost.yml up -d
-curl http://localhost:8001/health   # -> {"status":"ok", ...}
 ```
 
 This pulls `ghcr.io/nexusai-ucc/nexusai-backend:latest` — the same image our
-own staging/production deployments run — and applies DB migrations
-automatically on startup.
+own staging/production deployments run — and applies the database migrations
+automatically on startup. On Apple Silicon Macs the image runs under
+emulation, which works but starts a bit slower.
 
-Configure the plugin (same settings page as Option A) with:
-- **Backend URL**: `http://localhost:8001` (or wherever this instance is
-  reachable from your Moodle server)
-- **API key** / **Shared secret**: the values you generated above
+Check that it is up (or just open the URL in a browser):
+
+```bash
+curl http://localhost:8001/health          # Linux / macOS
+```
+```powershell
+curl.exe http://localhost:8001/health      # Windows (PowerShell)
+```
+
+The response should be `{"status":"ok", ...}`. If port 8001 is already in use,
+set `API_PORT` in `.env` to another value and use that port below.
+
+### 4. Point the plugin at it
+
+Configure the plugin (same settings page as Option A). The **Backend URL**
+depends on where your Moodle runs:
+
+| Where Moodle runs | Backend URL |
+|---|---|
+| Directly on the same machine (XAMPP, MAMP, Laragon, native install) | `http://localhost:8001` |
+| In Docker on Windows or macOS (Docker Desktop) | `http://host.docker.internal:8001` |
+| In Docker on Linux | `http://host.docker.internal:8001` if your Moodle container maps `host.docker.internal` to the host (for example with `extra_hosts: ["host.docker.internal:host-gateway"]`); otherwise use the host's IP address |
+| On another machine | `http://<address of the machine running the backend>:8001` |
+
+- **API key** / **Shared secret**: the two values you generated in step 2.
 
 ## What to test
 
