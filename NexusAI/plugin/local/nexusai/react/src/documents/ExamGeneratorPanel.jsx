@@ -263,7 +263,10 @@ export default function ExamGeneratorPanel({ courseId, lang = "es" }) {
     };
 
     const handleExport = () => {
-        downloadGiftFile(questions, `examen-nexusai-curso-${courseId}.txt`);
+        const filename = lang === "es"
+            ? `examen-nexusai-curso-${courseId}.txt`
+            : `exam-nexusai-course-${courseId}.txt`;
+        downloadGiftFile(questions, filename, lang);
     };
 
     const handleReset = () => {

@@ -1,42 +1,80 @@
 // This file is part of the NexusAI plugin for Moodle.
 //
-// Sugerencia de respuesta con IA en formularios de reply de foro (Épica 06 — F-11).
+// AI reply suggestion in forum reply forms (Epic 06 — F-11).
 //
-// Cómo funciona:
-//   1. Se carga en páginas mod-forum-discuss (vista de discusión).
-//   2. Usa MutationObserver para detectar cuando aparece el formulario de reply.
-//   3. Inyecta un botón "✨ Sugerir respuesta" junto al área de texto.
-//   4. Al clickear llama a local_nexusai_forum_suggest_reply con el post al que
-//      se está respondiendo.
-//   5. Muestra la sugerencia en un panel con botón "Usar esta respuesta".
+// How it works:
+//   1. It is loaded on mod-forum-discuss pages (discussion view).
+//   2. It uses a MutationObserver to detect when the reply form appears.
+//   3. It adds a "Suggest reply" button next to the text area.
+//   4. On click it calls local_nexusai_forum_suggest_reply with the post being
+//      replied to.
+//   5. It shows the suggestion in a panel with a "Use this reply" button.
+//
+// Every fixed text comes from the language pack (lang/*/local_nexusai.php) so it
+// follows the language of the Moodle user.
 
-define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
+define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notification, Str) {
 
+    var COMPONENT = 'local_nexusai';
     var BTN_ID   = 'nexusai-suggest-reply-btn';
     var PANEL_ID = 'nexusai-reply-suggestion-panel';
 
     var discussionid, courseid;
+    var strings = null;
 
     /**
-     * Escapa HTML para evitar XSS al insertar texto del LLM en el DOM.
+     * Loads every fixed UI text of this module from the language pack (once).
+     *
+     * @returns {Promise} Resolves with an object keyed by string identifier.
      */
-    function escapeHtml(str) {
-        return String(str)
-            .replace(/&/g,  '&amp;')
-            .replace(/</g,  '&lt;')
-            .replace(/>/g,  '&gt;')
-            .replace(/"/g,  '&quot;');
+    function loadStrings() {
+        if (strings) {
+            return Promise.resolve(strings);
+        }
+        var keys = [
+            'forum_suggest_button',
+            'forum_suggest_close',
+            'forum_suggest_empty',
+            'forum_suggest_error',
+            'forum_suggest_material',
+            'forum_suggest_title',
+            'forum_suggest_use',
+            'forum_suggest_working',
+        ];
+        return Str.get_strings(keys.map(function(key) {
+            return {key: key, component: COMPONENT};
+        })).then(function(values) {
+            strings = {};
+            keys.forEach(function(key, i) {
+                strings[key] = values[i];
+            });
+            return strings;
+        });
     }
 
     /**
-     * Extrae el post_id del link de reply que desencadenó la apertura del form.
-     * Moodle usa href="../post.php?reply=POSTID" o action="post.php?reply=POSTID".
+     * Escapes HTML so LLM output and language strings are safe to inject in the DOM.
      *
-     * @param {Element} formEl  El formulario de reply detectado.
+     * @param {string} str Text to escape.
+     * @returns {string}
+     */
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    /**
+     * Extracts the id of the post being replied to from the reply form.
+     * Moodle uses action="post.php?reply=POSTID" or a hidden input named "reply".
+     *
+     * @param {Element} formEl The detected reply form (or its container).
      * @returns {number|null}
      */
     function extractReplyPostId(formEl) {
-        // 1. Buscar en el action del form.
+        // 1. Look in the form action.
         var form = formEl.tagName === 'FORM' ? formEl : formEl.querySelector('form');
         if (form) {
             var action = form.getAttribute('action') || '';
@@ -46,13 +84,13 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
             }
         }
 
-        // 2. Buscar input hidden name="reply" dentro del form.
+        // 2. Look for a hidden input name="reply" inside the form.
         var hiddenReply = (form || formEl).querySelector('input[name="reply"]');
         if (hiddenReply && hiddenReply.value) {
             return parseInt(hiddenReply.value, 10);
         }
 
-        // 3. Fallback: buscar el post padre en el DOM y leer su data-post-id / id="pXXX".
+        // 3. Fallback: find the parent post in the DOM and read its id="pXXX".
         var postEl = formEl.closest('[id^="p"]');
         if (postEl) {
             var pid = postEl.id.replace(/^p/, '');
@@ -65,21 +103,45 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
     }
 
     /**
-     * Muestra el panel con la sugerencia del LLM bajo el formulario.
+     * Fills the form textarea (or the editor) with the suggested text.
      *
-     * @param {string}  suggestedReply
-     * @param {boolean} hasMaterial
-     * @param {Element} formEl          Formulario de reply (para saber dónde insertar).
+     * @param {string}  text   Suggested reply.
+     * @param {Element} formEl The reply form.
+     */
+    function fillReplyForm(text, formEl) {
+        // Plain textarea.
+        var textarea = formEl.querySelector('textarea[name="message"]');
+        if (textarea) {
+            textarea.value = text;
+            textarea.dispatchEvent(new Event('input', {bubbles: true}));
+            return;
+        }
+
+        // Rich text editor (contenteditable).
+        var editor = formEl.querySelector('[contenteditable="true"]');
+        if (editor) {
+            editor.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
+            editor.dispatchEvent(new Event('input', {bubbles: true}));
+        }
+    }
+
+    /**
+     * Shows the panel with the LLM suggestion below the form.
+     *
+     * @param {string}  suggestedReply Suggested reply text.
+     * @param {boolean} hasMaterial    Whether course material was used.
+     * @param {Element} formEl         The reply form (used to place the panel).
      */
     function showSuggestionPanel(suggestedReply, hasMaterial, formEl) {
-        // Remover panel anterior si existe.
+        // Remove the previous panel, if any.
         var old = document.getElementById(PANEL_ID);
         if (old) {
             old.parentNode.removeChild(old);
         }
 
         var materialNote = hasMaterial
-            ? '<span style="font-size:11px;color:#166534;margin-left:8px">📚 Con material del curso</span>'
+            ? '<span style="font-size:11px;color:#166534;margin-left:8px">📚 '
+              + escapeHtml(strings.forum_suggest_material) + '</span>'
             : '';
 
         var panel = document.createElement('div');
@@ -100,8 +162,8 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
             '<button type="button" id="nexusai-rsp-close" '
             + 'style="position:absolute;top:8px;right:10px;background:none;border:none;'
             + 'cursor:pointer;font-size:16px;color:#166534;padding:0;line-height:1" '
-            + 'aria-label="Cerrar sugerencia">✕</button>'
-            + '<strong style="font-size:13px">✨ NexusAI sugiere:</strong>'
+            + 'aria-label="' + escapeHtml(strings.forum_suggest_close) + '">✕</button>'
+            + '<strong style="font-size:13px">✨ ' + escapeHtml(strings.forum_suggest_title) + '</strong>'
             + materialNote
             + '<p id="nexusai-rsp-text" style="margin:8px 0;white-space:pre-wrap">'
             + escapeHtml(suggestedReply)
@@ -109,9 +171,9 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
             + '<button type="button" id="nexusai-rsp-use" '
             + 'style="background:#166534;color:#fff;border:none;border-radius:6px;'
             + 'padding:5px 14px;font-size:12px;cursor:pointer;font-weight:600">'
-            + 'Usar esta respuesta</button>';
+            + escapeHtml(strings.forum_suggest_use) + '</button>';
 
-        // Insertar después del formulario.
+        // Insert right after the form.
         if (formEl.parentNode) {
             formEl.parentNode.insertBefore(panel, formEl.nextSibling);
         }
@@ -127,40 +189,16 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
     }
 
     /**
-     * Rellena el textarea (o editor Atto) del form con el texto sugerido.
+     * Calls the backend and shows the suggestion.
      *
-     * @param {string}  text
-     * @param {Element} formEl
-     */
-    function fillReplyForm(text, formEl) {
-        // Textarea simple.
-        var textarea = formEl.querySelector('textarea[name="message"]');
-        if (textarea) {
-            textarea.value = text;
-            textarea.dispatchEvent(new Event('input', {bubbles: true}));
-            return;
-        }
-
-        // Editor Atto (contenteditable).
-        var atto = formEl.querySelector('[contenteditable="true"]');
-        if (atto) {
-            atto.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
-            atto.dispatchEvent(new Event('input', {bubbles: true}));
-            return;
-        }
-    }
-
-    /**
-     * Llama al backend y muestra la sugerencia.
-     *
-     * @param {number}  replyToPostId
-     * @param {Element} formEl
+     * @param {number}  replyToPostId Id of the post being replied to.
+     * @param {Element} formEl        The reply form.
      */
     function requestSuggestion(replyToPostId, formEl) {
         var btn = document.getElementById(BTN_ID);
         if (btn) {
             btn.disabled   = true;
-            btn.textContent = '⟳ Generando…';
+            btn.textContent = '⟳ ' + strings.forum_suggest_working;
         }
 
         Ajax.call([{
@@ -173,11 +211,11 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
         }])[0].then(function(response) {
             if (btn) {
                 btn.disabled   = false;
-                btn.textContent = '✨ Sugerir respuesta';
+                btn.textContent = '✨ ' + strings.forum_suggest_button;
             }
             if (!response.suggested_reply) {
                 Notification.addNotification({
-                    message: 'NexusAI: no se pudo generar una sugerencia.',
+                    message: strings.forum_suggest_empty,
                     type:    'warning',
                 });
                 return;
@@ -186,19 +224,19 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
         }).catch(function() {
             if (btn) {
                 btn.disabled   = false;
-                btn.textContent = '✨ Sugerir respuesta';
+                btn.textContent = '✨ ' + strings.forum_suggest_button;
             }
             Notification.addNotification({
-                message: 'NexusAI: error al generar la sugerencia. Intentá de nuevo.',
+                message: strings.forum_suggest_error,
                 type:    'error',
             });
         });
     }
 
     /**
-     * Inyecta el botón "✨ Sugerir respuesta" en el formulario de reply.
+     * Adds the "Suggest reply" button to the reply form.
      *
-     * @param {Element} formEl  Contenedor del formulario de reply.
+     * @param {Element} formEl Container of the reply form.
      */
     function injectButton(formEl) {
         if (document.getElementById(BTN_ID)) {
@@ -213,7 +251,7 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
         var btn = document.createElement('button');
         btn.id        = BTN_ID;
         btn.type      = 'button';
-        btn.textContent = '✨ Sugerir respuesta';
+        btn.textContent = '✨ ' + strings.forum_suggest_button;
         btn.style.cssText = [
             'background:#f0fdf4',
             'border:1px solid #86efac',
@@ -231,20 +269,20 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
             requestSuggestion(replyPostId, formEl);
         });
 
-        // Insertar antes del textarea / editor.
+        // Insert before the textarea / editor.
         var textarea = formEl.querySelector('textarea[name="message"], [contenteditable="true"]');
         if (textarea) {
             textarea.parentNode.insertBefore(btn, textarea);
         } else {
-            // Fallback: al principio del form.
+            // Fallback: at the top of the form.
             var inner = formEl.querySelector('form') || formEl;
             inner.insertBefore(btn, inner.firstChild);
         }
     }
 
     /**
-     * Detecta formularios de reply que aparecen dinámicamente en la página.
-     * Moodle 5.x carga el form inline vía AMD/AJAX cuando se clickea "Reply".
+     * Detects reply forms that appear dynamically in the page.
+     * Moodle 5.x loads the inline form through AMD/AJAX when "Reply" is clicked.
      */
     function watchForReplyForms() {
         var observer = new MutationObserver(function(mutations) {
@@ -253,8 +291,8 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
                     if (!node || node.nodeType !== 1) {
                         return;
                     }
-                    // El form de reply tiene action="...post.php..." con ?reply= en la URL.
-                    // También puede ser un div contenedor del form.
+                    // The reply form has action="...post.php..." with ?reply= in the URL.
+                    // The node can also be a container div around the form.
                     var forms = node.querySelectorAll
                         ? node.querySelectorAll('form[action*="post.php"]')
                         : [];
@@ -264,7 +302,7 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
                         }
                     });
 
-                    // Algunos temas de Moodle insertan el form directamente como node.
+                    // Some Moodle themes insert the form directly as the node.
                     if (node.tagName === 'FORM' && /post\.php/.test(node.getAttribute('action') || '')) {
                         if (/[?&]reply=\d+/.test(node.getAttribute('action') || '')) {
                             injectButton(node.parentElement || node);
@@ -279,9 +317,9 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
 
     return {
         /**
-         * Punto de entrada invocado por before_footer_listener.php.
+         * Entry point invoked by before_footer_listener.php.
          *
-         * @param {Object} params  {discussionid, courseid}
+         * @param {Object} params {discussionid, courseid}
          */
         init: function(params) {
             discussionid = params.discussionid;
@@ -291,7 +329,10 @@ define(['core/ajax', 'core/notification'], function(Ajax, Notification) {
                 return;
             }
 
-            watchForReplyForms();
+            loadStrings().then(function() {
+                watchForReplyForms();
+                return null;
+            }).catch(Notification.exception);
         },
     };
 });

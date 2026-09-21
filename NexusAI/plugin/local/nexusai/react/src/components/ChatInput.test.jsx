@@ -142,3 +142,37 @@ describe("ChatInput — micrófono (VOICE-01, #314)", () => {
         expect(onSend).toHaveBeenCalledWith("pregunta escrita a mano");
     });
 });
+
+describe("ChatInput — marcador de texto pegado según el idioma", () => {
+    const LONG_PASTE = Array.from({ length: 20 }, (_, i) => `line ${i + 1}`).join("\n");
+
+    async function pasteLongText(user, props) {
+        const onSend = vi.fn();
+        render(<ChatInput onSend={onSend} {...props} />);
+        const textarea = screen.getByRole("textbox");
+        await user.click(textarea);
+        await user.paste(LONG_PASTE);
+        return { onSend, textarea };
+    }
+
+    it("shows the English marker for lang 'en' and expands it on send", async () => {
+        const user = userEvent.setup();
+        const { onSend, textarea } = await pasteLongText(user, { lang: "en" });
+
+        expect(textarea.value).toBe("[📋 Pasted #1 — 20 lines]");
+        expect(textarea.value).not.toMatch(/Pegado|líneas/);
+
+        await user.click(screen.getByRole("button", { name: /send/i }));
+        expect(onSend).toHaveBeenCalledWith(LONG_PASTE);
+    });
+
+    it("shows the Spanish marker for lang 'es' and expands it on send", async () => {
+        const user = userEvent.setup();
+        const { onSend, textarea } = await pasteLongText(user, { lang: "es" });
+
+        expect(textarea.value).toBe("[📋 Pegado #1 — 20 líneas]");
+
+        await user.click(screen.getByRole("button", { name: /enviar/i }));
+        expect(onSend).toHaveBeenCalledWith(LONG_PASTE);
+    });
+});

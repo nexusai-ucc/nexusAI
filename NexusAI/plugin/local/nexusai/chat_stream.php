@@ -129,11 +129,11 @@ if ($multicourse) {
     foreach ($enrolled as $course) {
         $cid = (int) $course->id;
         $courseids[] = $cid;
-        $coursenames[(string) $cid] = $course->fullname ?? $course->shortname ?? 'Materia';
+        $coursenames[(string) $cid] = $course->fullname ?? $course->shortname ?? 'Course';
     }
     if (empty($courseids)) {
         $courseids   = [$courseid];
-        $coursenames = [(string) $courseid => 'Materia actual'];
+        $coursenames = [(string) $courseid => 'Current course'];
     }
     $bodyarray['course_id']    = (int) $courseids[0];
     $bodyarray['course_ids']   = $courseids;

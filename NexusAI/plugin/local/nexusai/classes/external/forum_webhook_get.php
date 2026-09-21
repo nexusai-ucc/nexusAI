@@ -17,8 +17,8 @@
 /**
  * External function `local_nexusai_forum_webhook_get`.
  *
- * Lee la URL de webhook configurada para el curso (FOR-07, #378), para
- * precargar el campo en el panel docente al montar `ForumDigestPanel`.
+ * Reads the webhook URL configured for the course (FOR-07, #378), to
+ * prefill the field in the teacher panel when `ForumDigestPanel` mounts.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,8 +32,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Lee la URL de webhook configurada para el curso (FOR-07, #378), para precargar el campo en el panel docente
- * al montar `ForumDigestPanel`.
+ * Reads the webhook URL configured for the course (FOR-07, #378), to prefill the field in the teacher
+ * panel when `ForumDigestPanel` mounts.
  */
 class forum_webhook_get extends \external_api {
     /**
@@ -43,7 +43,7 @@ class forum_webhook_get extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
@@ -59,10 +59,10 @@ class forum_webhook_get extends \external_api {
     }
 
     /**
-     * Lee la URL de webhook configurada para el curso (FOR-07, #378), para precargar el campo en el panel
-     * docente al montar `ForumDigestPanel`.
+     * Reads the webhook URL configured for the course (FOR-07, #378), to prefill the field in the
+     * teacher panel when `ForumDigestPanel` mounts.
      *
-     * @param int $courseid ID del curso
+     * @param int $courseid Course ID
      * @return array
      */
     public static function execute(int $courseid): array {

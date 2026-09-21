@@ -17,8 +17,8 @@
 /**
  * External function `local_nexusai_document_summarize`.
  *
- * Proxy entre React y el endpoint /api/v1/documents/summarize del backend Python.
- * Genera un resumen del documento usando el LLM configurado (BUS-03).
+ * Proxy between React and the Python backend's /api/v1/documents/summarize endpoint.
+ * Generates a summary of the document using the configured LLM (BUS-03).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -31,7 +31,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Proxy entre React y el endpoint /api/v1/documents/summarize del backend Python.
+ * Proxy between React and the Python backend's /api/v1/documents/summarize endpoint.
  */
 class document_summarize extends \external_api {
     /**
@@ -41,8 +41,8 @@ class document_summarize extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'documentid' => new \external_value(PARAM_RAW, 'UUID del documento a resumir', VALUE_REQUIRED),
-            'courseid'   => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
+            'documentid' => new \external_value(PARAM_RAW, 'UUID of the document to summarize', VALUE_REQUIRED),
+            'courseid'   => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
         ]);
     }
 
@@ -53,19 +53,19 @@ class document_summarize extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'document_id'       => new \external_value(PARAM_RAW, 'UUID del documento'),
-            'document_filename' => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
-            'summary'           => new \external_value(PARAM_RAW, 'Resumen generado por IA'),
-            'chunks_used'       => new \external_value(PARAM_INT, 'Fragmentos usados para el resumen'),
-            'total_chunks'      => new \external_value(PARAM_INT, 'Total de fragmentos del documento'),
+            'document_id'       => new \external_value(PARAM_RAW, 'Document UUID'),
+            'document_filename' => new \external_value(PARAM_TEXT, 'File name'),
+            'summary'           => new \external_value(PARAM_RAW, 'AI-generated summary'),
+            'chunks_used'       => new \external_value(PARAM_INT, 'Chunks used for the summary'),
+            'total_chunks'      => new \external_value(PARAM_INT, 'Total chunks of the document'),
         ]);
     }
 
     /**
-     * Proxy entre React y el endpoint /api/v1/documents/summarize del backend Python.
+     * Proxy between React and the Python backend's /api/v1/documents/summarize endpoint.
      *
-     * @param string $documentid UUID del documento a resumir
-     * @param int $courseid ID del curso de Moodle
+     * @param string $documentid UUID of the document to summarize
+     * @param int $courseid Moodle course ID
      * @return array
      */
     public static function execute(string $documentid, int $courseid): array {
