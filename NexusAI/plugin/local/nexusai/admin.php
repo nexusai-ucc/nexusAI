@@ -50,7 +50,7 @@ $PAGE->set_heading(get_string('admin_page_title', 'local_nexusai'));
 
 // Health check against the backend.
 
-$endpoint = rtrim((string) get_config('local_nexusai', 'api_endpoint'), '/');
+$endpoint = rtrim(trim((string) get_config('local_nexusai', 'api_endpoint')), '/');
 $healthurl = $endpoint . '/health';
 
 // Possible backend states: connected, error, or unconfigured.

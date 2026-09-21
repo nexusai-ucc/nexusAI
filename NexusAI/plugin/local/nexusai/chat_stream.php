@@ -148,9 +148,9 @@ if ($body === false) {
 }
 
 // Backend config (same as backend_client).
-$endpoint = rtrim((string) get_config('local_nexusai', 'api_endpoint'), '/');
-$apikey   = (string) get_config('local_nexusai', 'api_key');
-$secret   = (string) get_config('local_nexusai', 'shared_secret');
+$endpoint = rtrim(trim((string) get_config('local_nexusai', 'api_endpoint')), '/');
+$apikey   = trim((string) get_config('local_nexusai', 'api_key'));
+$secret   = trim((string) get_config('local_nexusai', 'shared_secret'));
 
 if ($endpoint === '' || $apikey === '' || $secret === '') {
     http_response_code(500);

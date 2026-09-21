@@ -11,6 +11,9 @@ Initial submission to the Moodle Plugins directory. Maturity: beta.
   function local_nexusai_frontend_lang()" because `lib.php` was not loaded.
 - Document downloads read their parameters through `optional_param()`
   instead of `$_GET`.
+- The backend URL, API key and shared secret settings strip leading and
+  trailing spaces when saved (and when read), so a value pasted with a stray
+  space no longer breaks the request signature.
 - Every text of the AI forum features (summarize thread, suggest reply,
   similar-discussion notice), the chat paste marker and the exported GIFT
   (question titles, model-answer comment, file name) comes from the language
