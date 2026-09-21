@@ -191,12 +191,12 @@ class chat_send extends \external_api {
                 $courseids[] = $cid;
                 $coursenames[(string) $cid] = $course->fullname
                     ?? $course->shortname
-                    ?? 'Materia';
+                    ?? 'Course';
             }
             // Defensive fallback: if it couldn't be resolved, use the current course.
             if (empty($courseids)) {
                 $courseids   = [(int) $params['courseid']];
-                $coursenames = [(string) $params['courseid'] => 'Materia actual'];
+                $coursenames = [(string) $params['courseid'] => 'Current course'];
             }
 
             $response = $client->send_message_multicourse(

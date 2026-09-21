@@ -45,12 +45,12 @@ final class stream_error_detail_test extends \advanced_testcase {
      * string — with a `message` already written for the student. It has
      * to be preferred over anything else.
      */
-    public function test_prefiere_el_message_estructurado_del_rate_limiter(): void {
+    public function test_prefers_the_structured_message_from_the_rate_limiter(): void {
         $body = json_encode([
             'detail' => [
                 'error'      => 'rate_limit_exceeded',
                 'scope'      => 'daily',
-                'message'    => 'Alcanzaste tu límite de 50 consultas de hoy. Volvé a intentarlo mañana.',
+                'message'    => 'You reached your limit of 50 queries today. Try again tomorrow.',
                 'limit'      => 50,
                 'window_sec' => 86400,
             ],
@@ -59,7 +59,7 @@ final class stream_error_detail_test extends \advanced_testcase {
         $result = backend_client::extract_stream_error_detail($body, 429);
 
         $this->assertEquals(
-            'Alcanzaste tu límite de 50 consultas de hoy. Volvé a intentarlo mañana.',
+            'You reached your limit of 50 queries today. Try again tomorrow.',
             $result
         );
     }
@@ -69,19 +69,19 @@ final class stream_error_detail_test extends \advanced_testcase {
      * one — that's this PR's whole reason to exist: so the frontend can
      * tell them apart.
      */
-    public function test_distingue_el_mensaje_de_minuto_del_de_diario(): void {
+    public function test_distinguishes_the_minute_message_from_the_daily_one(): void {
         $bodyminute = json_encode([
             'detail' => [
                 'error'   => 'rate_limit_exceeded',
                 'scope'   => 'minute',
-                'message' => 'Superaste el límite de 20 consultas por minuto. Esperá un momento y volvé a intentarlo.',
+                'message' => 'You exceeded the limit of 20 queries per minute. Wait a moment and try again.',
             ],
         ]);
         $bodydaily = json_encode([
             'detail' => [
                 'error'   => 'rate_limit_exceeded',
                 'scope'   => 'daily',
-                'message' => 'Alcanzaste tu límite de 50 consultas de hoy. Volvé a intentarlo mañana.',
+                'message' => 'You reached your limit of 50 queries today. Try again tomorrow.',
             ],
         ]);
 
@@ -89,31 +89,31 @@ final class stream_error_detail_test extends \advanced_testcase {
         $dailymsg  = backend_client::extract_stream_error_detail($bodydaily, 429);
 
         $this->assertNotEquals($minutemsg, $dailymsg);
-        $this->assertStringContainsString('minuto', $minutemsg);
-        $this->assertStringContainsString('mañana', $dailymsg);
+        $this->assertStringContainsString('minute', $minutemsg);
+        $this->assertStringContainsString('tomorrow', $dailymsg);
     }
 
     /**
      * A plain string `detail` (not structured — e.g. a generic 503 from
      * the backend) also has to be shown, not lost.
      */
-    public function test_usa_el_detail_string_plano_cuando_no_es_estructurado(): void {
-        $body = json_encode(['detail' => 'El LLM no está disponible temporalmente']);
+    public function test_uses_the_plain_string_detail_when_not_structured(): void {
+        $body = json_encode(['detail' => 'The LLM is temporarily unavailable']);
 
         $result = backend_client::extract_stream_error_detail($body, 503);
 
-        $this->assertEquals('El LLM no está disponible temporalmente', $result);
+        $this->assertEquals('The LLM is temporarily unavailable', $result);
     }
 
     /**
      * An empty body or broken JSON (connection cut off mid error-response)
      * shouldn't break anything — it falls back to a readable message with the status.
      */
-    public function test_cae_al_fallback_con_body_vacio_o_json_roto(): void {
+    public function test_falls_back_with_empty_body_or_broken_json(): void {
         $this->assertEquals('HTTP 500', backend_client::extract_stream_error_detail('', 500));
         $this->assertEquals(
             'HTTP 502',
-            backend_client::extract_stream_error_detail('{esto no es json', 502)
+            backend_client::extract_stream_error_detail('{this is not json', 502)
         );
     }
 
@@ -121,7 +121,7 @@ final class stream_error_detail_test extends \advanced_testcase {
      * A structured `detail` with no `message` (unexpected shape) also
      * falls back instead of failing or showing something empty.
      */
-    public function test_cae_al_fallback_si_el_detail_estructurado_no_tiene_message(): void {
+    public function test_falls_back_if_the_structured_detail_has_no_message(): void {
         $body = json_encode(['detail' => ['error' => 'something_else']]);
 
         $result = backend_client::extract_stream_error_detail($body, 500);

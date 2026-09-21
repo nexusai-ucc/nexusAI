@@ -194,15 +194,15 @@ export async function uploadDocument(courseId, file, section = null) {
     const mimeType = resolveMimeType(file);
     if (!ACCEPTED_MIME_TYPES.has(mimeType)) {
         throw new Error(
-            `Formato no soportado: ${file.type || "desconocido"}. `
-            + "Se aceptan PDF, DOCX, PPTX, XLSX, CSV, MD, HTML y TXT."
+            `Unsupported format: ${file.type || "unknown"}. `
+            + "Accepted: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML and TXT."
         );
     }
     if (file.size > 20 * 1024 * 1024) {
-        throw new Error(`Archivo muy grande (${formatBytes(file.size)}). Máximo: 20 MB`);
+        throw new Error(`File too large (${formatBytes(file.size)}). Maximum: 20 MB`);
     }
     if (file.size === 0) {
-        throw new Error("El archivo está vacío");
+        throw new Error("The file is empty");
     }
 
     // Convertir File → base64. FileReader es async pero lo envolvemos en Promise.
@@ -254,15 +254,15 @@ export async function replaceDocument(courseId, documentId, file) {
     const mimeType = resolveMimeType(file);
     if (!ACCEPTED_MIME_TYPES.has(mimeType)) {
         throw new Error(
-            `Formato no soportado: ${file.type || "desconocido"}. `
-            + "Se aceptan PDF, DOCX, PPTX, XLSX, CSV, MD, HTML y TXT."
+            `Unsupported format: ${file.type || "unknown"}. `
+            + "Accepted: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML and TXT."
         );
     }
     if (file.size > 20 * 1024 * 1024) {
-        throw new Error(`Archivo muy grande (${formatBytes(file.size)}). Máximo: 20 MB`);
+        throw new Error(`File too large (${formatBytes(file.size)}). Maximum: 20 MB`);
     }
     if (file.size === 0) {
-        throw new Error("El archivo está vacío");
+        throw new Error("The file is empty");
     }
 
     const contentB64 = await fileToBase64(file);

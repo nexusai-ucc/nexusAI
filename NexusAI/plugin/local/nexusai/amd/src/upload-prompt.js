@@ -1,10 +1,10 @@
 // This file is part of the NexusAI plugin for Moodle.
 //
-// Muestra un modal de confirmación al docente cuando sube un archivo a una
-// sección del curso (fuera de la interfaz de NexusAI). El docente puede elegir
-// indexarlo en NexusAI o ignorarlo.
+// Shows a confirmation modal to the teacher after they add a file to a course
+// section (outside the NexusAI interface). The teacher can choose to index it in
+// NexusAI or ignore it.
 //
-// Cargado solo para usuarios con local/nexusai:manage (docentes/gestores).
+// Loaded only for users with local/nexusai:manage (teachers/managers).
 
 define([
     'core/ajax',
@@ -14,11 +14,11 @@ define([
 ], function(Ajax, ModalSaveCancel, Str, Notification) {
 
     /**
-     * Muestra el modal de confirmación para un archivo pendiente.
-     * Devuelve una Promise que resuelve cuando el usuario eligió (sí o no).
+     * Shows the confirmation modal for one pending file.
+     * Returns a Promise that resolves when the user has chosen (yes or no).
      *
-     * @param {Object} item  {cmid, filename, mimetype}
-     * @param {number} courseid
+     * @param {Object} item     {cmid, filename, mimetype}
+     * @param {number} courseid Course id.
      * @returns {Promise}
      */
     function promptForItem(item, courseid) {
@@ -27,15 +27,11 @@ define([
             {key: 'upload_prompt_body',    component: 'local_nexusai', param: item.filename},
             {key: 'upload_prompt_yes',     component: 'local_nexusai'},
             {key: 'upload_prompt_no',      component: 'local_nexusai'},
-            {key: 'upload_prompt_success', component: 'local_nexusai', param: item.filename},
-            {key: 'upload_prompt_error',   component: 'local_nexusai'},
         ]).then(function(strings) {
             var title  = strings[0];
             var body   = strings[1];
             var btnYes = strings[2];
             var btnNo  = strings[3];
-            var msgOk  = strings[4];
-            var msgErr = strings[5];
 
             return ModalSaveCancel.create({
                 title: title,
@@ -70,7 +66,7 @@ define([
                     Ajax.call([{
                         methodname: 'local_nexusai_dismiss_pending_upload',
                         args: {cmid: item.cmid},
-                    }])[0].catch(function() { /* ignorar error de dismiss */ });
+                    }])[0].catch(function() { /* Ignore a failed dismiss. */ });
                     resolve();
                 });
 
@@ -82,10 +78,10 @@ define([
     }
 
     /**
-     * Procesa la lista de pendientes secuencialmente (un modal a la vez).
+     * Processes the pending list sequentially (one modal at a time).
      *
-     * @param {Array}  items     Lista de {cmid, filename, mimetype}
-     * @param {number} courseid
+     * @param {Array}  items     List of {cmid, filename, mimetype}.
+     * @param {number} courseid  Course id.
      * @returns {Promise}
      */
     function processItems(items, courseid) {
@@ -96,9 +92,9 @@ define([
 
     return {
         /**
-         * Punto de entrada cargado por before_footer_listener.php.
+         * Entry point loaded by before_footer_listener.php.
          *
-         * @param {Object} params  {courseid}
+         * @param {Object} params {courseid}
          */
         init: function(params) {
             var courseid = params.courseid;
@@ -112,7 +108,7 @@ define([
                 }
                 return processItems(items, courseid);
             }).catch(function() {
-                // Fallo silencioso: no interrumpir la experiencia del docente.
+                // Silent failure: never interrupt the teacher.
             });
         },
     };

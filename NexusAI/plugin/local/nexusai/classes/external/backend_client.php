@@ -247,7 +247,7 @@ class backend_client {
     /**
      * Lists the teacher's gaps — questions the material couldn't answer (Feature G).
      *
-     * @param int $courseid ID del curso.
+     * @param int $courseid Course ID.
      * @param int $days     Days back (1..365).
      * @param int $limit    Max items (1..100).
      * @param bool $includearchived Include already-archived gaps (DOC-D08, #383).

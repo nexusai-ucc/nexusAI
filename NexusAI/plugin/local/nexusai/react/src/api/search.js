@@ -71,7 +71,7 @@ export async function searchMaterial({
     section = null, sectionUnassigned = false,
 }) {
     if (!query?.trim()) {
-        throw new Error("La búsqueda no puede estar vacía");
+        throw new Error("The search cannot be empty");
     }
 
     const ajax = await getMoodleAjax();

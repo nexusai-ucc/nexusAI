@@ -1,5 +1,5 @@
-# Build artifacts de Webpack — pero el bundle final SÍ se commitea
-# (está en amd/build/ y es lo que Moodle carga en producción).
+# Webpack build artifacts — but the final bundle IS committed
+# (it lives in amd/build/ and is what Moodle loads in production).
 react/node_modules/
 react/dist/
 react/.cache/
