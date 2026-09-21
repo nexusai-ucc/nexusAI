@@ -11,6 +11,12 @@ Initial submission to the Moodle Plugins directory. Maturity: beta.
   function local_nexusai_frontend_lang()" because `lib.php` was not loaded.
 - Document downloads read their parameters through `optional_param()`
   instead of `$_GET`.
+- Every text of the AI forum features (summarize thread, suggest reply,
+  similar-discussion notice), the chat paste marker and the exported GIFT
+  (question titles, model-answer comment, file name) comes from the language
+  pack and follows the language of the Moodle user.
+- All code comments, web service descriptions and tests are in English; the
+  calendar feed download is named `course-<id>.ics`.
 - Full feature set: RAG-powered chat, semantic search, practice quizzes and
   flashcards, course calendar with `.ics` export, AI-assisted forums,
   teacher analytics dashboard, exam generator, weekly forum digest.
