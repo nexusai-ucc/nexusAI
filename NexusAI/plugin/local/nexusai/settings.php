@@ -55,7 +55,7 @@ if ($hassiteconfig) {
     ));
 
     // Python backend URL.
-    $settings->add(new admin_setting_configtext(
+    $settings->add(new \local_nexusai\admin_setting_trimmed_text(
         'local_nexusai/api_endpoint',
         get_string('apiendpoint', 'local_nexusai'),
         get_string('apiendpoint_desc', 'local_nexusai'),
@@ -65,7 +65,8 @@ if ($hassiteconfig) {
 
     // Backend bearer API key (auth layer 1 — see ADR-005).
     // We use passwordunmask so the value stays hidden in the UI after saving.
-    $settings->add(new admin_setting_configpasswordunmask(
+    // The trimmed variants strip a stray space from a pasted value.
+    $settings->add(new \local_nexusai\admin_setting_trimmed_password(
         'local_nexusai/api_key',
         get_string('apikey', 'local_nexusai'),
         get_string('apikey_desc', 'local_nexusai'),
@@ -73,7 +74,7 @@ if ($hassiteconfig) {
     ));
 
     // HMAC shared secret (auth layer 2 — see ADR-005).
-    $settings->add(new admin_setting_configpasswordunmask(
+    $settings->add(new \local_nexusai\admin_setting_trimmed_password(
         'local_nexusai/shared_secret',
         get_string('sharedsecret', 'local_nexusai'),
         get_string('sharedsecret_desc', 'local_nexusai'),

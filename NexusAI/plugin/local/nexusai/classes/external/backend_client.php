@@ -56,14 +56,32 @@ class backend_client {
     private string $secret;
 
     /**
+     * Language of the Moodle user's interface as the backend understands it.
+     *
+     * Sent in the Accept-Language header so the backend can word the fixed messages
+     * it returns (for example "this course has no indexed material yet") in the
+     * language the user sees. Only "es" and "en" are supported, like the widget:
+     * Spanish when the interface is Spanish (es, es_ar, es_mx...), English otherwise.
+     *
+     * @param string|null $current Moodle language code; defaults to the current one.
+     * @return string "es" or "en".
+     */
+    public static function interface_language(?string $current = null): string {
+        $primary = strtolower(explode('_', (string) ($current ?? current_language()))[0]);
+        return $primary === 'es' ? 'es' : 'en';
+    }
+
+    /**
      * Constructor that reads the plugin config from `local_nexusai/*`.
      *
      * @throws \moodle_exception If any of the 3 config values is missing.
      */
     public function __construct() {
-        $endpoint = get_config('local_nexusai', 'api_endpoint');
-        $apikey   = get_config('local_nexusai', 'api_key');
-        $secret   = get_config('local_nexusai', 'shared_secret');
+        // Trimmed on read too: a value saved with a stray space before the
+        // settings page started trimming would otherwise keep failing the signature.
+        $endpoint = trim((string) get_config('local_nexusai', 'api_endpoint'));
+        $apikey   = trim((string) get_config('local_nexusai', 'api_key'));
+        $secret   = trim((string) get_config('local_nexusai', 'shared_secret'));
 
         // Defensive checks: if the admin didn't fill in the config, fail
         // with a clear error instead of sending broken requests to the backend.
@@ -1400,6 +1418,7 @@ class backend_client {
             'X-Timestamp: ' . $timestamp,
             'X-Nonce: '     . $nonce,
             'X-Signature: ' . $signature,
+            'Accept-Language: ' . self::interface_language(),
         ]);
         $curl->setopt([
             // 120 seconds for chat (the LLM can take a while). For PDF
