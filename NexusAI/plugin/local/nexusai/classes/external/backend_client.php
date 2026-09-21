@@ -61,9 +61,11 @@ class backend_client {
      * @throws \moodle_exception If any of the 3 config values is missing.
      */
     public function __construct() {
-        $endpoint = get_config('local_nexusai', 'api_endpoint');
-        $apikey   = get_config('local_nexusai', 'api_key');
-        $secret   = get_config('local_nexusai', 'shared_secret');
+        // Trimmed on read too: a value saved with a stray space before the
+        // settings page started trimming would otherwise keep failing the signature.
+        $endpoint = trim((string) get_config('local_nexusai', 'api_endpoint'));
+        $apikey   = trim((string) get_config('local_nexusai', 'api_key'));
+        $secret   = trim((string) get_config('local_nexusai', 'shared_secret'));
 
         // Defensive checks: if the admin didn't fill in the config, fail
         // with a clear error instead of sending broken requests to the backend.
