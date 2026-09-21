@@ -1,125 +1,131 @@
 # Estado de la publicación en Moodle Marketplace
 
-> Última actualización: 2026-09-18. Para compartir con el equipo — resume qué se validó, qué se hizo y qué falta antes de subir `nexusai.zip`.
+> Última actualización: 2026-09-21. Para compartir con el equipo — resume qué se validó, qué se hizo, qué se encontró al simular ser reviewer y qué falta antes de subir el ZIP.
 
 ## Contexto
 
 Se validó el repo del plugin (`moodle-local_nexusai`) contra las [Plugin
-Submission Guidelines](https://moodle.org/plugins/) oficiales de Moodle
-Marketplace. De 10 puntos revisados, 6 ya cumplían y se encontraron 4 gaps
-reales. Este documento cubre el trabajo hecho sobre esos 4 gaps.
+Submission Guidelines](https://moodle.atlassian.net/wiki/external/ODRhYjAyNTY4NDVmNGJlNjljN2ViMzkwYzdmYmIwMGI)
+de Moodle Marketplace y después se simuló ser el reviewer con la **Opción A**
+(backend alojado) sobre un Moodle 4.5 limpio, para ver el plugin como lo va a
+ver quien lo evalúa y sacar las capturas en inglés.
 
-## Qué se hizo (PR #495, mergeada a `development`)
+## Qué se hizo
 
-| # | Gap | Estado | Detalle |
-|---|---|---|---|
-| 1 | Descripciones del formulario en inglés | ✅ Listo para pegar | Texto corto y completo traducidos, quedan en el borrador de la publicación (no en el repo — van directo al formulario). |
-| 2 | Comentarios de código en inglés | ✅ Hecho | 79 archivos PHP traducidos (mecánico, sin cambio de comportamiento). Verificado con `php -l` en todo el plugin. |
-| 3 | CI solo probaba PostgreSQL | ✅ Hecho | Matriz de CI ahora corre Moodle 4.1/4.5 × PostgreSQL/MySQL — 4/4 combinaciones en verde. |
-| 4 | Sin forma de que un reviewer testee contra el backend | ✅ Documentado, ⚠️ falta 1 dato | Ver sección "Reviewer testing" abajo. |
+| PR | Qué | Estado |
+|---|---|---|
+| #495 | Textos y comentarios del plugin en inglés, CI con MySQL y PostgreSQL, self-host del backend para reviewers | mergeada |
+| #496 | Fix de `$_GET` (`optional_param`), beta, publicación de la imagen desde `nexusai-backend`, `lang/es` fuera del ZIP | mergeada |
+| #497 | `docker-compose.selfhost.yml` y `.env.example` servidos desde `nexusai-backend` | mergeada |
+| #499 | Instrucciones de la Opción B para Linux, macOS y Windows | mergeada |
+| #498, #500 | Lo anterior llevado a `staging` (`development → staging`) | mergeadas |
+| #502 | La raíz del ZIP se llama `nexusai` (Moodle la exige así) | mergeada |
+| #503 | La pantalla de Materiales fallaba en instalaciones nuevas (`lib.php` no se cargaba) | mergeada |
+| #504 | Backend: la IA responde en el idioma del material | mergeada |
+| #505 | Plugin: textos de foros y chat según el idioma de Moodle; todo el código en inglés | mergeada |
 
-### Extra, no pedido por la guía pero encontrado en el camino
+`development` del monorepo ya tiene todo y quedó sincronizado a
+`moodle-local_nexusai` y `nexusai-backend` (release `0.18.1`, beta).
 
-- **UI hardcodeada en español**: `admin.php`, `calendar_feed.php` y
-  `document_download.php` tenían texto de error/UI directo en español en
-  vez de vía `get_string()`. Se agregaron las claves a `lang/en/` y
-  `lang/es/` y se corrigió.
-- **README traducido + 2 links rotos arreglados**: el README (posible
-  "Documentation URL" de la publicación) estaba 100% en español y tenía 2
-  links relativos que solo funcionan dentro del monorepo, rotos en el repo
-  público real.
-- **`CHANGES.md` nuevo**: arranca en la versión actual (0.18.0, la de esta
-  publicación), no reconstruye el historial completo del monorepo (mezcla
-  cosas de backend/CI sin interés para un usuario del plugin).
-- **Issue tracker**: ya estaba activo en `moodle-local_nexusai` (0 issues
-  abiertas) — no hacía falta crear nada, solo referenciarlo.
+## Qué se encontró al simular ser reviewer
 
-## Reviewer testing (gap #4)
+Cosas que el CI no ve y un reviewer sí:
 
-`docs/REVIEWER_TESTING.md` (nuevo) da dos caminos, pensado para pegar en el
-campo de notas al reviewer del formulario:
+- **Materiales fallaba en un sitio nuevo** (`Call to undefined function
+  local_nexusai_frontend_lang()`): en un sitio ya usado otro camino dejaba
+  `lib.php` cargado. Arreglado en #503.
+- **Botones y paneles de foro en español** con el sitio en inglés: los textos
+  estaban escritos en el JavaScript. Arreglado en #505, junto con otros textos
+  fijos (marcador de pegado del chat, GIFT exportado) y comentarios en español
+  que viajaban en el ZIP.
+- **La IA respondía en español con material en inglés** (resumen de hilo,
+  sugerencia de respuesta, quizzes, chat): los prompts están en español y el
+  modelo sigue el idioma de las instrucciones. Arreglado en #504 detectando el
+  idioma del material y pidiéndolo de forma explícita.
+- **Lint de los módulos AMD**: tenían 8 errores que el CI no detectaba (el paso
+  Grunt tiene `continue-on-error`). Ahora pasan sin errores.
+- **El panel de admin dice "Connected" sin validar credenciales**: solo llama a
+  `GET /health`, que no requiere autenticación. Decisión del equipo si vale la
+  pena una verificación autenticada.
+- **El backend no separa los datos por sitio de Moodle**: `forum_post_id` es
+  único en todo el backend y las consultas filtran solo por `course_id`. Si
+  varios reviewers usan el mismo backend alojado, sus datos se pisan (pasó en
+  la simulación: los ids 1–3 de foro ya tenían datos de otras pruebas y se
+  sobrescribieron). No se verificó si documentos y chat tienen el mismo
+  problema. **Decisión pendiente para la Opción A.**
 
-- **Opción A — backend real de producción**: URL + API key + shared secret
-  reales. Falta un solo dato: **las credenciales las tiene que pasar
-  Santi** (solo él tiene acceso SSH a la VM de producción).
-- **Opción B — self-host con imagen prearmada**: se agregó un workflow de
-  CI (`docker-publish.yml`) que publica a
-  `ghcr.io/nexusai-ucc/nexusai-backend` en cada push a `main`. Con eso +
-  `docker-compose.selfhost.yml` + `.env.example` (ambos en la raíz de
-  `nexusai-backend`), cualquiera levanta el backend con 2 archivos, sin
-  clonar ningún repo ni compilar nada.
+## Estado de cada pieza
 
-  Vive en el repo separado **`nexusai-backend`**, no en el monorepo — mismo
-  criterio que el ZIP del plugin: no tiene sentido que publicar una imagen
-  para uso externo dependa del ciclo interno
-  `development → staging → main` del monorepo (ese ciclo mueve las VMs
-  reales de staging/prod, no es para esto). Publicar ahora depende solo de
-  `nexusai-backend`, que tiene su propio ciclo igual de simple que
-  `moodle-local_nexusai`.
-
-## Pipeline de sync — estado actual
-
-- ✅ Mergeado a `development` del monorepo (PR #495, 4 commits + fix de phpcs).
-- ✅ Sincronizado a `development` de `moodle-local_nexusai` (automático).
-- ✅ **PR #6 mergeada** — `main` de `moodle-local_nexusai` ya tiene todo,
-  aprobada por Delfi y verificada con un clone fresco.
-- 🟡 **Workflow de publish agregado a `nexusai-backend`** (vía overlay del
-  monorepo) — falta que se sincronice a su `development` y se promueva a
-  `main` (mismo paso que se hizo para el plugin). Recién ahí se puede
-  correr (push a `main` o `workflow_dispatch`).
-- ⚠️ **Paquete de GHCR nace privado** — una vez publicada la imagen,
-  alguien con admin del org (Santi) tiene que entrar a la config del
-  paquete y marcarlo público, si no el `docker pull` de un reviewer
-  externo da 403.
+| Pieza | Estado |
+|---|---|
+| Código del plugin (`development`) | ✅ 0.18.1 beta, CI en verde (Moodle 4.1 / 4.5 × PostgreSQL / MySQL) |
+| `moodle-local_nexusai` `main` | 🟡 sigue en 0.18.0 — falta la promoción `development → main` |
+| ZIP | 🟡 el de 0.18.0 **no debe enviarse**; falta armar el 0.18.1 |
+| Imagen de Docker (`ghcr.io/nexusai-ucc/nexusai-backend`) | ✅ **pública** (pull anónimo verificado el 2026-09-21). Es la del `main` de `nexusai-backend`, todavía sin el fix de idioma (#504) |
+| Backend de staging | 🟡 va atrás de `development`: no tiene el fix de idioma |
+| Opción A (backend alojado) | 🟡 funciona; falta decidir credenciales (producción vs staging) y el aislamiento por sitio |
+| Opción B (self-host) | 🟡 documentada para Linux, macOS y Windows; **sin probar de punta a punta** con la imagen pública |
+| Capturas en inglés | 🟡 hechas: instalación, ajustes, Connected, Materiales. Faltan: chat con fuente, quiz, foro (duplicado y resumen), Analytics, calendario, Course review, Exam generator |
 
 ## Decisión tomada: `lang/es/` se queda en el repo, no en el ZIP
 
-La guía de Marketplace es explícita: "Only English strings should be
-included in the plugin" (las traducciones se suben después vía AMOS).
-`lang/es/` queda intacto en `moodle-local_nexusai` para uso local en
-español, y `package-plugin-from-repo.sh` lo excluye solo al armar el ZIP.
+La guía es explícita: "Only English strings should be included in the plugin"
+(las traducciones se suben después vía AMOS). `lang/es/` queda intacto en
+`moodle-local_nexusai` para uso local en español, y
+`package-plugin-from-repo.sh` lo excluye solo al armar el ZIP.
 
-## Madurez: beta
+## Cómo se arma el ZIP
 
-`version.php` pasó de `MATURITY_ALPHA` a `MATURITY_BETA` (release
-`0.18.0`), como ya anticipaba `investigacion/01-moodle/publicacion-marketplace.md`.
+`./scripts/package-plugin-from-repo.sh [rama]` — clona `moodle-local_nexusai`
+(default: `main`) y empaqueta desde ahí, no desde el working tree del monorepo,
+para que el ZIP sea exactamente lo que cualquiera ve en el repo público. La
+carpeta raíz del ZIP es `nexusai` (Moodle la exige así; corregido en #502) y el
+archivo se llama `local_nexusai-vX.Y.Z.zip`. No necesita Node: los bundles ya
+vienen commiteados.
 
-## Cómo se arma el ZIP (nuevo)
+## Falta antes de subir el ZIP (en orden)
 
-`./scripts/package-plugin-from-repo.sh [rama]` — clona
-`moodle-local_nexusai` (default: `main`) y empaqueta directo desde ahí, en
-vez de usar el working tree local del monorepo. Es más fiel: garantiza que
-el ZIP sea exactamente lo que cualquiera ve en el repo público (que es
-justamente por lo que se separó el repo del monorepo). No necesita
-Node/npm — el bundle de React ya viene commiteado en ese repo.
+1. **Cadena hasta `main`**
+   1. Mergear la PR que actualiza `CHANGES.md` y este documento.
+   2. Promover `development → main` en `moodle-local_nexusai`.
+   3. Armar el ZIP 0.18.1 y comprobarlo: raíz `nexusai`, sin `lang/es`, versión
+      0.18.1, `MATURITY_BETA`.
+2. **Backend**
+   1. PR `development → staging` del monorepo para que staging tenga el fix de
+      idioma (no hay workflow de deploy en el repo: lo aplica quien opera la VM).
+   2. Promover `development → main` en `nexusai-backend` para que la imagen
+      pública lleve el fix.
+3. **Volver a simular al reviewer con el ZIP final** (ver plan de pruebas).
+4. **Decidir la Opción A**: credenciales de producción o de staging (ambas
+   exponen historial de chat real; ver `reviewer-simulation/HALLAZGOS.md`) y si
+   se aísla por sitio o se atiende a un reviewer a la vez.
+5. **Formulario de Marketplace**
+   (https://marketplace.moodle.com/plugins/submit/step1?type=free): descripciones
+   en inglés, link al issue tracker
+   (https://github.com/nexusai-ucc/moodle-local_nexusai/issues) y las notas para
+   el reviewer de `docs/REVIEWER_TESTING.md` con las credenciales pegadas en el
+   propio formulario (no en el repo).
 
-`./scripts/package-plugin.sh` (el anterior, arma desde el working tree
-local) sigue existiendo para probar cambios locales antes de pushear.
+## Plan de pruebas antes de enviar
 
-## Falta antes de subir el ZIP
+Sobre un sitio **nuevo** (`down -v` y volver a levantar), como lo haría el
+reviewer:
 
-1. ~~Mergear el PR #6~~ — hecho.
-2. Mergear la PR #496 (review de Delfi/Santi) — lleva el fix de `$_GET`, el
-   bump a beta y el workflow de publish.
-3. Promover `development → main` en `moodle-local_nexusai` (lleva el fix y
-   el bump a beta) y en `nexusai-backend` (activa el workflow de publish).
-4. Publicar la imagen de Docker + marcarla pública en GHCR (Santi).
-5. Decidir producción vs staging para las credenciales del reviewer (ver
-   nota de privacidad en `reviewer-simulation/HALLAZGOS.md`), y completar
-   los placeholders de `docs/REVIEWER_TESTING.md`.
-6. Rebuild del ZIP: `./scripts/package-plugin-from-repo.sh` desde la raíz
-   del monorepo.
-7. Completar el formulario de Marketplace
-   (https://marketplace.moodle.com/plugins/submit/step1?type=free): pegar
-   las descripciones en inglés, el link al issue tracker
-   (https://github.com/nexusai-ucc/moodle-local_nexusai/issues), y las
-   notas para el reviewer de `docs/REVIEWER_TESTING.md`.
-
-## ¿Roadmap público para el plugin?
-
-Es un nice-to-have, no un requisito de Marketplace — no lo pide la guía en
-ningún punto. Vale la pena si van a seguir agregando features después de
-aprobado (da contexto a instituciones que evalúan adoptarlo y a
-colaboradores externos), pero no bloquea la publicación. Se puede sumar
-más adelante como una sección corta en el README o un `ROADMAP.md`, sin
-apuro para esta entrega.
+1. **Instalación del ZIP final** desde la interfaz: validación del paquete
+   (nombre `nexusai`, versión 0.18.1, aviso de beta), ajustes, "Connected".
+2. **Curso completo** (guía de carga): materiales indexados, foro, quizzes y
+   entregas con fechas, usuarios.
+3. **Actividad de alumnos**: 10 preguntas con respuesta en el material citando
+   la fuente y 3 sin respuesta (deben generar *content gaps*); quiz de práctica,
+   flashcards, búsqueda, calendario, 👍/👎.
+4. **Foros con IA en inglés**: aviso de discusión similar, resumen de un hilo
+   largo y sugerencia de respuesta — con el fix de idioma ya en staging.
+5. **Vista del docente**: Analytics, Student questions, Exam generator (en
+   inglés), Course review, exportación de datos de privacidad.
+6. **Idioma**: repetir 4 con el usuario en español y confirmar que nada aparece
+   como `[[clave]]`.
+7. **Opción B**: `docker pull` anónimo, `docker compose` con los archivos de
+   `nexusai-backend` y el plugin apuntando al backend local. Probada al menos en
+   Linux; macOS y Windows siguen sin probar.
+8. **Capturas** de cada paso, con ancho de ventana fijo y sin mostrar la URL del
+   backend.
