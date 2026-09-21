@@ -206,6 +206,7 @@ curl_setopt_array($ch, [
         'X-Nonce: '     . $nonce,
         'X-Signature: ' . $signature,
         'Accept: text/event-stream',
+        'Accept-Language: ' . \local_nexusai\external\backend_client::interface_language(),
     ],
     CURLOPT_TIMEOUT        => 300,
     CURLOPT_CONNECTTIMEOUT => 10,
