@@ -122,7 +122,7 @@ $ics = local_nexusai_build_ics($events, $calname, $CFG->wwwroot);
 
 header('Content-Type: text/calendar; charset=utf-8');
 $disposition = $download ? 'attachment' : 'inline';
-header('Content-Disposition: ' . $disposition . '; filename="curso-' . (int) $course->id . '.ics"');
+header('Content-Disposition: ' . $disposition . '; filename="course-' . (int) $course->id . '.ics"');
 header('Cache-Control: max-age=1800, private');
 echo $ics;
 exit;

@@ -41,8 +41,11 @@ const CHARS_WARNING_THRESHOLD = 1800;
 const PASTE_LINES_THRESHOLD = 15;
 const PASTE_CHARS_THRESHOLD = 500;
 
-function placeholderFor(id, lines) {
-    return `[📋 Pegado #${id} — ${lines} línea${lines === 1 ? "" : "s"}]`;
+function placeholderFor(id, lines, lang = "es") {
+    if (lang === "es") {
+        return `[📋 Pegado #${id} — ${lines} línea${lines === 1 ? "" : "s"}]`;
+    }
+    return `[📋 Pasted #${id} — ${lines} line${lines === 1 ? "" : "s"}]`;
 }
 
 // Función (no constante de módulo) a propósito: se re-evalúa en cada
@@ -126,7 +129,7 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId, lan
         if (!canSend) return;
         let finalText = trimmed;
         for (const p of pastes) {
-            finalText = finalText.split(placeholderFor(p.id, p.lines)).join(p.text);
+            finalText = finalText.split(placeholderFor(p.id, p.lines, lang)).join(p.text);
         }
         onSend(finalText);
         resetComposer();
@@ -202,7 +205,7 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId, lan
         const ta = textareaRef.current;
         const start = ta ? ta.selectionStart : value.length;
         const end = ta ? ta.selectionEnd : value.length;
-        const token = placeholderFor(id, lines);
+        const token = placeholderFor(id, lines, lang);
 
         setValue((prev) => prev.slice(0, start) + token + prev.slice(end));
         setPastes((prev) => [...prev, { id, text, lines, chars: text.length }]);
@@ -211,7 +214,7 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId, lan
     const removePaste = (id) => {
         const p = pastes.find((x) => x.id === id);
         if (p) {
-            setValue((prev) => prev.split(placeholderFor(id, p.lines)).join(""));
+            setValue((prev) => prev.split(placeholderFor(id, p.lines, lang)).join(""));
         }
         setPastes((prev) => prev.filter((x) => x.id !== id));
         setPreviewId((cur) => (cur === id ? null : cur));

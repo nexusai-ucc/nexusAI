@@ -174,6 +174,23 @@ describe("ExamGeneratorPanel — generate + preview", () => {
     });
 });
 
+describe("ExamGeneratorPanel — exportación en inglés", () => {
+    it("exports with an English file name and passes the language to the GIFT writer", async () => {
+        const user = userEvent.setup();
+        render(<ExamGeneratorPanel courseId={7} lang="en" />);
+        await user.click(await screen.findByLabelText(/apunte1\.pdf/));
+        await user.click(screen.getByRole("button", { name: "Next" }));
+        await user.click(screen.getByRole("button", { name: /Generate exam/ }));
+        await screen.findByText(/Bank generated/);
+
+        await user.click(screen.getByRole("button", { name: /Export as GIFT/ }));
+
+        const [, filenameArg, langArg] = downloadGiftFile.mock.calls[0];
+        expect(filenameArg).toBe("exam-nexusai-course-7.txt");
+        expect(langArg).toBe("en");
+    });
+});
+
 describe("ExamGeneratorPanel — temas con dificultad detectada (DOC-D09)", () => {
     it("fetches and merges Gaps + FAQ topics only when the checkbox is toggled on, deduped and sorted by count", async () => {
         listGaps.mockResolvedValue({ items: [{ question: "¿Qué es una integral?", count: 5 }] });

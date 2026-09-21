@@ -615,7 +615,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             />
                         ))}
 
-                        {loading && !messages.some((m) => m.streaming && m.content) && <TypingIndicator />}
+                        {loading && !messages.some((m) => m.streaming && m.content) && <TypingIndicator lang={lang} />}
 
                         {error && (
                             <div className="nexusai-error" role="alert">

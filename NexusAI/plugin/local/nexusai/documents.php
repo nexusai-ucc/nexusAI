@@ -31,6 +31,7 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/lib.php');
 
 global $PAGE, $OUTPUT, $USER, $COURSE, $DB;
 

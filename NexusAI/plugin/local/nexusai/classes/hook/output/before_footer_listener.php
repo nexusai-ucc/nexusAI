@@ -50,7 +50,10 @@ class before_footer_listener {
      * @param before_footer_html_generation $hook The hook, with methods like add_html() etc.
      */
     public static function callback(before_footer_html_generation $hook): void {
-        global $PAGE, $USER;
+        global $CFG, $PAGE, $USER;
+
+        // The function below lives in lib.php, which Moodle does not autoload.
+        require_once($CFG->dirroot . '/local/nexusai/lib.php');
 
         $context = visibility_helper::resolve();
         if ($context === null) {

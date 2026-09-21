@@ -17,7 +17,7 @@
 /**
  * External function `local_nexusai_quiz_errors_clear`.
  *
- * Borra el historial de errores de quiz del alumno en un curso (SP-10).
+ * Deletes the student's quiz error history in a course (SP-10).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -30,7 +30,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Borra el historial de errores de quiz del alumno en un curso (SP-10).
+ * Deletes the student's quiz error history in a course (SP-10).
  */
 class quiz_errors_clear extends \external_api {
     /**
@@ -40,7 +40,7 @@ class quiz_errors_clear extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
@@ -56,9 +56,9 @@ class quiz_errors_clear extends \external_api {
     }
 
     /**
-     * Borra el historial de errores de quiz del alumno en un curso (SP-10).
+     * Deletes the student's quiz error history in a course (SP-10).
      *
-     * @param int $courseid ID del curso
+     * @param int $courseid Course ID
      * @return array
      */
     public static function execute(int $courseid): array {

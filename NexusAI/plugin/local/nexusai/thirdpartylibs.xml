@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <!--
-PUB-01 (issue #309): declara las librerías de terceros empaquetadas dentro
-del bundle React/webpack compilado en amd/build/ — requerido por moodle.org
-para cualquier plugin que distribuya código de terceros. El source (sin
-compilar) está en react/package.json; esto documenta lo que efectivamente
-queda minificado dentro de los dos bundles AMD commiteados.
+PUB-01 (issue #309): declares the third-party libraries packaged inside the
+compiled React/webpack bundle in amd/build/ — required by moodle.org for any
+plugin that distributes third-party code. The (uncompiled) source is in
+react/package.json; this documents what actually ends up minified inside the
+two committed AMD bundles.
 -->
 <libraries>
     <library>
