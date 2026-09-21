@@ -52,7 +52,7 @@ class before_footer_listener {
     public static function callback(before_footer_html_generation $hook): void {
         global $CFG, $PAGE, $USER;
 
-        // lib.php is not autoloaded and the function below lives there.
+        // The function below lives in lib.php, which Moodle does not autoload.
         require_once($CFG->dirroot . '/local/nexusai/lib.php');
 
         $context = visibility_helper::resolve();
