@@ -3,10 +3,12 @@
 All notable changes to the NexusAI Moodle plugin are documented in this
 file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.18.0] — 2026-09-19
+## [0.18.1] — 2026-09-20
 
 Initial submission to the Moodle Plugins directory. Maturity: beta.
 
+- Fixed: the Materials page failed on a fresh install with "Call to undefined
+  function local_nexusai_frontend_lang()" because `lib.php` was not loaded.
 - Document downloads read their parameters through `optional_param()`
   instead of `$_GET`.
 - Full feature set: RAG-powered chat, semantic search, practice quizzes and
