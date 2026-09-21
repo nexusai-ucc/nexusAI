@@ -17,8 +17,8 @@
 /**
  * External function `local_nexusai_document_delete`.
  *
- * Borra un documento indexado y todos sus chunks asociados.
- * El backend hace ON DELETE CASCADE sobre chunks(document_id).
+ * Deletes an indexed document and all its associated chunks.
+ * The backend does ON DELETE CASCADE over chunks(document_id).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Borra un documento indexado y todos sus chunks asociados.
+ * Deletes an indexed document and all its associated chunks.
  */
 class document_delete extends \external_api {
     /**
@@ -42,8 +42,8 @@ class document_delete extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'   => new \external_value(PARAM_INT, 'ID del curso (para validar capability)', VALUE_REQUIRED),
-            'documentid' => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento a borrar', VALUE_REQUIRED),
+            'courseid'   => new \external_value(PARAM_INT, 'Course ID (to validate the capability)', VALUE_REQUIRED),
+            'documentid' => new \external_value(PARAM_ALPHANUMEXT, 'UUID of the document to delete', VALUE_REQUIRED),
         ]);
     }
 
@@ -54,15 +54,15 @@ class document_delete extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'success' => new \external_value(PARAM_BOOL, 'true si se borró correctamente'),
+            'success' => new \external_value(PARAM_BOOL, 'true if deleted successfully'),
         ]);
     }
 
     /**
-     * Borra un documento indexado y todos sus chunks asociados.
+     * Deletes an indexed document and all its associated chunks.
      *
-     * @param int $courseid ID del curso (para validar capability)
-     * @param string $documentid UUID del documento a borrar
+     * @param int $courseid Course ID (to validate the capability)
+     * @param string $documentid UUID of the document to delete
      * @return array
      */
     public static function execute(int $courseid, string $documentid): array {
@@ -77,7 +77,7 @@ class document_delete extends \external_api {
 
         $client = new backend_client();
 
-        // Defensa: verificar que el documento pertenece al curso antes de borrar.
+        // Defense: verify the document belongs to the course before deleting.
         $document = $client->get_document($params['documentid']);
         if (((int) ($document['course_id'] ?? 0)) !== (int) $params['courseid']) {
             throw new \moodle_exception(

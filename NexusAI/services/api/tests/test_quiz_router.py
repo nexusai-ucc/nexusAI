@@ -103,6 +103,18 @@ def test_build_quiz_prompt_defaults_to_medium_difficulty():
     assert with_default[0]["content"] == with_explicit[0]["content"]
 
 
+@pytest.mark.parametrize(
+    "question_type", ["multiple_choice", "true_false", "open", "mix", "flashcard"]
+)
+def test_build_quiz_prompt_follows_material_language(question_type):
+    """The output language must follow the course material, not be forced to Spanish."""
+    system_msg = _build_quiz_prompt(
+        _CHUNKS, num_questions=3, topic=None, question_type=question_type
+    )[0]["content"]
+    assert "en español" not in system_msg
+    assert "mismo idioma que el material" in system_msg
+
+
 # ─────────────────────────────────────────────────────────────
 # Fixtures — endpoint end-to-end con dependencias mockeadas
 # ─────────────────────────────────────────────────────────────
@@ -668,6 +680,43 @@ async def test_generate_exam_404_when_no_chunks_for_selected_documents(client, m
     response = await client.post("/api/v1/quiz/generate-exam", json=payload)
 
     assert response.status_code == 404
+
+
+async def test_generate_exam_404_message_follows_the_interface_language(
+    client, mock_db
+):
+    """No material means no text to detect a language from, so the plugin sends the
+    interface language in Accept-Language and the message follows it."""
+    mock_db.execute.return_value.all.return_value = []
+    payload = {"course_id": 1, "user_id": 9, "document_ids": [_VALID_DOC_ID]}
+    url = "/api/v1/quiz/generate-exam"
+
+    english = await client.post(url, json=payload, headers={"Accept-Language": "en"})
+    spanish = await client.post(url, json=payload, headers={"Accept-Language": "es"})
+    default = await client.post(url, json=payload)
+
+    assert english.status_code == 404
+    assert (
+        english.json()["detail"]
+        == "The selected files have no indexed material in this course."
+    )
+    assert spanish.json()["detail"].startswith("Los archivos seleccionados")
+    assert default.json()["detail"].startswith("Los archivos seleccionados")
+
+
+async def test_generate_quiz_404_message_follows_the_interface_language(
+    client, mock_db
+):
+    mock_db.execute.return_value.all.return_value = []
+    payload = {"course_id": 1, "user_id": 9}
+    url = "/api/v1/quiz/generate"
+
+    english = await client.post(url, json=payload, headers={"Accept-Language": "en-US"})
+    default = await client.post(url, json=payload)
+
+    assert english.status_code == 404
+    assert "doesn't have indexed material" in english.json()["detail"]
+    assert "todavía no tiene material indexado" in default.json()["detail"]
 
 
 async def test_generate_exam_keeps_source_topic_matching_focus_topics(client, mock_llm):

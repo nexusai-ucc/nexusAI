@@ -1,5 +1,5 @@
-local_nexusai — plugin de Moodle
-Copyright (C) 2026 Equipo NexusAI — Universidad Católica de Córdoba
+local_nexusai — Moodle plugin
+Copyright (C) 2026 NexusAI Team — Universidad Católica de Córdoba
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -16,13 +16,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 ---
 
-NOTA: este archivo cubre específicamente el plugin de Moodle
-(`plugin/local/nexusai/`), requerido en GPL v3 o posterior para su
-publicación en el directorio oficial de Moodle.org — mismo esquema de
-licencia que el propio Moodle core. El resto del repositorio (backend
-Python en `services/api/`) se distribuye bajo licencia MIT — ver el
-`LICENSE` en la raíz del repositorio para el texto completo de esa
-licencia y la explicación del licenciamiento por subárbol.
+NOTE: this file specifically covers the Moodle plugin
+(`plugin/local/nexusai/`), which is required to be GPL v3 or later for
+publication in the official Moodle.org directory — the same license scheme
+as Moodle core itself. The rest of the repository (the Python backend in
+`services/api/`) is distributed under the MIT license — see the `LICENSE`
+file at the repository root for the full text of that license and the
+explanation of per-subtree licensing.
 
-El texto completo de la GNU General Public License v3 está disponible en:
+The full text of the GNU General Public License v3 is available at:
 https://www.gnu.org/licenses/gpl-3.0.txt

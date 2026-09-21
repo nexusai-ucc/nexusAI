@@ -151,13 +151,19 @@ const IconDoc = () => (
     </svg>
 );
 
+const COPY_L = {
+    es: { copy: "Copiar", copied: "✓ Copiado", error: "Error" },
+    en: { copy: "Copy", copied: "✓ Copied", error: "Error" },
+};
+
 /**
  * Hook que inyecta botones "Copiar" en los bloques <pre> del markdown
  * del asistente, después de que React renderiza el HTML sanitizado.
  */
-function useCopyButtons(ref, htmlContent) {
+function useCopyButtons(ref, htmlContent, lang = "es") {
     useEffect(() => {
         if (!ref.current) return;
+        const CL = COPY_L[lang] || COPY_L.es;
         const pres = ref.current.querySelectorAll("pre");
 
         pres.forEach((pre) => {
@@ -173,28 +179,28 @@ function useCopyButtons(ref, htmlContent) {
             const btn = document.createElement("button");
             btn.type = "button";
             btn.className = "nexusai-copy-btn";
-            btn.textContent = "Copiar";
+            btn.textContent = CL.copy;
 
             btn.addEventListener("click", async () => {
                 const code = pre.querySelector("code");
                 const text = code ? code.innerText : pre.innerText;
                 try {
                     await navigator.clipboard.writeText(text);
-                    btn.textContent = "✓ Copiado";
+                    btn.textContent = CL.copied;
                     btn.classList.add("nexusai-copy-btn--copied");
                     setTimeout(() => {
-                        btn.textContent = "Copiar";
+                        btn.textContent = CL.copy;
                         btn.classList.remove("nexusai-copy-btn--copied");
                     }, 2000);
                 } catch {
-                    btn.textContent = "Error";
-                    setTimeout(() => { btn.textContent = "Copiar"; }, 1500);
+                    btn.textContent = CL.error;
+                    setTimeout(() => { btn.textContent = CL.copy; }, 1500);
                 }
             });
 
             wrapper.appendChild(btn);
         });
-    }, [htmlContent]);
+    }, [htmlContent, lang]);
 }
 
 const FEEDBACK_L = {
@@ -204,6 +210,14 @@ const FEEDBACK_L = {
         commentHint:  "¿Qué estuvo mal? (opcional)",
         send:         "Enviar",
         thanks:       "¡Gracias por tu feedback!",
+        sourcesAria:  "Fuentes citadas",
+        sourcesLabel: "Fuentes:",
+        downloadTitle:"Descargar archivo original",
+        fragment:     (n) => ` · fragmento #${n}`,
+        close:        "Cerrar",
+        showLess:     "Mostrar menos",
+        showMore:     "Mostrar más",
+        regenerate:   "Regenerar",
     },
     en: {
         helpful:      "Helpful response",
@@ -211,6 +225,14 @@ const FEEDBACK_L = {
         commentHint:  "What went wrong? (optional)",
         send:         "Send",
         thanks:       "Thanks for your feedback!",
+        sourcesAria:  "Cited sources",
+        sourcesLabel: "Sources:",
+        downloadTitle:"Download original file",
+        fragment:     (n) => ` · chunk #${n}`,
+        close:        "Close",
+        showLess:     "Show less",
+        showMore:     "Show more",
+        regenerate:   "Regenerate",
     },
 };
 
@@ -295,7 +317,7 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
         return renderMarkdown(message.content);
     }, [isUser, message.content]);
 
-    useCopyButtons(markdownRef, htmlContent);
+    useCopyButtons(markdownRef, htmlContent, lang);
 
     // ASIST-06 (#384): respuestas largas se cortan con fade + "Mostrar más".
     // No se evalúa mientras el mensaje sigue en streaming (el alto todavía
@@ -361,7 +383,7 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
                             className="nexusai-msg__show-more-btn"
                             onClick={() => setLongExpanded((v) => !v)}
                         >
-                            {longExpanded ? "Mostrar menos" : "Mostrar más"}
+                            {longExpanded ? FL.showLess : FL.showMore}
                         </button>
                     )}
                 </div>
@@ -369,8 +391,8 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
 
             {sources.length > 0 && message.has_relevant_context !== false && (
                 <div className="nexusai-msg__sources-wrap" style={{ paddingLeft: "34px" }}>
-                    <div className="nexusai-msg__sources" aria-label="Fuentes citadas">
-                        <span className="nexusai-msg__sources-label">Fuentes:</span>
+                    <div className="nexusai-msg__sources" aria-label={FL.sourcesAria}>
+                        <span className="nexusai-msg__sources-label">{FL.sourcesLabel}</span>
                         {sources.map((src, i) => {
                             const key = `${src.document_filename}-${src.chunk_index ?? "x"}-${i}`;
                             const hasDownload = !!src.document_id;
@@ -404,7 +426,7 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
                                     className={`nexusai-msg__source-pill ${isClickable ? "nexusai-msg__source-pill--clickable" : ""} ${!hasDownload && isOpen ? "nexusai-msg__source-pill--active" : ""}`}
                                     onClick={handleClick}
                                     disabled={!isClickable}
-                                    title={hasDownload ? "Descargar archivo original" : undefined}
+                                    title={hasDownload ? FL.downloadTitle : undefined}
                                 >
                                     <IconDoc />
                                     {courseLabel && (
@@ -433,13 +455,13 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
                                         {expCourse && <span className="nexusai-msg__source-panel-course">{expCourse}</span>}
                                         <span>{exp.document_filename}</span>
                                         {typeof exp.chunk_index === "number" &&
-                                            ` · fragmento #${exp.chunk_index}`}
+                                            FL.fragment(exp.chunk_index)}
                                     </span>
                                     <button
                                         type="button"
                                         className="nexusai-msg__source-panel-close"
                                         onClick={() => setExpandedIdx(null)}
-                                        aria-label="Cerrar"
+                                        aria-label={FL.close}
                                     >
                                         <IconX size={14} />
                                     </button>
@@ -461,7 +483,7 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
                         className="nexusai-msg__regenerate-btn"
                         onClick={onRegenerate}
                     >
-                        <IconRefreshCw size={11} /> Regenerar
+                        <IconRefreshCw size={11} /> {FL.regenerate}
                     </button>
                 )}
                 {!message.streaming && (

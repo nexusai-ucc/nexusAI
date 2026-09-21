@@ -15,15 +15,15 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Página de gestión de documentos NexusAI por curso.
+ * NexusAI per-course document management page.
  *
- * Acceso: solo usuarios con capability local/nexusai:manage en el contexto del curso.
+ * Access: only users with the local/nexusai:manage capability in the course context.
  *
  * URL: /local/nexusai/documents.php?courseid=X
  *
- * Esta página renderiza un shell PHP mínimo (header, breadcrumbs, container)
- * y carga el bundle React `documents-manager-lazy` que maneja toda la UX:
- * drag-and-drop, tabla con polling, re-indexar/eliminar.
+ * This page renders a minimal PHP shell (header, breadcrumbs, container)
+ * and loads the `documents-manager-lazy` React bundle that handles the whole
+ * UX: drag-and-drop, the polling table, reindex/delete.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -31,16 +31,17 @@
  */
 
 require_once(__DIR__ . '/../../config.php');
+require_once(__DIR__ . '/lib.php');
 
 global $PAGE, $OUTPUT, $USER, $COURSE, $DB;
 
-// 1. Resolver curso.
+// 1. Resolve the course.
 $courseid = required_param('courseid', PARAM_INT);
 $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 
-// ONB-07 (#430): tab inicial opcional (p.ej. ?tab=help desde el link de
-// OnboardingPanel en modo revisión). DocumentsManager.jsx ignora cualquier
-// valor que no matchee una de sus keys y cae a "material".
+// ONB-07 (#430): optional initial tab (e.g. ?tab=help from the
+// OnboardingPanel link in review mode). DocumentsManager.jsx ignores any
+// value that doesn't match one of its keys and falls back to "material".
 $initialtab = optional_param('tab', '', PARAM_ALPHA);
 
 // 2. Login + capability.
@@ -48,7 +49,7 @@ require_login($course);
 $context = context_course::instance($course->id);
 require_capability('local/nexusai:manage', $context);
 
-// 3. Setup página.
+// 3. Page setup.
 $pageurl = new moodle_url('/local/nexusai/documents.php', ['courseid' => $courseid]);
 $PAGE->set_url($pageurl);
 $PAGE->set_context($context);
@@ -59,20 +60,20 @@ $PAGE->set_title(
 );
 $PAGE->set_heading(format_string($course->fullname));
 
-// Breadcrumb: Curso → NexusAI.
+// Breadcrumb: Course → NexusAI.
 $PAGE->navbar->add(
     get_string('documents_page_title', 'local_nexusai'),
     $pageurl
 );
 
-// 4. Cargar bundle React de documents.
+// 4. Load the documents React bundle.
 $PAGE->requires->js_call_amd('local_nexusai/documents-manager-lazy', 'init', [
     [
         'courseid'  => (int) $course->id,
         'userid'    => (int) $USER->id,
         'sesskey'   => sesskey(),
         'wwwroot'   => (string) (new moodle_url('/'))->out(false),
-        'lang'      => current_language(),
+        'lang'      => local_nexusai_frontend_lang(),
         'fullname'  => (string) format_string($course->fullname),
         'shortname' => (string) format_string($course->shortname),
         'initialtab' => $initialtab,
@@ -84,10 +85,10 @@ echo $OUTPUT->header();
 
 echo $OUTPUT->heading(get_string('documents_page_title', 'local_nexusai'));
 
-// Container donde React monta la app.
+// Container where React mounts the app.
 echo '<div id="local-nexusai-documents-app" data-plugin="nexusai"></div>';
 
-// Fallback noscript para usuarios sin JS habilitado.
+// Noscript fallback for users without JS enabled.
 echo '<noscript><div class="alert alert-warning">' .
     get_string('documents_page_noscript', 'local_nexusai') .
     '</div></noscript>';

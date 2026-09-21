@@ -129,6 +129,27 @@ describe("toGiftFormat — multiple questions", () => {
     });
 });
 
+describe("toGiftFormat — language of titles and comments", () => {
+    const questions = [
+        { question_type: "true_false", question: "Q1", correct_index: 0, explanation: "" },
+        { question_type: "open", question: "Q2", explanation: "Because." },
+    ];
+
+    it("uses English titles and the model-answer comment when lang is 'en'", () => {
+        const gift = toGiftFormat(questions, "en");
+        expect(gift).toContain("::Question 1::Q1 {TRUE}");
+        expect(gift).toContain("::Question 2::Q2 {}");
+        expect(gift).toContain("// Model answer: Because.");
+        expect(gift).not.toContain("Pregunta");
+        expect(gift).not.toContain("Respuesta modelo");
+    });
+
+    it("keeps the Spanish titles by default and for lang 'es'", () => {
+        expect(toGiftFormat(questions)).toContain("::Pregunta 1::");
+        expect(toGiftFormat(questions, "es")).toContain("// Respuesta modelo: Because.");
+    });
+});
+
 describe("downloadGiftFile", () => {
     const originalCreateObjectURL = URL.createObjectURL;
     const originalRevokeObjectURL = URL.revokeObjectURL;

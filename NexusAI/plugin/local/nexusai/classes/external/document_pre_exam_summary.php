@@ -17,10 +17,10 @@
 /**
  * External function `local_nexusai_document_pre_exam_summary`.
  *
- * Proxy entre React y el endpoint /api/v1/documents/pre-exam-summary del
- * backend Python. Genera un resumen de repaso combinando todo el material
- * indexado relevante para un próximo examen, opcionalmente acotado a una
- * unidad/sección del curso (BUS-04).
+ * Proxy between React and the Python backend's
+ * /api/v1/documents/pre-exam-summary endpoint. Generates a review summary
+ * combining all relevant indexed material for an upcoming exam, optionally
+ * scoped to a course unit/section (BUS-04).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -33,7 +33,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Proxy entre React y el endpoint /api/v1/documents/pre-exam-summary del backend Python.
+ * Proxy between React and the Python backend's /api/v1/documents/pre-exam-summary endpoint.
  */
 class document_pre_exam_summary extends \external_api {
     /**
@@ -43,8 +43,8 @@ class document_pre_exam_summary extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
-            'section'  => new \external_value(PARAM_INT, 'Unidad/sección opcional', VALUE_DEFAULT, null, NULL_ALLOWED),
+            'courseid' => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+            'section'  => new \external_value(PARAM_INT, 'Optional unit/section', VALUE_DEFAULT, null, NULL_ALLOWED),
         ]);
     }
 
@@ -55,22 +55,22 @@ class document_pre_exam_summary extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'summary'          => new \external_value(PARAM_RAW, 'Resumen de repaso generado por IA'),
+            'summary'          => new \external_value(PARAM_RAW, 'AI-generated review summary'),
             'documents_used'   => new \external_multiple_structure(
                 new \external_single_structure([
-                    'document_id' => new \external_value(PARAM_RAW, 'UUID del documento'),
-                    'filename'    => new \external_value(PARAM_TEXT, 'Nombre del archivo'),
+                    'document_id' => new \external_value(PARAM_RAW, 'Document UUID'),
+                    'filename'    => new \external_value(PARAM_TEXT, 'File name'),
                 ])
             ),
-            'total_documents'  => new \external_value(PARAM_INT, 'Cantidad de documentos usados'),
+            'total_documents'  => new \external_value(PARAM_INT, 'Number of documents used'),
         ]);
     }
 
     /**
-     * Proxy entre React y el endpoint /api/v1/documents/pre-exam-summary del backend Python.
+     * Proxy between React and the Python backend's /api/v1/documents/pre-exam-summary endpoint.
      *
-     * @param int $courseid ID del curso de Moodle
-     * @param int $section Unidad/sección opcional
+     * @param int $courseid Moodle course ID
+     * @param int $section Optional unit/section
      * @return array
      */
     public static function execute(int $courseid, ?int $section = null): array {

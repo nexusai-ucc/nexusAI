@@ -17,9 +17,9 @@
 /**
  * English language strings for local_nexusai.
  *
- * Moodle requiere que CADA capability y CADA setting tenga su string acá. Si falta,
- * Moodle muestra "[[clave]]" en la UI, lo cual queda feísimo. Mantener sincronizado
- * con lang/es/local_nexusai.php.
+ * Moodle requires EVERY capability and EVERY setting to have its string here. If
+ * one is missing, Moodle shows "[[key]]" in the UI, which looks quite bad. Keep
+ * this in sync with lang/es/local_nexusai.php.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -28,7 +28,20 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['admin_active_config'] = 'Active configuration';
+$string['admin_backend_status'] = 'Backend status';
+$string['admin_check_again'] = 'Check again';
+$string['admin_edit_config'] = 'Edit configuration';
+$string['admin_health_configure_prompt'] = 'Configure the endpoint in <a href="{$a}">Plugin configuration</a>';
+$string['admin_health_invalid_response'] = 'Invalid response (not JSON)';
+$string['admin_health_latency'] = 'latency <strong>{$a} ms</strong>';
+$string['admin_health_version'] = 'backend version <code>{$a}</code>';
 $string['admin_page_title'] = 'NexusAI · Admin panel';
+$string['admin_plugin_enabled'] = 'Plugin enabled';
+$string['admin_status_connected'] = 'Connected';
+$string['admin_status_error'] = 'Connection error';
+$string['admin_status_unconfigured'] = 'Not configured';
+$string['admin_value_masked'] = '●●●●●●●● (configured)';
 $string['alert_from_email'] = 'Alert sender email';
 $string['alert_from_email_desc'] = 'Address shown as sender in NexusAI calendar alert emails. Leave empty to use Moodle\'s global noreply address (Site administration → Server → Email).';
 $string['apienabled'] = 'Enable NexusAI';
@@ -47,9 +60,39 @@ $string['chatwidget_send'] = 'Send';
 $string['chatwidget_title'] = 'NexusAI Assistant';
 $string['documents_page_noscript'] = 'This page requires JavaScript to manage materials indexed by the NexusAI assistant.';
 $string['documents_page_title'] = 'NexusAI · Materials';
+$string['erroraccessdenied'] = 'Access denied';
 $string['errorbackend'] = 'NexusAI backend error: {$a}';
 $string['errorbackendunreachable'] = 'Cannot reach NexusAI backend: {$a}. Check API endpoint, network, and that the backend container is running.';
 $string['errorconfigmissing'] = 'NexusAI configuration is incomplete. Missing: {$a}. Set it in Site administration → Plugins → Local plugins → NexusAI.';
+$string['errorcourseidrequired'] = 'Course ID required';
+$string['errorcoursenotfound'] = 'Course not found.';
+$string['errorfeednotfound'] = 'Feed not found. The subscription may have been revoked.';
+$string['errorfilenotavailable'] = 'The file is not available. To restore it, delete and re-upload the document from the plugin\'s Documents section.';
+$string['errorinvalidfilename'] = 'Invalid filename';
+$string['errorinvalidparams'] = 'Invalid parameters.';
+$string['errorusernotenrolled'] = 'This feed\'s student is not enrolled in the course.';
+$string['forum_similar_close'] = 'Close notice';
+$string['forum_similar_found'] = 'A similar discussion already exists ({$a}% similarity):';
+$string['forum_similar_more'] = 'and {$a} more';
+$string['forum_similar_view'] = 'View discussion';
+$string['forum_suggest_button'] = 'Suggest reply';
+$string['forum_suggest_close'] = 'Close suggestion';
+$string['forum_suggest_empty'] = 'NexusAI: could not generate a suggestion.';
+$string['forum_suggest_error'] = 'NexusAI: error generating the suggestion. Try again.';
+$string['forum_suggest_material'] = 'With course material';
+$string['forum_suggest_title'] = 'NexusAI suggests:';
+$string['forum_suggest_use'] = 'Use this reply';
+$string['forum_suggest_working'] = 'Generating…';
+$string['forum_summary_button'] = 'Summarize thread';
+$string['forum_summary_close'] = 'Close summary';
+$string['forum_summary_error'] = 'NexusAI: could not summarize the thread. Try again.';
+$string['forum_summary_keypoints'] = 'Key points';
+$string['forum_summary_loading'] = 'Summarizing thread';
+$string['forum_summary_resolved'] = 'Discussion resolved';
+$string['forum_summary_title'] = 'NexusAI — Thread summary';
+$string['forum_summary_truncated'] = 'The thread is long — the first {$a} posts were summarized.';
+$string['forum_summary_unresolved'] = 'No definitive answer';
+$string['forum_summary_working'] = 'Summarizing…';
 $string['messageprovider:cal_alert'] = 'NexusAI calendar alerts';
 $string['messageprovider:newmaterial'] = 'New material uploaded to a course';
 $string['newmaterial_body'] = 'A new file "{$a->filename}" was uploaded to {$a->course}. You can already ask the NexusAI assistant about it.';

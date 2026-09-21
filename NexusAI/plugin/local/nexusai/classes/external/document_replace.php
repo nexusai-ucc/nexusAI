@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_document_replace`.
  *
- * CONT-07 (#356): reemplaza el archivo de un documento existente manteniendo
- * su document_id (las citas viejas del chat siguen apuntando al mismo id).
- * Mismos validadores que document_upload.php (magic bytes, tamaño, mimetype).
+ * CONT-07 (#356): replaces an existing document's file while keeping its
+ * document_id (old chat citations keep pointing to the same id).
+ * Same validators as document_upload.php (magic bytes, size, mimetype).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -33,8 +33,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * CONT-07 (#356): reemplaza el archivo de un documento existente manteniendo su document_id (las citas viejas
- * del chat siguen apuntando al mismo id).
+ * CONT-07 (#356): replaces an existing document's file while keeping its document_id (old chat
+ * citations keep pointing to the same id).
  */
 class document_replace extends \external_api {
     /**
@@ -44,11 +44,11 @@ class document_replace extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'    => new \external_value(PARAM_INT, 'ID del curso de Moodle', VALUE_REQUIRED),
-            'documentid'  => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento a reemplazar', VALUE_REQUIRED),
-            'filename'    => new \external_value(PARAM_FILE, 'Nombre del archivo nuevo (con extensión)', VALUE_REQUIRED),
-            'mimetype'    => new \external_value(PARAM_RAW, 'MIME type detectado por el browser', VALUE_REQUIRED),
-            'content_b64' => new \external_value(PARAM_RAW, 'Contenido binario en base64', VALUE_REQUIRED),
+            'courseid'    => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+            'documentid'  => new \external_value(PARAM_ALPHANUMEXT, 'UUID of the document to replace', VALUE_REQUIRED),
+            'filename'    => new \external_value(PARAM_FILE, 'New file name (with extension)', VALUE_REQUIRED),
+            'mimetype'    => new \external_value(PARAM_RAW, 'MIME type detected by the browser', VALUE_REQUIRED),
+            'content_b64' => new \external_value(PARAM_RAW, 'Binary content in base64', VALUE_REQUIRED),
         ]);
     }
 
@@ -59,16 +59,16 @@ class document_replace extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'id'            => new \external_value(PARAM_ALPHANUMEXT, 'UUID del documento (sin cambios)'),
-            'course_id'     => new \external_value(PARAM_INT, 'ID del curso'),
-            'uploader_id'   => new \external_value(PARAM_INT, 'ID del docente que subió'),
-            'filename'      => new \external_value(PARAM_RAW, 'Nombre del archivo'),
+            'id'            => new \external_value(PARAM_ALPHANUMEXT, 'Document UUID (unchanged)'),
+            'course_id'     => new \external_value(PARAM_INT, 'Course ID'),
+            'uploader_id'   => new \external_value(PARAM_INT, 'ID of the teacher who uploaded it'),
+            'filename'      => new \external_value(PARAM_RAW, 'File name'),
             'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
-            'section'       => new \external_value(PARAM_INT, 'Sección asignada', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'section'       => new \external_value(PARAM_INT, 'Assigned section', VALUE_OPTIONAL, null, NULL_ALLOWED),
             'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
             'error_message' => new \external_value(
                 PARAM_RAW,
-                'Mensaje de error si status=error',
+                'Error message if status=error',
                 VALUE_OPTIONAL,
                 null,
                 NULL_ALLOWED
@@ -76,7 +76,7 @@ class document_replace extends \external_api {
         ]);
     }
 
-    /** MIME types permitidos → validador de magic bytes (igual que document_upload.php). */
+    /** Allowed MIME types → magic-bytes validator (same as document_upload.php). */
     private const ALLOWED_MIME_TYPES = [
         'application/pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -89,14 +89,14 @@ class document_replace extends \external_api {
     ];
 
     /**
-     * Reemplaza el archivo de un documento existente manteniendo su document_id (CONT-07, #356).
+     * Replaces an existing document's file while keeping its document_id (CONT-07, #356).
      *
-     * @param int    $courseid   ID del curso (el contexto del curso valida acceso).
-     * @param string $documentid UUID del documento a reemplazar.
-     * @param string $filename   Nombre del archivo nuevo.
-     * @param string $mimetype   MIME type: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML o TXT.
-     * @param string $contentb64 Contenido binario del archivo nuevo en base64.
-     * @return array Document state después del reemplazo.
+     * @param int    $courseid   Course ID (the course context validates access).
+     * @param string $documentid UUID of the document to replace.
+     * @param string $filename   New file's name.
+     * @param string $mimetype   MIME type: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML or TXT.
+     * @param string $contentb64 New file's binary content in base64.
+     * @return array Document state after the replacement.
      */
     public static function execute(
         int $courseid,
@@ -130,7 +130,7 @@ class document_replace extends \external_api {
             throw new \invalid_parameter_exception('Invalid filename length');
         }
 
-        // Base64 inflate ~33%, así que 20 MB de archivo = ~27 MB en base64.
+        // Base64 inflates by ~33%, so a 20 MB file = ~27 MB in base64.
         if (strlen($params['content_b64']) > 30 * 1024 * 1024) {
             throw new \invalid_parameter_exception('File too large (max 20MB)');
         }
@@ -144,8 +144,8 @@ class document_replace extends \external_api {
 
         $client = new backend_client();
 
-        // Defensa: verificar que el documento pertenece al curso antes de
-        // reemplazarlo (mismo criterio que document_reindex/document_delete).
+        // Defense: verify the document belongs to the course before
+        // replacing it (same criterion as document_reindex/document_delete).
         $document = $client->get_document($params['documentid']);
         if (((int) ($document['course_id'] ?? 0)) !== (int) $params['courseid']) {
             throw new \moodle_exception(
@@ -172,8 +172,8 @@ class document_replace extends \external_api {
             );
         }
 
-        // Actualizar la copia en el file storage de Moodle: borrar la vieja
-        // (pudo tener otro nombre) y guardar la nueva bajo el nombre actual.
+        // Update the copy in Moodle's file storage: delete the old one
+        // (it may have had a different name) and save the new one under the current name.
         $fs = get_file_storage();
         $existing = $fs->get_file(
             $context->id,
@@ -209,8 +209,8 @@ class document_replace extends \external_api {
     }
 
     /**
-     * Verifica magic bytes contra el MIME type declarado.
-     * Lanza invalid_parameter_exception si no coinciden.
+     * Verifies magic bytes against the declared MIME type.
+     * Throws invalid_parameter_exception if they don't match.
      */
     private static function validate_magic_bytes(string $bytes, string $mimetype): void {
         switch ($mimetype) {

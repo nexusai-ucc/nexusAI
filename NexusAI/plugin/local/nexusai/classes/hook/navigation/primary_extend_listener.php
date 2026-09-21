@@ -15,20 +15,20 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Listener para el hook `core\hook\navigation\primary_extend` (UX-02).
+ * Listener for the `core\hook\navigation\primary_extend` hook (UX-02).
  *
- * Agrega el disparador del widget a la fila de navegación primaria de Moodle
- * (junto a Home/Dashboard/My courses), reemplazando el botón flotante (FAB)
- * que existía hasta ahora. El panel en sí sigue montado por
- * before_footer_listener.php — este hook solo agrega el ícono clickeable.
+ * Adds the widget trigger to Moodle's primary navigation row (next to
+ * Home/Dashboard/My courses), replacing the floating action button (FAB)
+ * that existed until now. The panel itself is still mounted by
+ * before_footer_listener.php — this hook only adds the clickable icon.
  *
- * Nota: la plantilla que renderiza los nodos de la navbar primaria
- * (lib/templates/moremenu_children.mustache) solo imprime `{{{text}}}` sin
- * escapar — nunca usa el `pix_icon` que acepta navigation_node::add(). Por
- * eso el ícono se arma como SVG inline pasado como `$text`, no como pix_icon.
- * Tampoco hay forma de cargar una hoja de estilos propia desde este hook
- * ($PAGE->requires->css() tira coding_exception después de <head>) — el SVG
- * lleva sus estilos inline.
+ * Note: the template that renders the primary navbar's nodes
+ * (lib/templates/moremenu_children.mustache) only prints `{{{text}}}`
+ * unescaped — it never uses the `pix_icon` that navigation_node::add()
+ * accepts. That's why the icon is built as inline SVG passed as `$text`,
+ * not as a pix_icon. There's also no way to load our own stylesheet from
+ * this hook ($PAGE->requires->css() throws a coding_exception after
+ * <head>) — the SVG carries its styles inline.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -41,11 +41,11 @@ use core\hook\navigation\primary_extend;
 use local_nexusai\visibility_helper;
 
 /**
- * Agrega el disparador del widget a la navegación primaria de Moodle (UX-02).
+ * Adds the widget trigger to Moodle's primary navigation (UX-02).
  */
 class primary_extend_listener {
     /**
-     * Callback ejecutado por Moodle al armar la navegación primaria.
+     * Callback executed by Moodle when building the primary navigation.
      *
      * @param primary_extend $hook
      */

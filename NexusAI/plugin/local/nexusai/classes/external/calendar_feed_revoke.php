@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_calendar_feed_revoke`.
  *
- * Rota el token del feed de calendario del alumno (CAL-07 / #377): la URL
- * vieja deja de funcionar y se devuelve una nueva. Como el token es
- * per-alumno, esto corta las suscripciones de todos sus cursos.
+ * Rotates the student's calendar feed token (CAL-07 / #377): the old URL
+ * stops working and a new one is returned. Since the token is per student,
+ * this cuts the subscriptions of all their courses.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -34,8 +34,8 @@ require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 require_once($GLOBALS['CFG']->dirroot . '/local/nexusai/lib.php');
 
 /**
- * Rota el token del feed de calendario del alumno (CAL-07 / #377): la URL vieja deja de funcionar y se
- * devuelve una nueva.
+ * Rotates the student's calendar feed token (CAL-07 / #377): the old URL stops working and a new one
+ * is returned.
  */
 class calendar_feed_revoke extends \external_api {
     /**
@@ -45,7 +45,7 @@ class calendar_feed_revoke extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso (para contexto y capability)', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID (for context and capability check)', VALUE_REQUIRED),
         ]);
     }
 
@@ -56,15 +56,15 @@ class calendar_feed_revoke extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'url' => new \external_value(PARAM_RAW, 'Nueva URL absoluta del feed .ics'),
+            'url' => new \external_value(PARAM_RAW, 'New absolute URL of the .ics feed'),
         ]);
     }
 
     /**
-     * Rota el token del feed de calendario del alumno (CAL-07 / #377): la URL vieja deja de funcionar y se
-     * devuelve una nueva.
+     * Rotates the student's calendar feed token (CAL-07 / #377): the old URL stops working and a new one
+     * is returned.
      *
-     * @param int $courseid ID del curso (para contexto y capability)
+     * @param int $courseid Course ID (for context and capability check)
      * @return array
      */
     public static function execute(int $courseid): array {

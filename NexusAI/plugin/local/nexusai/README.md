@@ -1,105 +1,111 @@
 # NexusAI
 
-**Asistente académico con inteligencia artificial para Moodle.**
+**AI-powered academic assistant for Moodle.**
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Moodle: 4.1–4.5](https://img.shields.io/badge/Moodle-4.1--4.5-orange)]()
 
-NexusAI integra un asistente conversacional con RAG (Retrieval-Augmented
-Generation) directamente en el aula virtual de Moodle. A diferencia de un
-chatbot genérico, responde **basándose en el material real que subió el
-docente** (PDFs, DOCX, TXT) — cita la fuente, y si la respuesta no está en el
-material, lo dice explícitamente en vez de inventar.
+NexusAI integrates a conversational AI assistant with RAG (Retrieval-Augmented
+Generation) directly into the Moodle course. Unlike a generic chatbot, it
+answers **based on the real material uploaded by the teacher** (PDF, DOCX,
+TXT) — it cites the source, and if the answer isn't in the material, it says
+so explicitly instead of making something up.
 
-Repositorio: <https://github.com/nexusai-ucc/nexusAI>
+Repository: <https://github.com/nexusai-ucc/nexusAI>
 
-## Funcionalidades
+## Features
 
-**Para alumnos**
+**For students**
 
-- Chat con el asistente sobre el contenido real de la materia, con streaming
-  de la respuesta y fuentes citadas.
-- Buscador semántico sobre todo el material del curso, con historial de
-  búsquedas recientes.
-- Generación de quizzes de práctica (opción múltiple y desarrollo), con
-  dificultad adaptativa según el historial de aciertos, exportables a PDF.
-- Plan de estudio con repetición espaciada (spaced repetition) para
-  flashcards, y racha de estudio.
-- Calendario del curso (lista y vista de mes en grilla), con alertas
-  configurables y exportación a `.ics` para importar en cualquier app de
-  calendario.
-- Panel de foros con IA: detección de posts duplicados antes de publicar,
-  resumen de un hilo, y sugerencia de respuesta con contexto del material.
-- Feedback 👍/👎 sobre las respuestas del chat.
+- Chat with the assistant about the course's real content, with streaming
+  responses and cited sources.
+- Semantic search across all course material, with a history of recent
+  searches.
+- Practice quiz generation (multiple choice and open-ended), with adaptive
+  difficulty based on past performance, exportable to PDF.
+- A spaced-repetition study plan for flashcards, and a study streak.
+- Course calendar (list and month-grid views), with configurable alerts and
+  `.ics` export to import into any calendar app.
+- AI-powered forum panel: duplicate-post detection before publishing, thread
+  summaries, and reply suggestions grounded in the course material.
+- 👍/👎 feedback on chat responses.
 
-**Para docentes**
+**For teachers**
 
-- Gestión de material: subida en lote, reemplazo, reindexación y borrado de
-  documentos, con vista previa y resumen automático.
-- Dashboard de Analytics: preguntas más frecuentes, uso diario, distribución
-  de puntajes de quiz, ratio de vacíos de contenido detectados, y exportación
-  del reporte a PDF.
-- Detección de vacíos de contenido: preguntas que el material no pudo
-  responder bien, para saber qué reforzar en la próxima clase.
-- Generador de exámenes a partir del material del curso.
-- Resumen semanal de actividad del foro (digest), con detección de posts que
-  parecen urgentes/frustrados, y notificación opcional a un webhook externo
+- Material management: bulk upload, replace, reindex, and delete documents,
+  with preview and automatic summary.
+- Analytics dashboard: most frequent questions, daily usage, quiz score
+  distribution, detected content-gap ratio, and PDF report export.
+- Content gap detection: questions the material couldn't answer well, to
+  know what to reinforce in the next class.
+- Exam generator based on the course material.
+- Weekly forum activity digest, with detection of posts that look
+  urgent/frustrated, and optional notification to an external webhook
   (Slack, Discord, Teams).
 
-**Transversal**
+**Across the board**
 
-- Modo oscuro y panel de accesibilidad (tamaño de fuente, alto contraste,
-  reducir animaciones).
-- Exportación/eliminación de datos personales (privacidad, GDPR-friendly).
+- Dark mode and an accessibility panel (font size, high contrast, reduced
+  motion).
+- Personal data export/deletion (privacy, GDPR-friendly).
 
-## Instalación
+## Installation
 
-1. Descargá el `.zip` del plugin desde el [directorio oficial de
-   Moodle.org](https://moodle.org/plugins/) (o desde una release de este
-   repositorio).
-2. **Site administration → Plugins → Install plugins** → subí el `.zip` →
-   **Install**.
-3. Moodle detecta el tipo `local` automáticamente y corre el instalador.
+1. Download the plugin `.zip` from the [official Moodle.org
+   directory](https://moodle.org/plugins/) (or from a release of this
+   repository).
+2. **Site administration → Plugins → Install plugins** → upload the `.zip`
+   → **Install**.
+3. Moodle detects the `local` plugin type automatically and runs the
+   installer.
 
-## Configuración
+## Configuration
 
-NexusAI necesita un backend propio corriendo (FastAPI + PostgreSQL/pgvector —
-ver [`services/api`](../../../services/api) en el repositorio para levantarlo).
-Una vez que el backend está corriendo:
+NexusAI needs its own backend running (FastAPI + PostgreSQL/pgvector). See
+the self-hosting guide in the main project repository:
+[`docs/CORRER_PROYECTO.md`](https://github.com/nexusai-ucc/nexusAI/blob/main/NexusAI/docs/CORRER_PROYECTO.md).
+Once the backend is running:
 
 **Site administration → Plugins → Local plugins → NexusAI:**
 
-| Campo | Descripción |
+| Field | Description |
 |---|---|
-| **Backend API URL** | URL donde corre el backend FastAPI (ej. `https://api.tu-institucion.edu`) |
-| **API key** | Valor de `NEXUSAI_API_KEY` configurado en el backend |
-| **Shared secret (HMAC)** | Valor de `NEXUSAI_SHARED_SECRET` configurado en el backend |
+| **Backend API URL** | URL where the FastAPI backend runs (e.g. `https://api.your-institution.edu`) |
+| **API key** | Value of `NEXUSAI_API_KEY` configured on the backend |
+| **Shared secret (HMAC)** | Value of `NEXUSAI_SHARED_SECRET` configured on the backend |
 
-Después de guardar: **Site administration → Development → Purge all caches**.
+After saving: **Site administration → Development → Purge all caches**.
 
 ## Capabilities
 
-| Capability | Rol por defecto | Para qué |
+| Capability | Default role | Purpose |
 |---|---|---|
-| `local/nexusai:use` | student, teacher, manager | Usar el chat, buscador, quizzes, plan de estudio, calendario y foros con IA |
-| `local/nexusai:manage` | editingteacher, manager | Gestionar material, ver Analytics, generar exámenes, configurar el digest de foros |
-| `local/nexusai:viewanalytics` | editingteacher, manager | Ver el dashboard de Analytics del curso |
+| `local/nexusai:use` | student, teacher, manager | Use the chat, search, quizzes, study plan, calendar and AI-powered forums |
+| `local/nexusai:manage` | editingteacher, manager | Manage material, view Analytics, generate exams, configure the forum digest |
+| `local/nexusai:viewanalytics` | editingteacher, manager | View the course Analytics dashboard |
 
-## Compatibilidad
+## Compatibility
 
-- **Moodle:** 4.1 LTS (build 2022112800) hasta 4.5.
+- **Moodle:** 4.1 LTS (build 2022112800) through 4.5.
 - **PHP:** 8.0+.
-- **Base de datos del backend:** PostgreSQL con la extensión `pgvector`.
+- **Backend database:** PostgreSQL with the `pgvector` extension.
 
-## Desarrollo y contribución
+## Support
 
-Para levantar el proyecto completo en local (Docker, backend, build del
-widget React) y contribuir, ver el [`README.md` en la raíz del
-repositorio](../../../../README.md#cómo-correrlo-en-local).
+- Bug reports and feature requests: [issue
+  tracker](https://github.com/nexusai-ucc/moodle-local_nexusai/issues) on
+  this repository.
+- Version history: [`CHANGES.md`](CHANGES.md).
 
-## Licencia
+## Development and contribution
 
-GPL v3 o posterior — ver [`LICENSE`](LICENSE), requerido para publicación en
-el directorio oficial de Moodle.org. El resto del repositorio (backend
-Python) se distribuye bajo licencia MIT — ver el `LICENSE` en la raíz del
-repositorio.
+To run the full project locally (Docker, backend, React widget build) and
+contribute, see the [README at the root of the main
+repository](https://github.com/nexusai-ucc/nexusAI).
+
+## License
+
+GPL v3 or later — see [`LICENSE`](LICENSE), required for publication on the
+official Moodle.org directory. The rest of the repository (Python backend)
+is distributed under the MIT license — see the `LICENSE` file at the root
+of the main repository.

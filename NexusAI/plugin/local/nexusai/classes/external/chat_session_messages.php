@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_chat_session_messages`.
  *
- * Devuelve los mensajes completos de una sesión previa para que el frontend
- * pueda continuar la conversación. El backend valida ownership de la sesión
- * contra el user_id del alumno.
+ * Returns the full messages of a previous session so the frontend can
+ * continue the conversation. The backend validates the session's ownership
+ * against the student's user_id.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Devuelve los mensajes completos de una sesión previa para que el frontend pueda continuar la conversación.
+ * Returns the full messages of a previous session so the frontend can continue the conversation.
  */
 class chat_session_messages extends \external_api {
     /**
@@ -42,8 +42,8 @@ class chat_session_messages extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid'  => new \external_value(PARAM_INT, 'Curso (para capability check)', VALUE_REQUIRED),
-            'sessionid' => new \external_value(PARAM_ALPHANUMEXT, 'UUID de sesión', VALUE_REQUIRED),
+            'courseid'  => new \external_value(PARAM_INT, 'Course (for capability check)', VALUE_REQUIRED),
+            'sessionid' => new \external_value(PARAM_ALPHANUMEXT, 'Session UUID', VALUE_REQUIRED),
         ]);
     }
 
@@ -54,12 +54,12 @@ class chat_session_messages extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'session_id' => new \external_value(PARAM_RAW, 'UUID de la sesión'),
+            'session_id' => new \external_value(PARAM_RAW, 'Session UUID'),
             'messages'   => new \external_multiple_structure(
                 new \external_single_structure([
-                    'id'         => new \external_value(PARAM_ALPHANUMEXT, 'UUID del mensaje'),
+                    'id'         => new \external_value(PARAM_ALPHANUMEXT, 'Message UUID'),
                     'role'       => new \external_value(PARAM_ALPHA, 'user | assistant | system'),
-                    'content'    => new \external_value(PARAM_RAW, 'Texto del mensaje'),
+                    'content'    => new \external_value(PARAM_RAW, 'Message text'),
                     'created_at' => new \external_value(PARAM_RAW, 'ISO timestamp'),
                 ])
             ),
@@ -67,11 +67,11 @@ class chat_session_messages extends \external_api {
     }
 
     /**
-     * Devuelve los mensajes completos de una sesión previa para que el frontend pueda continuar la
-     * conversación.
+     * Returns the full messages of a previous session so the frontend can continue the
+     * conversation.
      *
-     * @param int $courseid Curso (para capability check)
-     * @param string $sessionid UUID de sesión
+     * @param int $courseid Course (for capability check)
+     * @param string $sessionid Session UUID
      * @return array
      */
     public static function execute(int $courseid, string $sessionid): array {

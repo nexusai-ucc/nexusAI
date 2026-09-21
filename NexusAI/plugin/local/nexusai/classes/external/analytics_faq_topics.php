@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_analytics_faq_topics`.
  *
- * Devuelve las preguntas más frecuentes de los alumnos del curso, agrupadas
- * por tema mediante un LLM (DOC-D02). Solo accesible para usuarios con
- * capability `local/nexusai:manage` (docentes y admins).
+ * Returns the course students' most frequent questions, grouped by topic
+ * using an LLM (DOC-D02). Only accessible to users with the
+ * `local/nexusai:manage` capability (teachers and admins).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Devuelve las preguntas más frecuentes de los alumnos del curso, agrupadas por tema mediante un LLM
+ * Returns the course students' most frequent questions, grouped by topic using an LLM
  * (DOC-D02).
  */
 class analytics_faq_topics extends \external_api {
@@ -43,8 +43,8 @@ class analytics_faq_topics extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Días hacia atrás (1..365)', VALUE_DEFAULT, 30),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'days'     => new \external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 30),
         ]);
     }
 
@@ -55,15 +55,15 @@ class analytics_faq_topics extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'course_id'       => new \external_value(PARAM_INT, 'ID del curso'),
-            'days'            => new \external_value(PARAM_INT, 'Ventana temporal'),
-            'total_questions' => new \external_value(PARAM_INT, 'Cantidad de preguntas consideradas'),
+            'course_id'       => new \external_value(PARAM_INT, 'Course ID'),
+            'days'            => new \external_value(PARAM_INT, 'Time window'),
+            'total_questions' => new \external_value(PARAM_INT, 'Number of questions considered'),
             'topics'          => new \external_multiple_structure(
                 new \external_single_structure([
-                    'topic'             => new \external_value(PARAM_RAW, 'Nombre del tema'),
-                    'count'             => new \external_value(PARAM_INT, 'Veces preguntada (sumado dentro del tema)'),
+                    'topic'             => new \external_value(PARAM_RAW, 'Topic name'),
+                    'count'             => new \external_value(PARAM_INT, 'Times asked (summed within the topic)'),
                     'example_questions' => new \external_multiple_structure(
-                        new \external_value(PARAM_RAW, 'Pregunta de ejemplo')
+                        new \external_value(PARAM_RAW, 'Example question')
                     ),
                 ])
             ),
@@ -71,11 +71,11 @@ class analytics_faq_topics extends \external_api {
     }
 
     /**
-     * Devuelve las preguntas más frecuentes de los alumnos del curso, agrupadas por tema mediante un LLM
+     * Returns the course students' most frequent questions, grouped by topic using an LLM
      * (DOC-D02).
      *
-     * @param int $courseid ID del curso
-     * @param int $days Días hacia atrás (1..365)
+     * @param int $courseid Course ID
+     * @param int $days Days back (1..365)
      * @return array
      */
     public static function execute(int $courseid, int $days = 30): array {
@@ -86,7 +86,7 @@ class analytics_faq_topics extends \external_api {
 
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
-        // Solo docentes / admins ven el dashboard de FAQ. Los alumnos no.
+        // Only teachers / admins see the FAQ dashboard. Students don't.
         require_capability('local/nexusai:manage', $context);
 
         $days = max(1, min(365, (int) $params['days']));

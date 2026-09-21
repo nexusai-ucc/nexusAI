@@ -15,17 +15,17 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Tests de la External Function `local_nexusai_document_list`.
+ * Tests for the `local_nexusai_document_list` External Function.
  *
- * Qué se verifica:
- *  1. Que execute_returns() declare todos los campos esperados,
- *     incluyendo los nuevos created_at / updated_at (CONT-05).
- *  2. Que el mapeo del array produzca los campos correctos cuando
- *     el backend devuelve timestamps.
- *  3. Que el mapeo maneje correctamente la ausencia de timestamps
- *     (compatibilidad con backends anteriores a CONT-05).
+ * What's verified:
+ *  1. That execute_returns() declares all expected fields,
+ *     including the new created_at / updated_at (CONT-05).
+ *  2. That the array mapping produces the correct fields when
+ *     the backend returns timestamps.
+ *  3. That the mapping correctly handles the absence of timestamps
+ *     (compat with pre-CONT-05 backends).
  *
- * Estos tests no requieren DB ni contexto Moodle: verifican lógica pura.
+ * These tests need no DB or Moodle context: they verify pure logic.
  *
  * @package    local_nexusai
  * @category   test
@@ -36,21 +36,21 @@
 namespace local_nexusai;
 
 /**
- * Tests de document_list external function.
+ * Tests for the document_list external function.
  *
  * @covers \local_nexusai\external\document_list
  * @runTestsInSeparateProcesses
  */
 final class document_list_test extends \advanced_testcase {
-    // Test 1: estructura de execute_returns().
+    // Test 1: execute_returns() structure.
 
     /**
-     * execute_returns() debe declarar todos los campos requeridos,
-     * incluidos los de CONT-05 (created_at, updated_at).
+     * execute_returns() must declare all required fields, including the
+     * CONT-05 ones (created_at, updated_at).
      *
-     * El contrato es {total, items[]} (paginación, UX-17/#387), no una
-     * lista pelada -- este test asumía la forma vieja, previa a paginación,
-     * y nunca se corrió de verdad hasta ahora (issue #474) para notarlo.
+     * The contract is {total, items[]} (pagination, UX-17/#387), not a
+     * bare list -- this test assumed the old, pre-pagination shape, and
+     * was never actually run until now (issue #474) for anyone to notice.
      */
     public function test_execute_returns_declares_required_fields(): void {
         $returns = \local_nexusai\external\document_list::execute_returns();
@@ -58,7 +58,7 @@ final class document_list_test extends \advanced_testcase {
         $this->assertInstanceOf(
             \external_single_structure::class,
             $returns,
-            'execute_returns() debe retornar external_single_structure con {total, items}'
+            'execute_returns() must return external_single_structure with {total, items}'
         );
 
         $topkeys = $returns->keys;
@@ -69,19 +69,19 @@ final class document_list_test extends \advanced_testcase {
         $this->assertInstanceOf(
             \external_multiple_structure::class,
             $items,
-            'items debe ser external_multiple_structure'
+            'items must be external_multiple_structure'
         );
 
         $inner = $items->content;
         $this->assertInstanceOf(
             \external_single_structure::class,
             $inner,
-            'El contenido de items debe ser external_single_structure'
+            'items\' content must be external_single_structure'
         );
 
         $keys = $inner->keys;
 
-        // Campos base.
+        // Base fields.
         $this->assertArrayHasKey('id', $keys);
         $this->assertArrayHasKey('course_id', $keys);
         $this->assertArrayHasKey('uploader_id', $keys);
@@ -90,24 +90,24 @@ final class document_list_test extends \advanced_testcase {
         $this->assertArrayHasKey('status', $keys);
         $this->assertArrayHasKey('error_message', $keys);
 
-        // CONT-05: campos de timestamps.
+        // CONT-05: timestamp fields.
         $this->assertArrayHasKey(
             'created_at',
             $keys,
-            'created_at debe estar declarado en execute_returns() (CONT-05)'
+            'created_at must be declared in execute_returns() (CONT-05)'
         );
         $this->assertArrayHasKey(
             'updated_at',
             $keys,
-            'updated_at debe estar declarado en execute_returns() (CONT-05)'
+            'updated_at must be declared in execute_returns() (CONT-05)'
         );
     }
 
-    // Test 2: mapeo con timestamps presentes.
+    // Test 2: mapping with timestamps present.
 
     /**
-     * Cuando el backend devuelve created_at y updated_at, el array
-     * mapeado debe incluirlos correctamente.
+     * When the backend returns created_at and updated_at, the mapped
+     * array must include them correctly.
      */
     public function test_mapping_includes_timestamps_when_present(): void {
         $raw = [
@@ -133,21 +133,21 @@ final class document_list_test extends \advanced_testcase {
         $this->assertEquals(
             '2026-05-25T10:00:00+00:00',
             $mapped['created_at'],
-            'created_at debe mapearse desde la respuesta del backend'
+            'created_at must be mapped from the backend response'
         );
         $this->assertEquals(
             '2026-05-25T10:05:30+00:00',
             $mapped['updated_at'],
-            'updated_at debe mapearse desde la respuesta del backend'
+            'updated_at must be mapped from the backend response'
         );
     }
 
-    // Test 3: mapeo sin timestamps (backward compat).
+    // Test 3: mapping without timestamps (backward compat).
 
     /**
-     * Si el backend no devuelve created_at / updated_at (versiones
-     * anteriores a la migración 004), el mapeo debe producir null
-     * en esos campos sin error.
+     * If the backend doesn't return created_at / updated_at (versions
+     * predating migration 004), the mapping must produce null
+     * in those fields with no error.
      */
     public function test_mapping_returns_null_when_timestamps_absent(): void {
         $raw = [
@@ -163,17 +163,17 @@ final class document_list_test extends \advanced_testcase {
 
         $this->assertNull(
             $mapped['created_at'],
-            'created_at debe ser null si no viene en la respuesta del backend'
+            'created_at must be null if it\'s not in the backend response'
         );
         $this->assertNull(
             $mapped['updated_at'],
-            'updated_at debe ser null si no viene en la respuesta del backend'
+            'updated_at must be null if it\'s not in the backend response'
         );
         $this->assertEquals('pending', $mapped['status']);
     }
 
     /**
-     * Lista vacía del backend → resultado vacío sin error.
+     * Empty list from the backend → empty result with no error.
      */
     public function test_mapping_empty_list_returns_empty_array(): void {
         $documents = [];
@@ -186,11 +186,11 @@ final class document_list_test extends \advanced_testcase {
         $this->assertCount(0, $result);
     }
 
-    // Helper: réplica del closure de mapeo de execute().
+    // Helper: replica of execute()'s mapping closure.
 
     /**
-     * Réplica del closure array_map en execute() de document_list.php.
-     * Permite testear la transformación de datos sin necesitar contexto Moodle.
+     * Replica of the array_map closure in document_list.php's execute().
+     * Lets the data transformation be tested without needing a Moodle context.
      */
     private function apply_mapping(array $d): array {
         return [

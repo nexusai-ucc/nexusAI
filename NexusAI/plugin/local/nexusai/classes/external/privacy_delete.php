@@ -17,9 +17,9 @@
 /**
  * External function `local_nexusai_privacy_delete`.
  *
- * Borra el historial personal del alumno (mensajes, errores de quiz) en un
- * curso. Los intentos de quiz se anonimizan, no se borran — ver docstring
- * de app/privacy/router.py en el backend (PRIV-01, issue #310).
+ * Deletes the student's personal history (messages, quiz errors) in a
+ * course. Quiz attempts are anonymized, not deleted — see the docstring
+ * in app/privacy/router.py on the backend (PRIV-01, issue #310).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * Borra el historial personal del alumno (mensajes, errores de quiz) en un curso.
+ * Deletes the student's personal history (messages, quiz errors) in a course.
  */
 class privacy_delete extends \external_api {
     /**
@@ -42,7 +42,7 @@ class privacy_delete extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
@@ -53,19 +53,19 @@ class privacy_delete extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'messages_deleted'         => new \external_value(PARAM_INT, 'Mensajes de chat borrados'),
-            'quiz_errors_deleted'      => new \external_value(PARAM_INT, 'Errores de quiz borrados'),
+            'messages_deleted'         => new \external_value(PARAM_INT, 'Chat messages deleted'),
+            'quiz_errors_deleted'      => new \external_value(PARAM_INT, 'Quiz errors deleted'),
             'quiz_attempts_anonymized' => new \external_value(
                 PARAM_INT,
-                'Intentos de quiz anonimizados (no borrados, ver docstring del backend)'
+                'Quiz attempts anonymized (not deleted, see the backend\'s docstring)'
             ),
         ]);
     }
 
     /**
-     * Borra el historial personal del alumno (mensajes, errores de quiz) en un curso.
+     * Deletes the student's personal history (messages, quiz errors) in a course.
      *
-     * @param int $courseid ID del curso
+     * @param int $courseid Course ID
      * @return array
      */
     public static function execute(int $courseid): array {
@@ -80,8 +80,8 @@ class privacy_delete extends \external_api {
         require_capability('local/nexusai:use', $context);
 
         $client = new backend_client();
-        // Se usa el $USER->id real de la sesión — nunca un parámetro que el alumno
-        // pueda manipular para borrar el historial de otra persona.
+        // Uses the session's real $USER->id — never a parameter the student
+        // could manipulate to delete someone else's history.
         return $client->privacy_delete((int) $USER->id, (int) $params['courseid']);
     }
 }

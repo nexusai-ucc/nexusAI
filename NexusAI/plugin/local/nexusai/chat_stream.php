@@ -15,29 +15,29 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Proxy streaming Server-Sent Events entre el browser y el backend FastAPI.
+ * Server-Sent Events streaming proxy between the browser and the FastAPI backend.
  *
- * Por qué NO es una External Function:
- *   `core/ajax` y el sistema de External Functions de Moodle no soportan
- *   streaming — son request/response JSON-RPC. Para forwardear SSE chunk
- *   por chunk al browser necesitamos un endpoint PHP normal con
- *   `CURLOPT_WRITEFUNCTION` que va escribiendo al output buffer del cliente.
+ * Why this is NOT an External Function:
+ *   Moodle's `core/ajax` and External Functions system don't support
+ *   streaming — they're request/response JSON-RPC. To forward SSE chunk
+ *   by chunk to the browser we need a plain PHP endpoint with
+ *   `CURLOPT_WRITEFUNCTION` that writes straight to the client's output buffer.
  *
  * Auth:
- *   - sesskey (CSRF protection de Moodle, validada con confirm_sesskey).
- *   - require_login() para garantizar sesión válida.
- *   - require_capability local/nexusai:use en el contexto del curso.
- *   - HMAC server-to-server intacto: se firma con el shared_secret y
- *     nunca se expone al browser. Mantenemos el patrón Hybrid PHP Proxy
+ *   - sesskey (Moodle's CSRF protection, validated with confirm_sesskey).
+ *   - require_login() to guarantee a valid session.
+ *   - require_capability local/nexusai:use in the course context.
+ *   - Server-to-server HMAC stays intact: it's signed with the shared_secret
+ *     and never exposed to the browser. We keep the Hybrid PHP Proxy pattern
  *     (ADR-001).
  *
- * Input: form-urlencoded o JSON con los mismos campos que chat_send:
- *   - question (string, requerido)
- *   - courseid (int, requerido)
- *   - sessionid (string|empty) — UUID de sesión existente
+ * Input: form-urlencoded or JSON with the same fields as chat_send:
+ *   - question (string, required)
+ *   - courseid (int, required)
+ *   - sessionid (string|empty) — existing session UUID
  *   - multicourse (bool|0/1) — Feature B
  *
- * Output: stream Server-Sent Events. Cada evento es un line de
+ * Output: Server-Sent Events stream. Each event is a line of
  *   `data: {"type":"token|meta|done|error",...}\n\n`.
  *
  * @package    local_nexusai
@@ -45,9 +45,9 @@
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-// Streaming requiere desactivar el output buffering desde el principio.
-// Constantes deben definirse ANTES de cargar config.php para evitar
-// que Moodle inicialice buffering propio.
+// Streaming requires disabling output buffering from the start.
+// Constants must be defined BEFORE loading config.php to prevent
+// Moodle from initializing its own buffering.
 define('NO_DEBUG_DISPLAY', true);
 define('NO_OUTPUT_BUFFERING', true);
 
@@ -63,13 +63,13 @@ if (isguestuser()) {
 }
 require_sesskey();
 
-// Parsear input.
-// Soporta tanto JSON body como form-urlencoded (mayor flexibilidad para
-// fetch() desde React).
+// Parse input.
+// Supports both a JSON body and form-urlencoded (more flexibility for
+// fetch() from React).
 $rawbody = file_get_contents('php://input');
 $payload = json_decode($rawbody, true);
 if (!is_array($payload)) {
-    // Fallback a $_POST si no es JSON.
+    // Fallback to $_POST if it's not JSON.
     $payload = $_POST;
 }
 
@@ -84,11 +84,11 @@ if ($courseid <= 0) {
     exit;
 }
 
-// Validar capability en el contexto del curso.
+// Validate the capability in the course context.
 $context = context_course::instance($courseid);
 require_capability('local/nexusai:use', $context);
 
-// Validaciones de negocio.
+// Business validations.
 $cleanquestion = trim($question);
 if ($cleanquestion === '') {
     http_response_code(400);
@@ -107,7 +107,7 @@ if ($cleansessionid !== '' && (strlen($cleansessionid) < 8 || strlen($cleansessi
     exit;
 }
 
-// Armar payload para el backend Python.
+// Build the payload for the Python backend.
 $bodyarray = [
     'question'  => $cleanquestion,
     'course_id' => $courseid,
@@ -117,7 +117,7 @@ if ($cleansessionid !== '') {
     $bodyarray['session_id'] = $cleansessionid;
 }
 
-// Feature B: resolver cursos del alumno si multicourse=true.
+// Feature B: resolve the student's courses if multicourse=true.
 if ($multicourse) {
     $enrolled = enrol_get_users_courses(
         (int) $USER->id,
@@ -129,11 +129,11 @@ if ($multicourse) {
     foreach ($enrolled as $course) {
         $cid = (int) $course->id;
         $courseids[] = $cid;
-        $coursenames[(string) $cid] = $course->fullname ?? $course->shortname ?? 'Materia';
+        $coursenames[(string) $cid] = $course->fullname ?? $course->shortname ?? 'Course';
     }
     if (empty($courseids)) {
         $courseids   = [$courseid];
-        $coursenames = [(string) $courseid => 'Materia actual'];
+        $coursenames = [(string) $courseid => 'Current course'];
     }
     $bodyarray['course_id']    = (int) $courseids[0];
     $bodyarray['course_ids']   = $courseids;
@@ -147,10 +147,10 @@ if ($body === false) {
     exit;
 }
 
-// Config del backend (igual que backend_client).
-$endpoint = rtrim((string) get_config('local_nexusai', 'api_endpoint'), '/');
-$apikey   = (string) get_config('local_nexusai', 'api_key');
-$secret   = (string) get_config('local_nexusai', 'shared_secret');
+// Backend config (same as backend_client).
+$endpoint = rtrim(trim((string) get_config('local_nexusai', 'api_endpoint')), '/');
+$apikey   = trim((string) get_config('local_nexusai', 'api_key'));
+$secret   = trim((string) get_config('local_nexusai', 'shared_secret'));
 
 if ($endpoint === '' || $apikey === '' || $secret === '') {
     http_response_code(500);
@@ -158,40 +158,39 @@ if ($endpoint === '' || $apikey === '' || $secret === '') {
     exit;
 }
 
-// HMAC, mismo ordering que backend_client::compute_signature.
+// HMAC, same ordering as backend_client::compute_signature.
 $timestamp = (string) time();
 $nonce     = bin2hex(random_bytes(16));
 $signature = hash_hmac('sha256', $timestamp . $nonce . $body, $secret);
 
-// Headers SSE al browser ANTES de empezar el cURL.
-// CRÍTICO: tienen que ir antes del primer echo/flush, y NO debe haber
-// output buffering por delante.
+// SSE headers to the browser BEFORE starting cURL.
+// CRITICAL: these must come before the first echo/flush, and there must be
+// NO output buffering ahead of them.
 @header('Content-Type: text/event-stream');
 @header('Cache-Control: no-cache');
-@header('X-Accel-Buffering: no');  // Por si nginx está delante.
+@header('X-Accel-Buffering: no');  // In case nginx is in front.
 
-// Flush cualquier output buffer pendiente de Moodle/PHP. Sin esto los chunks
-// se acumulan en memoria y el browser los recibe todos juntos al final.
+// Flush any pending Moodle/PHP output buffer. Without this the chunks pile
+// up in memory and the browser receives them all at once at the end.
 while (ob_get_level() > 0) {
     @ob_end_flush();
 }
 @ob_implicit_flush(true);
 
-// Uso de cURL al backend Python con WRITEFUNCTION.
-// Usamos curl_* de PHP directamente (no la clase \curl de Moodle) porque
-// necesitamos CURLOPT_WRITEFUNCTION para forwardear chunks tal como llegan.
+// A cURL call to the Python backend with WRITEFUNCTION.
+// We use PHP's curl_* directly (not Moodle's \curl class) because we need
+// CURLOPT_WRITEFUNCTION to forward chunks as they arrive.
 //
-// FEAT-06 (#481, límite diario): antes de esto, un error del backend que NO
-// llegaba en formato SSE (ej. un 429 de rate limit, que FastAPI devuelve
-// como JSON plano `{"detail":{...}}`, no como `data: {...}\n\n`) se
-// reenviaba tal cual al browser. El parser SSE de React descarta en
-// silencio cualquier línea que no empiece con "data:", así que el alumno
-// se quedaba con el indicador de "escribiendo" colgado para siempre, sin
-// ningún error visible — el 429 nunca llegaba a mostrarse. Para evitarlo,
-// inspeccionamos el status real de la respuesta con CURLOPT_HEADERFUNCTION
-// ANTES de reenviar cuerpo: si no es 2xx, bufferizamos el body (es un JSON
-// chico, no un stream real) y lo reformateamos como un evento SSE de error
-// bien armado en vez de pasarlo crudo.
+// FEAT-06 (#481, daily limit): before this, a backend error that did NOT
+// arrive in SSE format (e.g. a 429 rate limit, which FastAPI returns as
+// plain JSON `{"detail":{...}}`, not as `data: {...}\n\n`) was forwarded
+// as-is to the browser. React's SSE parser silently discards any line that
+// doesn't start with "data:", so the student was left with the "typing"
+// indicator stuck forever, with no visible error — the 429 never got
+// shown. To avoid this, we inspect the response's real status with
+// CURLOPT_HEADERFUNCTION BEFORE forwarding the body: if it's not 2xx, we
+// buffer the body (it's a small JSON, not a real stream) and reformat it
+// as a properly-built SSE error event instead of passing it through raw.
 $httpstatus = null;
 $errorbuffer = '';
 
@@ -207,22 +206,23 @@ curl_setopt_array($ch, [
         'X-Nonce: '     . $nonce,
         'X-Signature: ' . $signature,
         'Accept: text/event-stream',
+        'Accept-Language: ' . \local_nexusai\external\backend_client::interface_language(),
     ],
     CURLOPT_TIMEOUT        => 300,
     CURLOPT_CONNECTTIMEOUT => 10,
     CURLOPT_RETURNTRANSFER => false,
-    // Se ejecuta por cada línea de header que llega — usamos la primera
-    // "HTTP/x.x <status>" para saber si el backend respondió 2xx (stream
-    // real) o un error (JSON plano, hay que bufferizar y reformatear).
+    // Runs for every incoming header line — we use the first
+    // "HTTP/x.x <status>" to know whether the backend replied 2xx (a real
+    // stream) or an error (plain JSON, needs buffering and reformatting).
     CURLOPT_HEADERFUNCTION => function ($curl, $headerline) use (&$httpstatus) {
         if ($httpstatus === null && preg_match('#^HTTP/\S+\s+(\d{3})#', $headerline, $m)) {
             $httpstatus = (int) $m[1];
         }
         return strlen($headerline);
     },
-    // Callback que se ejecuta cada vez que llegan bytes del backend. Si ya
-    // sabemos que la respuesta no es 2xx, acumulamos en vez de reenviar
-    // (mejor esfuerzo: por si el error viniera en varios chunks).
+    // Callback that runs every time bytes arrive from the backend. If we
+    // already know the response isn't 2xx, we accumulate instead of
+    // forwarding (best effort: in case the error arrives across several chunks).
     CURLOPT_WRITEFUNCTION  => function ($curl, $chunk) use (&$httpstatus, &$errorbuffer) {
         if ($httpstatus !== null && $httpstatus >= 400) {
             $errorbuffer .= $chunk;
@@ -238,7 +238,7 @@ $ok = curl_exec($ch);
 
 if ($ok === false) {
     $err = curl_error($ch);
-    // Si ya hubo un primer flush, mandamos un evento de error SSE inline.
+    // If a first flush already happened, send an inline SSE error event.
     echo "data: " . json_encode([
         'type'   => 'error',
         'detail' => 'backend_unreachable: ' . substr($err, 0, 200),

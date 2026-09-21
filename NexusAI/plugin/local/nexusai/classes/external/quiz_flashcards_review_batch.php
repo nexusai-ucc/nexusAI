@@ -17,10 +17,9 @@
 /**
  * External function `local_nexusai_quiz_flashcards_review_batch`.
  *
- * SP-11 (#315): aplica repetición espaciada (SM-2) sobre el resultado de
- * autoevaluación de una sesión de flashcards. Se llama una sola vez al
- * final de la sesión (mismo patrón que quiz_attempt_save/quiz_errors_record),
- * no por tarjeta.
+ * SP-11 (#315): applies spaced repetition (SM-2) over the self-assessment
+ * result of a flashcards session. Called once at the end of the session
+ * (same pattern as quiz_attempt_save/quiz_errors_record), not per card.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -33,8 +32,8 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * SP-11 (#315): aplica repetición espaciada (SM-2) sobre el resultado de autoevaluación de una sesión de
- * flashcards.
+ * SP-11 (#315): applies spaced repetition (SM-2) over the self-assessment result of a
+ * flashcards session.
  */
 class quiz_flashcards_review_batch extends \external_api {
     /**
@@ -44,13 +43,13 @@ class quiz_flashcards_review_batch extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
             'reviews'  => new \external_multiple_structure(
                 new \external_single_structure([
-                    'flashcardid' => new \external_value(PARAM_ALPHANUMEXT, 'ID de la flashcard (UUID)', VALUE_REQUIRED),
-                    'knewit'      => new \external_value(PARAM_BOOL, 'true = la sabía, false = no la sabía', VALUE_REQUIRED),
+                    'flashcardid' => new \external_value(PARAM_ALPHANUMEXT, 'Flashcard ID (UUID)', VALUE_REQUIRED),
+                    'knewit'      => new \external_value(PARAM_BOOL, 'true = knew it, false = didn\'t know it', VALUE_REQUIRED),
                 ]),
-                'Resultado de autoevaluación por flashcard'
+                'Self-assessment result per flashcard'
             ),
         ]);
     }
@@ -62,16 +61,16 @@ class quiz_flashcards_review_batch extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'updated' => new \external_value(PARAM_INT, 'Cantidad de flashcards con estado actualizado'),
+            'updated' => new \external_value(PARAM_INT, 'Number of flashcards with updated state'),
         ]);
     }
 
     /**
-     * SP-11 (#315): aplica repetición espaciada (SM-2) sobre el resultado de autoevaluación de una sesión de
-     * flashcards.
+     * SP-11 (#315): applies spaced repetition (SM-2) over the self-assessment result of a
+     * flashcards session.
      *
-     * @param int $courseid ID del curso
-     * @param array $reviews Resultado de autoevaluación por flashcard
+     * @param int $courseid Course ID
+     * @param array $reviews Self-assessment result per flashcard
      * @return array
      */
     public static function execute(int $courseid, array $reviews): array {
@@ -90,7 +89,7 @@ class quiz_flashcards_review_batch extends \external_api {
             return ['updated' => 0];
         }
 
-        // Tope defensivo: una sesión de flashcards no debería tener más de 50.
+        // Defensive cap: a flashcards session shouldn't have more than 50.
         $cleanreviews = array_slice($params['reviews'], 0, 50);
         $cleanreviews = array_map(static fn(array $r): array => [
             'flashcard_id' => (string) $r['flashcardid'],

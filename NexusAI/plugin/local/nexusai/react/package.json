@@ -2,7 +2,7 @@
   "name": "local_nexusai-react",
   "version": "0.1.0",
   "private": true,
-  "description": "React widget embebido en el plugin Moodle local_nexusai. Compila a un bundle AMD único en ../amd/build/.",
+  "description": "React widget embedded in the local_nexusai Moodle plugin. Compiles to a single AMD bundle in ../amd/build/.",
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack --mode development --watch",

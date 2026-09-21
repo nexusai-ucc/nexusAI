@@ -17,8 +17,8 @@
 /**
  * External function `local_nexusai_calendar_feed_url`.
  *
- * Devuelve la URL del feed .ics suscribible del alumno para un curso
- * (CAL-07 / #377). Crea el token del alumno si todavía no tiene uno.
+ * Returns the URL of the student's subscribable .ics feed for a course
+ * (CAL-07 / #377). Creates the student's token if they don't have one yet.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -33,7 +33,7 @@ require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 require_once($GLOBALS['CFG']->dirroot . '/local/nexusai/lib.php');
 
 /**
- * Devuelve la URL del feed .ics suscribible del alumno para un curso (CAL-07 / #377).
+ * Returns the URL of the student's subscribable .ics feed for a course (CAL-07 / #377).
  */
 class calendar_feed_url extends \external_api {
     /**
@@ -43,7 +43,7 @@ class calendar_feed_url extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
@@ -54,14 +54,14 @@ class calendar_feed_url extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'url' => new \external_value(PARAM_RAW, 'URL absoluta del feed .ics'),
+            'url' => new \external_value(PARAM_RAW, 'Absolute .ics feed URL'),
         ]);
     }
 
     /**
-     * Devuelve la URL del feed .ics suscribible del alumno para un curso (CAL-07 / #377).
+     * Returns the URL of the student's subscribable .ics feed for a course (CAL-07 / #377).
      *
-     * @param int $courseid ID del curso
+     * @param int $courseid Course ID
      * @return array
      */
     public static function execute(int $courseid): array {

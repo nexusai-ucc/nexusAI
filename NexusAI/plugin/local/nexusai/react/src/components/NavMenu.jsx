@@ -26,6 +26,7 @@ export default function NavMenu({ open, onClose, activeTab, onSelect, isTeacher 
     if (!open) return null;
 
     const title = lang === "es" ? "Ir a" : "Go to";
+    const closeLabel = lang === "es" ? "Cerrar" : "Close";
 
     return (
         <div className="nexusai-navmenu">
@@ -35,7 +36,7 @@ export default function NavMenu({ open, onClose, activeTab, onSelect, isTeacher 
                     type="button"
                     className="nexusai-navmenu__close"
                     onClick={onClose}
-                    aria-label="Cerrar"
+                    aria-label={closeLabel}
                 >×</button>
             </div>
 

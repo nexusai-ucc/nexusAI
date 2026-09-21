@@ -39,7 +39,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import Annotated, Any, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy import delete, desc, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -62,6 +62,7 @@ from app.db.session import get_db
 from app.documents.retriever import retrieve_context
 from app.providers.embeddings import EmbeddingProvider, get_embedding_provider
 from app.providers.llm import LLMProvider, get_llm_provider
+from app.shared.language import localized, resolve_language, with_language_directive
 from app.shared.config import get_settings
 from app.shared.moderation import moderate_text
 
@@ -606,6 +607,7 @@ async def _run_quiz_generation(
     messages = _build_quiz_prompt(
         chunks, num_questions, topic, question_type, difficulty, focus_labels
     )
+    messages = with_language_directive(messages, *(text for _, text in chunks))
     try:
         result = await llm.chat_completion(
             messages,
@@ -946,8 +948,10 @@ def _build_quiz_prompt(
 
     system = (
         f"Sos un generador de quizzes académicos de NexusAI. "
-        f"Producís preguntas de {type_desc} en español, basadas estrictamente "
-        "en el material académico del curso del alumno. Tu salida es JSON.\n\n"
+        f"Producís preguntas de {type_desc} basadas estrictamente "
+        "en el material académico del curso del alumno. Escribí las preguntas, "
+        "las opciones y las explicaciones en el mismo idioma que el material "
+        "(si mezcla idiomas, usá el predominante). Tu salida es JSON.\n\n"
         f"{difficulty_line}\n\n"
         "REGLA CRÍTICA: Solo podés generar preguntas sobre contenido que esté "
         "explícita y directamente presente en el material entregado.\n"
@@ -983,6 +987,7 @@ def _build_quiz_prompt(
 async def generate_quiz(
     payload: QuizRequest,
     _body: Annotated[bytes, Depends(verify_hmac)],
+    request: Request,
     db: AsyncSession = Depends(get_db),
     llm: LLMProvider = Depends(get_llm_provider),
     embeddings: EmbeddingProvider = Depends(get_embedding_provider),
@@ -1066,9 +1071,12 @@ async def generate_quiz(
         if not answer.startswith("YES"):
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=(
+                detail=localized(
+                    resolve_language(request, topic),
                     f"No encontré material sobre '{topic}' en los archivos del curso. "
-                    "Intentá con un tema que esté cubierto en los archivos indexados."
+                    "Intentá con un tema que esté cubierto en los archivos indexados.",
+                    f"I couldn't find material about '{topic}' in the course files. "
+                    "Try a topic that is covered in the indexed files.",
                 ),
             )
 
@@ -1080,7 +1088,11 @@ async def generate_quiz(
     if not chunks:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Este curso todavía no tiene material indexado para generar un quiz.",
+            detail=localized(
+                resolve_language(request),
+                "Este curso todavía no tiene material indexado para generar un quiz.",
+                "This course doesn't have indexed material yet to generate a quiz.",
+            ),
         )
 
     # 2) Pedir al LLM la generación + parseo/validación/enriquecimiento (compartido con /generate-exam).
@@ -1113,6 +1125,7 @@ async def generate_quiz(
 async def generate_exam(
     payload: ExamGenerateRequest,
     _body: Annotated[bytes, Depends(verify_hmac)],
+    request: Request,
     db: AsyncSession = Depends(get_db),
     llm: LLMProvider = Depends(get_llm_provider),
 ) -> QuizResponse:
@@ -1135,7 +1148,11 @@ async def generate_exam(
     if not chunks:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Los archivos seleccionados no tienen material indexado en este curso.",
+            detail=localized(
+                resolve_language(request),
+                "Los archivos seleccionados no tienen material indexado en este curso.",
+                "The selected files have no indexed material in this course.",
+            ),
         )
 
     questions = await _run_quiz_generation(
@@ -1190,11 +1207,11 @@ async def evaluate_open_answer(
                 "Evaluás respuestas abiertas de alumnos comparándolas con el contenido del curso. "
                 "Tu salida es JSON.\n\n"
                 "Devolvé EXCLUSIVAMENTE un JSON con esta forma exacta:\n"
-                '{"correct": true, "score": 0.85, "feedback": "<feedback detallado en español>"}\n'
+                '{"correct": true, "score": 0.85, "feedback": "<feedback detallado>"}\n'
                 "- correct: true si el alumno demostró comprensión del concepto principal.\n"
                 "- score: valor entre 0.0 y 1.0 representando la calidad de la respuesta.\n"
-                "- feedback: feedback constructivo en español; mencioná qué estuvo bien, "
-                "qué faltó y cuál es la respuesta correcta completa."
+                "- feedback: feedback constructivo, en el mismo idioma que el material del curso; "
+                "mencioná qué estuvo bien, qué faltó y cuál es la respuesta correcta completa."
             ),
         },
         {
@@ -1207,6 +1224,9 @@ async def evaluate_open_answer(
             ),
         },
     ]
+    messages = with_language_directive(
+        messages, payload.question, payload.model_answer, payload.user_answer
+    )
 
     try:
         result = await llm.chat_completion(
@@ -1436,9 +1456,10 @@ async def review_suggestions(
                 "Tu salida es JSON.\n\n"
                 "Devolvé EXCLUSIVAMENTE un JSON con esta forma exacta:\n"
                 '{"suggestions": [{"group": 0, "topic": "<subtema en 3-6 palabras>", '
-                '"suggestion": "<2-4 oraciones en español, concretas y accionables>"}]}\n'
+                '"suggestion": "<2-4 oraciones, concretas y accionables>"}]}\n'
                 "- topic: nombrá el/los conceptos puntuales que fallan, NO el nombre del archivo.\n"
                 "- suggestion: explicá qué patrón de error ves y qué debería releer/practicar.\n"
+                "- Escribí topic y suggestion en el mismo idioma que las preguntas recibidas.\n"
                 "- Devolvé un objeto de 'suggestions' por cada grupo recibido, con el mismo índice 'group'."
             ),
         },
@@ -1447,6 +1468,15 @@ async def review_suggestions(
             "content": "\n\n".join(prompt_blocks),
         },
     ]
+    messages = with_language_directive(
+        messages,
+        *(
+            text
+            for g in top_groups
+            for sample in g["samples"]
+            for text in (sample["question"], sample["explanation"])
+        ),
+    )
 
     try:
         result_llm = await llm.chat_completion(
@@ -1763,6 +1793,16 @@ async def study_plan(
             "content": "\n\n".join(prompt_blocks),
         },
     ]
+    messages = with_language_directive(
+        messages,
+        *(
+            text
+            for g in top_quiz_groups
+            for sample in g["samples"]
+            for text in (sample["question"], sample["explanation"])
+        ),
+        *(g["question"] for g in top_gap_groups),
+    )
 
     try:
         result_llm = await llm.chat_completion(

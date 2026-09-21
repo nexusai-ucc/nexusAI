@@ -17,8 +17,8 @@
 /**
  * External function `local_nexusai_dismiss_pending_upload`.
  *
- * El docente eligió NO indexar el archivo en NexusAI.
- * Solo elimina la entrada de la user preference sin enviar nada al backend.
+ * The teacher chose NOT to index the file in NexusAI.
+ * Just removes the entry from the user preference without sending anything to the backend.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 
 /**
- * El docente eligió NO indexar el archivo en NexusAI.
+ * The teacher chose NOT to index the file in NexusAI.
  */
 class dismiss_pending_upload extends \external_api {
     /**
@@ -42,7 +42,7 @@ class dismiss_pending_upload extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'cmid' => new \external_value(PARAM_INT, 'Course module ID del recurso a descartar', VALUE_REQUIRED),
+            'cmid' => new \external_value(PARAM_INT, 'Course module ID of the resource to dismiss', VALUE_REQUIRED),
         ]);
     }
 
@@ -53,14 +53,14 @@ class dismiss_pending_upload extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'success' => new \external_value(PARAM_BOOL, 'Siempre true'),
+            'success' => new \external_value(PARAM_BOOL, 'Always true'),
         ]);
     }
 
     /**
-     * El docente eligió NO indexar el archivo en NexusAI.
+     * The teacher chose NOT to index the file in NexusAI.
      *
-     * @param int $cmid Course module ID del recurso a descartar
+     * @param int $cmid Course module ID of the resource to dismiss
      * @return array
      */
     public static function execute(int $cmid): array {
@@ -68,9 +68,9 @@ class dismiss_pending_upload extends \external_api {
             'cmid' => $cmid,
         ]);
 
-        // No necesitamos validar capability aquí: el peor caso es que alguien
-        // borre una preference propia. Aun así, require login está garantizado
-        // por loginrequired: true en services.php.
+        // No need to validate a capability here: the worst case is someone
+        // deletes their own preference. require_login is still guaranteed
+        // by loginrequired: true in services.php.
         $raw     = get_user_preferences(\local_nexusai\observer::PENDING_PREF, '{}');
         $pending = json_decode($raw, true);
         if (!is_array($pending)) {

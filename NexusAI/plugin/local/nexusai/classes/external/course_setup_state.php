@@ -17,18 +17,18 @@
 /**
  * External function `local_nexusai_course_setup_state` (ONB-02 / #425).
  *
- * Agrega en una sola llamada el "estado de setup" de un curso: qué le falta
- * armar al docente. Alimenta el tutorial de creación (ONB-03) y el modo
- * revisión al editar (ONB-04).
+ * Aggregates a course's "setup state" in a single call: what's still missing
+ * for the teacher to set up. Feeds the creation tutorial (ONB-03) and the
+ * review mode when editing (ONB-04).
  *
- * Todas las señales de Moodle se resuelven **in-process** (sin webservices
- * remotos): secciones con contenido, grupos, alumnos matriculados, foros y
- * eventos de calendario. La única señal externa es "material indexado en
- * NexusAI", que viene del backend Python vía `backend_client::get_course_stats`
- * — si el backend no responde, esa señal degrada a `present = null` y el
- * resto de la respuesta sigue siendo válida.
+ * All Moodle signals are resolved **in-process** (no remote webservices):
+ * sections with content, groups, enrolled students, forums and calendar
+ * events. The only external signal is "material indexed in NexusAI", which
+ * comes from the Python backend via `backend_client::get_course_stats`
+ * — if the backend doesn't respond, that signal degrades to `present = null`
+ * and the rest of the response stays valid.
  *
- * Es **100% lectura**: no escribe nada en Moodle (ver ADR-010).
+ * It's **100% read-only**: it doesn't write anything to Moodle (see ADR-010).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -44,7 +44,7 @@ require_once($GLOBALS['CFG']->dirroot . '/group/lib.php');
 require_once($GLOBALS['CFG']->dirroot . '/calendar/lib.php');
 
 /**
- * Agrega en una sola llamada el "estado de setup" de un curso: qué le falta armar al docente.
+ * Aggregates a course's "setup state" in a single call: what's still missing for the teacher to set up.
  */
 class course_setup_state extends \external_api {
     /**
@@ -54,25 +54,25 @@ class course_setup_state extends \external_api {
      */
     public static function execute_parameters(): \external_function_parameters {
         return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso', VALUE_REQUIRED),
+            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
     /**
-     * Estructura de una señal individual: presente + conteo.
+     * Structure of an individual signal: present + count.
      *
-     * `present` admite null solo en la señal `material` (backend caído).
+     * `present` allows null only on the `material` signal (backend down).
      */
     private static function signal_structure(string $desc, bool $nullablepresent = false): \external_single_structure {
         return new \external_single_structure([
             'present' => new \external_value(
                 PARAM_BOOL,
-                $desc . ' — presente',
+                $desc . ' — present',
                 $nullablepresent ? VALUE_DEFAULT : VALUE_REQUIRED,
                 null,
                 $nullablepresent ? NULL_ALLOWED : NULL_NOT_ALLOWED
             ),
-            'count'   => new \external_value(PARAM_INT, $desc . ' — cantidad', VALUE_DEFAULT, 0),
+            'count'   => new \external_value(PARAM_INT, $desc . ' — count', VALUE_DEFAULT, 0),
         ]);
     }
 
@@ -83,20 +83,20 @@ class course_setup_state extends \external_api {
      */
     public static function execute_returns(): \external_single_structure {
         return new \external_single_structure([
-            'courseid' => new \external_value(PARAM_INT, 'ID del curso consultado'),
-            'sections' => self::signal_structure('Secciones con al menos una actividad/recurso'),
-            'groups'   => self::signal_structure('Grupos definidos en el curso'),
-            'students' => self::signal_structure('Alumnos matriculados (rol con arquetipo student)'),
-            'forums'   => self::signal_structure('Foros del curso'),
-            'calendar' => self::signal_structure('Eventos de calendario propios del curso'),
-            'material' => self::signal_structure('Material indexado en NexusAI', true),
+            'courseid' => new \external_value(PARAM_INT, 'Queried course ID'),
+            'sections' => self::signal_structure('Sections with at least one activity/resource'),
+            'groups'   => self::signal_structure('Groups defined in the course'),
+            'students' => self::signal_structure('Enrolled students (role with student archetype)'),
+            'forums'   => self::signal_structure('Course forums'),
+            'calendar' => self::signal_structure('Course\'s own calendar events'),
+            'material' => self::signal_structure('Material indexed in NexusAI', true),
         ]);
     }
 
     /**
-     * Agrega en una sola llamada el "estado de setup" de un curso: qué le falta armar al docente.
+     * Aggregates a course's "setup state" in a single call: what's still missing for the teacher to set up.
      *
-     * @param int $courseid ID del curso
+     * @param int $courseid Course ID
      * @return array
      */
     public static function execute(int $courseid): array {
@@ -114,17 +114,17 @@ class course_setup_state extends \external_api {
     }
 
     /**
-     * Junta las 5 señales que viven en Moodle. Separado de execute() para
-     * poder testearlo con un curso generado sin depender del backend.
+     * Gathers the 5 signals that live in Moodle. Separated from execute() so
+     * it can be tested with a generated course without depending on the backend.
      *
      * @param int        $courseid
-     * @param \context    $context  Contexto del curso (para contar matrícula).
+     * @param \context    $context  Course context (to count enrolment).
      * @return array{sections:array, groups:array, students:array, forums:array, calendar:array}
      */
     public static function gather_moodle_signals(int $courseid, \context $context): array {
         global $DB;
 
-        // Secciones con contenido (al menos un módulo, oculto o no).
+        // Sections with content (at least one module, hidden or not).
         $modinfo = get_fast_modinfo($courseid);
         $sectionswithcontent = 0;
         foreach ($modinfo->get_sections() as $cmids) {
@@ -133,19 +133,19 @@ class course_setup_state extends \external_api {
             }
         }
 
-        // Grupos.
+        // Groups.
         $groupcount = count(groups_get_all_groups($courseid));
 
-        // Alumnos matriculados (solo roles con arquetipo student).
+        // Enrolled students (only roles with the student archetype).
         $studentroles = array_keys(get_archetype_roles('student'));
         $studentcount = empty($studentroles)
             ? 0
             : count_role_users($studentroles, $context);
 
-        // Foros.
+        // Forums.
         $forumcount = $DB->count_records('forum', ['course' => $courseid]);
 
-        // Eventos de calendario propios del curso (no los de usuario).
+        // The course's own calendar events (not the user's).
         $calendarcount = $DB->count_records_select(
             'event',
             "courseid = :courseid AND eventtype <> 'user'",
@@ -162,7 +162,7 @@ class course_setup_state extends \external_api {
     }
 
     /**
-     * Construye una señal a partir de un conteo: present = count > 0.
+     * Builds a signal from a count: present = count > 0.
      */
     public static function signal(int $count): array {
         $count = max(0, $count);
@@ -170,10 +170,10 @@ class course_setup_state extends \external_api {
     }
 
     /**
-     * Traduce la respuesta de `/courses/{id}/stats` a una señal. `null` (el
-     * backend no respondió) → present desconocido.
+     * Translates the `/courses/{id}/stats` response into a signal. `null` (the
+     * backend didn't respond) → present unknown.
      *
-     * @param array|null $stats Respuesta del backend o null si falló.
+     * @param array|null $stats Backend response, or null if it failed.
      * @return array{present:bool|null, count:int}
      */
     public static function material_signal(?array $stats): array {
@@ -188,9 +188,9 @@ class course_setup_state extends \external_api {
     }
 
     /**
-     * Pide las stats de material al backend. Cualquier fallo (config
-     * incompleta, backend caído, timeout) devuelve null en lugar de romper
-     * toda la external function.
+     * Requests material stats from the backend. Any failure (incomplete
+     * config, backend down, timeout) returns null instead of breaking the
+     * whole external function.
      *
      * @param int $courseid
      * @return array|null
@@ -200,7 +200,7 @@ class course_setup_state extends \external_api {
             return (new backend_client())->get_course_stats($courseid);
         } catch (\Throwable $e) {
             debugging(
-                'local_nexusai course_setup_state: no se pudo obtener course stats: ' . $e->getMessage(),
+                'local_nexusai course_setup_state: could not fetch course stats: ' . $e->getMessage(),
                 DEBUG_DEVELOPER
             );
             return null;

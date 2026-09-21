@@ -15,24 +15,24 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Aislamiento multi-curso (QA-02, issue #312).
+ * Multi-course isolation (QA-02, issue #312).
  *
- * Muestra representativa de external functions `local/nexusai:use` +
- * `courseid` sin cobertura previa: un alumno matriculado SOLO en el curso
- * A, llamando con el courseid de un curso B real donde no tiene ningún rol
- * asignado, debe ser rechazado. El sistema de capabilities de Moodle ya lo
- * garantiza por contexto (un rol asignado en el contexto del curso A no
- * otorga nada en el contexto del curso B) — este test lo confirma
- * explícitamente por primera vez para estas funciones, sin necesitar
- * mockear backend_client.
+ * Representative sample of external functions with `local/nexusai:use` +
+ * `courseid` and no previous coverage: a student enrolled ONLY in course A,
+ * calling with the courseid of a real course B where they have no role
+ * assigned, must be rejected. Moodle's capability system already
+ * guarantees this per context (a role assigned in course A's context
+ * grants nothing in course B's context) — this test confirms it
+ * explicitly for the first time for these functions, without needing to
+ * mock backend_client.
  *
- * La excepción real es `require_login_exception`, no `required_capability_exception`:
- * `validate_context()` llama internamente a `require_login()` para un contexto de
- * curso, que verifica matriculación ANTES de que execute() llegue a
- * `require_capability()` — un alumno no matriculado nunca pasa de ahí, así que la
- * capability ni se evalúa (confirmado corriendo el test de verdad por primera vez,
- * issue #474; el comentario original asumía que era require_capability() la que
- * tiraba).
+ * The actual exception is `require_login_exception`, not `required_capability_exception`:
+ * `validate_context()` internally calls `require_login()` for a course
+ * context, which checks enrolment BEFORE execute() reaches
+ * `require_capability()` — a non-enrolled student never gets past that, so
+ * the capability isn't even evaluated (confirmed by actually running the
+ * test for the first time, issue #474; the original comment assumed it was
+ * require_capability() that threw).
  *
  * @package    local_nexusai
  * @category   test
@@ -43,7 +43,7 @@
 namespace local_nexusai;
 
 /**
- * Verifica aislamiento multi-curso en una muestra de external functions (QA-02, #312).
+ * Verifies multi-course isolation across a sample of external functions (QA-02, #312).
  *
  * @covers \local_nexusai\external\chat_send
  * @covers \local_nexusai\external\quiz_generate
@@ -53,8 +53,8 @@ namespace local_nexusai;
  */
 final class course_isolation_test extends \advanced_testcase {
     /**
-     * Alumno matriculado SOLO en $courseA (rol student). $courseB existe
-     * de verdad pero es ajeno — el alumno no tiene ningún rol ahí.
+     * Student enrolled ONLY in $courseA (student role). $courseB really
+     * exists but is unrelated — the student has no role there.
      *
      * @return array{0: \stdClass, 1: \stdClass, 2: \stdClass} [$courseA, $courseB, $student]
      */
@@ -107,12 +107,12 @@ final class course_isolation_test extends \advanced_testcase {
     }
 
     /**
-     * Control positivo: el MISMO alumno sí pasa la validación de capability
-     * para su propio curso — confirma que los 4 tests de arriba prueban
-     * aislamiento real y no un error de parámetros/typo que tira por
-     * cualquier motivo. Sin backend real en este entorno de test, se
-     * espera que falle más adelante (config de backend_client ausente,
-     * moodle_exception) — nunca por capability.
+     * Positive control: the SAME student DOES pass the capability check
+     * for their own course — confirms the 4 tests above are testing real
+     * isolation and not some parameter/typo error that throws for any
+     * reason. With no real backend in this test environment, it's expected
+     * to fail further down the line (missing backend_client config,
+     * moodle_exception) — never because of capability.
      */
     public function test_quiz_generate_passes_capability_check_for_the_students_own_course(): void {
         $this->resetAfterTest();
@@ -120,13 +120,13 @@ final class course_isolation_test extends \advanced_testcase {
 
         try {
             \local_nexusai\external\quiz_generate::execute($coursea->id);
-            $this->fail('Se esperaba una excepción al llegar a backend_client (sin config en el entorno de test)');
+            $this->fail('Expected an exception when reaching backend_client (no config in the test environment)');
         } catch (\required_capability_exception $e) {
-            $this->fail('No debería fallar por capability en el curso propio del alumno: ' . $e->getMessage());
+            $this->fail('Should not fail on capability for the student\'s own course: ' . $e->getMessage());
         } catch (\Throwable $e) {
-            // Cualquier otra excepción (típicamente moodle_exception por
-            // falta de config de backend_client) confirma que la
-            // capability SÍ se validó correctamente antes de llegar acá.
+            // Any other exception (typically a moodle_exception due to
+            // missing backend_client config) confirms the capability WAS
+            // validated correctly before reaching here.
             $this->assertNotInstanceOf(\required_capability_exception::class, $e);
         }
     }

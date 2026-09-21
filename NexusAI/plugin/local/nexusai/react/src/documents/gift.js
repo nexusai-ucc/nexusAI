@@ -15,8 +15,14 @@ function escapeGift(text) {
     return String(text ?? "").replace(/[\\~=#{}]/g, (ch) => `\\${ch}`);
 }
 
-function questionToGift(q, index) {
-    const title = `Pregunta ${index + 1}`;
+const GIFT_TEXT = {
+    es: { title: (n) => `Pregunta ${n}`, modelAnswer: "Respuesta modelo" },
+    en: { title: (n) => `Question ${n}`, modelAnswer: "Model answer" },
+};
+
+function questionToGift(q, index, lang) {
+    const T = GIFT_TEXT[lang] || GIFT_TEXT.es;
+    const title = T.title(index + 1);
     const stem = escapeGift(q.question);
 
     if (q.question_type === "true_false") {
@@ -29,7 +35,7 @@ function questionToGift(q, index) {
         // GIFT no tiene "pregunta abierta evaluada por IA" — se exporta como
         // essay (grading manual en Moodle). La respuesta modelo va como
         // comentario del docente, no como parte del bloque de respuesta.
-        const modelAnswer = q.explanation ? `\n// Respuesta modelo: ${q.explanation.replace(/\n/g, " ")}` : "";
+        const modelAnswer = q.explanation ? `\n// ${T.modelAnswer}: ${q.explanation.replace(/\n/g, " ")}` : "";
         return `::${title}::${stem} {}${modelAnswer}`;
     }
 
@@ -46,10 +52,11 @@ function questionToGift(q, index) {
  * string GIFT completo, listo para descargar como .txt.
  *
  * @param {Array} questions
+ * @param {string} [lang] 'es' | 'en' — language of the generated titles/comments.
  * @returns {string}
  */
-export function toGiftFormat(questions) {
-    return questions.map((q, i) => questionToGift(q, i)).join("\n\n") + "\n";
+export function toGiftFormat(questions, lang = "es") {
+    return questions.map((q, i) => questionToGift(q, i, lang)).join("\n\n") + "\n";
 }
 
 /**
@@ -57,14 +64,16 @@ export function toGiftFormat(questions) {
  *
  * @param {Array} questions
  * @param {string} [filename]
+ * @param {string} [lang] 'es' | 'en'
  */
-export function downloadGiftFile(questions, filename = "examen-nexusai.txt") {
-    const content = toGiftFormat(questions);
+export function downloadGiftFile(questions, filename, lang = "es") {
+    const name = filename || (lang === "es" ? "examen-nexusai.txt" : "exam-nexusai.txt");
+    const content = toGiftFormat(questions, lang);
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = filename;
+    link.download = name;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

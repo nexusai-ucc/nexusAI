@@ -17,14 +17,15 @@
 /**
  * Hook callbacks registration for local_nexusai.
  *
- * Moodle 4.4 introdujo un nuevo sistema de hooks tipado (en lugar de los callbacks
- * basados en convención de nombres como `<plugin>_before_footer`). Este archivo
- * mapea hooks de core a clases listener nuestras.
+ * Moodle 4.4 introduced a new typed hooks system (instead of naming-convention
+ * callbacks like `<plugin>_before_footer`). This file maps core hooks to our
+ * listener classes.
  *
- * Sin esto, en Moodle 4.4+, el HTML que retorna `local_nexusai_before_footer()`
- * NO se imprime (solo se muestra un warning de deprecación).
+ * Without this, on Moodle 4.4+, the HTML returned by
+ * `local_nexusai_before_footer()` is NOT printed (only a deprecation warning
+ * is shown).
  *
- * En Moodle 4.1-4.3 este archivo es ignorado y se usa el callback viejo de lib.php.
+ * On Moodle 4.1-4.3 this file is ignored and the old lib.php callback is used instead.
  *
  * Ref: https://moodledev.io/docs/4.4/apis/core/hooks
  *

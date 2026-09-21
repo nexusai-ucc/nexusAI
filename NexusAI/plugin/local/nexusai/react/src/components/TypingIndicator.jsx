@@ -9,9 +9,10 @@ const IconAssistant = () => (
     </svg>
 );
 
-export default function TypingIndicator() {
+export default function TypingIndicator({ lang = "es" }) {
+    const label = lang === "es" ? "El asistente está escribiendo" : "The assistant is typing";
     return (
-        <div className="nexusai-msg nexusai-msg--assistant" aria-live="polite" aria-label="El asistente está escribiendo">
+        <div className="nexusai-msg nexusai-msg--assistant" aria-live="polite" aria-label={label}>
             <div className="nexusai-typing">
                 <div className="nexusai-msg__avatar" aria-hidden="true">
                     <IconAssistant />
