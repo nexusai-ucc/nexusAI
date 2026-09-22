@@ -133,18 +133,27 @@ if ($multicourse) {
     );
     $courseids   = [];
     $coursenames = [];
+    // Same reasoning as chat_send.php: multicourse searches every enrolled
+    // course, so $isteacher (computed above from only $courseid's context)
+    // needs to be recomputed across all of them, not just the "current" one.
+    $isteachermulticourse = false;
     foreach ($enrolled as $course) {
         $cid = (int) $course->id;
         $courseids[] = $cid;
         $coursenames[(string) $cid] = $course->fullname ?? $course->shortname ?? 'Course';
+        if (has_capability('local/nexusai:manage', context_course::instance($cid))) {
+            $isteachermulticourse = true;
+        }
     }
     if (empty($courseids)) {
         $courseids   = [$courseid];
         $coursenames = [(string) $courseid => 'Current course'];
+        $isteachermulticourse = $isteacher;
     }
     $bodyarray['course_id']    = (int) $courseids[0];
     $bodyarray['course_ids']   = $courseids;
     $bodyarray['course_names'] = $coursenames;
+    $bodyarray['is_teacher']   = $isteachermulticourse;
 }
 
 $body = json_encode($bodyarray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

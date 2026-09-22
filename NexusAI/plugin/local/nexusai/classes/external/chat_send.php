@@ -192,17 +192,31 @@ class chat_send extends \external_api {
             );
             $courseids   = [];
             $coursenames = [];
+            // Multicourse mode searches material across EVERY enrolled
+            // course, not just $params['courseid'] — so $isteacher (computed
+            // above from only the current course's context) would under- or
+            // over-grant the per-role token budget depending on which course
+            // happened to be "current" when the student opened the chat.
+            // Recomputed here as true if the user manages ANY of the courses
+            // actually being searched (has_capability is already O(1) per
+            // context, no extra DB round trip beyond what enrol_get_users_courses
+            // already did).
+            $isteachermulticourse = false;
             foreach ($enrolledcourses as $course) {
                 $cid = (int) $course->id;
                 $courseids[] = $cid;
                 $coursenames[(string) $cid] = $course->fullname
                     ?? $course->shortname
                     ?? 'Course';
+                if (has_capability('local/nexusai:manage', \context_course::instance($cid))) {
+                    $isteachermulticourse = true;
+                }
             }
             // Defensive fallback: if it couldn't be resolved, use the current course.
             if (empty($courseids)) {
                 $courseids   = [(int) $params['courseid']];
                 $coursenames = [(string) $params['courseid'] => 'Current course'];
+                $isteachermulticourse = $isteacher;
             }
 
             $response = $client->send_message_multicourse(
@@ -211,7 +225,7 @@ class chat_send extends \external_api {
                 (int) $USER->id,
                 $cleanquestion,
                 $cleansessionid,
-                $isteacher
+                $isteachermulticourse
             );
         } else {
             $response = $client->send_message(
