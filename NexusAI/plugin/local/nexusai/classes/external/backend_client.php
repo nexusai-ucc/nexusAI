@@ -123,17 +123,27 @@ class backend_client {
      * @param int         $userid     Logged-in user ID (= $USER->id, not from the client).
      * @param string      $question   Student's question (1..2000 chars, validated by external_api).
      * @param string|null $sessionid  Existing session UUID, or null to create a new one.
+     * @param bool        $isteacher  Resolved server-side (has_capability), NEVER from the
+     *                                client — drives the backend's per-role token budget
+     *                                (app/shared/token_budget.py).
      * @return array{session_id: string, answer: string, messages: array}
      *
      * @throws \moodle_exception If the backend returns non-200 or if the network fails.
      */
-    public function send_message(int $courseid, int $userid, string $question, ?string $sessionid = null): array {
+    public function send_message(
+        int $courseid,
+        int $userid,
+        string $question,
+        ?string $sessionid = null,
+        bool $isteacher = false
+    ): array {
         // Body as JSON with a stable format. Keys use snake_case because
         // that's how the backend's Pydantic contract (ChatRequest) defines them.
         $payload = [
-            'question'  => $question,
-            'course_id' => $courseid,
-            'user_id'   => $userid,
+            'question'   => $question,
+            'course_id'  => $courseid,
+            'user_id'    => $userid,
+            'is_teacher' => $isteacher,
         ];
         if (!empty($sessionid)) {
             $payload['session_id'] = $sessionid;
@@ -162,6 +172,8 @@ class backend_client {
      * @param int         $userid      Student's real $USER->id.
      * @param string      $question    Student's question.
      * @param string|null $sessionid   Existing session UUID, or null to create one.
+     * @param bool        $isteacher   Resolved server-side (has_capability), NEVER from the
+     *                                 client — drives the backend's per-role token budget.
      * @return array{session_id:string, answer:string, messages:array}
      *
      * @throws \moodle_exception If the backend returns non-2xx or the network fails.
@@ -171,7 +183,8 @@ class backend_client {
         array $coursenames,
         int $userid,
         string $question,
-        ?string $sessionid = null
+        ?string $sessionid = null,
+        bool $isteacher = false
     ): array {
         // The primary course ID is the first one in the list (the schema
         // requires it to be > 0 for compat with single-course clients).
@@ -183,6 +196,7 @@ class backend_client {
             'user_id'      => $userid,
             'course_ids'   => array_map('intval', $courseids),
             'course_names' => $coursenames,
+            'is_teacher'   => $isteacher,
         ];
         if (!empty($sessionid)) {
             $payload['session_id'] = $sessionid;

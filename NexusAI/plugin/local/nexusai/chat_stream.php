@@ -88,6 +88,12 @@ if ($courseid <= 0) {
 $context = context_course::instance($courseid);
 require_capability('local/nexusai:use', $context);
 
+// Resolved server-side, same capability visibility_helper.php already uses
+// to compute 'isteacher' for the frontend. Drives the backend's per-role
+// token budget (app/shared/token_budget.py) — NEVER trust a role sent by
+// the client.
+$isteacher = has_capability('local/nexusai:manage', $context);
+
 // Business validations.
 $cleanquestion = trim($question);
 if ($cleanquestion === '') {
@@ -109,9 +115,10 @@ if ($cleansessionid !== '' && (strlen($cleansessionid) < 8 || strlen($cleansessi
 
 // Build the payload for the Python backend.
 $bodyarray = [
-    'question'  => $cleanquestion,
-    'course_id' => $courseid,
-    'user_id'   => (int) $USER->id,
+    'question'   => $cleanquestion,
+    'course_id'  => $courseid,
+    'user_id'    => (int) $USER->id,
+    'is_teacher' => $isteacher,
 ];
 if ($cleansessionid !== '') {
     $bodyarray['session_id'] = $cleansessionid;

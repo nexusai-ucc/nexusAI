@@ -151,6 +151,12 @@ class chat_send extends \external_api {
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
 
+        // Resolved server-side, same capability visibility_helper.php already
+        // uses to compute 'isteacher' for the frontend. Drives the backend's
+        // per-role token budget (app/shared/token_budget.py) — NEVER trust a
+        // role sent by the client.
+        $isteacher = has_capability('local/nexusai:manage', $context);
+
         // 3. Business-rule validation.
         $cleanquestion = trim($params['question']);
         if ($cleanquestion === '') {
@@ -204,14 +210,16 @@ class chat_send extends \external_api {
                 $coursenames,
                 (int) $USER->id,
                 $cleanquestion,
-                $cleansessionid
+                $cleansessionid,
+                $isteacher
             );
         } else {
             $response = $client->send_message(
                 (int) $params['courseid'],
                 (int) $USER->id,
                 $cleanquestion,
-                $cleansessionid
+                $cleansessionid,
+                $isteacher
             );
         }
 
