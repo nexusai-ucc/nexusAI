@@ -135,6 +135,36 @@ Reabrir si:
 - **Calidad de respuestas** (faithfulness ≥ 95%, recall@5 ≥ 0.85 — ver dataset evaluación).
 - **Latencia p95** por proveedor.
 
+## Actualización — 2026-09-22
+
+Se disparó el trigger de la tabla anterior ("El piloto MVP supera 1.500
+req/día (límite Gemini gratuito) → pasar a Gemini paid o adelantar a
+OpenAI"), aunque por saturación/latencia más que por volumen puro: Gemini
+gratuito en staging empezó a dar picos de hasta 147s de respuesta (típico
+13-30s), a veces error directo — riesgo real de cara a una demo.
+
+**Decisión tomada para staging (no cambia la decisión de producción, que
+sigue siendo OpenAI):** se adelantó el pasaje a OpenAI antes de lo
+planeado.
+
+| | Antes (config original de esta ADR) | Ahora en staging |
+|---|---|---|
+| LLM de chat | Gemini 2.5 Flash | **GPT-4o-mini** (crédito prepago del equipo, USD 10, auto-recharge apagado) |
+| Fallback | Cadena de modelos gratuitos de Gemini → Groq | **Groq (gratis)**, si OpenAI falla |
+| Embeddings | Gemini Embedding / nomic-embed-text | **Sin cambios** — sigue en Gemini gratis |
+
+Medido con el mismo prompt contra los dos proveedores: OpenAI responde en
+0.8-1.6s a la primera palabra y ~2.5s la respuesta completa, sin errores;
+Gemini gratuito, en el mejor caso, similar, pero con los picos de hasta
+147s ya mencionados. La ganancia no es "más rápido siempre" sino
+previsibilidad — sin los cuelgues intermitentes.
+
+No se re-evaluó calidad de respuesta Gemini vs GPT-4o-mini específicamente
+para este cambio (la sección "Cómo se mitigan" de esta ADR ya documentaba
+un dataset de evaluación de 30 preguntas para ese propósito) — este
+cambio fue puntualmente por estabilidad/latencia de cara a una demo, no
+por una comparación de calidad.
+
 ## Referencias
 
 - [Google Gemini API — Pricing y límites](https://ai.google.dev/pricing)
@@ -145,4 +175,4 @@ Reabrir si:
 
 ---
 
-*Última actualización: 2026-05-02*
+*Última actualización: 2026-09-22*

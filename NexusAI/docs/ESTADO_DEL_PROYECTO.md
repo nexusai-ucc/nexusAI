@@ -72,13 +72,30 @@
 - Entrada de voz: botón de micrófono, graba con MediaRecorder, transcribe
   con Groq Whisper, el texto se muestra para confirmar/editar antes de
   enviarse — nunca se envía directo (VOICE-01).
-- Resiliencia del LLM: fallback automático Gemini → OpenAI, y cadena de
-  modelos gratuitos de Gemini antes de caer a Groq (INFRA-01/03).
+- Resiliencia del LLM: arquitectura multi-proveedor con fallback
+  automático (INFRA-01/03) — la config concreta cambió en staging el
+  22/09/2026 (ver más abajo), pero el mecanismo de fallback en sí ya
+  estaba construido desde antes.
 - Cache de respuestas repetidas en Redis (INFRA-02).
 - Moderación de contenido y rate limiting (por minuto y diario) en
   `/api/v1/chat/messages`.
 - Detección de idioma de la interfaz para responder en el idioma correcto,
   con fallback para preguntas muy cortas donde no se puede detectar.
+
+**Config de proveedor LLM en staging (actualizado 22/09/2026):** Gemini
+gratis (usado hasta entonces como modelo de texto principal) empezó a
+saturarse — picos de hasta 147s de respuesta, típico de 13-30s, a veces
+error directo — riesgo real de cara a una demo. Se pasó el modelo
+principal a **OpenAI `gpt-4o-mini`** (crédito prepago propio del equipo,
+USD 10, auto-recharge apagado), con **Groq (gratis) como fallback
+automático** si OpenAI falla. Los embeddings (búsqueda semántica del RAG)
+siguen en Gemini gratis, sin cambios. Medido con el mismo prompt: OpenAI
+0.8-1.6s a la primera palabra / ~2.5s respuesta completa, sin errores,
+contra los picos de Gemini. Verificado en staging contra chat, quiz,
+examen, resumen y foro — todo entre 2-12s. Este cambio dispara la
+condición de revisión que ya anticipaba
+[ADR-004](./adr/004-gemini-mvp-openai-prod.md) ("el piloto supera el
+límite gratuito de Gemini → pasar a OpenAI") — ver el addendum en esa ADR.
 
 ### 3.2 Study Planner / Quiz
 
