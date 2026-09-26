@@ -47,6 +47,28 @@ if ($hassiteconfig) {
         1
     ));
 
+    // Courses section (CURSO-01): NexusAI ships off everywhere so it can be
+    // turned on one course at a time, and stays out of non-course pages.
+    $settings->add(new admin_setting_heading(
+        'local_nexusai/section_courses',
+        get_string('section_courses', 'local_nexusai'),
+        get_string('section_courses_desc', 'local_nexusai')
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_nexusai/default_course_enabled',
+        get_string('default_course_enabled', 'local_nexusai'),
+        get_string('default_course_enabled_desc', 'local_nexusai'),
+        0
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_nexusai/show_outside_course',
+        get_string('show_outside_course', 'local_nexusai'),
+        get_string('show_outside_course_desc', 'local_nexusai'),
+        0
+    ));
+
     // Backend section.
     $settings->add(new admin_setting_heading(
         'local_nexusai/section_backend',

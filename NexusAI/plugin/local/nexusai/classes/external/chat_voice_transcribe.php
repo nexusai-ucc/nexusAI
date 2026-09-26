@@ -99,6 +99,7 @@ class chat_voice_transcribe extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         if (!in_array($params['mimetype'], self::ALLOWED_MIME_TYPES, true)) {
             throw new \invalid_parameter_exception(

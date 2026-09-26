@@ -77,6 +77,7 @@ class confirm_pending_upload extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:manage', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         // Read and validate the current user's preference.
         $raw     = get_user_preferences(\local_nexusai\observer::PENDING_PREF, '{}');

@@ -99,6 +99,7 @@ class quiz_study_plan_dismiss extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         if (empty($params['quizerrorids']) && empty($params['gapquestionids'])) {
             throw new \invalid_parameter_exception('At least one id must be provided');

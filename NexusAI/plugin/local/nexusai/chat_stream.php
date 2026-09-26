@@ -87,6 +87,11 @@ if ($courseid <= 0) {
 // Validate the capability in the course context.
 $context = context_course::instance($courseid);
 require_capability('local/nexusai:use', $context);
+if (!\local_nexusai\local\course_guard::is_enabled($courseid)) {
+    http_response_code(403);
+    echo json_encode(['error' => get_string('coursedisabled', 'local_nexusai')]);
+    exit;
+}
 
 // Resolved server-side, same capability visibility_helper.php already uses
 // to compute 'isteacher' for the frontend. Drives the backend's per-role
@@ -139,6 +144,10 @@ if ($multicourse) {
     $isteachermulticourse = false;
     foreach ($enrolled as $course) {
         $cid = (int) $course->id;
+        // Courses with NexusAI off stay out of the search (CURSO-01).
+        if (!\local_nexusai\local\course_guard::is_enabled($cid)) {
+            continue;
+        }
         $courseids[] = $cid;
         $coursenames[(string) $cid] = $course->fullname ?? $course->shortname ?? 'Course';
         if (has_capability('local/nexusai:manage', context_course::instance($cid))) {

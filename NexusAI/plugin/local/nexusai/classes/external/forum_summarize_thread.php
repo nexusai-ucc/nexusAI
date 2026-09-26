@@ -92,6 +92,7 @@ class forum_summarize_thread extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         // Verify the discussion belongs to the course.
         $discussion = $DB->get_record('forum_discussions', [

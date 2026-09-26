@@ -77,6 +77,7 @@ class course_sections_list extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $modinfo = get_fast_modinfo($params['courseid']);
         $sections = $modinfo->get_listed_section_info_all();

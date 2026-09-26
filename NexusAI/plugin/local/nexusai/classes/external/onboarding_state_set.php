@@ -91,6 +91,7 @@ class onboarding_state_set extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:manage', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         self::write_state($params['courseid'], $params['dismissed'], $params['skipped']);
 

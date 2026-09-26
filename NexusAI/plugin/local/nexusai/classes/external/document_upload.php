@@ -126,6 +126,7 @@ class document_upload extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:manage', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         // Validate the MIME type against the list of allowed types.
         if (!in_array($params['mimetype'], self::ALLOWED_MIME_TYPES, true)) {

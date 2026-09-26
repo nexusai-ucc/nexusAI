@@ -43,12 +43,13 @@ class visibility_helper {
      *
      * Rules:
      *   - Logged in and not a guest, always.
-     *   - Inside a real course ($COURSE->id > 1): also requires
-     *     `local/nexusai:use` in that course — without it, nothing is shown
-     *     (neither icon nor panel), same as before UX-02.
-     *   - Outside a course (dashboard, home, admin, etc.): shown regardless,
-     *     with courseid=0 — the panel enters an empty state instead of
-     *     trying to use a nonexistent course.
+     *   - Inside a real course ($COURSE->id > 1): NexusAI must be on for the
+     *     course (course_guard, which also checks the site-wide switch) and the
+     *     user needs `local/nexusai:use` there — otherwise nothing is shown
+     *     (neither icon nor panel).
+     *   - Outside a course (dashboard, home, admin, etc.): only when the admin
+     *     turned on "show outside courses", with courseid=0 — the panel enters
+     *     an empty state instead of trying to use a nonexistent course.
      *
      * @return array{courseid:int, isteacher:bool}|null null if nothing should be shown.
      */
@@ -60,6 +61,9 @@ class visibility_helper {
         }
 
         if (!empty($COURSE->id) && $COURSE->id > 1) {
+            if (!local\course_guard::is_enabled((int) $COURSE->id)) {
+                return null;
+            }
             $context = \context_course::instance($COURSE->id);
             if (!has_capability('local/nexusai:use', $context)) {
                 return null;
@@ -69,6 +73,10 @@ class visibility_helper {
                 'courseid'  => (int) $COURSE->id,
                 'isteacher' => has_capability('local/nexusai:manage', $context),
             ];
+        }
+
+        if (!local\course_guard::show_outside_course()) {
+            return null;
         }
 
         return [

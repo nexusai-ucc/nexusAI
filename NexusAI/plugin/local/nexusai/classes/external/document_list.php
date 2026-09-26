@@ -103,6 +103,7 @@ class document_list extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:manage', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $offset = max(0, (int) $params['offset']);
         $limit  = $params['limit'] !== null ? max(1, (int) $params['limit']) : null;

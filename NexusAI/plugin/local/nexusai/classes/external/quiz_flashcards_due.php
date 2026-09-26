@@ -109,6 +109,7 @@ class quiz_flashcards_due extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $lim = max(1, min(50, (int) $params['limit']));
 

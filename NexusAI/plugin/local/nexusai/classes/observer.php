@@ -30,7 +30,7 @@
  * Dependencies:
  *   - `local_nexusai\external\backend_client` — sends the file to the backend.
  *   - Moodle's filestore — reads the bytes of the uploaded file.
- *   - `get_config('local_nexusai', 'enabled')` — master switch.
+ *   - `course_guard::is_enabled()` — site-wide switch and per-course switch.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -64,8 +64,8 @@ class observer {
      * @param \core\event\course_module_created $event
      */
     public static function course_module_created(\core\event\course_module_created $event): void {
-        // Master switch: if the plugin is disabled, do nothing.
-        if (!get_config('local_nexusai', 'enabled')) {
+        // Off site-wide or in this course: do nothing (CURSO-01).
+        if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
             return;
         }
 
@@ -108,7 +108,7 @@ class observer {
      * @param \mod_forum\event\discussion_created $event
      */
     public static function forum_discussion_created(\mod_forum\event\discussion_created $event): void {
-        if (!get_config('local_nexusai', 'enabled')) {
+        if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
             return;
         }
 
@@ -137,7 +137,7 @@ class observer {
      * @param \mod_forum\event\post_created $event
      */
     public static function forum_post_created(\mod_forum\event\post_created $event): void {
-        if (!get_config('local_nexusai', 'enabled')) {
+        if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
             return;
         }
         self::index_forum_post_from_event(
@@ -155,7 +155,7 @@ class observer {
      * @param \mod_forum\event\post_updated $event
      */
     public static function forum_post_updated(\mod_forum\event\post_updated $event): void {
-        if (!get_config('local_nexusai', 'enabled')) {
+        if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
             return;
         }
         self::index_forum_post_from_event(
@@ -174,7 +174,7 @@ class observer {
      * @param \mod_forum\event\post_deleted $event
      */
     public static function forum_post_deleted(\mod_forum\event\post_deleted $event): void {
-        if (!get_config('local_nexusai', 'enabled')) {
+        if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
             return;
         }
 

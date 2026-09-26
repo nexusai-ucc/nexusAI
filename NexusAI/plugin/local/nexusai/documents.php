@@ -48,6 +48,15 @@ $initialtab = optional_param('tab', '', PARAM_ALPHA);
 require_login($course);
 $context = context_course::instance($course->id);
 require_capability('local/nexusai:manage', $context);
+if (!\local_nexusai\local\course_guard::is_enabled((int) $course->id)) {
+    // With NexusAI off in the course, send the teacher to where it is turned on.
+    redirect(
+        new moodle_url('/local/nexusai/course_settings.php', ['courseid' => $course->id]),
+        get_string('coursedisabled', 'local_nexusai'),
+        null,
+        \core\output\notification::NOTIFY_INFO
+    );
+}
 
 // 3. Page setup.
 $pageurl = new moodle_url('/local/nexusai/documents.php', ['courseid' => $courseid]);

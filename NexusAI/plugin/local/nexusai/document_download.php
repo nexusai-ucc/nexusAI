@@ -61,6 +61,10 @@ if ($filename === '' || strlen($filename) > 255) {
 
 $context = context_course::instance($courseid);
 require_capability('local/nexusai:use', $context);
+if (!\local_nexusai\local\course_guard::is_enabled($courseid)) {
+    http_response_code(403);
+    die(get_string('coursedisabled', 'local_nexusai'));
+}
 
 $fs   = get_file_storage();
 $file = $fs->get_file($context->id, 'local_nexusai', 'documents', $courseid, '/', $filename);

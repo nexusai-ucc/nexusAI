@@ -70,7 +70,7 @@ function local_nexusai_before_footer(): string {
 
     // Logic for Moodle 4.1-4.3 (legacy hook system).
 
-    if (!isloggedin() || isguestuser()) {
+    if (!isloggedin() || isguestuser() || !\local_nexusai\local\course_guard::plugin_enabled()) {
         return '';
     }
 
@@ -80,7 +80,7 @@ function local_nexusai_before_footer(): string {
     $onboarding = \local_nexusai\visibility_helper::onboarding_hint();
 
     if (empty($COURSE->id) || $COURSE->id <= 1) {
-        if ($onboarding === null) {
+        if ($onboarding === null || !\local_nexusai\local\course_guard::show_outside_course()) {
             // Other course-less pages: the full out-of-course experience is
             // 4.4+ only (new hook). On 4.1-4.3 it stays as before.
             return '';
@@ -101,6 +101,9 @@ function local_nexusai_before_footer(): string {
         return '<div id="local-nexusai-container" data-plugin="nexusai"></div>';
     }
 
+    if (!\local_nexusai\local\course_guard::is_enabled((int) $COURSE->id)) {
+        return '';
+    }
     $context = context_course::instance($COURSE->id);
     if (!has_capability('local/nexusai:use', $context)) {
         return '';
@@ -217,7 +220,22 @@ function local_nexusai_calfeed_url(int $userid, int $courseid): string {
  * @param context_course  $context    Course context.
  */
 function local_nexusai_extend_navigation_course($navigation, $course, $context): void {
-    if (!has_capability('local/nexusai:manage', $context)) {
+    if (!has_capability('local/nexusai:manage', $context) || !\local_nexusai\local\course_guard::plugin_enabled()) {
+        return;
+    }
+
+    // Always reachable for teachers, even with NexusAI off in the course:
+    // it is where they turn it on (CURSO-01).
+    $navigation->add_node(navigation_node::create(
+        get_string('course_settings_title', 'local_nexusai'),
+        new moodle_url('/local/nexusai/course_settings.php', ['courseid' => $course->id]),
+        navigation_node::TYPE_SETTING,
+        null,
+        'local_nexusai_course_settings',
+        new pix_icon('i/settings', '')
+    ));
+
+    if (!\local_nexusai\local\course_guard::is_enabled((int) $course->id)) {
         return;
     }
 
