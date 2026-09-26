@@ -28,6 +28,14 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   changed a course setting and detaches a deleted user from it.
 - Calendar alerts of a course that is off stay pending and go out when it is
   turned on again.
+- New: every request that reads course material (chat, stream, search, quiz,
+  summaries, forum reply suggestions) now carries `visible_cmids`, the list of
+  activities the logged-in user can see, worked out on the server from Moodle
+  visibility (eye icon, hidden section, availability restrictions, role). The
+  backend answers only from material of those activities. Teachers see hidden
+  ones; a teacher who switches role to student sees what a student sees.
+  Needs the backend from the same release: it rejects requests without the
+  list.
 
 ## [0.18.1] — 2026-09-20
 

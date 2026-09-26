@@ -165,6 +165,12 @@ if ($multicourse) {
     $bodyarray['is_teacher']   = $isteachermulticourse;
 }
 
+// Only material from activities this user can see (VIS-02). Computed here, on
+// the server, for the courses in the body: never taken from the browser.
+$bodyarray['visible_cmids'] = \local_nexusai\local\visible_material::for_courses(
+    $bodyarray['course_ids'] ?? [$bodyarray['course_id']]
+);
+
 $body = json_encode($bodyarray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 if ($body === false) {
     http_response_code(500);
