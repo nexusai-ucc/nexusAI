@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Estado** | ✅ Aceptada |
+| **Estado** | Reemplazada por [ADR-014](014-datos-alumno-en-moodle.md) |
 | **Fecha** | 2026-05-04 |
 | **Autor/es** | Delfina Salinas, Marcos Bugliotti |
 | **Decididores** | Equipo NexusAI |
