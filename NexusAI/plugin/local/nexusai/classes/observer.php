@@ -182,6 +182,7 @@ class observer {
 
         try {
             $client = new \local_nexusai\external\backend_client();
+            $client->set_role('system');
             $client->delete_forum_post($postid);
         } catch (\Throwable $e) {
             debugging(
@@ -218,6 +219,7 @@ class observer {
             }
 
             $client = new \local_nexusai\external\backend_client();
+            $client->set_role('system');
             $client->index_forum_post($postid, $discussionid, $courseid, $content);
         } catch (\Throwable $e) {
             debugging(

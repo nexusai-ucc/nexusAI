@@ -223,6 +223,8 @@ curl_setopt_array($ch, [
         'X-Signature: ' . $signature,
         'Accept: text/event-stream',
         'Accept-Language: ' . \local_nexusai\external\backend_client::interface_language(),
+        // Who originated the call, for the backend usage ledger (tokens by role).
+        'X-NexusAI-Role: ' . (!empty($bodyarray['is_teacher']) ? 'teacher' : 'student'),
     ],
     CURLOPT_TIMEOUT        => 300,
     CURLOPT_CONNECTTIMEOUT => 10,

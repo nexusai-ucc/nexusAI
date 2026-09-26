@@ -47,6 +47,7 @@ class send_calendar_alerts extends \core\task\scheduled_task {
      */
     public function execute(): void {
         $client = new \local_nexusai\external\backend_client();
+        $client->set_role('system');
 
         $due = $client->get_due_calendar_alerts();
         $alerts = $due['alerts'] ?? [];
