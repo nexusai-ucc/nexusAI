@@ -33,14 +33,15 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
         done:            "Listo",
         selectAllAria:   "Seleccionar todos los documentos",
         colFile:         "Archivo",
+        colActivity:     "En el aula",
         colStatus:       "Estado",
         colDate:         "Fecha",
         emptyTitle:      "Todavía no subiste material a este curso.",
         emptyHint:       "Arrastrá un PDF, DOCX o TXT arriba y NexusAI lo indexa para que el asistente pueda responder sobre su contenido.",
-        deleteTitle:     "Eliminar documento",
-        deleteConfirm:   "Eliminar",
+        deleteTitle:     "Quitar de NexusAI",
+        deleteConfirm:   "Quitar",
         cancel:          "Cancelar",
-        deleteBody:      (name) => <>¿Borrar <strong>{name}</strong>? Esto elimina el documento y todos sus chunks indexados. La acción no se puede deshacer.</>,
+        deleteBody:      (name) => <>¿Quitar <strong>{name}</strong> de NexusAI? El asistente deja de usarlo. La actividad sigue en el aula: para borrarla, hacelo desde el curso.</>,
         replaceTitle:    "Reemplazar documento",
         replaceConfirm:  "Reemplazar",
         replaceBody:     (oldName, newName) => <>¿Reemplazar <strong>{oldName}</strong> por <strong>{newName}</strong>? El documento se re-indexa desde cero; las citas viejas del chat siguen apuntando a este mismo material.</>,
@@ -71,14 +72,15 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
         done:            "Done",
         selectAllAria:   "Select all documents",
         colFile:         "File",
+        colActivity:     "In the classroom",
         colStatus:       "Status",
         colDate:         "Date",
         emptyTitle:      "You haven't uploaded any material to this course yet.",
         emptyHint:       "Drag a PDF, DOCX or TXT above and NexusAI indexes it so the assistant can answer about its content.",
-        deleteTitle:     "Delete document",
-        deleteConfirm:   "Delete",
+        deleteTitle:     "Remove from NexusAI",
+        deleteConfirm:   "Remove",
         cancel:          "Cancel",
-        deleteBody:      (name) => <>Delete <strong>{name}</strong>? This removes the document and all its indexed chunks. This action can't be undone.</>,
+        deleteBody:      (name) => <>Remove <strong>{name}</strong> from NexusAI? The assistant stops using it. The activity stays in the classroom: delete it from the course if you want it gone.</>,
         replaceTitle:    "Replace document",
         replaceConfirm:  "Replace",
         replaceBody:     (oldName, newName) => <>Replace <strong>{oldName}</strong> with <strong>{newName}</strong>? The document is re-indexed from scratch; old chat citations keep pointing to this same material.</>,
@@ -353,6 +355,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
                                 />
                             </th>
                             <th>{L.colFile}</th>
+                            <th>{L.colActivity}</th>
                             <th>{L.colStatus}</th>
                             <th>{L.colDate}</th>
                             <th></th>
@@ -496,7 +499,13 @@ function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, 
         replacing:   "Reemplazando...",
         replace:     "Reemplazar",
         deleting:    "Borrando...",
-        delete:      "Eliminar",
+        delete:      "Quitar de NexusAI",
+        viewInClass: "Ver en el aula",
+        visible:     "Visible",
+        hidden:      "Oculta a alumnos",
+        missing:     "Actividad borrada",
+        none:        "Sin actividad",
+        unit:        (n) => `Unidad ${n}`,
     } : {
         selectAria:  (name) => `Select ${name}`,
         hideText:    "Hide text",
@@ -504,7 +513,13 @@ function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, 
         replacing:   "Replacing...",
         replace:     "Replace",
         deleting:    "Deleting...",
-        delete:      "Delete",
+        delete:      "Remove from NexusAI",
+        viewInClass: "View in the classroom",
+        visible:     "Visible",
+        hidden:      "Hidden from students",
+        missing:     "Activity deleted",
+        none:        "No activity",
+        unit:        (n) => `Unit ${n}`,
     };
 
     return (
@@ -528,6 +543,9 @@ function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, 
                             <div className="nexusai-table__progress-fill"></div>
                         </div>
                     )}
+                </td>
+                <td className="nexusai-table__activity">
+                    <ActivityCell doc={doc} L={L} />
                 </td>
                 <td>
                     <StatusBadge status={doc.status} errorMessage={doc.error_message} lang={lang} />
@@ -566,12 +584,37 @@ function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, 
             </tr>
             {previewOpen && (
                 <tr className="nexusai-table__preview-row">
-                    <td colSpan={5}>
+                    <td colSpan={6}>
                         <DocumentPreview preview={preview} lang={lang} />
                     </td>
                 </tr>
             )}
         </>
+    );
+}
+
+// ============================================================
+// Dónde vive el documento en el aula (VIS-03 / #538)
+// ============================================================
+
+/**
+ * Unidad, enlace a la actividad y si está visible. El estado sale de Moodle
+ * (document_list); tras subir, el documento nuevo trae cmid y visible.
+ */
+function ActivityCell({ doc, L }) {
+    const status = doc.activity_status || (doc.cmid ? (doc.visible === false ? "hidden" : "visible") : "none");
+    const wwwroot = typeof window !== "undefined" ? window.M?.cfg?.wwwroot : "";
+    const url = doc.activity_url || (doc.cmid && wwwroot ? `${wwwroot}/mod/resource/view.php?id=${doc.cmid}` : "");
+    const unit = doc.section_name || (doc.section !== null && doc.section !== undefined ? L.unit(doc.section) : "");
+
+    return (
+        <div className="nexusai-activity">
+            {unit && <span className="nexusai-activity__unit">{unit}</span>}
+            <span className={`nexusai-activity__state nexusai-activity__state--${status}`}>{L[status]}</span>
+            {url && status !== "missing" && (
+                <a className="nexusai-link-btn" href={url} target="_blank" rel="noreferrer">{L.viewInClass}</a>
+            )}
+        </div>
     );
 }
 

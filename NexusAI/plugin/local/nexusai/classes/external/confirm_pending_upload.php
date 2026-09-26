@@ -137,7 +137,8 @@ class confirm_pending_upload extends \external_api {
             $filename,
             $mimetype,
             $filebytes,
-            $section
+            $section,
+            $params['cmid']
         );
 
         // CAL-03 (issue #239): notify the course's users that there's new

@@ -36,6 +36,17 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   ones; a teacher who switches role to student sees what a student sees.
   Needs the backend from the same release: it rejects requests without the
   list.
+- Changed: everything uploaded from NexusAI now becomes a real "File"
+  activity in the unit the teacher chooses (there is no "unassigned" any more),
+  so Moodle decides who sees it. The upload dialog has a "Visible to students"
+  switch, on by default, that maps to the activity's eye icon; hidden material
+  is not announced to students. It checks `moodle/course:manageactivities`,
+  `mod/resource:addinstance` and Moodle's maximum file size first, and if the
+  backend refuses the file the activity is removed. The Materials table shows
+  each document's unit, a link to its activity and whether it is visible,
+  hidden or deleted. "Delete" became "Remove from NexusAI": it takes the
+  document out of the index and leaves the activity in the course. Files added
+  the native way still ask for confirmation, now indexed with their activity.
 
 ## [0.18.1] — 2026-09-20
 

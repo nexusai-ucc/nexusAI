@@ -141,3 +141,57 @@ describe("DocumentsTable — reindexar en lote", () => {
         expect(screen.getByText("En cola")).toBeInTheDocument();
     });
 });
+
+describe("DocumentsTable — dónde vive cada documento en el aula (VIS-03)", () => {
+    const withActivity = [
+        {
+            id: "doc-a", filename: "visible.pdf", status: "indexed", updated_at: "2026-09-01T10:00:00Z",
+            cmid: 41, section: 1, section_name: "Unidad 1", activity_status: "visible",
+            activity_url: "https://aula.test/mod/resource/view.php?id=41",
+        },
+        {
+            id: "doc-b", filename: "oculto.pdf", status: "indexed", updated_at: "2026-09-01T10:00:00Z",
+            cmid: 42, section: 2, section_name: "Unidad 2", activity_status: "hidden",
+            activity_url: "https://aula.test/mod/resource/view.php?id=42",
+        },
+        {
+            id: "doc-c", filename: "borrado.pdf", status: "indexed", updated_at: "2026-09-01T10:00:00Z",
+            cmid: 43, section: 1, section_name: "Unidad 1", activity_status: "missing",
+        },
+        { id: "doc-d", filename: "viejo.pdf", status: "indexed", updated_at: "2026-09-01T10:00:00Z" },
+    ];
+
+    it("shows the unit, whether the activity is visible and a link to it", () => {
+        render(<Wrapper initialDocs={withActivity} />);
+
+        const rowVisible = screen.getByText("visible.pdf").closest("tr");
+        expect(within(rowVisible).getByText("Unidad 1")).toBeInTheDocument();
+        expect(within(rowVisible).getByText("Visible")).toBeInTheDocument();
+        expect(within(rowVisible).getByRole("link", { name: "Ver en el aula" }))
+            .toHaveAttribute("href", "https://aula.test/mod/resource/view.php?id=41");
+
+        const rowHidden = screen.getByText("oculto.pdf").closest("tr");
+        expect(within(rowHidden).getByText("Oculta a alumnos")).toBeInTheDocument();
+    });
+
+    it("flags a deleted activity and a document that has none, without a link", () => {
+        render(<Wrapper initialDocs={withActivity} />);
+
+        const rowGone = screen.getByText("borrado.pdf").closest("tr");
+        expect(within(rowGone).getByText("Actividad borrada")).toBeInTheDocument();
+        expect(within(rowGone).queryByRole("link")).not.toBeInTheDocument();
+
+        const rowNone = screen.getByText("viejo.pdf").closest("tr");
+        expect(within(rowNone).getByText("Sin actividad")).toBeInTheDocument();
+    });
+
+    it("a document just uploaded (cmid and visible, no status yet) shows as visible or hidden", () => {
+        render(<Wrapper initialDocs={[
+            { id: "n1", filename: "nuevo.pdf", status: "pending", cmid: 50, section: 3, visible: false },
+        ]} />);
+
+        const row = screen.getByText("nuevo.pdf").closest("tr");
+        expect(within(row).getByText("Oculta a alumnos")).toBeInTheDocument();
+        expect(within(row).getByText("Unidad 3")).toBeInTheDocument();
+    });
+});

@@ -2050,3 +2050,40 @@
 @media (prefers-reduced-motion: reduce) {
     .nexusai-skeleton { animation-duration: 2.4s; }
 }
+
+/* VIS-03 (#538): dónde vive cada documento en el aula */
+.nexusai-activity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    font-size: 0.85em;
+}
+.nexusai-activity__unit {
+    color: var(--nexusai-fg, #1e293b);
+}
+.nexusai-activity__state {
+    font-weight: 600;
+}
+.nexusai-activity__state--visible {
+    color: var(--nexusai-success, #15803d);
+}
+.nexusai-activity__state--hidden {
+    color: var(--nexusai-warning, #b45309);
+}
+.nexusai-activity__state--missing,
+.nexusai-activity__state--none {
+    color: var(--nexusai-danger, #b91c1c);
+}
+.nexusai-visibility-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0;
+    cursor: pointer;
+}
+.nexusai-documents__hint {
+    margin: 0 0 12px;
+    font-size: 0.85em;
+    color: var(--nexusai-fg-muted, #64748b);
+}

@@ -58,9 +58,15 @@ class document_upload extends \external_api {
             'content_b64' => new \external_value(PARAM_RAW, 'Binary content in base64', VALUE_REQUIRED),
             'section'     => new \external_value(
                 PARAM_INT,
-                'Course section/unit (-1 = unassigned, BUS-05)',
+                'Course section/unit where the activity is created (0 = general)',
                 VALUE_DEFAULT,
                 -1
+            ),
+            'visible'     => new \external_value(
+                PARAM_BOOL,
+                'Whether students can see the activity (Moodle eye icon)',
+                VALUE_DEFAULT,
+                true
             ),
         ]);
     }
@@ -78,6 +84,8 @@ class document_upload extends \external_api {
             'filename'      => new \external_value(PARAM_RAW, 'File name'),
             'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
             'section'       => new \external_value(PARAM_INT, 'Assigned section', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'cmid'          => new \external_value(PARAM_INT, 'Course module id of the activity created', VALUE_OPTIONAL),
+            'visible'       => new \external_value(PARAM_BOOL, 'Whether the activity is visible to students', VALUE_OPTIONAL),
             'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
             'error_message' => new \external_value(PARAM_RAW, 'Error message if status=error', VALUE_OPTIONAL),
         ]);
@@ -102,7 +110,8 @@ class document_upload extends \external_api {
      * @param string $filename    Uploaded file's name.
      * @param string $mimetype    MIME type: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML or TXT.
      * @param string $contentb64  File's binary content in base64.
-     * @param int    $section     Course section/unit (-1 = unassigned, BUS-05).
+     * @param int    $section     Course section/unit where the activity is created.
+     * @param bool   $visible     Whether students can see the activity.
      * @return array Document state after the upload.
      */
     public static function execute(
@@ -110,7 +119,8 @@ class document_upload extends \external_api {
         string $filename,
         string $mimetype,
         string $contentb64,
-        int $section = -1
+        int $section = -1,
+        bool $visible = true
     ): array {
         global $USER;
 
@@ -120,6 +130,7 @@ class document_upload extends \external_api {
             'mimetype'    => $mimetype,
             'content_b64' => $contentb64,
             'section'     => $section,
+            'visible'     => $visible,
         ]);
 
         // Validate the course context + manage capability.
@@ -159,30 +170,51 @@ class document_upload extends \external_api {
         // Validate magic bytes against the declared MIME type.
         self::validate_magic_bytes($filebytes, $params['mimetype']);
 
-        // A value of -1 means the teacher didn't pick a section (BUS-05) → null is sent to the backend.
-        $section = $params['section'] >= 0 ? (int) $params['section'] : null;
+        // VIS-03: every document is a real Moodle "File" activity in a unit, so
+        // Moodle decides who can see it. There is no "unassigned" any more.
+        $course = get_course((int) $params['courseid']);
+        $section = (int) $params['section'];
+        $visible = (bool) $params['visible'];
+        \local_nexusai\local\material_activity::require_can_create($course, $section, strlen($filebytes), $visible);
+
+        // Create the activity first so the backend indexes the document with its
+        // cmid in one step. If the backend refuses, the activity is removed so a
+        // failed upload leaves nothing behind in the classroom.
+        $cmid = \local_nexusai\local\material_activity::create(
+            $course,
+            $section,
+            $params['filename'],
+            $filebytes,
+            $visible
+        );
 
         // POST to the backend with HMAC. The backend client re-encodes to
         // base64 (yes, double encode/decode, but the backend's contract
         // lives in services/api/app/documents/router.py and it's cleaner this way).
-        $client = new backend_client();
-        $response = $client->upload_document(
-            (int) $params['courseid'],
-            (int) $USER->id, // Always from the server, never from the client.
-            $params['filename'],
-            $params['mimetype'],
-            $filebytes,
-            $section
-        );
-
-        // Validate the response's shape.
-        if (!isset($response['id'], $response['status'])) {
-            throw new \moodle_exception(
-                'errorbackend',
-                'local_nexusai',
-                '',
-                'Backend upload response is missing required fields'
+        try {
+            $client = new backend_client();
+            $response = $client->upload_document(
+                (int) $params['courseid'],
+                (int) $USER->id, // Always from the server, never from the client.
+                $params['filename'],
+                $params['mimetype'],
+                $filebytes,
+                $section,
+                $cmid
             );
+
+            // Validate the response's shape.
+            if (!isset($response['id'], $response['status'])) {
+                throw new \moodle_exception(
+                    'errorbackend',
+                    'local_nexusai',
+                    '',
+                    'Backend upload response is missing required fields'
+                );
+            }
+        } catch (\Throwable $e) {
+            \local_nexusai\local\material_activity::remove($cmid);
+            throw $e;
         }
 
         // Save a copy in Moodle's file storage so it can be served via
@@ -213,11 +245,14 @@ class document_upload extends \external_api {
 
         // CAL-03 (issue #239): notify the course's users that there's new
         // material. Best-effort — must never break the upload's response.
-        \local_nexusai\notifier::notify_new_material(
-            (int) $params['courseid'],
-            $params['filename'],
-            (int) $USER->id
-        );
+        // A hidden activity is not announced: students must not learn about it.
+        if ($visible) {
+            \local_nexusai\notifier::notify_new_material(
+                (int) $params['courseid'],
+                $params['filename'],
+                (int) $USER->id
+            );
+        }
 
         return [
             'id'            => (string) $response['id'],
@@ -226,6 +261,8 @@ class document_upload extends \external_api {
             'filename'      => (string) $response['filename'],
             'mime_type'     => (string) $response['mime_type'],
             'section'       => isset($response['section']) ? (int) $response['section'] : null,
+            'cmid'          => $cmid,
+            'visible'       => $visible,
             'status'        => (string) $response['status'],
             'error_message' => $response['error_message'] ?? null,
         ];
