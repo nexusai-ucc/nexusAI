@@ -11,6 +11,10 @@ Sprint 3 additions:
   - BACK-14: rate limiting por user_id (20 req/min + límite diario), logging
              estructurado JSON con request_id + course_id + user_id + tokens
              + latencia.
+
+Presupuesto de tokens por rol (complementa BACK-14): limita el CONSUMO REAL
+en tokens por hora y por día, diferenciado alumno/docente. Ver
+app/shared/token_budget.py.
 """
 
 from __future__ import annotations
@@ -46,6 +50,12 @@ from app.shared.error_monitoring import (
 )
 from app.shared.moderation import moderate_text
 from app.shared.rate_limit import check_rate_limit
+from app.shared.token_budget import (
+    estimate_tokens,
+    estimate_tokens_for_messages,
+    finalize_token_usage,
+    reserve_token_budget,
+)
 
 import redis.asyncio as redis_async
 
@@ -97,6 +107,17 @@ async def _get_or_create_session(
     db.add(session)
     await db.flush()
     return session
+
+
+def _token_budget_limits(settings, is_teacher: bool) -> tuple[int, int]:
+    """Devuelve (límite horario, límite diario) de tokens según el rol.
+
+    is_teacher viene resuelto server-side en el plugin PHP (has_capability),
+    nunca del JS del navegador — ver comentario en ChatRequest.is_teacher.
+    """
+    if is_teacher:
+        return settings.token_budget_teacher_hourly, settings.token_budget_teacher_daily
+    return settings.token_budget_student_hourly, settings.token_budget_student_daily
 
 
 def _build_system_prompt(retrieved_context: str, is_multicourse: bool = False) -> str:
@@ -206,6 +227,38 @@ async def messages(
         language=resolve_language(request, payload.question),
     )
 
+    # ----- Presupuesto de tokens por rol (complementa el rate limit de
+    # arriba — ver app/shared/token_budget.py). Reserva ATÓMICA antes de
+    # cualquier gasto real (moderación puede llamar al LLM en el caso
+    # borderline, y después el LLM principal) — se reserva con la pregunta
+    # del alumno (lo único conocido en este punto, antes del RAG); el resto
+    # del costo real (contexto RAG + historial + completion) se ajusta más
+    # abajo con finalize_token_usage una vez conocido. -----
+    token_hourly_limit, token_daily_limit = _token_budget_limits(
+        settings, payload.is_teacher
+    )
+    question_tokens_estimate = estimate_tokens(payload.question)
+    reserved_hourly = await reserve_token_budget(
+        user_id=payload.user_id,
+        is_teacher=payload.is_teacher,
+        redis=redis,
+        limit=token_hourly_limit,
+        window_sec=3600,
+        scope="hourly",
+        estimated_tokens=question_tokens_estimate,
+        language=resolve_language(request, payload.question),
+    )
+    reserved_daily = await reserve_token_budget(
+        user_id=payload.user_id,
+        is_teacher=payload.is_teacher,
+        redis=redis,
+        limit=token_daily_limit,
+        window_sec=86400,
+        scope="daily",
+        estimated_tokens=question_tokens_estimate,
+        language=resolve_language(request, payload.question),
+    )
+
     # ----- Moderación de contenido — antes de cualquier escritura o gasto de
     # tokens (retrieval/LLM). Ver app/shared/moderation.py. -----
     moderation = await moderate_text(
@@ -213,6 +266,28 @@ async def messages(
         llm=llm,
         language=resolve_language(request, payload.question),
     )
+    if moderation.tokens_used:
+        # moderate_text puede llamar al LLM (fallback sin MODERATION_API_KEY
+        # configurada, el default del MVP) — ese costo es real y se conoce
+        # de inmediato (no es streaming), así que se suma directo, sin pasar
+        # por reserve_token_budget (que existe para el caso donde el costo
+        # recién se conoce después, no antes).
+        await finalize_token_usage(
+            user_id=payload.user_id,
+            is_teacher=payload.is_teacher,
+            redis=redis,
+            window_sec=3600,
+            reserved_tokens=0,
+            actual_tokens=moderation.tokens_used,
+        )
+        await finalize_token_usage(
+            user_id=payload.user_id,
+            is_teacher=payload.is_teacher,
+            redis=redis,
+            window_sec=86400,
+            reserved_tokens=0,
+            actual_tokens=moderation.tokens_used,
+        )
     if not moderation.allowed:
         log_moderation_block(
             endpoint="chat.messages",
@@ -220,6 +295,25 @@ async def messages(
             user_id=payload.user_id,
             source=moderation.source,
             categories=moderation.categories,
+        )
+        # Se bloqueó antes de llamar al LLM principal — liberar la reserva
+        # (el costo real de moderación ya se sumó arriba, pero la reserva de
+        # la pregunta en sí no se va a gastar).
+        await finalize_token_usage(
+            user_id=payload.user_id,
+            is_teacher=payload.is_teacher,
+            redis=redis,
+            window_sec=3600,
+            reserved_tokens=reserved_hourly,
+            actual_tokens=0,
+        )
+        await finalize_token_usage(
+            user_id=payload.user_id,
+            is_teacher=payload.is_teacher,
+            redis=redis,
+            window_sec=86400,
+            reserved_tokens=reserved_daily,
+            actual_tokens=0,
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=moderation.blocked_message
@@ -308,6 +402,24 @@ async def messages(
             extra={"error": str(exc), "type": type(exc).__name__},
         )
         await record_llm_failure_and_maybe_alert(redis, endpoint="messages", error=exc)
+        # Liberar la reserva de arriba — la request falló, no tiene sentido
+        # dejarle cobrada la estimación de una respuesta que nunca se generó.
+        await finalize_token_usage(
+            user_id=payload.user_id,
+            is_teacher=payload.is_teacher,
+            redis=redis,
+            window_sec=3600,
+            reserved_tokens=reserved_hourly,
+            actual_tokens=0,
+        )
+        await finalize_token_usage(
+            user_id=payload.user_id,
+            is_teacher=payload.is_teacher,
+            redis=redis,
+            window_sec=86400,
+            reserved_tokens=reserved_daily,
+            actual_tokens=0,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="El asistente no está disponible temporalmente",
@@ -316,6 +428,25 @@ async def messages(
     llm_latency_ms = (time.perf_counter() - llm_start) * 1000
     await record_llm_slow_and_maybe_alert(
         redis, endpoint="messages", latency_ms=llm_latency_ms
+    )
+
+    # Ajustar la reserva de arriba al costo real (ya conocido) de esta
+    # request — ver reserve_token_budget/finalize_token_usage.
+    await finalize_token_usage(
+        user_id=payload.user_id,
+        is_teacher=payload.is_teacher,
+        redis=redis,
+        window_sec=3600,
+        reserved_tokens=reserved_hourly,
+        actual_tokens=result.total_tokens,
+    )
+    await finalize_token_usage(
+        user_id=payload.user_id,
+        is_teacher=payload.is_teacher,
+        redis=redis,
+        window_sec=86400,
+        reserved_tokens=reserved_daily,
+        actual_tokens=result.total_tokens,
     )
 
     # ----- BACK-12: Persistir mensaje del asistente con token counts -----
@@ -451,6 +582,34 @@ async def messages_stream(
         language=resolve_language(request, payload.question),
     )
 
+    # ----- Presupuesto de tokens por rol (ver app/shared/token_budget.py).
+    # Reserva atómica igual que en /messages — ver el comentario en ese
+    # endpoint para el razonamiento completo. -----
+    token_hourly_limit, token_daily_limit = _token_budget_limits(
+        settings, payload.is_teacher
+    )
+    question_tokens_estimate = estimate_tokens(payload.question)
+    reserved_hourly = await reserve_token_budget(
+        user_id=payload.user_id,
+        is_teacher=payload.is_teacher,
+        redis=redis,
+        limit=token_hourly_limit,
+        window_sec=3600,
+        scope="hourly",
+        estimated_tokens=question_tokens_estimate,
+        language=resolve_language(request, payload.question),
+    )
+    reserved_daily = await reserve_token_budget(
+        user_id=payload.user_id,
+        is_teacher=payload.is_teacher,
+        redis=redis,
+        limit=token_daily_limit,
+        window_sec=86400,
+        scope="daily",
+        estimated_tokens=question_tokens_estimate,
+        language=resolve_language(request, payload.question),
+    )
+
     # ----- Moderación de contenido — antes de abrir el stream (que ya
     # implica costo de RAG/LLM). Ver app/shared/moderation.py. -----
     moderation = await moderate_text(
@@ -458,6 +617,23 @@ async def messages_stream(
         llm=llm,
         language=resolve_language(request, payload.question),
     )
+    if moderation.tokens_used:
+        await finalize_token_usage(
+            user_id=payload.user_id,
+            is_teacher=payload.is_teacher,
+            redis=redis,
+            window_sec=3600,
+            reserved_tokens=0,
+            actual_tokens=moderation.tokens_used,
+        )
+        await finalize_token_usage(
+            user_id=payload.user_id,
+            is_teacher=payload.is_teacher,
+            redis=redis,
+            window_sec=86400,
+            reserved_tokens=0,
+            actual_tokens=moderation.tokens_used,
+        )
     if not moderation.allowed:
         log_moderation_block(
             endpoint="chat.stream",
@@ -465,6 +641,25 @@ async def messages_stream(
             user_id=payload.user_id,
             source=moderation.source,
             categories=moderation.categories,
+        )
+        # Se bloqueó antes de llamar al LLM principal — liberar la reserva
+        # (ya se sumó el costo real de moderación arriba, pero la reserva
+        # de la pregunta en sí no se va a gastar).
+        await finalize_token_usage(
+            user_id=payload.user_id,
+            is_teacher=payload.is_teacher,
+            redis=redis,
+            window_sec=3600,
+            reserved_tokens=reserved_hourly,
+            actual_tokens=0,
+        )
+        await finalize_token_usage(
+            user_id=payload.user_id,
+            is_teacher=payload.is_teacher,
+            redis=redis,
+            window_sec=86400,
+            reserved_tokens=reserved_daily,
+            actual_tokens=0,
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=moderation.blocked_message
@@ -594,22 +789,65 @@ async def messages_stream(
                 usage_seen: StreamUsage | None = None
                 llm_start = time.perf_counter()
 
-                async for chunk in llm.chat_completion_stream(llm_messages):
-                    if isinstance(chunk, StreamToken):
-                        full_text_parts.append(chunk.text)
-                        yield (
-                            "data: "
-                            + json.dumps(
-                                {
-                                    "type": "token",
-                                    "content": chunk.text,
-                                },
-                                ensure_ascii=False,
+                try:
+                    async for chunk in llm.chat_completion_stream(llm_messages):
+                        if isinstance(chunk, StreamToken):
+                            full_text_parts.append(chunk.text)
+                            yield (
+                                "data: "
+                                + json.dumps(
+                                    {
+                                        "type": "token",
+                                        "content": chunk.text,
+                                    },
+                                    ensure_ascii=False,
+                                )
+                                + "\n\n"
                             )
-                            + "\n\n"
-                        )
-                    elif isinstance(chunk, StreamUsage):
-                        usage_seen = chunk
+                        elif isinstance(chunk, StreamUsage):
+                            usage_seen = chunk
+                finally:
+                    # Se ejecuta SIEMPRE, incluso si el cliente corta la
+                    # conexión a mitad de stream (pestaña cerrada, cambio de
+                    # tab, wifi cortado): Starlette cancela este generador
+                    # (CancelledError/GeneratorExit), que NO es un Exception
+                    # normal y antes se saltaba por completo el registro del
+                    # consumo de tokens de abajo — el LLM ya había facturado
+                    # lo generado hasta ese punto y el contador de Redis
+                    # nunca se enteraba. `finally` corre antes de que la
+                    # cancelación siga propagándose, y un await adicional
+                    # acá adentro (record/finalize) todavía se ejecuta con
+                    # normalidad — es el patrón estándar de cleanup async.
+                    #
+                    # Si el proveedor alcanzó a mandar el usage real
+                    # (usage_seen), se usa ese número exacto. Si el stream
+                    # se cortó ANTES de que llegara (el caso más agresivo:
+                    # cancelado a mitad de generación), se estima con
+                    # tiktoken sobre el prompt completo + lo generado hasta
+                    # el corte — no es exacto, pero es mejor que perder el
+                    # registro del gasto por completo.
+                    if usage_seen:
+                        stream_total_tokens = usage_seen.total_tokens
+                    else:
+                        stream_total_tokens = estimate_tokens_for_messages(
+                            llm_messages
+                        ) + estimate_tokens("".join(full_text_parts))
+                    await finalize_token_usage(
+                        user_id=payload.user_id,
+                        is_teacher=payload.is_teacher,
+                        redis=redis,
+                        window_sec=3600,
+                        reserved_tokens=reserved_hourly,
+                        actual_tokens=stream_total_tokens,
+                    )
+                    await finalize_token_usage(
+                        user_id=payload.user_id,
+                        is_teacher=payload.is_teacher,
+                        redis=redis,
+                        window_sec=86400,
+                        reserved_tokens=reserved_daily,
+                        actual_tokens=stream_total_tokens,
+                    )
 
                 full_text = "".join(full_text_parts)
                 llm_latency_ms = (time.perf_counter() - llm_start) * 1000

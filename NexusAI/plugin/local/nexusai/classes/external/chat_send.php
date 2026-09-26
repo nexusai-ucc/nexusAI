@@ -151,6 +151,12 @@ class chat_send extends \external_api {
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
 
+        // Resolved server-side, same capability visibility_helper.php already
+        // uses to compute 'isteacher' for the frontend. Drives the backend's
+        // per-role token budget (app/shared/token_budget.py) — NEVER trust a
+        // role sent by the client.
+        $isteacher = has_capability('local/nexusai:manage', $context);
+
         // 3. Business-rule validation.
         $cleanquestion = trim($params['question']);
         if ($cleanquestion === '') {
@@ -186,17 +192,31 @@ class chat_send extends \external_api {
             );
             $courseids   = [];
             $coursenames = [];
+            // Multicourse mode searches material across EVERY enrolled
+            // course, not just $params['courseid'] — so $isteacher (computed
+            // above from only the current course's context) would under- or
+            // over-grant the per-role token budget depending on which course
+            // happened to be "current" when the student opened the chat.
+            // Recomputed here as true if the user manages ANY of the courses
+            // actually being searched (has_capability is already O(1) per
+            // context, no extra DB round trip beyond what enrol_get_users_courses
+            // already did).
+            $isteachermulticourse = false;
             foreach ($enrolledcourses as $course) {
                 $cid = (int) $course->id;
                 $courseids[] = $cid;
                 $coursenames[(string) $cid] = $course->fullname
                     ?? $course->shortname
                     ?? 'Course';
+                if (has_capability('local/nexusai:manage', \context_course::instance($cid))) {
+                    $isteachermulticourse = true;
+                }
             }
             // Defensive fallback: if it couldn't be resolved, use the current course.
             if (empty($courseids)) {
                 $courseids   = [(int) $params['courseid']];
                 $coursenames = [(string) $params['courseid'] => 'Current course'];
+                $isteachermulticourse = $isteacher;
             }
 
             $response = $client->send_message_multicourse(
@@ -204,14 +224,16 @@ class chat_send extends \external_api {
                 $coursenames,
                 (int) $USER->id,
                 $cleanquestion,
-                $cleansessionid
+                $cleansessionid,
+                $isteachermulticourse
             );
         } else {
             $response = $client->send_message(
                 (int) $params['courseid'],
                 (int) $USER->id,
                 $cleanquestion,
-                $cleansessionid
+                $cleansessionid,
+                $isteacher
             );
         }
 

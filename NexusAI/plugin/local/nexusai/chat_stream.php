@@ -88,6 +88,12 @@ if ($courseid <= 0) {
 $context = context_course::instance($courseid);
 require_capability('local/nexusai:use', $context);
 
+// Resolved server-side, same capability visibility_helper.php already uses
+// to compute 'isteacher' for the frontend. Drives the backend's per-role
+// token budget (app/shared/token_budget.py) — NEVER trust a role sent by
+// the client.
+$isteacher = has_capability('local/nexusai:manage', $context);
+
 // Business validations.
 $cleanquestion = trim($question);
 if ($cleanquestion === '') {
@@ -109,9 +115,10 @@ if ($cleansessionid !== '' && (strlen($cleansessionid) < 8 || strlen($cleansessi
 
 // Build the payload for the Python backend.
 $bodyarray = [
-    'question'  => $cleanquestion,
-    'course_id' => $courseid,
-    'user_id'   => (int) $USER->id,
+    'question'   => $cleanquestion,
+    'course_id'  => $courseid,
+    'user_id'    => (int) $USER->id,
+    'is_teacher' => $isteacher,
 ];
 if ($cleansessionid !== '') {
     $bodyarray['session_id'] = $cleansessionid;
@@ -126,18 +133,27 @@ if ($multicourse) {
     );
     $courseids   = [];
     $coursenames = [];
+    // Same reasoning as chat_send.php: multicourse searches every enrolled
+    // course, so $isteacher (computed above from only $courseid's context)
+    // needs to be recomputed across all of them, not just the "current" one.
+    $isteachermulticourse = false;
     foreach ($enrolled as $course) {
         $cid = (int) $course->id;
         $courseids[] = $cid;
         $coursenames[(string) $cid] = $course->fullname ?? $course->shortname ?? 'Course';
+        if (has_capability('local/nexusai:manage', context_course::instance($cid))) {
+            $isteachermulticourse = true;
+        }
     }
     if (empty($courseids)) {
         $courseids   = [$courseid];
         $coursenames = [(string) $courseid => 'Current course'];
+        $isteachermulticourse = $isteacher;
     }
     $bodyarray['course_id']    = (int) $courseids[0];
     $bodyarray['course_ids']   = $courseids;
     $bodyarray['course_names'] = $coursenames;
+    $bodyarray['is_teacher']   = $isteachermulticourse;
 }
 
 $body = json_encode($bodyarray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
