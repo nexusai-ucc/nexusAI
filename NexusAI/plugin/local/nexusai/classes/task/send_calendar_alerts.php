@@ -46,6 +46,11 @@ class send_calendar_alerts extends \core\task\scheduled_task {
      * Queries the backend for due alerts, notifies each student and marks them as sent.
      */
     public function execute(): void {
+        // Off site-wide: nothing to send and no reason to call the backend (CURSO-01).
+        if (!\local_nexusai\local\course_guard::plugin_enabled()) {
+            return;
+        }
+
         $client = new \local_nexusai\external\backend_client();
 
         $due = $client->get_due_calendar_alerts();
@@ -58,6 +63,13 @@ class send_calendar_alerts extends \core\task\scheduled_task {
         foreach ($alerts as $alert) {
             $userid = (int) ($alert['user_id'] ?? 0);
             if ($userid <= 0) {
+                continue;
+            }
+
+            // The course turned NexusAI off: the alert stays pending and goes
+            // out if it is turned on again.
+            $alertcourseid = (int) ($alert['course_id'] ?? 0);
+            if ($alertcourseid > 0 && !\local_nexusai\local\course_guard::is_enabled($alertcourseid)) {
                 continue;
             }
 

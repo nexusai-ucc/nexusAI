@@ -70,8 +70,8 @@ class notifier {
      * @param int    $teacherid $USER->id of the teacher who uploaded it (excluded from recipients).
      */
     private static function send_notifications(int $courseid, string $filename, int $teacherid): void {
-        if (empty(get_config('local_nexusai', 'enabled'))) {
-            return; // Master switch off — no side effects.
+        if (!\local_nexusai\local\course_guard::is_enabled($courseid)) {
+            return; // Off site-wide or in this course — no side effects.
         }
 
         $course = get_course($courseid);

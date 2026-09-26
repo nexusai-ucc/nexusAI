@@ -112,6 +112,7 @@ class analytics_dashboard extends \external_api {
         self::validate_context($context);
         // Only teachers / admins see the analytics dashboard. Students don't.
         require_capability('local/nexusai:manage', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $days = max(1, min(365, (int) $params['days']));
 

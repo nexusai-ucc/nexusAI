@@ -105,6 +105,7 @@ class course_setup_state extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:manage', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $state = self::gather_moodle_signals($params['courseid'], $context);
         $state['courseid'] = (int) $params['courseid'];

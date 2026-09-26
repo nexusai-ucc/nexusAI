@@ -110,6 +110,8 @@ final class manage_capability_test extends \advanced_testcase {
     public function test_exam_generate_rejects_empty_document_ids_before_reaching_backend(): void {
         $this->resetAfterTest();
         [$course] = $this->create_teacher_in_course();
+        // Courses start with NexusAI off; this one has to be on for the call to get that far.
+        \local_nexusai\local\course_guard::set_enabled((int) $course->id, true);
 
         $this->expectException(\invalid_parameter_exception::class);
         \local_nexusai\external\exam_generate::execute($course->id, []);

@@ -85,6 +85,7 @@ class chat_message_feedback extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $cleancomment = trim($params['comment']);
         if (mb_strlen($cleancomment) > 1000) {

@@ -125,6 +125,7 @@ class forum_weekly_digest extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:manage', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $days = max(1, min(30, (int) $params['days']));
         $since = time() - ($days * DAYSECS);

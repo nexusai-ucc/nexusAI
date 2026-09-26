@@ -79,6 +79,7 @@ class document_summarize extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $cleandocid = trim($params['documentid']);
         if ($cleandocid === '') {

@@ -97,6 +97,7 @@ class forum_search_similar extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $cleantext = trim($params['text']);
         if (mb_strlen($cleantext) < 10) {

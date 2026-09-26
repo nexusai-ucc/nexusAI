@@ -150,6 +150,7 @@ class chat_send extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         // Resolved server-side, same capability visibility_helper.php already
         // uses to compute 'isteacher' for the frontend. Drives the backend's
@@ -204,6 +205,10 @@ class chat_send extends \external_api {
             $isteachermulticourse = false;
             foreach ($enrolledcourses as $course) {
                 $cid = (int) $course->id;
+                // Courses with NexusAI off stay out of the search (CURSO-01).
+                if (!\local_nexusai\local\course_guard::is_enabled($cid)) {
+                    continue;
+                }
                 $courseids[] = $cid;
                 $coursenames[(string) $cid] = $course->fullname
                     ?? $course->shortname

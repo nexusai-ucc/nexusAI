@@ -3,6 +3,32 @@
 All notable changes to the NexusAI Moodle plugin are documented in this
 file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.19.0] — Unreleased
+
+- New: teachers turn NexusAI on or off for their course from "NexusAI in this
+  course" (course navigation, needs `local/nexusai:manage`). When it is off,
+  students see no widget or icon, every NexusAI web service and script refuses
+  the course, observers and scheduled tasks skip it, and no request is made to
+  the backend. Nothing is deleted: history, questions and documents come back
+  when it is turned on again. The change is logged as a
+  `course_settings_updated` event.
+- Changed: NexusAI now ships **off in every course**, including existing ones
+  after the upgrade, so it can be turned on one course at a time. Admins can
+  change that with "On by default in courses", or turn courses on from the
+  command line: `php local/nexusai/cli/enable_course.php --courseid=N`
+  (`--list` shows the state of every course).
+- Changed: the widget, the navigation icon and the course-creation tutorial no
+  longer show outside a course unless the admin turns on "Show outside of a
+  course".
+- Fixed: the site-wide "enabled" switch only stopped observers and
+  notifications. It now also hides the widget and blocks the web services and
+  scripts.
+- New table `local_nexusai_course` and the plugin's first `db/upgrade.php`;
+  the empty placeholder table is removed. The Privacy API declares who last
+  changed a course setting and detaches a deleted user from it.
+- Calendar alerts of a course that is off stay pending and go out when it is
+  turned on again.
+
 ## [0.18.1] — 2026-09-20
 
 Initial submission to the Moodle Plugins directory. Maturity: beta.

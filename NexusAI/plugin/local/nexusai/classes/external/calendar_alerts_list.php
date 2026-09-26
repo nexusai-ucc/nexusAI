@@ -79,6 +79,7 @@ class calendar_alerts_list extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $client   = new backend_client();
         $response = $client->list_calendar_alerts((int) $params['userid'], (int) $params['courseid']);

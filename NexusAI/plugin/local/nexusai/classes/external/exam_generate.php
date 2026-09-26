@@ -148,6 +148,7 @@ class exam_generate extends \external_api {
         // the exam generator uses the same capability that gates the rest of
         // the teacher dashboard (documents.php).
         require_capability('local/nexusai:manage', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         if (empty($params['documentids'])) {
             throw new \invalid_parameter_exception('At least one document must be selected');

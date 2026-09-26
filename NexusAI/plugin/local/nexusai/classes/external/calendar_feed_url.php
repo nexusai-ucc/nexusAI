@@ -72,6 +72,7 @@ class calendar_feed_url extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         return [
             'url' => local_nexusai_calfeed_url((int) $USER->id, (int) $params['courseid']),

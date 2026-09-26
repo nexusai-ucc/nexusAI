@@ -84,6 +84,16 @@ class provider implements
             'privacy:metadata:nexusai_backend'
         );
 
+        // CURSO-01: who last changed the per-course NexusAI switch.
+        $collection->add_database_table(
+            'local_nexusai_course',
+            [
+                'usermodified' => 'privacy:metadata:local_nexusai_course:usermodified',
+                'timemodified' => 'privacy:metadata:local_nexusai_course:timemodified',
+            ],
+            'privacy:metadata:local_nexusai_course'
+        );
+
         return $collection;
     }
 
@@ -176,6 +186,24 @@ class provider implements
             $client ??= new backend_client();
             $client->privacy_delete($userid, (int) $context->instanceid);
         }
+
+        self::anonymise_course_settings([$userid]);
+    }
+
+    /**
+     * The per-course setting is not the user's data, only who changed it: on a
+     * deletion request the row stays and stops pointing at the user.
+     *
+     * @param int[] $userids Users to detach from the course settings.
+     * @return void
+     */
+    private static function anonymise_course_settings(array $userids): void {
+        global $DB;
+        if (empty($userids)) {
+            return;
+        }
+        [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        $DB->set_field_select('local_nexusai_course', 'usermodified', 0, "usermodified $insql", $params);
     }
 
     /**
@@ -240,5 +268,7 @@ class provider implements
             $client ??= new backend_client();
             $client->privacy_delete((int) $userid, $courseid);
         }
+
+        self::anonymise_course_settings(array_map('intval', $userlist->get_userids()));
     }
 }

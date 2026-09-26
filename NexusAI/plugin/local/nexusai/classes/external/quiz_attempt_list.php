@@ -99,6 +99,7 @@ class quiz_attempt_list extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $days  = max(1, min(365, (int) $params['days']));
         $limit = max(1, min(100, (int) $params['limit']));
