@@ -220,8 +220,7 @@ function local_nexusai_calfeed_url(int $userid, int $courseid): string {
  * @param context_course  $context    Course context.
  */
 function local_nexusai_extend_navigation_course($navigation, $course, $context): void {
-    if (!has_capability('local/nexusai:manage', $context)
-            || !\local_nexusai\local\course_guard::plugin_enabled()) {
+    if (!has_capability('local/nexusai:manage', $context) || !\local_nexusai\local\course_guard::plugin_enabled()) {
         return;
     }
 
