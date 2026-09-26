@@ -62,6 +62,21 @@ class backend_client {
     private const ROLES = ['student', 'teacher', 'system'];
 
     /**
+     * @var string[] Endpoints that read course material. Their body gets
+     * `visible_cmids` (see local\visible_material) and the backend answers
+     * only from documents of those activities. Add here any new endpoint that
+     * reads indexed material; chat_stream.php does the same for the stream.
+     */
+    private const VISIBILITY_PATHS = [
+        '/api/v1/chat/messages',
+        '/api/v1/search',
+        '/api/v1/quiz/generate',
+        '/api/v1/documents/summarize',
+        '/api/v1/documents/pre-exam-summary',
+        '/api/v1/forums/suggest-reply',
+    ];
+
+    /**
      * Forces the role reported to the backend for every request of this client.
      *
      * Scheduled tasks and event observers call this with 'system': their backend
@@ -1467,6 +1482,9 @@ class backend_client {
      * @throws \moodle_exception If the HTTP status isn't 200, or the JSON is broken.
      */
     private function post(string $path, string $body): array {
+        if (in_array($path, self::VISIBILITY_PATHS, true)) {
+            $body = \local_nexusai\local\visible_material::add_to_body($body);
+        }
         return $this->request('POST', $path, $body);
     }
 
