@@ -161,6 +161,28 @@ container de la API no llega a levantar y el error aparece en ese log.
 - [ ] `sudo docker logs nexusai-api --tail 50` → sin errores de migración ni de DB
 - [ ] Probar un endpoint real (login o chat) desde el Moodle local
 
+### Registro de consumo de tokens (una vez, y el cron diario)
+
+La migración 023 crea `llm_usage`, `model_prices` y `llm_usage_daily`. Después
+del primer deploy que la incluya:
+
+```bash
+# 1. Cargar hacia atrás los tokens históricos del chat (se puede repetir: no duplica)
+sudo docker exec nexusai-api python scripts/backfill_llm_usage.py
+
+# 2. Revisar precios y cargar los de los modelos en uso (solo viene gpt-4o-mini)
+sudo docker exec nexusai-api python scripts/model_prices.py list
+sudo docker exec nexusai-api python scripts/model_prices.py set \
+    --provider groq --model <modelo> --input <USD por 1M> --output <USD por 1M>
+```
+
+Un modelo sin precio deja `cost_usd` vacío y manda una alerta por día y por
+modelo. Para resumir por día el detalle de más de 13 meses, cron diario en la VM:
+
+```cron
+30 3 * * * docker exec nexusai-api python scripts/rollup_llm_usage.py >> /var/log/nexusai-rollup.log 2>&1
+```
+
 ### Reiniciar todo el stack (sin rebuild)
 
 ```bash

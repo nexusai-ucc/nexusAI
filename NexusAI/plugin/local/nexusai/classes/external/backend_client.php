@@ -55,6 +55,79 @@ class backend_client {
     /** @var string Shared secret for HMAC (32-byte hex) */
     private string $secret;
 
+    /** @var string|null Role forced by the caller (e.g. 'system' from tasks and observers) */
+    private ?string $role = null;
+
+    /** @var string[] Roles the backend usage ledger understands */
+    private const ROLES = ['student', 'teacher', 'system'];
+
+    /**
+     * Forces the role reported to the backend for every request of this client.
+     *
+     * Scheduled tasks and event observers call this with 'system': their backend
+     * calls are automatic, not something the current user asked for.
+     *
+     * @param string $role One of 'student', 'teacher' or 'system'.
+     * @return void
+     */
+    public function set_role(string $role): void {
+        if (!in_array($role, self::ROLES, true)) {
+            throw new \coding_exception('Unknown NexusAI role: ' . $role);
+        }
+        $this->role = $role;
+    }
+
+    /**
+     * Role of the current user in a course, as the backend usage ledger records it.
+     *
+     * Computed server-side with the same capability the widget uses to detect
+     * teachers, never taken from the browser. Without a logged-in user the call
+     * is attributed to the system; tasks and observers force 'system' with
+     * set_role() because cron runs them as the admin.
+     *
+     * @param int $courseid Course the request belongs to.
+     * @return string 'teacher', 'student' or 'system'.
+     */
+    public static function role_for_course(int $courseid): string {
+        if (!isloggedin() || isguestuser()) {
+            return 'system';
+        }
+        $context = \context_course::instance($courseid, IGNORE_MISSING);
+        if (!$context) {
+            return 'student';
+        }
+        return has_capability('local/nexusai:manage', $context) ? 'teacher' : 'student';
+    }
+
+    /**
+     * Role to report for a request: the forced one, or the user's role in the
+     * course the request is about (read from the JSON body or the query string).
+     *
+     * @param string $path Relative path, possibly with a query string.
+     * @param string $body JSON body (empty for GET/DELETE).
+     * @return string|null Null when the request has no course to derive it from.
+     */
+    private function request_role(string $path, string $body): ?string {
+        if ($this->role !== null) {
+            return $this->role;
+        }
+        $courseid = 0;
+        if ($body !== '') {
+            $data = json_decode($body, true);
+            if (is_array($data) && isset($data['course_id']) && is_numeric($data['course_id'])) {
+                $courseid = (int) $data['course_id'];
+            }
+        }
+        if ($courseid <= 0) {
+            $query = (string) parse_url($path, PHP_URL_QUERY);
+            parse_str($query, $params);
+            if (isset($params['course_id']) && is_numeric($params['course_id'])) {
+                $courseid = (int) $params['course_id'];
+            }
+        }
+        return $courseid > 0 ? self::role_for_course($courseid) : null;
+    }
+
     /**
      * Language of the Moodle user's interface as the backend understands it.
      *
@@ -1426,14 +1499,20 @@ class backend_client {
         global $CFG;
         require_once($CFG->libdir . '/filelib.php');
         $curl = new \curl(['ignoresecurity' => true]);
-        $curl->setHeader([
+        $headers = [
             'Content-Type: application/json',
             'Authorization: Bearer ' . $this->apikey,
             'X-Timestamp: ' . $timestamp,
             'X-Nonce: '     . $nonce,
             'X-Signature: ' . $signature,
             'Accept-Language: ' . self::interface_language(),
-        ]);
+        ];
+        // Who originated the call, for the backend usage ledger (tokens by role).
+        $role = $this->request_role($path, $body);
+        if ($role !== null) {
+            $headers[] = 'X-NexusAI-Role: ' . $role;
+        }
+        $curl->setHeader($headers);
         $curl->setopt([
             // 120 seconds for chat (the LLM can take a while). For PDF
             // upload, the backend returns 202 immediately and indexing runs

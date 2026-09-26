@@ -193,4 +193,79 @@ final class backend_client_test extends \advanced_testcase {
             'Two consecutive nonces must not be equal'
         );
     }
+
+    // Test 6: role reported to the backend usage ledger (COST-01).
+
+    /**
+     * Configures the plugin so backend_client can be built without a real backend.
+     */
+    private function configure_plugin(): void {
+        set_config('api_endpoint', 'http://localhost:8001', 'local_nexusai');
+        set_config('api_key', 'test-api-key', 'local_nexusai');
+        set_config('shared_secret', 'test-shared-secret', 'local_nexusai');
+    }
+
+    /**
+     * role_for_course() tells teachers from students with the manage capability,
+     * and attributes calls without a logged-in user to the system.
+     */
+    public function test_role_for_course_distinguishes_teacher_student_and_system(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $teacher = $generator->create_user();
+        $student = $generator->create_user();
+        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $generator->enrol_user($student->id, $course->id, 'student');
+
+        $this->setUser($teacher);
+        $this->assertSame('teacher', backend_client::role_for_course((int) $course->id));
+
+        $this->setUser($student);
+        $this->assertSame('student', backend_client::role_for_course((int) $course->id));
+
+        $this->setUser(null);
+        $this->assertSame('system', backend_client::role_for_course((int) $course->id));
+    }
+
+    /**
+     * request_role() finds the course in the JSON body or the query string,
+     * returns null without a course, and a role forced with set_role() wins.
+     */
+    public function test_request_role_reads_course_and_respects_forced_role(): void {
+        $this->resetAfterTest();
+        $this->configure_plugin();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $teacher = $generator->create_user();
+        $generator->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $this->setUser($teacher);
+
+        $client = new backend_client();
+        $method = new \ReflectionMethod(backend_client::class, 'request_role');
+        $method->setAccessible(true);
+
+        $body = json_encode(['course_id' => (int) $course->id]);
+        $this->assertSame('teacher', $method->invoke($client, '/api/v1/quiz/generate', $body));
+        $this->assertSame(
+            'teacher',
+            $method->invoke($client, '/api/v1/admin/analytics?course_id=' . $course->id . '&days=30', '')
+        );
+        $this->assertNull($method->invoke($client, '/api/v1/documents', ''));
+
+        $client->set_role('system');
+        $this->assertSame('system', $method->invoke($client, '/api/v1/quiz/generate', $body));
+    }
+
+    /**
+     * set_role() only accepts the roles the backend ledger understands.
+     */
+    public function test_set_role_rejects_unknown_roles(): void {
+        $this->resetAfterTest();
+        $this->configure_plugin();
+        $client = new backend_client();
+
+        $this->expectException(\coding_exception::class);
+        $client->set_role('admin');
+    }
 }
