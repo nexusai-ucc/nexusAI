@@ -63,6 +63,12 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   were reachable by any student of the course). Replacing a document from
   NexusAI also replaces the file of its activity, so the classroom and the index
   show the same one.
+- New: forum posts respect visibility too. Each indexed post stores its forum
+  and, in separate-groups forums, the group of its discussion, and "similar
+  posts" shows only posts from forums the user can see and from discussions
+  without a group or of one of the user's groups (whoever can access all groups
+  sees all). Posts indexed before this release are not shown until they are
+  indexed again.
 
 ## [0.18.1] — 2026-09-20
 

@@ -208,4 +208,87 @@ final class visible_material_test extends \advanced_testcase {
         $this->expectException(\moodle_exception::class);
         visible_material::add_to_body('not json');
     }
+
+    /**
+     * Creates a forum and a discussion in it, and returns the forum's cmid and the discussion.
+     *
+     * @param \stdClass $course Course.
+     * @param \stdClass $author Author of the discussion.
+     * @param int $groupmode Forum group mode.
+     * @param int $groupid Group the discussion is posted to (-1 = everyone).
+     * @return array{0:int,1:\stdClass} Forum cmid and discussion record.
+     */
+    private function forum_discussion(\stdClass $course, \stdClass $author, int $groupmode, int $groupid): array {
+        $gen = $this->getDataGenerator();
+        $forum = $gen->create_module('forum', ['course' => $course->id, 'groupmode' => $groupmode]);
+        $discussion = $gen->get_plugin_generator('mod_forum')->create_discussion([
+            'course' => $course->id,
+            'forum' => $forum->id,
+            'userid' => $author->id,
+            'groupid' => $groupid,
+        ]);
+        return [(int) $forum->cmid, $discussion];
+    }
+
+    /**
+     * A discussion of a separate-groups forum is tied to its group; any other kind is open to everyone.
+     */
+    public function test_forum_scope_ties_only_separate_group_discussions_to_a_group(): void {
+        $this->resetAfterTest();
+        [$course, $student, $teacher] = $this->setup_course();
+        $group = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+        $this->setAdminUser();
+
+        [$cmsep, $dsep] = $this->forum_discussion($course, $teacher, SEPARATEGROUPS, (int) $group->id);
+        [$cmvis, $dvis] = $this->forum_discussion($course, $teacher, VISIBLEGROUPS, (int) $group->id);
+        [$cmnone, $dnone] = $this->forum_discussion($course, $teacher, NOGROUPS, -1);
+        [$cmall, $dall] = $this->forum_discussion($course, $teacher, SEPARATEGROUPS, -1);
+        $id = (int) $course->id;
+
+        $this->assertSame(['cmid' => $cmsep, 'groupid' => (int) $group->id], visible_material::forum_scope((int) $dsep->id, $id));
+        $this->assertSame(['cmid' => $cmvis, 'groupid' => null], visible_material::forum_scope((int) $dvis->id, $id));
+        $this->assertSame(['cmid' => $cmnone, 'groupid' => null], visible_material::forum_scope((int) $dnone->id, $id));
+        $this->assertSame(['cmid' => $cmall, 'groupid' => null], visible_material::forum_scope((int) $dall->id, $id));
+        $this->assertSame(['cmid' => null, 'groupid' => null], visible_material::forum_scope(999999, $id));
+    }
+
+    /**
+     * A student gets their own groups; whoever can access all groups is flagged as such.
+     */
+    public function test_groups_for_course_lists_the_users_groups(): void {
+        $this->resetAfterTest();
+        [$course, $student, $teacher] = $this->setup_course();
+        $gen = $this->getDataGenerator();
+        $mine = $gen->create_group(['courseid' => $course->id]);
+        $gen->create_group(['courseid' => $course->id]);
+        $gen->create_group_member(['groupid' => $mine->id, 'userid' => $student->id]);
+
+        $this->setUser($student);
+        $this->assertSame(
+            ['group_ids' => [(int) $mine->id], 'all_groups' => false],
+            visible_material::groups_for_course((int) $course->id)
+        );
+
+        $this->setUser($teacher);
+        $this->assertTrue(visible_material::groups_for_course((int) $course->id)['all_groups']);
+    }
+
+    /**
+     * For forum posts the body also carries the groups; for everything else it does not.
+     */
+    public function test_add_to_body_adds_groups_only_when_asked(): void {
+        $this->resetAfterTest();
+        [$course, $student] = $this->setup_course();
+        $group = $this->getDataGenerator()->create_group(['courseid' => $course->id]);
+        $this->getDataGenerator()->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+        $this->setUser($student);
+        $body = json_encode(['course_id' => (int) $course->id]);
+
+        $plain = json_decode(visible_material::add_to_body($body), true);
+        $this->assertArrayNotHasKey('group_ids', $plain);
+
+        $withgroups = json_decode(visible_material::add_to_body($body, true), true);
+        $this->assertSame([(int) $group->id], $withgroups['group_ids']);
+        $this->assertFalse($withgroups['all_groups']);
+    }
 }

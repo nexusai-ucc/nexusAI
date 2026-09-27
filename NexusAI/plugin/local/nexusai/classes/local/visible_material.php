@@ -82,6 +82,54 @@ class visible_material {
     }
 
     /**
+     * Forum and group a forum discussion belongs to, as the backend stores them (VIS-06).
+     *
+     * `cmid` is the forum activity: it is visible or not to each user, like any activity.
+     * `groupid` is set only when the discussion is restricted to one group, that is, in a
+     * separate-groups forum: in every other case everyone who sees the forum sees the discussion.
+     *
+     * @param int $discussionid Discussion id.
+     * @param int $courseid Course id.
+     * @return array{cmid:?int, groupid:?int} Both null when the forum is not found.
+     */
+    public static function forum_scope(int $discussionid, int $courseid): array {
+        global $DB;
+
+        $none = ['cmid' => null, 'groupid' => null];
+        $discussion = $DB->get_record('forum_discussions', ['id' => $discussionid], 'id, forum, groupid');
+        if (!$discussion) {
+            return $none;
+        }
+        $cm = get_fast_modinfo($courseid)->instances['forum'][(int) $discussion->forum] ?? null;
+        if ($cm === null) {
+            return $none;
+        }
+        $restricted = (int) $discussion->groupid > 0
+            && groups_get_activity_groupmode($cm) == SEPARATEGROUPS;
+        return [
+            'cmid' => (int) $cm->id,
+            'groupid' => $restricted ? (int) $discussion->groupid : null,
+        ];
+    }
+
+    /**
+     * Groups whose discussions the current user may read in a course.
+     *
+     * @param int $courseid Course id.
+     * @return array{group_ids:int[], all_groups:bool} `all_groups` for whoever can access all groups.
+     */
+    public static function groups_for_course(int $courseid): array {
+        global $USER;
+
+        $context = \context_course::instance($courseid);
+        $groups = groups_get_all_groups($courseid, (int) $USER->id, 0, 'g.id');
+        return [
+            'group_ids' => array_values(array_map('intval', array_keys($groups))),
+            'all_groups' => has_capability('moodle/site:accessallgroups', $context),
+        ];
+    }
+
+    /**
      * Adds `visible_cmids` to a JSON request body bound for the backend.
      *
      * The courses come from the body itself (`course_ids`, or `course_id`),
@@ -89,10 +137,11 @@ class visible_material {
      * Any `visible_cmids` already in the body is overwritten.
      *
      * @param string $body JSON body.
+     * @param bool $withgroups Also add the user's groups (`group_ids`, `all_groups`), for forum posts.
      * @return string JSON body with `visible_cmids`, ready to be signed.
      * @throws \moodle_exception If the body is not a JSON object.
      */
-    public static function add_to_body(string $body): string {
+    public static function add_to_body(string $body, bool $withgroups = false): string {
         $payload = json_decode($body, true);
         if (!is_array($payload)) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'Invalid request body');
@@ -101,6 +150,11 @@ class visible_material {
             ? $payload['course_ids']
             : [$payload['course_id'] ?? 0];
         $payload['visible_cmids'] = self::for_courses($courseids);
+        if ($withgroups) {
+            $groups = self::groups_for_course((int) ($payload['course_id'] ?? 0));
+            $payload['group_ids'] = $groups['group_ids'];
+            $payload['all_groups'] = $groups['all_groups'];
+        }
 
         $newbody = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($newbody === false) {
