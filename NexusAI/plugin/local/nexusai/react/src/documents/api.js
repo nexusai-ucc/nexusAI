@@ -188,8 +188,12 @@ function resolveMimeType(file) {
     return byExtension || file.type;
 }
 
-export async function uploadDocument(courseId, file, section = null) {
+// `section`: unidad del aula donde se crea la actividad (0 = General); es
+// obligatoria, porque todo material queda como actividad de Moodle (VIS-03).
+// `visible`: si los alumnos ven la actividad (ojito de Moodle).
+export async function uploadDocument(courseId, file, section, visible = true) {
     if (!file) throw new Error("No file provided");
+    if (section === null || section === undefined) throw new Error("Choose a unit");
 
     const mimeType = resolveMimeType(file);
     if (!ACCEPTED_MIME_TYPES.has(mimeType)) {
@@ -217,7 +221,9 @@ export async function uploadDocument(courseId, file, section = null) {
             uploader_id: 2,
             filename: file.name,
             mime_type: mimeType,
-            section: section === null || section === undefined ? null : section,
+            section,
+            cmid: 1000 + MOCK_DOCS.length,
+            visible,
             status: "pending",
             error_message: null,
         };
@@ -233,7 +239,8 @@ export async function uploadDocument(courseId, file, section = null) {
         filename:    file.name,
         mimetype:    mimeType,
         content_b64: contentB64,
-        section:     section === null || section === undefined ? -1 : section,
+        section,
+        visible,
     });
 }
 

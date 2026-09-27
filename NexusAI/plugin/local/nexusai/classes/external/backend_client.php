@@ -964,6 +964,8 @@ class backend_client {
      * @param string $filename     File name.
      * @param string $mimetype     MIME type (only 'application/pdf' accepted in the MVP).
      * @param string $filebytes    File binary content (raw, NOT base64).
+     * @param int|null $section    Course section the activity is in.
+     * @param int|null $cmid       Course module id of the activity the file comes from (VIS-01).
      * @return array{id:string, course_id:int, uploader_id:int, filename:string, mime_type:string,
      *     status:string, error_message:?string}
      *
@@ -975,7 +977,8 @@ class backend_client {
         string $filename,
         string $mimetype,
         string $filebytes,
-        ?int $section = null
+        ?int $section = null,
+        ?int $cmid = null
     ): array {
         $payload = [
             'course_id'   => $courseid,
@@ -986,6 +989,10 @@ class backend_client {
         ];
         if ($section !== null) {
             $payload['section'] = $section;
+        }
+        if ($cmid !== null) {
+            // The activity the document comes from: it decides who can see it.
+            $payload['cmid'] = $cmid;
         }
 
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

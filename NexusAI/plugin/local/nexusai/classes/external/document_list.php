@@ -77,12 +77,57 @@ class document_list extends \external_api {
                     'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
                     'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
                     'error_message' => new \external_value(PARAM_RAW, 'Error message, if applicable', VALUE_OPTIONAL),
+                    'section'       => new \external_value(PARAM_INT, 'Unit number', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'section_name'  => new \external_value(PARAM_TEXT, 'Unit name in the course', VALUE_OPTIONAL),
+                    'cmid'          => new \external_value(
+                        PARAM_INT,
+                        'Activity the document comes from',
+                        VALUE_OPTIONAL,
+                        null,
+                        NULL_ALLOWED
+                    ),
+                    'activity_url'  => new \external_value(PARAM_URL, 'Link to the activity in the classroom', VALUE_OPTIONAL),
+                    'activity_status' => new \external_value(
+                        PARAM_ALPHA,
+                        'visible | hidden | missing | none: state of the activity in the classroom',
+                        VALUE_OPTIONAL
+                    ),
                     'created_at'    => new \external_value(PARAM_TEXT, 'Upload date (ISO 8601)', VALUE_OPTIONAL),
                     'updated_at'    => new \external_value(PARAM_TEXT, 'Last update date (ISO 8601)', VALUE_OPTIONAL),
                 ]),
                 'Course documents, ordered by upload date descending'
             ),
         ]);
+    }
+
+    /**
+     * Where a document lives in the classroom: unit, link to its activity and
+     * whether that activity is visible, hidden or gone (VIS-03).
+     *
+     * @param array $doc Document as the backend returns it.
+     * @param \course_modinfo $modinfo Course modinfo.
+     * @return array
+     */
+    private static function activity_fields(array $doc, \course_modinfo $modinfo): array {
+        $cmid = isset($doc['cmid']) ? (int) $doc['cmid'] : null;
+        $out = [
+            'section'         => isset($doc['section']) ? (int) $doc['section'] : null,
+            'cmid'            => $cmid,
+            'activity_status' => 'none',
+        ];
+        if ($cmid === null) {
+            return $out;
+        }
+        $cm = $modinfo->cms[$cmid] ?? null;
+        if ($cm === null || !empty($cm->deletioninprogress)) {
+            $out['activity_status'] = 'missing';
+            return $out;
+        }
+        $out['activity_status'] = $cm->visible && $cm->get_section_info()->visible ? 'visible' : 'hidden';
+        $out['activity_url'] = $cm->url ? $cm->url->out(false) : '';
+        $out['section'] = (int) $cm->sectionnum;
+        $out['section_name'] = get_section_name($cm->course, $cm->sectionnum);
+        return $out;
     }
 
     /**
@@ -110,11 +155,12 @@ class document_list extends \external_api {
 
         $client   = new backend_client();
         $response = $client->list_documents((int) $params['courseid'], $limit, $offset);
+        $modinfo  = get_fast_modinfo((int) $params['courseid']);
 
         return [
             'total' => (int) ($response['total'] ?? 0),
             'items' => array_map(
-                static fn(array $d) => [
+                static fn(array $d) => self::activity_fields($d, $modinfo) + [
                     'id'            => (string) ($d['id'] ?? ''),
                     'course_id'     => (int) ($d['course_id'] ?? 0),
                     'uploader_id'   => (int) ($d['uploader_id'] ?? 0),

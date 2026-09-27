@@ -113,6 +113,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
     ); // "material" | "questions" | "analytics" | "exam" | "search" | "help"
     const [sections, setSections]         = useState([]); // BUS-05: secciones del curso para el selector de upload
     const [selectedSection, setSelectedSection] = useState("");
+    const [visibleToStudents, setVisibleToStudents] = useState(true); // VIS-03: ojito de la actividad
     // CONT-06 (#320): cola de archivos subiéndose en secuencia — un item por
     // archivo, { key, filename, status: "queued"|"uploading"|"error", error }.
     // "uploading"/"queued" se sacan solos al terminar bien; "error" queda
@@ -129,8 +130,10 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
         course:          "Curso",
         assistantActive: "Asistente activo",
         intro:           "Los archivos que subís acá quedan disponibles para el asistente NexusAI cuando los alumnos de este curso le hacen preguntas. Se aceptan PDF, DOCX, PPTX, XLSX, CSV, MD, HTML y TXT. La indexación tarda aproximadamente 30-60 segundos por archivo.",
-        sectionLabel:    "Unidad/sección (opcional)",
-        unassigned:      "Sin asignar",
+        sectionLabel:    "Unidad del aula",
+        chooseSection:   "Elegí una unidad",
+        visibleLabel:    "Visible para alumnos",
+        visibleHint:     "Cada archivo se crea como una actividad \"Archivo\" en esa unidad. Si lo dejás oculto, los alumnos no lo ven en el aula ni el asistente lo usa para responderles.",
         uploading:       "Subiendo...",
         queued:          "En cola...",
         dismissUploadError: (name) => `Descartar error de ${name}`,
@@ -145,8 +148,10 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
         course:          "Course",
         assistantActive: "Assistant active",
         intro:           "Files you upload here become available to the NexusAI assistant when this course's students ask it questions. PDF, DOCX, PPTX, XLSX, CSV, MD, HTML and TXT are accepted. Indexing takes about 30-60 seconds per file.",
-        sectionLabel:    "Unit/section (optional)",
-        unassigned:      "Unassigned",
+        sectionLabel:    "Course unit",
+        chooseSection:   "Choose a unit",
+        visibleLabel:    "Visible to students",
+        visibleHint:     "Each file is created as a \"File\" activity in that unit. If you leave it hidden, students do not see it in the classroom and the assistant does not use it to answer them.",
         uploading:       "Uploading...",
         queued:          "Queued...",
         dismissUploadError: (name) => `Dismiss error for ${name}`,
@@ -264,14 +269,15 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
         setUploadQueue((prev) => [...prev, ...items]);
         setUploading(true);
 
-        const section = selectedSection === "" ? null : Number(selectedSection);
+        // Sin lista de unidades (no cargó) se sube a General (0).
+        const section = selectedSection === "" ? 0 : Number(selectedSection);
 
         for (const item of items) {
             setUploadQueue((prev) =>
                 prev.map((q) => (q.key === item.key ? { ...q, status: "uploading" } : q))
             );
             try {
-                const newDoc = await uploadDocument(courseid, item.file, section);
+                const newDoc = await uploadDocument(courseid, item.file, section, visibleToStudents);
                 // El backend devuelve 200 con el doc existente cuando el contenido
                 // es idéntico (CONT-04). Si el id ya está en la lista, el doc está
                 // indexado — no sobreescribir con la respuesta que puede traer fecha nula.
@@ -374,7 +380,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                                         onChange={(e) => setSelectedSection(e.target.value)}
                                         disabled={uploading}
                                     >
-                                        <option value="">{L.unassigned}</option>
+                                        <option value="" disabled>{L.chooseSection}</option>
                                         {sections.map((s) => (
                                             <option key={s.section} value={s.section}>{s.name}</option>
                                         ))}
@@ -382,7 +388,19 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                                 </div>
                             )}
 
-                            <UploadZone onUpload={handleUpload} disabled={uploading} lang={lang} />
+                            <label className="nexusai-visibility-toggle" htmlFor="nexusai-upload-visible">
+                                <input
+                                    id="nexusai-upload-visible"
+                                    type="checkbox"
+                                    checked={visibleToStudents}
+                                    onChange={(e) => setVisibleToStudents(e.target.checked)}
+                                    disabled={uploading}
+                                />
+                                <span>{L.visibleLabel}</span>
+                            </label>
+                            <p className="nexusai-documents__hint">{L.visibleHint}</p>
+
+                            <UploadZone onUpload={handleUpload} disabled={uploading || (sections.length > 0 && selectedSection === "")} lang={lang} />
 
                             {uploadQueue.length > 0 && (
                                 <ul className="nexusai-upload-queue">

@@ -69,6 +69,12 @@ class observer {
             return;
         }
 
+        // NexusAI created this activity itself (VIS-03) and indexes it in the same
+        // step: asking the teacher to confirm it again would be wrong.
+        if (\local_nexusai\local\material_activity::is_creating()) {
+            return;
+        }
+
         $data = $event->get_data();
 
         // Only "resource"-type modules have an attached file.
