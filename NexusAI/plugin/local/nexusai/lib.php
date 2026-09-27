@@ -125,34 +125,25 @@ function local_nexusai_before_footer(): string {
 }
 
 /**
- * Allows Moodle to serve files from the plugin's 'documents' area.
+ * Serves nothing from the plugin's file areas (VIS-05).
  *
- * URL: /pluginfile.php/{contextid}/local_nexusai/documents/{courseid}/{filename}
- * Access: requires local/nexusai:use (course students and teachers).
+ * Until VIS-05 the plugin kept its own copy of each uploaded document and
+ * served it here to any student of the course, hidden or not. Every document
+ * is now a "File" activity of the course and is opened through it
+ * (document_download.php), so Moodle's visibility rules always apply. Copies
+ * left by older versions are not served.
+ *
+ * @param stdClass $course Course.
+ * @param stdClass|null $cm Course module.
+ * @param context $context Context.
+ * @param string $filearea File area.
+ * @param array $args Remaining path.
+ * @param bool $forcedownload Whether to force the download.
+ * @param array $options Options.
+ * @return bool Always false: nothing is served.
  */
 function local_nexusai_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = []) {
-    if ($filearea !== 'documents') {
-        return false;
-    }
-
-    require_login($course);
-    if (!has_capability('local/nexusai:use', $context)) {
-        return false;
-    }
-
-    $itemid  = (int) array_shift($args);
-    $filename = array_shift($args);
-    if (empty($filename)) {
-        return false;
-    }
-
-    $fs   = get_file_storage();
-    $file = $fs->get_file($context->id, 'local_nexusai', 'documents', $itemid, '/', $filename);
-    if (!$file || $file->is_directory()) {
-        return false;
-    }
-
-    send_stored_file($file, 86400, 0, $forcedownload, $options);
+    return false;
 }
 
 /**
