@@ -98,6 +98,69 @@ class observer {
     }
 
     /**
+     * Callback for the course_module_deleted event (VIS-04).
+     *
+     * A "File" activity deleted in Moodle stops being used: its document leaves
+     * the index, with its chunks and stored summaries.
+     *
+     * @param \core\event\course_module_deleted $event
+     */
+    public static function course_module_deleted(\core\event\course_module_deleted $event): void {
+        self::sync_resource($event, static function (\local_nexusai\local\material_sync $sync, int $courseid, int $cmid) {
+            $sync->remove_activity($courseid, $cmid);
+        });
+    }
+
+    /**
+     * Callback for the course_module_updated event (VIS-04).
+     *
+     * If the file of a "File" activity changed, its document is indexed again.
+     * Renaming the activity or changing its visibility does not touch the index.
+     *
+     * @param \core\event\course_module_updated $event
+     */
+    public static function course_module_updated(\core\event\course_module_updated $event): void {
+        self::sync_resource($event, static function (\local_nexusai\local\material_sync $sync, int $courseid, int $cmid) {
+            $sync->sync_activity($courseid, $cmid);
+        });
+    }
+
+    /**
+     * Runs a sync action for a "File" activity event, off the request's back.
+     *
+     * Skips courses where NexusAI is off, other kinds of activity and what
+     * NexusAI is creating itself. A backend failure is logged and never
+     * interrupts Moodle.
+     *
+     * @param \core\event\base $event Deleted or updated event of a course module.
+     * @param callable $action fn(material_sync, courseid, cmid)
+     */
+    private static function sync_resource(\core\event\base $event, callable $action): void {
+        $courseid = (int) $event->courseid;
+        if (!\local_nexusai\local\course_guard::is_enabled($courseid)) {
+            return;
+        }
+        if (($event->other['modulename'] ?? '') !== 'resource') {
+            return;
+        }
+        if (\local_nexusai\local\material_activity::is_creating()) {
+            return;
+        }
+
+        $cmid = (int) $event->objectid;
+        try {
+            $client = new \local_nexusai\external\backend_client();
+            $client->set_role('system');
+            $action(new \local_nexusai\local\material_sync($client), $courseid, $cmid);
+        } catch (\Throwable $e) {
+            debugging(
+                '[NexusAI] Syncing the index failed for cmid=' . $cmid . ': ' . $e->getMessage(),
+                DEBUG_NORMAL
+            );
+        }
+    }
+
+    /**
      * Name of the user preference where pending-confirmation uploads accumulate.
      * Value: JSON object {cmid: {courseid, context_id, filename, mimetype}}.
      */

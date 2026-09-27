@@ -42,6 +42,22 @@ $observers = [
         'priority'     => 0,
     ],
 
+    // VIS-04: keep the index in step with the activity a document comes from.
+    [
+        'eventname'    => '\core\event\course_module_deleted',
+        'callback'     => '\local_nexusai\observer::course_module_deleted',
+        'includefile'  => null,
+        'internal'     => false,
+        'priority'     => 0,
+    ],
+    [
+        'eventname'    => '\core\event\course_module_updated',
+        'callback'     => '\local_nexusai\observer::course_module_updated',
+        'includefile'  => null,
+        'internal'     => false,
+        'priority'     => 0,
+    ],
+
     // Forums — Epic 06: index posts on create/edit/delete.
     // On Moodle 5.x, creating a new discussion fires discussion_created (NOT post_created).
     // post_created only fires for replies to existing discussions.

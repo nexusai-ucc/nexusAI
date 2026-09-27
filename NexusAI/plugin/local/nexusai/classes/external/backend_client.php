@@ -1280,10 +1280,14 @@ class backend_client {
      * @param int $courseid Moodle course ID.
      * @return array List of documents with their current status.
      */
-    public function list_documents(int $courseid, ?int $limit = null, int $offset = 0): array {
+    public function list_documents(int $courseid, ?int $limit = null, int $offset = 0, ?int $cmid = null): array {
         $query = 'course_id=' . $courseid . '&offset=' . $offset;
         if ($limit !== null) {
             $query .= '&limit=' . $limit;
+        }
+        if ($cmid !== null) {
+            // Only the documents of that activity (VIS-04).
+            $query .= '&cmid=' . $cmid;
         }
         return $this->get('/api/v1/documents?' . $query);
     }
