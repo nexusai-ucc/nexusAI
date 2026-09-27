@@ -181,10 +181,10 @@ class document_replace extends \external_api {
         // The document is the file of a "File" activity: replace that file too, so the
         // classroom and the index keep showing the same one (VIS-05). The file API does
         // not fire course_module_updated, so nothing is indexed twice.
-        if (!empty($document['cmid']) && \local_nexusai\local\material_link::url_for_cmid(
-            (int) $params['courseid'],
-            (int) $document['cmid']
-        ) !== null) {
+        $activityurl = !empty($document['cmid'])
+            ? \local_nexusai\local\material_link::url_for_cmid((int) $params['courseid'], (int) $document['cmid'])
+            : null;
+        if ($activityurl !== null) {
             \local_nexusai\local\material_activity::replace_file(
                 (int) $document['cmid'],
                 $params['filename'],
