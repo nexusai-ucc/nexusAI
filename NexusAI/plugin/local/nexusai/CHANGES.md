@@ -47,6 +47,13 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   hidden or deleted. "Delete" became "Remove from NexusAI": it takes the
   document out of the index and leaves the activity in the course. Files added
   the native way still ask for confirmation, now indexed with their activity.
+- New: the index follows the activity. Deleting a "File" activity in Moodle
+  takes its document out of NexusAI (with its chunks and stored summaries), and
+  replacing its file indexes it again. Renaming the activity or changing its
+  visibility does not touch the index. Both respect the per-course switch and
+  never interrupt Moodle if the backend fails. New observers for
+  `course_module_deleted` and `course_module_updated`; the plugin version was
+  bumped so they are picked up on upgrade.
 
 ## [0.18.1] — 2026-09-20
 
