@@ -157,6 +157,11 @@ class document_replace extends \external_api {
             );
         }
 
+        if (!empty($document['cmid'])) {
+            // It also changes the activity's file.
+            require_capability('moodle/course:manageactivities', $context);
+        }
+
         $response = $client->replace_document(
             $params['documentid'],
             $params['filename'],
@@ -173,29 +178,19 @@ class document_replace extends \external_api {
             );
         }
 
-        // Update the copy in Moodle's file storage: delete the old one
-        // (it may have had a different name) and save the new one under the current name.
-        $fs = get_file_storage();
-        $existing = $fs->get_file(
-            $context->id,
-            'local_nexusai',
-            'documents',
-            $params['courseid'],
-            '/',
-            $params['filename']
-        );
-        if ($existing) {
-            $existing->delete();
+        // The document is the file of a "File" activity: replace that file too, so the
+        // classroom and the index keep showing the same one (VIS-05). The file API does
+        // not fire course_module_updated, so nothing is indexed twice.
+        if (!empty($document['cmid']) && \local_nexusai\local\material_link::url_for_cmid(
+            (int) $params['courseid'],
+            (int) $document['cmid']
+        ) !== null) {
+            \local_nexusai\local\material_activity::replace_file(
+                (int) $document['cmid'],
+                $params['filename'],
+                $filebytes
+            );
         }
-        $filerecord = [
-            'contextid' => $context->id,
-            'component' => 'local_nexusai',
-            'filearea'  => 'documents',
-            'itemid'    => (int) $params['courseid'],
-            'filepath'  => '/',
-            'filename'  => $params['filename'],
-        ];
-        $fs->create_file_from_string($filerecord, $filebytes);
 
         return [
             'id'            => (string) $response['id'],

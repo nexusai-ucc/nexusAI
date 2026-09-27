@@ -128,3 +128,24 @@ describe("SearchPanel — estado vacío accionable (BUS-07, #362)", () => {
         expect(screen.queryByRole("button", { name: "Preguntarle al asistente" })).not.toBeInTheDocument();
     });
 });
+
+describe("SearchPanel — abrir un resultado (VIS-05)", () => {
+    it("opens the document through its id, not through a file name", async () => {
+        searchMaterial.mockResolvedValue(RESULT);
+        const open = vi.spyOn(window, "open").mockImplementation(() => null);
+        const user = userEvent.setup();
+        render(<SearchPanel courseId={5} sesskey="abc" />);
+
+        await user.type(screen.getByPlaceholderText("Buscá en el material del curso..."), "derivadas");
+        await user.click(screen.getByRole("button", { name: "Buscar" }));
+        await user.click(await screen.findByRole("button", { name: "Abrir ↗" }));
+
+        expect(open).toHaveBeenCalledTimes(1);
+        const url = new URL(open.mock.calls[0][0], "http://aula.test");
+        expect(url.pathname).toBe("/local/nexusai/document_download.php");
+        expect(url.searchParams.get("document_id")).toBe("doc-1");
+        expect(url.searchParams.get("courseid")).toBe("5");
+        expect(url.searchParams.has("filename")).toBe(false);
+        open.mockRestore();
+    });
+});

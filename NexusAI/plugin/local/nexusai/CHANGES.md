@@ -54,6 +54,15 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   never interrupt Moodle if the backend fails. New observers for
   `course_module_deleted` and `course_module_updated`; the plugin version was
   bumped so they are picked up on upgrade.
+- Changed: a source cited by NexusAI (chat, search, error review) now opens
+  through the "File" activity it comes from (`document_download.php` takes the
+  document id and redirects to `mod/resource/view.php`), so Moodle applies its
+  own rules: a student who opens a hidden source gets Moodle's error, not the
+  file. The plugin no longer keeps its own copy of uploaded files, and
+  `pluginfile.php` serves nothing from the plugin (copies left by older versions
+  were reachable by any student of the course). Replacing a document from
+  NexusAI also replaces the file of its activity, so the classroom and the index
+  show the same one.
 
 ## [0.18.1] — 2026-09-20
 

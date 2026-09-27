@@ -237,11 +237,13 @@ export default function SearchPanel({
         setError(null);
     };
 
-    const openDownload = (filename, resultCourseId) => {
-        if (!filename || !sesskey) return;
+    // VIS-05: el documento se abre a través de su actividad de Moodle, que
+    // aplica sus propios permisos (visibilidad, restricciones, rol).
+    const openDownload = (documentId, resultCourseId) => {
+        if (!documentId || !sesskey) return;
         const params = new URLSearchParams({
             courseid: String(resultCourseId || courseId || ""),
-            filename,
+            document_id: String(documentId),
             sesskey,
         });
         window.open(
@@ -401,7 +403,7 @@ export default function SearchPanel({
                                     <button
                                         type="button"
                                         className="nexusai-search__open-btn"
-                                        onClick={() => openDownload(r.document_filename, r.course_id)}
+                                        onClick={() => openDownload(r.document_id, r.course_id)}
                                     >
                                         {L.openFile}
                                     </button>

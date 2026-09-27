@@ -217,32 +217,6 @@ class document_upload extends \external_api {
             throw $e;
         }
 
-        // Save a copy in Moodle's file storage so it can be served via
-        // pluginfile.php without depending on the Python backend's disk.
-        // itemid = course_id to group by course. Filename unique per course
-        // (already validated by the backend with a collision check).
-        $fs = get_file_storage();
-        $existing = $fs->get_file(
-            $context->id,
-            'local_nexusai',
-            'documents',
-            $params['courseid'],
-            '/',
-            $params['filename']
-        );
-        if ($existing) {
-            $existing->delete();  // Replaces it if it already existed (re-upload).
-        }
-        $filerecord = [
-            'contextid' => $context->id,
-            'component' => 'local_nexusai',
-            'filearea'  => 'documents',
-            'itemid'    => (int) $params['courseid'],
-            'filepath'  => '/',
-            'filename'  => $params['filename'],
-        ];
-        $fs->create_file_from_string($filerecord, $filebytes);
-
         // CAL-03 (issue #239): notify the course's users that there's new
         // material. Best-effort — must never break the upload's response.
         // A hidden activity is not announced: students must not learn about it.

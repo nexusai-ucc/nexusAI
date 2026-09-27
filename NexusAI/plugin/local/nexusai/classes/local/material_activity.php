@@ -141,6 +141,41 @@ class material_activity {
     }
 
     /**
+     * Puts a new file in an existing "File" activity, so the classroom and the index show the same one.
+     *
+     * Used when the teacher replaces a document from NexusAI. The file API does not fire
+     * `course_module_updated`, so the caller reindexes on its own and nothing is indexed twice.
+     *
+     * @param int    $cmid     Course module id.
+     * @param string $filename New file name.
+     * @param string $bytes    New file content.
+     */
+    public static function replace_file(int $cmid, string $filename, string $bytes): void {
+        global $DB;
+
+        $context = \context_module::instance($cmid);
+        $cm = get_coursemodule_from_id('resource', $cmid, 0, false, MUST_EXIST);
+
+        $fs = get_file_storage();
+        $fs->delete_area_files($context->id, 'mod_resource', 'content');
+        $fs->create_file_from_string([
+            'contextid' => $context->id,
+            'component' => 'mod_resource',
+            'filearea'  => 'content',
+            'itemid'    => 0,
+            'filepath'  => '/',
+            'filename'  => $filename,
+            'sortorder' => 1,
+        ], $bytes);
+
+        // A new revision makes browsers fetch the new file instead of a cached one.
+        $DB->set_field('resource', 'revision', (int) $DB->get_field('resource', 'revision', ['id' => $cm->instance]) + 1, [
+            'id' => $cm->instance,
+        ]);
+        $DB->set_field('resource', 'timemodified', time(), ['id' => $cm->instance]);
+    }
+
+    /**
      * Removes an activity this class created, when the rest of the upload failed.
      *
      * @param int $cmid Course module id.
