@@ -74,7 +74,11 @@ class backend_client {
         '/api/v1/documents/summarize',
         '/api/v1/documents/pre-exam-summary',
         '/api/v1/forums/suggest-reply',
+        '/api/v1/forums/similar-posts',
     ];
+
+    /** @var string[] Endpoints that read forum posts: they also get the user's groups (VIS-06). */
+    private const GROUP_PATHS = ['/api/v1/forums/similar-posts'];
 
     /**
      * Forces the role reported to the backend for every request of this client.
@@ -1063,17 +1067,33 @@ class backend_client {
      * @param int    $discussionid mdl_forum_discussions ID.
      * @param int    $courseid     Moodle course ID.
      * @param string $content      Plain text of the post (no HTML).
+     * @param int|null $cmid       Forum activity the post is in (VIS-06).
+     * @param int|null $groupid    Group the discussion is restricted to, if any (VIS-06).
      * @return array{post_id:int, status:string}  status = 'indexed' | 'skipped'
      *
      * @throws \moodle_exception If the backend returns non-2xx or the network fails.
      */
-    public function index_forum_post(int $postid, int $discussionid, int $courseid, string $content): array {
+    public function index_forum_post(
+        int $postid,
+        int $discussionid,
+        int $courseid,
+        string $content,
+        ?int $cmid = null,
+        ?int $groupid = null
+    ): array {
         $payload = [
             'post_id'       => $postid,
             'discussion_id' => $discussionid,
             'course_id'     => $courseid,
             'content'       => $content,
         ];
+        if ($cmid !== null) {
+            // The forum and, if any, the group of the discussion decide who can see the post (VIS-06).
+            $payload['cmid'] = $cmid;
+        }
+        if ($groupid !== null) {
+            $payload['group_id'] = $groupid;
+        }
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
@@ -1494,7 +1514,10 @@ class backend_client {
      */
     private function post(string $path, string $body): array {
         if (in_array($path, self::VISIBILITY_PATHS, true)) {
-            $body = \local_nexusai\local\visible_material::add_to_body($body);
+            $body = \local_nexusai\local\visible_material::add_to_body(
+                $body,
+                in_array($path, self::GROUP_PATHS, true)
+            );
         }
         return $this->request('POST', $path, $body);
     }

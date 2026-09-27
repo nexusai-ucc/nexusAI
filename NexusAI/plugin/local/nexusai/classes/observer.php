@@ -289,7 +289,8 @@ class observer {
 
             $client = new \local_nexusai\external\backend_client();
             $client->set_role('system');
-            $client->index_forum_post($postid, $discussionid, $courseid, $content);
+            $scope = \local_nexusai\local\visible_material::forum_scope($discussionid, $courseid);
+            $client->index_forum_post($postid, $discussionid, $courseid, $content, $scope['cmid'], $scope['groupid']);
         } catch (\Throwable $e) {
             debugging(
                 '[NexusAI] forum post indexing failed for post=' . $postid . ': ' . $e->getMessage(),
