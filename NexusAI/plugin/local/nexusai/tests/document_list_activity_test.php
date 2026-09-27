@@ -53,6 +53,7 @@ final class document_list_activity_test extends \advanced_testcase {
         $modinfo = get_fast_modinfo($course->id);
 
         $method = new \ReflectionMethod(external\document_list::class, 'activity_fields');
+        $method->setAccessible(true);
         $status = static fn(?int $cmid) => $method->invoke(null, ['cmid' => $cmid, 'section' => 1], $modinfo);
 
         $this->assertSame('visible', $status($shown)['activity_status']);

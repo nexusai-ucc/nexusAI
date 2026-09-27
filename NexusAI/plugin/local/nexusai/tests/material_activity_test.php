@@ -117,8 +117,14 @@ final class material_activity_test extends \advanced_testcase {
         );
         $pending = static fn() => json_decode(get_user_preferences(observer::PENDING_PREF, '{}'), true);
 
+        // Depending on the database the real observer may already have queued it
+        // while the generator created the activity: start from a clean slate.
+        unset_user_preference(observer::PENDING_PREF);
+        $this->resetDebugging();
+
         // While NexusAI is creating an activity the observer leaves it alone.
         $flag = new \ReflectionProperty(material_activity::class, 'creating');
+        $flag->setAccessible(true);
         $flag->setValue(null, true);
         observer::course_module_created($event((int) $native->cmid));
         $flag->setValue(null, false);
