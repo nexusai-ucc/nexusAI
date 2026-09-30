@@ -34,6 +34,8 @@
 
 namespace local_nexusai;
 
+use core_external\external_single_structure;
+
 /**
  * Tests for the course_setup_state external function (ONB-02, #425).
  *
@@ -46,7 +48,7 @@ final class course_setup_state_test extends \advanced_testcase {
     public function test_execute_returns_declares_all_signals(): void {
         $returns = \local_nexusai\external\course_setup_state::execute_returns();
 
-        $this->assertInstanceOf(\external_single_structure::class, $returns);
+        $this->assertInstanceOf(external_single_structure::class, $returns);
 
         $keys = $returns->keys;
         foreach (['courseid', 'sections', 'groups', 'students', 'forums', 'calendar', 'material'] as $key) {
@@ -55,7 +57,7 @@ final class course_setup_state_test extends \advanced_testcase {
 
         foreach (['sections', 'groups', 'students', 'forums', 'calendar', 'material'] as $signal) {
             $this->assertInstanceOf(
-                \external_single_structure::class,
+                external_single_structure::class,
                 $keys[$signal],
                 "'$signal' must be a { present, count } structure"
             );

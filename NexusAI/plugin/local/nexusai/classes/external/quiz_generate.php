@@ -28,60 +28,63 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Proxy between React and the Python backend's /api/v1/quiz/generate endpoint.
  */
-class quiz_generate extends \external_api {
+class quiz_generate extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'      => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'topic'         => new \external_value(PARAM_RAW, 'Topic (optional)', VALUE_DEFAULT, ''),
-            'numquestions'  => new \external_value(PARAM_INT, 'Number of questions (1..10)', VALUE_DEFAULT, 5),
-            'questiontype'  => new \external_value(
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'      => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'topic'         => new external_value(PARAM_RAW, 'Topic (optional)', VALUE_DEFAULT, ''),
+            'numquestions'  => new external_value(PARAM_INT, 'Number of questions (1..10)', VALUE_DEFAULT, 5),
+            'questiontype'  => new external_value(
                 PARAM_ALPHANUMEXT,
                 'Question type (multiple_choice|true_false|open|mix|flashcard)',
                 VALUE_DEFAULT,
                 'multiple_choice'
             ),
-            'difficulty'    => new \external_value(PARAM_ALPHA, 'Difficulty (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
+            'difficulty'    => new external_value(PARAM_ALPHA, 'Difficulty (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
-            'topic'     => new \external_value(PARAM_RAW, 'Requested topic', VALUE_OPTIONAL, null, NULL_ALLOWED),
-            'questions' => new \external_multiple_structure(
-                new \external_single_structure([
-                    'id'                  => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'course_id' => new external_value(PARAM_INT, 'Course ID'),
+            'topic'     => new external_value(PARAM_RAW, 'Requested topic', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'questions' => new external_multiple_structure(
+                new external_single_structure([
+                    'id'                  => new external_value(
                         PARAM_ALPHANUMEXT,
                         'Persisted ID (flashcards only, SP-11)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'question_type'      => new \external_value(PARAM_ALPHANUMEXT, 'Question type'),
-                    'question'           => new \external_value(PARAM_RAW, 'Question text'),
-                    'options'            => new \external_multiple_structure(
-                        new \external_value(PARAM_RAW, 'Option')
+                    'question_type'      => new external_value(PARAM_ALPHANUMEXT, 'Question type'),
+                    'question'           => new external_value(PARAM_RAW, 'Question text'),
+                    'options'            => new external_multiple_structure(
+                        new external_value(PARAM_RAW, 'Option')
                     ),
-                    'correct_index'      => new \external_value(PARAM_INT, 'Index of the correct option (-1..3)'),
-                    'explanation'        => new \external_value(PARAM_RAW, 'Explanation / model answer'),
-                    'source_filename'    => new \external_value(PARAM_TEXT, 'File the question comes from'),
-                    'source_document_id' => new \external_value(
+                    'correct_index'      => new external_value(PARAM_INT, 'Index of the correct option (-1..3)'),
+                    'explanation'        => new external_value(PARAM_RAW, 'Explanation / model answer'),
+                    'source_filename'    => new external_value(PARAM_TEXT, 'File the question comes from'),
+                    'source_document_id' => new external_value(
                         PARAM_ALPHANUMEXT,
                         'Source document ID (UUID)',
                         VALUE_OPTIONAL,

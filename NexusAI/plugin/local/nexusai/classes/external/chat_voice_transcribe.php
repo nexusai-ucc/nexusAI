@@ -35,14 +35,15 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Receives a short audio clip recorded in the browser and forwards it to the Python backend to transcribe (VOICE-01, #314).
  */
-class chat_voice_transcribe extends \external_api {
+class chat_voice_transcribe extends external_api {
     /** Maximum accepted base64 size — short audio, 14 MB is plenty
      *  (~10 MB decoded, base64 inflates by ~33%). */
     private const MAX_B64_BYTES = 14 * 1024 * 1024;
@@ -60,24 +61,24 @@ class chat_voice_transcribe extends \external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'    => new \external_value(PARAM_INT, 'Course ID (to validate the capability)', VALUE_REQUIRED),
-            'mimetype'    => new \external_value(PARAM_RAW, 'MIME type detected by the browser', VALUE_REQUIRED),
-            'content_b64' => new \external_value(PARAM_RAW, 'Audio in base64', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'    => new external_value(PARAM_INT, 'Course ID (to validate the capability)', VALUE_REQUIRED),
+            'mimetype'    => new external_value(PARAM_RAW, 'MIME type detected by the browser', VALUE_REQUIRED),
+            'content_b64' => new external_value(PARAM_RAW, 'Audio in base64', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'text' => new \external_value(PARAM_RAW, 'Transcribed text'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'text' => new external_value(PARAM_RAW, 'Transcribed text'),
         ]);
     }
 

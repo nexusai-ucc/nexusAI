@@ -31,6 +31,8 @@
 
 namespace local_nexusai;
 
+use core_external\external_multiple_structure;
+
 /**
  * Tests for the onboarding_state_get/onboarding_state_set external functions (ONB-05, #428).
  *
@@ -109,7 +111,7 @@ final class onboarding_state_test extends \advanced_testcase {
         $this->assertArrayHasKey('courseid', $keys);
         $this->assertArrayHasKey('dismissed', $keys);
         $this->assertArrayHasKey('skipped', $keys);
-        $this->assertInstanceOf(\external_multiple_structure::class, $keys['skipped']);
+        $this->assertInstanceOf(external_multiple_structure::class, $keys['skipped']);
     }
 
     public function test_set_execute_returns_shape(): void {

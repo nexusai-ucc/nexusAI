@@ -29,36 +29,38 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * ASIST-01 (#321): saves the student's 👍/👎 vote on a specific assistant answer, tied to
  * `messages.id`.
  */
-class chat_message_feedback extends \external_api {
+class chat_message_feedback extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'  => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'messageid' => new \external_value(PARAM_ALPHANUMEXT, 'Message ID (UUID)', VALUE_REQUIRED),
-            'ishelpful' => new \external_value(PARAM_BOOL, 'true = 👍, false = 👎', VALUE_REQUIRED),
-            'comment'   => new \external_value(PARAM_TEXT, 'Optional short comment (only with 👎)', VALUE_DEFAULT, ''),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'  => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'messageid' => new external_value(PARAM_ALPHANUMEXT, 'Message ID (UUID)', VALUE_REQUIRED),
+            'ishelpful' => new external_value(PARAM_BOOL, 'true = 👍, false = 👎', VALUE_REQUIRED),
+            'comment'   => new external_value(PARAM_TEXT, 'Optional short comment (only with 👎)', VALUE_DEFAULT, ''),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'ok' => new \external_value(PARAM_BOOL, 'true if saved successfully'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'ok' => new external_value(PARAM_BOOL, 'true if saved successfully'),
         ]);
     }
 

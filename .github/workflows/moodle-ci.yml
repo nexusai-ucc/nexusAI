@@ -42,11 +42,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # DATA-02 (#522): el mínimo pasa a Moodle 4.5 LTS. Se prueba el
+        # mínimo, la versión que usa la UCC (5.0) y la última estable (5.2),
+        # cada una con el PHP más bajo que acepta.
         include:
-          # Moodle 4.1 LTS (PHP 7.4 / 8.0 mínimo)
-          - php: '8.0'
-            moodle-branch: 'MOODLE_401_STABLE'
-            database: 'pgsql'
           # Moodle 4.5 LTS (PHP 8.1+)
           - php: '8.1'
             moodle-branch: 'MOODLE_405_STABLE'
@@ -56,10 +55,20 @@ jobs:
           - php: '8.1'
             moodle-branch: 'MOODLE_405_STABLE'
             database: 'mysqli'
+          # Moodle 5.0: la versión de la UCC (PHP 8.2+)
+          - php: '8.2'
+            moodle-branch: 'MOODLE_500_STABLE'
+            database: 'pgsql'
+          # Moodle 5.2: última estable, con el directorio public/ (PHP 8.3+)
+          - php: '8.3'
+            moodle-branch: 'MOODLE_502_STABLE'
+            database: 'pgsql'
 
     services:
+      # PostgreSQL 16 y MySQL 8.4 son los mínimos de Moodle 5.2 y 5.0; 4.5
+      # también los acepta, así que la misma imagen sirve para toda la matriz.
       postgres:
-        image: pgvector/pgvector:pg14
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: 'postgres'
           POSTGRES_HOST_AUTH_METHOD: 'trust'
@@ -72,7 +81,7 @@ jobs:
           --health-retries 5
 
       mysql:
-        image: mysql:8.0
+        image: mysql:8.4
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
           MYSQL_DATABASE: 'moodle_test'

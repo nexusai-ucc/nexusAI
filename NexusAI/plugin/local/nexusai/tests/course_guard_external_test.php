@@ -28,10 +28,9 @@ namespace local_nexusai;
 use local_nexusai\local\course_guard;
 
 /**
- * External functions include externallib.php, which needs an isolated process in tests.
+ * An external function refuses a course where NexusAI is off.
  *
  * @covers \local_nexusai\local\course_guard
- * @runTestsInSeparateProcesses
  */
 final class course_guard_external_test extends \advanced_testcase {
     /**

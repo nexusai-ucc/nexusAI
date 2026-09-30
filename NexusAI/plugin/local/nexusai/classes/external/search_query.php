@@ -31,32 +31,35 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Proxy between React and the Python backend's /api/v1/search endpoint.
  */
-class search_query extends \external_api {
+class search_query extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'query'    => new \external_value(PARAM_RAW, 'Search query', VALUE_REQUIRED),
-            'courseid' => new \external_value(PARAM_INT, 'Current course ID', VALUE_REQUIRED),
-            'topk'     => new \external_value(PARAM_INT, 'Number of results (1..10)', VALUE_DEFAULT, 5),
-            'global'   => new \external_value(PARAM_BOOL, 'Search across all of the user\'s courses', VALUE_DEFAULT, false),
-            'materialtype' => new \external_value(PARAM_RAW, 'Filter by material type (mime type)', VALUE_DEFAULT, ''),
-            'section'      => new \external_value(
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'query'    => new external_value(PARAM_RAW, 'Search query', VALUE_REQUIRED),
+            'courseid' => new external_value(PARAM_INT, 'Current course ID', VALUE_REQUIRED),
+            'topk'     => new external_value(PARAM_INT, 'Number of results (1..10)', VALUE_DEFAULT, 5),
+            'global'   => new external_value(PARAM_BOOL, 'Search across all of the user\'s courses', VALUE_DEFAULT, false),
+            'materialtype' => new external_value(PARAM_RAW, 'Filter by material type (mime type)', VALUE_DEFAULT, ''),
+            'section'      => new external_value(
                 PARAM_INT,
                 'Filter by course section/unit (-1 = no filter, BUS-05)',
                 VALUE_DEFAULT,
                 -1
             ),
-            'sectionunassigned' => new \external_value(
+            'sectionunassigned' => new external_value(
                 PARAM_BOOL,
                 'Filter only material with no unit assigned (BUS-05)',
                 VALUE_DEFAULT,
@@ -68,34 +71,34 @@ class search_query extends \external_api {
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'query'   => new \external_value(PARAM_RAW, 'Original query'),
-            'total'   => new \external_value(PARAM_INT, 'Total results'),
-            'results' => new \external_multiple_structure(
-                new \external_single_structure([
-                    'document_id'       => new \external_value(PARAM_RAW, 'Document UUID', VALUE_DEFAULT, ''),
-                    'document_filename' => new \external_value(PARAM_TEXT, 'File name'),
-                    'course_id'         => new \external_value(PARAM_INT, 'Source course ID', VALUE_DEFAULT, 0),
-                    'course_name'       => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'query'   => new external_value(PARAM_RAW, 'Original query'),
+            'total'   => new external_value(PARAM_INT, 'Total results'),
+            'results' => new external_multiple_structure(
+                new external_single_structure([
+                    'document_id'       => new external_value(PARAM_RAW, 'Document UUID', VALUE_DEFAULT, ''),
+                    'document_filename' => new external_value(PARAM_TEXT, 'File name'),
+                    'course_id'         => new external_value(PARAM_INT, 'Source course ID', VALUE_DEFAULT, 0),
+                    'course_name'       => new external_value(
                         PARAM_TEXT,
                         'Course name (global mode only)',
                         VALUE_DEFAULT,
                         ''
                     ),
-                    'chunk_index'       => new \external_value(PARAM_INT, 'Fragment index'),
-                    'content'           => new \external_value(PARAM_RAW, 'Fragment text'),
-                    'similarity'        => new \external_value(PARAM_FLOAT, 'Similarity score 0-1'),
-                    'has_file'          => new \external_value(
+                    'chunk_index'       => new external_value(PARAM_INT, 'Fragment index'),
+                    'content'           => new external_value(PARAM_RAW, 'Fragment text'),
+                    'similarity'        => new external_value(PARAM_FLOAT, 'Similarity score 0-1'),
+                    'has_file'          => new external_value(
                         PARAM_BOOL,
                         'The original file is available for download',
                         VALUE_DEFAULT,
                         false
                     ),
-                    'mime_type'         => new \external_value(PARAM_RAW, 'Document MIME type', VALUE_DEFAULT, ''),
-                    'section'           => new \external_value(
+                    'mime_type'         => new external_value(PARAM_RAW, 'Document MIME type', VALUE_DEFAULT, ''),
+                    'section'           => new external_value(
                         PARAM_INT,
                         'Document section',
                         VALUE_OPTIONAL,

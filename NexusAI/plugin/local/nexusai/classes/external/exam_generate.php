@@ -29,40 +29,43 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Proxy between React and the Python backend's /api/v1/quiz/generate-exam endpoint.
  */
-class exam_generate extends \external_api {
+class exam_generate extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'     => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'documentids'  => new \external_multiple_structure(
-                new \external_value(PARAM_ALPHANUMEXT, 'Source document UUID'),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'     => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'documentids'  => new external_multiple_structure(
+                new external_value(PARAM_ALPHANUMEXT, 'Source document UUID'),
                 'Course files to draw the questions from (at least 1)'
             ),
-            'topic'        => new \external_value(PARAM_RAW, 'Optional topic', VALUE_DEFAULT, ''),
-            'numquestions' => new \external_value(PARAM_INT, 'Number of questions (1..20)', VALUE_DEFAULT, 10),
-            'questiontype' => new \external_value(
+            'topic'        => new external_value(PARAM_RAW, 'Optional topic', VALUE_DEFAULT, ''),
+            'numquestions' => new external_value(PARAM_INT, 'Number of questions (1..20)', VALUE_DEFAULT, 10),
+            'questiontype' => new external_value(
                 PARAM_ALPHANUMEXT,
                 'Question type (multiple_choice|true_false|open|mix)',
                 VALUE_DEFAULT,
                 'multiple_choice'
             ),
-            'difficulty'   => new \external_value(PARAM_ALPHA, 'Difficulty (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
+            'difficulty'   => new external_value(PARAM_ALPHA, 'Difficulty (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
             // DOC-D09 (#390): topics with detected difficulty (Gaps/FAQ) that
             // the teacher chose to prioritize as extra generation context.
-            'topics'       => new \external_multiple_structure(
-                new \external_single_structure([
-                    'label'  => new \external_value(PARAM_TEXT, 'Topic text (gap or FAQ)'),
-                    'source' => new \external_value(PARAM_ALPHA, 'Topic origin: gap|faq'),
+            'topics'       => new external_multiple_structure(
+                new external_single_structure([
+                    'label'  => new external_value(PARAM_TEXT, 'Topic text (gap or FAQ)'),
+                    'source' => new external_value(PARAM_ALPHA, 'Topic origin: gap|faq'),
                 ]),
                 'Topics with detected difficulty to prioritize (max 15)',
                 VALUE_OPTIONAL,
@@ -74,30 +77,30 @@ class exam_generate extends \external_api {
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
-            'topic'     => new \external_value(PARAM_RAW, 'Requested topic', VALUE_OPTIONAL, null, NULL_ALLOWED),
-            'questions' => new \external_multiple_structure(
-                new \external_single_structure([
-                    'question_type'      => new \external_value(PARAM_ALPHANUMEXT, 'Question type'),
-                    'question'           => new \external_value(PARAM_RAW, 'Question text'),
-                    'options'            => new \external_multiple_structure(
-                        new \external_value(PARAM_RAW, 'Option')
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'course_id' => new external_value(PARAM_INT, 'Course ID'),
+            'topic'     => new external_value(PARAM_RAW, 'Requested topic', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'questions' => new external_multiple_structure(
+                new external_single_structure([
+                    'question_type'      => new external_value(PARAM_ALPHANUMEXT, 'Question type'),
+                    'question'           => new external_value(PARAM_RAW, 'Question text'),
+                    'options'            => new external_multiple_structure(
+                        new external_value(PARAM_RAW, 'Option')
                     ),
-                    'correct_index'      => new \external_value(PARAM_INT, 'Index of the correct option (-1..3)'),
-                    'explanation'        => new \external_value(PARAM_RAW, 'Explanation / model answer'),
-                    'source_filename'    => new \external_value(PARAM_TEXT, 'File the question comes from'),
-                    'source_document_id' => new \external_value(
+                    'correct_index'      => new external_value(PARAM_INT, 'Index of the correct option (-1..3)'),
+                    'explanation'        => new external_value(PARAM_RAW, 'Explanation / model answer'),
+                    'source_filename'    => new external_value(PARAM_TEXT, 'File the question comes from'),
+                    'source_document_id' => new external_value(
                         PARAM_ALPHANUMEXT,
                         'Source document ID (UUID)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'source_topic'       => new \external_value(
+                    'source_topic'       => new external_value(
                         PARAM_TEXT,
                         'Detected-difficulty topic the question comes from (DOC-D09)',
                         VALUE_OPTIONAL,

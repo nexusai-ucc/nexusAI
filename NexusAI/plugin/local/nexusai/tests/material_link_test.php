@@ -32,10 +32,6 @@ use local_nexusai\local\material_link;
 /**
  * Covers material_link and the file replacement inside an activity.
  *
- * Runs in a separate process because backend_client is loaded from the external classes,
- * which require externallib.php.
- *
- * @runTestsInSeparateProcesses
  * @covers \local_nexusai\local\material_link
  * @covers \local_nexusai\local\material_activity
  */

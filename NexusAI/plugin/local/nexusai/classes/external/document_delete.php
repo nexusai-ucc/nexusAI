@@ -27,34 +27,35 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Deletes an indexed document and all its associated chunks.
  */
-class document_delete extends \external_api {
+class document_delete extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'   => new \external_value(PARAM_INT, 'Course ID (to validate the capability)', VALUE_REQUIRED),
-            'documentid' => new \external_value(PARAM_ALPHANUMEXT, 'UUID of the document to delete', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'   => new external_value(PARAM_INT, 'Course ID (to validate the capability)', VALUE_REQUIRED),
+            'documentid' => new external_value(PARAM_ALPHANUMEXT, 'UUID of the document to delete', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'success' => new \external_value(PARAM_BOOL, 'true if deleted successfully'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'success' => new external_value(PARAM_BOOL, 'true if deleted successfully'),
         ]);
     }
 

@@ -28,45 +28,46 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * CONT-07 (#356): replaces an existing document's file while keeping its document_id (old chat
  * citations keep pointing to the same id).
  */
-class document_replace extends \external_api {
+class document_replace extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'    => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
-            'documentid'  => new \external_value(PARAM_ALPHANUMEXT, 'UUID of the document to replace', VALUE_REQUIRED),
-            'filename'    => new \external_value(PARAM_FILE, 'New file name (with extension)', VALUE_REQUIRED),
-            'mimetype'    => new \external_value(PARAM_RAW, 'MIME type detected by the browser', VALUE_REQUIRED),
-            'content_b64' => new \external_value(PARAM_RAW, 'Binary content in base64', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'    => new external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+            'documentid'  => new external_value(PARAM_ALPHANUMEXT, 'UUID of the document to replace', VALUE_REQUIRED),
+            'filename'    => new external_value(PARAM_FILE, 'New file name (with extension)', VALUE_REQUIRED),
+            'mimetype'    => new external_value(PARAM_RAW, 'MIME type detected by the browser', VALUE_REQUIRED),
+            'content_b64' => new external_value(PARAM_RAW, 'Binary content in base64', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'id'            => new \external_value(PARAM_ALPHANUMEXT, 'Document UUID (unchanged)'),
-            'course_id'     => new \external_value(PARAM_INT, 'Course ID'),
-            'uploader_id'   => new \external_value(PARAM_INT, 'ID of the teacher who uploaded it'),
-            'filename'      => new \external_value(PARAM_RAW, 'File name'),
-            'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
-            'section'       => new \external_value(PARAM_INT, 'Assigned section', VALUE_OPTIONAL, null, NULL_ALLOWED),
-            'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
-            'error_message' => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'id'            => new external_value(PARAM_ALPHANUMEXT, 'Document UUID (unchanged)'),
+            'course_id'     => new external_value(PARAM_INT, 'Course ID'),
+            'uploader_id'   => new external_value(PARAM_INT, 'ID of the teacher who uploaded it'),
+            'filename'      => new external_value(PARAM_RAW, 'File name'),
+            'mime_type'     => new external_value(PARAM_RAW, 'MIME type'),
+            'section'       => new external_value(PARAM_INT, 'Assigned section', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'status'        => new external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
+            'error_message' => new external_value(
                 PARAM_RAW,
                 'Error message if status=error',
                 VALUE_OPTIONAL,

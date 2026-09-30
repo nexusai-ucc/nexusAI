@@ -30,13 +30,13 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026092700;
+$plugin->version   = 2026093000;
 // Beta: feature complete, CI on PostgreSQL and MySQL, English-only strings and
 // comments, input handling hardened for the Marketplace submission.
 $plugin->release   = '0.19.0';
 $plugin->maturity  = MATURITY_BETA;
 
-// We support Moodle 4.1 LTS (build 2022112800) up to 4.5.
+// We support Moodle 4.5 LTS (build 2024100700) up to 5.2. The UCC runs 5.0.
 // If someone tries to install on an older version, Moodle blocks it on its own.
-$plugin->requires  = 2022112800;        // Moodle 4.1 LTS.
-$plugin->supported = [401, 405];        // 4.1 to 4.5
+$plugin->requires  = 2024100700;        // Moodle 4.5 LTS.
+$plugin->supported = [405, 502];        // 4.5 to 5.2

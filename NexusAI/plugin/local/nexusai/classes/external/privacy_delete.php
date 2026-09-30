@@ -28,34 +28,36 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Deletes the student's personal history (messages, quiz errors) in a course.
  */
-class privacy_delete extends \external_api {
+class privacy_delete extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'messages_deleted'         => new \external_value(PARAM_INT, 'Chat messages deleted'),
-            'quiz_errors_deleted'      => new \external_value(PARAM_INT, 'Quiz errors deleted'),
-            'quiz_attempts_anonymized' => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'messages_deleted'         => new external_value(PARAM_INT, 'Chat messages deleted'),
+            'quiz_errors_deleted'      => new external_value(PARAM_INT, 'Quiz errors deleted'),
+            'quiz_attempts_anonymized' => new external_value(
                 PARAM_INT,
                 'Quiz attempts anonymized (not deleted, see the backend\'s docstring)'
             ),

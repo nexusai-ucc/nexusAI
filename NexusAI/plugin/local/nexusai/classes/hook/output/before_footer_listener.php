@@ -17,9 +17,9 @@
 /**
  * Listener for the `core\hook\output\before_footer_html_generation` hook.
  *
- * This is the replacement for the old `local_nexusai_before_footer()`
- * callback. On Moodle 4.4+, the hooks system invokes this method before
- * closing </body>, allowing HTML/JS to be injected into any page's footer.
+ * It replaced the old `local_nexusai_before_footer()` callback. The hooks
+ * system invokes this method before closing </body>, allowing HTML/JS to be
+ * injected into any page's footer.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC

@@ -30,24 +30,26 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * SP-12 (#322): suggests a starting difficulty for the practice quiz generator, based on the
  * average `score` of the student's last attempts in that topic/course (`quiz_attempts`, already
  * persisted — no new table or migration).
  */
-class quiz_suggest_difficulty extends \external_api {
+class quiz_suggest_difficulty extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'topic'    => new \external_value(
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'topic'    => new external_value(
                 PARAM_TEXT,
                 'Topic chosen by the student (empty = general history)',
                 VALUE_DEFAULT,
@@ -59,14 +61,14 @@ class quiz_suggest_difficulty extends \external_api {
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'difficulty'       => new \external_value(PARAM_ALPHA, 'easy | medium | hard', VALUE_OPTIONAL, null, NULL_ALLOWED),
-            'reason'           => new \external_value(PARAM_TEXT, 'Reason for the suggestion', VALUE_OPTIONAL, null, NULL_ALLOWED),
-            'basedonattempts'  => new \external_value(PARAM_INT, 'Number of attempts used for the suggestion'),
-            'accuracypct'      => new \external_value(PARAM_INT, 'Rounded accuracy %', VALUE_OPTIONAL, null, NULL_ALLOWED),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'difficulty'       => new external_value(PARAM_ALPHA, 'easy | medium | hard', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'reason'           => new external_value(PARAM_TEXT, 'Reason for the suggestion', VALUE_OPTIONAL, null, NULL_ALLOWED),
+            'basedonattempts'  => new external_value(PARAM_INT, 'Number of attempts used for the suggestion'),
+            'accuracypct'      => new external_value(PARAM_INT, 'Rounded accuracy %', VALUE_OPTIONAL, null, NULL_ALLOWED),
         ]);
     }
 

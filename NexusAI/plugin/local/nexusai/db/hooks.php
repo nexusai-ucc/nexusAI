@@ -21,11 +21,8 @@
  * callbacks like `<plugin>_before_footer`). This file maps core hooks to our
  * listener classes.
  *
- * Without this, on Moodle 4.4+, the HTML returned by
- * `local_nexusai_before_footer()` is NOT printed (only a deprecation warning
- * is shown).
- *
- * On Moodle 4.1-4.3 this file is ignored and the old lib.php callback is used instead.
+ * It is the only way the widget is injected: the plugin requires Moodle 4.5,
+ * so the old `local_nexusai_before_footer()` callback no longer exists.
  *
  * Ref: https://moodledev.io/docs/4.4/apis/core/hooks
  *

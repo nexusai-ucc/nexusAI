@@ -29,14 +29,17 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Receives the text the student is writing in the forum editor and returns existing posts in the
  * same course that are semantically similar.
  */
-class forum_search_similar extends \external_api {
+class forum_search_similar extends external_api {
     /**
      * @var float Similarity threshold hardcoded in PHP to avoid float conversion issues
      *     in Moodle 5.x (PARAM_FLOAT converts 0.75 to 1 via clean_param).
@@ -46,33 +49,33 @@ class forum_search_similar extends \external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'text'          => new \external_value(PARAM_RAW, 'Text of the post being drafted (min 10 chars)', VALUE_REQUIRED),
-            'courseid'      => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
-            'excludepostid' => new \external_value(PARAM_INT, 'Post to exclude (when editing)', VALUE_DEFAULT, 0),
-            'topk'          => new \external_value(PARAM_INT, 'Max results (1-10)', VALUE_DEFAULT, 3),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'text'          => new external_value(PARAM_RAW, 'Text of the post being drafted (min 10 chars)', VALUE_REQUIRED),
+            'courseid'      => new external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+            'excludepostid' => new external_value(PARAM_INT, 'Post to exclude (when editing)', VALUE_DEFAULT, 0),
+            'topk'          => new external_value(PARAM_INT, 'Max results (1-10)', VALUE_DEFAULT, 3),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'similar_posts' => new \external_multiple_structure(
-                new \external_single_structure([
-                    'forum_post_id' => new \external_value(PARAM_INT, 'mdl_forum_posts ID'),
-                    'discussion_id' => new \external_value(PARAM_INT, 'mdl_forum_discussions ID'),
-                    'similarity'    => new \external_value(PARAM_FLOAT, 'Similarity score 0.0-1.0'),
-                    'preview'       => new \external_value(PARAM_RAW, 'First 200 chars of the post'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'similar_posts' => new external_multiple_structure(
+                new external_single_structure([
+                    'forum_post_id' => new external_value(PARAM_INT, 'mdl_forum_posts ID'),
+                    'discussion_id' => new external_value(PARAM_INT, 'mdl_forum_discussions ID'),
+                    'similarity'    => new external_value(PARAM_FLOAT, 'Similarity score 0.0-1.0'),
+                    'preview'       => new external_value(PARAM_RAW, 'First 200 chars of the post'),
                 ])
             ),
-            'threshold_used' => new \external_value(PARAM_FLOAT, 'Threshold used in the search'),
+            'threshold_used' => new external_value(PARAM_FLOAT, 'Threshold used in the search'),
         ]);
     }
 

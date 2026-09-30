@@ -37,24 +37,28 @@
 
 namespace local_nexusai\external;
 
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
+
 defined('MOODLE_INTERNAL') || die();
 
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 require_once($GLOBALS['CFG']->dirroot . '/group/lib.php');
 require_once($GLOBALS['CFG']->dirroot . '/calendar/lib.php');
 
 /**
  * Aggregates a course's "setup state" in a single call: what's still missing for the teacher to set up.
  */
-class course_setup_state extends \external_api {
+class course_setup_state extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
@@ -63,27 +67,27 @@ class course_setup_state extends \external_api {
      *
      * `present` allows null only on the `material` signal (backend down).
      */
-    private static function signal_structure(string $desc, bool $nullablepresent = false): \external_single_structure {
-        return new \external_single_structure([
-            'present' => new \external_value(
+    private static function signal_structure(string $desc, bool $nullablepresent = false): external_single_structure {
+        return new external_single_structure([
+            'present' => new external_value(
                 PARAM_BOOL,
                 $desc . ' — present',
                 $nullablepresent ? VALUE_DEFAULT : VALUE_REQUIRED,
                 null,
                 $nullablepresent ? NULL_ALLOWED : NULL_NOT_ALLOWED
             ),
-            'count'   => new \external_value(PARAM_INT, $desc . ' — count', VALUE_DEFAULT, 0),
+            'count'   => new external_value(PARAM_INT, $desc . ' — count', VALUE_DEFAULT, 0),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'courseid' => new \external_value(PARAM_INT, 'Queried course ID'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'courseid' => new external_value(PARAM_INT, 'Queried course ID'),
             'sections' => self::signal_structure('Sections with at least one activity/resource'),
             'groups'   => self::signal_structure('Groups defined in the course'),
             'students' => self::signal_structure('Enrolled students (role with student archetype)'),

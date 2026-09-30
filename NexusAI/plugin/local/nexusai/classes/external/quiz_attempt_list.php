@@ -28,51 +28,54 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Returns the history of quizzes completed by the student in a course (SP-09 — per-student history).
  */
-class quiz_attempt_list extends \external_api {
+class quiz_attempt_list extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 90),
-            'limit'    => new \external_value(PARAM_INT, 'Max items (1..100)', VALUE_DEFAULT, 20),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'days'     => new external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 90),
+            'limit'    => new external_value(PARAM_INT, 'Max items (1..100)', VALUE_DEFAULT, 20),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
-            'total'     => new \external_value(PARAM_INT, 'Number of items'),
-            'items'     => new \external_multiple_structure(
-                new \external_single_structure([
-                    'id'              => new \external_value(PARAM_RAW, 'Attempt UUID'),
-                    'question_type'   => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'course_id' => new external_value(PARAM_INT, 'Course ID'),
+            'total'     => new external_value(PARAM_INT, 'Number of items'),
+            'items'     => new external_multiple_structure(
+                new external_single_structure([
+                    'id'              => new external_value(PARAM_RAW, 'Attempt UUID'),
+                    'question_type'   => new external_value(
                         PARAM_ALPHANUMEXT,
                         'Quiz type (optional)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'difficulty'      => new \external_value(PARAM_ALPHA, 'Difficulty'),
-                    'topic'           => new \external_value(PARAM_RAW, 'Topic (optional)', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'total_questions' => new \external_value(PARAM_INT, 'Total questions'),
-                    'correct_answers' => new \external_value(PARAM_INT, 'Correct answers'),
-                    'score'           => new \external_value(PARAM_FLOAT, 'Score 0.0-1.0 computed server-side'),
-                    'created_at'      => new \external_value(PARAM_RAW, 'ISO timestamp'),
+                    'difficulty'      => new external_value(PARAM_ALPHA, 'Difficulty'),
+                    'topic'           => new external_value(PARAM_RAW, 'Topic (optional)', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'total_questions' => new external_value(PARAM_INT, 'Total questions'),
+                    'correct_answers' => new external_value(PARAM_INT, 'Correct answers'),
+                    'score'           => new external_value(PARAM_FLOAT, 'Score 0.0-1.0 computed server-side'),
+                    'created_at'      => new external_value(PARAM_RAW, 'ISO timestamp'),
                 ])
             ),
         ]);

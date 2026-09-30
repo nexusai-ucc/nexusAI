@@ -28,50 +28,53 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Returns the teacher's "gaps" — frequent student questions that the course's indexed material
  * couldn't answer well.
  */
-class gaps_list extends \external_api {
+class gaps_list extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'        => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'days'            => new \external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 30),
-            'limit'           => new \external_value(PARAM_INT, 'Max items (1..100)', VALUE_DEFAULT, 20),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'        => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'days'            => new external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 30),
+            'limit'           => new external_value(PARAM_INT, 'Max items (1..100)', VALUE_DEFAULT, 20),
             // UX-15 (#385): offset over the already-clustered groups, to request the next page.
-            'offset'          => new \external_value(PARAM_INT, 'Position to paginate from', VALUE_DEFAULT, 0),
+            'offset'          => new external_value(PARAM_INT, 'Position to paginate from', VALUE_DEFAULT, 0),
             // DOC-D08 (#383): only active gaps by default.
-            'includearchived' => new \external_value(PARAM_BOOL, 'Include already-archived gaps', VALUE_DEFAULT, false),
+            'includearchived' => new external_value(PARAM_BOOL, 'Include already-archived gaps', VALUE_DEFAULT, false),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
-            'days'      => new \external_value(PARAM_INT, 'Time window'),
-            'total'     => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'course_id' => new external_value(PARAM_INT, 'Course ID'),
+            'days'      => new external_value(PARAM_INT, 'Time window'),
+            'total'     => new external_value(
                 PARAM_INT,
                 'Total number of grouped gaps (for pagination, not the count already trimmed by limit)'
             ),
-            'items'     => new \external_multiple_structure(
-                new \external_single_structure([
-                    'question'       => new \external_value(PARAM_RAW, 'Grouped question'),
-                    'count'          => new \external_value(PARAM_INT, 'Times asked'),
-                    'last_asked_at'  => new \external_value(PARAM_RAW, 'ISO timestamp of the last one'),
-                    'avg_similarity' => new \external_value(
+            'items'     => new external_multiple_structure(
+                new external_single_structure([
+                    'question'       => new external_value(PARAM_RAW, 'Grouped question'),
+                    'count'          => new external_value(PARAM_INT, 'Times asked'),
+                    'last_asked_at'  => new external_value(PARAM_RAW, 'ISO timestamp of the last one'),
+                    'avg_similarity' => new external_value(
                         PARAM_FLOAT,
                         'Average similarity (0..1)',
                         VALUE_OPTIONAL,
@@ -80,10 +83,10 @@ class gaps_list extends \external_api {
                     ),
                     // Real unanswered_questions IDs behind this gap — this is what
                     // has to be sent back to gaps_archive, not the text.
-                    'question_ids'   => new \external_multiple_structure(
-                        new \external_value(PARAM_ALPHANUMEXT, 'UUID of an unanswered_questions row')
+                    'question_ids'   => new external_multiple_structure(
+                        new external_value(PARAM_ALPHANUMEXT, 'UUID of an unanswered_questions row')
                     ),
-                    'is_archived'    => new \external_value(PARAM_BOOL, 'True if every row in the group is archived'),
+                    'is_archived'    => new external_value(PARAM_BOOL, 'True if every row in the group is archived'),
                 ])
             ),
         ]);
