@@ -106,8 +106,7 @@ class chat_sessions_list extends external_api {
         $limit = max(1, min(100, (int) $params['limit']));
         $scopecourseid = !empty($params['scopecourse']) ? (int) $params['courseid'] : null;
 
-        $client   = new backend_client();
-        $response = $client->list_sessions((int) $USER->id, $scopecourseid, $limit);
+        $response = ['sessions' => \local_nexusai\local\chat_store::list_sessions((int) $USER->id, $scopecourseid, $limit)];
 
         $sessions = $response['sessions'] ?? [];
         return [

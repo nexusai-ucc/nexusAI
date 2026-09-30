@@ -17,21 +17,16 @@
 /**
  * Privacy API provider for local_nexusai.
  *
- * The student data is moving from the external NexusAI backend to the plugin's
- * own tables (DATA-03, issue #523; see docs/adr/014). While both hold data, this
- * provider covers both:
+ * The student data lives in the plugin's own tables (`local_nexusai_*`, see
+ * docs/adr/014). Contexts, users, export and deletion are worked out with SQL.
+ * Usage and interaction metrics are anonymised instead of deleted, so course
+ * totals stay right; everything else is deleted. Rows migrated from the
+ * backend that only carry a hash of the user id are found through that hash.
  *
- * - The plugin tables (`local_nexusai_*`): contexts, users, export and deletion
- *   are worked out with SQL. Usage and interaction metrics are anonymised instead
- *   of deleted, so course totals stay right; everything else is deleted.
- * - The backend: exported and deleted through `backend_client`, one call per
- *   course. The backend has no "which courses does this user have data in"
- *   endpoint, so for it the courses where the user is enrolled with
- *   `local/nexusai:use` are included. Over-including is safe (an empty export);
- *   under-including would not be. When the plugin is not configured to reach a
- *   backend there is nothing there to export or delete, and it is skipped.
- * - Three user preferences: onboarding state per course, files pending
- *   indexing and the calendar feed token.
+ * The backend no longer stores the student's data: it receives the question
+ * and the history to answer them, which is declared as an external location.
+ * Three user preferences are covered too: onboarding state per course, files
+ * pending indexing and the calendar feed token (never exported).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -47,7 +42,6 @@ use core_privacy\local\request\contextlist;
 use core_privacy\local\request\transform;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
-use local_nexusai\external\backend_client;
 
 /**
  * Declares, lists, exports and deletes the personal data NexusAI keeps.
@@ -140,7 +134,7 @@ class provider implements
     }
 
     /**
-     * Course contexts where the user has data in the plugin tables or may have it in the backend.
+     * Course contexts where the user has data in the plugin tables.
      *
      * @param int $userid User ID.
      * @return contextlist Course contexts to include in the request.
@@ -160,17 +154,6 @@ class provider implements
                     AND ctx.instanceid IN (SELECT c.courseid FROM $from WHERE $where)",
                 $params
             );
-        }
-
-        // The backend's data: every course where the user is enrolled and can use NexusAI.
-        foreach (enrol_get_users_courses($userid, true, ['id']) as $course) {
-            $context = \context_course::instance((int) $course->id);
-            if (has_capability('local/nexusai:use', $context, $userid)) {
-                $contextlist->add_from_sql(
-                    'SELECT id FROM {context} WHERE id = :contextid',
-                    ['contextid' => $context->id]
-                );
-            }
         }
 
         return $contextlist;
@@ -195,10 +178,6 @@ class provider implements
                 ['courseid' => (int) $context->instanceid]
             );
         }
-
-        foreach (get_enrolled_users($context, 'local/nexusai:use', 0, 'u.id') as $user) {
-            $userlist->add_user((int) $user->id);
-        }
     }
 
     /**
@@ -212,20 +191,9 @@ class provider implements
             return;
         }
 
-        $client = null;
         foreach ($contextlist->get_contexts() as $context) {
-            if ($context->contextlevel !== CONTEXT_COURSE) {
-                continue;
-            }
-            $courseid = (int) $context->instanceid;
-            self::export_course_tables($context, $userid, $courseid);
-
-            $client ??= self::backend();
-            if ($client) {
-                writer::with_context($context)->export_data(
-                    [get_string('pluginname', 'local_nexusai')],
-                    (object) $client->privacy_export($userid, $courseid)
-                );
+            if ($context->contextlevel === CONTEXT_COURSE) {
+                self::export_course_tables($context, $userid, (int) $context->instanceid);
             }
         }
     }
@@ -265,17 +233,9 @@ class provider implements
             return;
         }
 
-        $client = null;
         foreach ($contextlist->get_contexts() as $context) {
-            if ($context->contextlevel !== CONTEXT_COURSE) {
-                continue;
-            }
-            $courseid = (int) $context->instanceid;
-            self::delete_course_rows($courseid, [$userid]);
-
-            $client ??= self::backend();
-            if ($client) {
-                $client->privacy_delete($userid, $courseid);
+            if ($context->contextlevel === CONTEXT_COURSE) {
+                self::delete_course_rows((int) $context->instanceid, [$userid]);
             }
         }
 
@@ -297,13 +257,7 @@ class provider implements
             return;
         }
 
-        $courseid = (int) $context->instanceid;
-        self::delete_course_rows($courseid, $userids);
-
-        $client = self::backend();
-        foreach ($client ? $userids : [] as $userid) {
-            $client->privacy_delete($userid, $courseid);
-        }
+        self::delete_course_rows((int) $context->instanceid, $userids);
 
         self::anonymise_course_settings($userids);
     }
@@ -318,14 +272,7 @@ class provider implements
             return;
         }
 
-        $courseid = (int) $context->instanceid;
-        self::delete_course_rows($courseid, null);
-
-        $client = self::backend();
-        $users = $client ? get_enrolled_users($context, 'local/nexusai:use', 0, 'u.id') : [];
-        foreach ($users as $user) {
-            $client->privacy_delete((int) $user->id, $courseid);
-        }
+        self::delete_course_rows((int) $context->instanceid, null);
     }
 
     /**
@@ -424,7 +371,7 @@ class provider implements
      * @param int $courseid Course ID.
      * @param int[]|null $userids Users to delete, or null for every user of the course.
      */
-    private static function delete_course_rows(int $courseid, ?array $userids): void {
+    public static function delete_course_rows(int $courseid, ?array $userids): void {
         global $DB;
 
         // Two filters: by user id, and by user id or hash for the tables with rows migrated from the backend.
@@ -507,20 +454,6 @@ class provider implements
         }
         [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
         $DB->set_field_select('local_nexusai_course', 'usermodified', 0, "usermodified $insql", $params);
-    }
-
-    /**
-     * Backend client, or null when the plugin is not configured to reach a backend.
-     *
-     * @return backend_client|null
-     */
-    private static function backend(): ?backend_client {
-        foreach (['api_endpoint', 'api_key', 'shared_secret'] as $setting) {
-            if (trim((string) get_config('local_nexusai', $setting)) === '') {
-                return null;
-            }
-        }
-        return new backend_client();
     }
 
     /**

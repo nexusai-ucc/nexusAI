@@ -58,6 +58,22 @@ $observers = [
         'priority'     => 0,
     ],
 
+    // DATA-05: the plugin tables have no foreign keys; clean up after Moodle deletes a course or a user.
+    [
+        'eventname'    => '\core\event\course_deleted',
+        'callback'     => '\local_nexusai\observer::course_deleted',
+        'includefile'  => null,
+        'internal'     => false,
+        'priority'     => 0,
+    ],
+    [
+        'eventname'    => '\core\event\user_deleted',
+        'callback'     => '\local_nexusai\observer::user_deleted',
+        'includefile'  => null,
+        'internal'     => false,
+        'priority'     => 0,
+    ],
+
     // Forums — Epic 06: index posts on create/edit/delete.
     // On Moodle 5.x, creating a new discussion fires discussion_created (NOT post_created).
     // post_created only fires for replies to existing discussions.

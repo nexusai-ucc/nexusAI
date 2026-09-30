@@ -35,6 +35,7 @@ import { IconBookOpen, IconGlobe, IconGrid } from "./components/icons.jsx";
 import { ToastProvider } from "./components/Toast.jsx";
 import { getFriendlyErrorMessage } from "./components/errors.js";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
+import BudgetBar from "./components/BudgetBar.jsx";
 import { getSessionMessages } from "./api/history.js";
 import { useOnboardingState } from "./onboarding/useOnboardingState.js";
 
@@ -163,6 +164,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
+    // DATA-05: se incrementa con cada respuesta para refrescar la barra de límite.
+    const [budgetTick, setBudgetTick] = useState(0);
     // UX-14 (#373): tab activo persistido en sessionStorage, por curso —
     // no se pierde al navegar a otra página del curso y volver en la misma
     // sesión de navegador. Solo los 4 tabs "destino" (no history/review,
@@ -355,6 +358,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
             setError(getFriendlyErrorMessage(err, t.errorGeneric, lang));
         } finally {
             setLoading(false);
+            setBudgetTick((n) => n + 1);
         }
     };
 
@@ -641,6 +645,10 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
                         <div ref={messagesEndRef} />
                     </div>
+
+                    {hasCourse && (
+                        <BudgetBar courseId={courseid} refreshKey={budgetTick} lang={lang} />
+                    )}
 
                     <ChatInput
                         onSend={send}

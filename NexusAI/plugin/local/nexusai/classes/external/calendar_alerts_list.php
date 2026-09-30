@@ -74,6 +74,8 @@ class calendar_alerts_list extends external_api {
      * @return array
      */
     public static function execute(int $userid, int $courseid): array {
+        global $USER;
+
         $params = self::validate_parameters(self::execute_parameters(), [
             'userid'   => $userid,
             'courseid' => $courseid,
@@ -84,8 +86,8 @@ class calendar_alerts_list extends external_api {
         require_capability('local/nexusai:use', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        $client   = new backend_client();
-        $response = $client->list_calendar_alerts((int) $params['userid'], (int) $params['courseid']);
+        // Always the logged-in user's reminders; see calendar_alert_save.
+        $response = ['alerts' => \local_nexusai\local\calendar_store::list((int) $USER->id, (int) $params['courseid'])];
 
         return [
             'alerts' => array_map(

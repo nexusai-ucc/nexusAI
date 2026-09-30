@@ -76,8 +76,7 @@ class forum_webhook_get extends external_api {
         require_capability('local/nexusai:manage', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        $client = new backend_client();
-        $response = $client->get_forum_webhook($params['courseid']);
+        $response = ['webhook_url' => \local_nexusai\local\calendar_store::webhook((int) $params['courseid'])];
 
         return [
             'webhook_url' => $response['webhook_url'] ?? null,

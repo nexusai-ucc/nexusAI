@@ -95,12 +95,15 @@ class gaps_archive extends external_api {
             throw new \invalid_parameter_exception('At least one question id must be provided');
         }
 
-        $client   = new backend_client();
-        $response = $client->archive_gap(
-            (int) $params['courseid'],
-            array_map('strval', $params['questionids']),
-            (bool) $params['archived']
-        );
+        $response = [
+            'course_id' => (int) $params['courseid'],
+            'archived' => (bool) $params['archived'],
+            'affected' => \local_nexusai\local\gap_store::archive(
+                (int) $params['courseid'],
+                array_map('strval', $params['questionids']),
+                (bool) $params['archived']
+            ),
+        ];
 
         return [
             'course_id' => (int) ($response['course_id'] ?? $params['courseid']),

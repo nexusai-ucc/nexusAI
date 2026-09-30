@@ -217,6 +217,17 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // Token limit bar in the widget (DATA-05).
+    'local_nexusai_budget_status' => [
+        'classname'     => '\local_nexusai\external\budget_status',
+        'methodname'    => 'execute',
+        'description'   => 'Get how much of their token limit the logged-in user has left, per hour and per day.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Quiz evaluator — evaluates open answers with AI (SP-05).
     'local_nexusai_quiz_evaluate' => [
         'classname'     => '\local_nexusai\external\quiz_evaluate',

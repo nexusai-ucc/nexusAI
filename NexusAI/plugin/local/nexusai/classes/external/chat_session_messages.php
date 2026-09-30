@@ -95,8 +95,7 @@ class chat_session_messages extends external_api {
             throw new \invalid_parameter_exception('Invalid session id');
         }
 
-        $client   = new backend_client();
-        $response = $client->get_session_messages((int) $USER->id, $cleansessionid);
+        $response = \local_nexusai\local\chat_store::session_messages((int) $USER->id, $cleansessionid);
 
         if (!isset($response['session_id'], $response['messages'])) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'Invalid session messages response');

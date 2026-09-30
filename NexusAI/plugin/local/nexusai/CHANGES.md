@@ -5,6 +5,28 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.19.0] — Unreleased
 
+- Changed: the student data now lives in Moodle (DATA-05). Chat history,
+  votes, interaction metrics, unanswered questions, quiz attempts and errors,
+  flashcards and their spaced repetition, calendar reminders and the forum
+  webhook are read and written in the plugin's tables; 24 web services no
+  longer call the backend and keep their parameters and returns. The chat
+  stores the question before asking, sends the last messages as history and
+  stores the answer, metrics and usage when the backend finishes, even if the
+  student closes the tab. A multi-course conversation stays in the course
+  where it was opened. The backend keeps no student data: study plan, review
+  suggestions, frequent topics and the forum digest get what they need in the
+  request.
+- New: every AI call made for a user is stored with the user, role and cost
+  (`local_nexusai_usage`), and the widget shows how much of the token limit is
+  left today, with a warning at 80% and the renewal time when it runs out.
+  The limits per role are site settings.
+- New: deleting a course or a user removes their NexusAI data.
+- Fixed: the calendar reminder web services trusted the user id sent by the
+  browser; they now always use the logged-in user.
+- Fixed: `local_nexusai_quiz_errors_record` declared its options parameter
+  wrongly, which raised a debugging notice.
+- Note: the data already in the backend is not visible until it is migrated
+  (DATA-06).
 - New: the plugin's own tables for the student data (DATA-03). Fifteen
   `local_nexusai_*` tables are created on install and upgrade: the eleven that
   will receive the data the NexusAI backend keeps today (chat, interaction

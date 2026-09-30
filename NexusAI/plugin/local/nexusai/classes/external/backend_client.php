@@ -209,214 +209,22 @@ class backend_client {
     }
 
     /**
-     * Sends a student's message to the backend's /api/v1/chat/messages endpoint.
+     * Asks the backend's non-streaming chat (DATA-05).
      *
-     * @param int         $courseid   Course ID (validated against context before reaching here).
-     * @param int         $userid     Logged-in user ID (= $USER->id, not from the client).
-     * @param string      $question   Student's question (1..2000 chars, validated by external_api).
-     * @param string|null $sessionid  Existing session UUID, or null to create a new one.
-     * @param bool        $isteacher  Resolved server-side (has_capability), NEVER from the
-     *                                client — drives the backend's per-role token budget
-     *                                (app/shared/token_budget.py).
-     * @return array{session_id: string, answer: string, messages: array}
+     * The conversation lives in Moodle: the payload carries the history and
+     * the backend stores nothing (see local\chat_turn). Material visibility is
+     * added by post() and the usage comes back in the X-NexusAI-Usage header.
      *
-     * @throws \moodle_exception If the backend returns non-200 or if the network fails.
-     */
-    public function send_message(
-        int $courseid,
-        int $userid,
-        string $question,
-        ?string $sessionid = null,
-        bool $isteacher = false
-    ): array {
-        // Body as JSON with a stable format. Keys use snake_case because
-        // that's how the backend's Pydantic contract (ChatRequest) defines them.
-        $payload = [
-            'question'   => $question,
-            'course_id'  => $courseid,
-            'user_id'    => $userid,
-            'is_teacher' => $isteacher,
-        ];
-        if (!empty($sessionid)) {
-            $payload['session_id'] = $sessionid;
-        }
-
-        // CRITICAL: the signed body must be EXACTLY the string sent as the
-        // POST body. Any JSON reformatting between signing and sending
-        // breaks the signature. That's why we build the string here and reuse it.
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-
-        return $this->post('/api/v1/chat/messages', $body);
-    }
-
-    /**
-     * Sends a student's message with multi-course context (Feature B).
-     *
-     * The backend will search for material across ALL courses in the list, not just the
-     * "primary course". Course names let the LLM cite which course each
-     * fragment came from.
-     *
-     * @param int[]       $courseids   Course IDs to query (>= 1).
-     * @param array       $coursenames Map {string(courseid) => name}.
-     * @param int         $userid      Student's real $USER->id.
-     * @param string      $question    Student's question.
-     * @param string|null $sessionid   Existing session UUID, or null to create one.
-     * @param bool        $isteacher   Resolved server-side (has_capability), NEVER from the
-     *                                 client — drives the backend's per-role token budget.
-     * @return array{session_id:string, answer:string, messages:array}
-     *
+     * @param array $payload Body built by local\chat_turn::payload().
+     * @return array The backend's answer, with metrics, gap, budget and usage.
      * @throws \moodle_exception If the backend returns non-2xx or the network fails.
      */
-    public function send_message_multicourse(
-        array $courseids,
-        array $coursenames,
-        int $userid,
-        string $question,
-        ?string $sessionid = null,
-        bool $isteacher = false
-    ): array {
-        // The primary course ID is the first one in the list (the schema
-        // requires it to be > 0 for compat with single-course clients).
-        $primarycourseid = !empty($courseids) ? (int) $courseids[0] : 0;
-
-        $payload = [
-            'question'     => $question,
-            'course_id'    => $primarycourseid,
-            'user_id'      => $userid,
-            'course_ids'   => array_map('intval', $courseids),
-            'course_names' => $coursenames,
-            'is_teacher'   => $isteacher,
-        ];
-        if (!empty($sessionid)) {
-            $payload['session_id'] = $sessionid;
-        }
-
+    public function chat(array $payload): array {
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
-
         return $this->post('/api/v1/chat/messages', $body);
-    }
-
-    /**
-     * Lists the user's previous sessions (history — Feature E).
-     *
-     * @param int      $userid   Real $USER->id.
-     * @param int|null $courseid Filter by course, or null for all of the user's.
-     * @param int      $limit    Maximum (1..100).
-     * @return array{sessions: array}
-     */
-    public function list_sessions(int $userid, ?int $courseid = null, int $limit = 20): array {
-        $payload = [
-            'user_id' => $userid,
-            'limit'   => $limit,
-        ];
-        if ($courseid !== null && $courseid > 0) {
-            $payload['course_id'] = $courseid;
-        }
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/chat/sessions/list', $body);
-    }
-
-    /**
-     * Returns the full messages of a session.
-     *
-     * @param int    $userid    Real $USER->id (the backend validates ownership).
-     * @param string $sessionid Session UUID.
-     * @return array{session_id:string, messages: array}
-     */
-    public function get_session_messages(int $userid, string $sessionid): array {
-        $payload = [
-            'user_id'    => $userid,
-            'session_id' => $sessionid,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/chat/sessions/messages', $body);
-    }
-
-    /**
-     * Deletes a single chat session (ASIST-02, #350). The backend validates
-     * ownership (userid) before deleting; the cascade over the session's
-     * messages is already resolved at the FK level in Postgres.
-     *
-     * POST instead of a real DELETE verb — same convention as the rest of
-     * the chat module's endpoints, so the body can be HMAC-signed.
-     *
-     * @param int    $userid    Real $USER->id (the backend validates ownership).
-     * @param string $sessionid UUID of the session to delete.
-     * @return array{success: bool}
-     */
-    public function delete_chat_session(int $userid, string $sessionid): array {
-        $payload = [
-            'user_id'    => $userid,
-            'session_id' => $sessionid,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/chat/sessions/delete', $body);
-    }
-
-    /**
-     * Lists the teacher's gaps — questions the material couldn't answer (Feature G).
-     *
-     * @param int $courseid Course ID.
-     * @param int $days     Days back (1..365).
-     * @param int $limit    Max items (1..100).
-     * @param bool $includearchived Include already-archived gaps (DOC-D08, #383).
-     * @return array{course_id:int, days:int, total:int, items:array}
-     */
-    public function list_gaps(
-        int $courseid,
-        int $days = 30,
-        int $limit = 20,
-        bool $includearchived = false,
-        int $offset = 0
-    ): array {
-        $payload = [
-            'course_id'        => $courseid,
-            'days'             => $days,
-            'limit'            => $limit,
-            'offset'           => $offset,
-            'include_archived' => $includearchived,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/gaps/list', $body);
-    }
-
-    /**
-     * Archives or unarchives a detected gap (DOC-D08, issue #383).
-     *
-     * @param int $courseid    Course ID.
-     * @param array $questionids IDs (UUID string) of the rows to flag.
-     * @param bool $archived   true to archive, false to unarchive.
-     * @return array{course_id:int, archived:bool, affected:int}
-     */
-    public function archive_gap(int $courseid, array $questionids, bool $archived): array {
-        $payload = [
-            'course_id'    => $courseid,
-            'question_ids' => $questionids,
-            'archived'     => $archived,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/gaps/archive', $body);
     }
 
     /**
@@ -427,29 +235,22 @@ class backend_client {
      * @return array{course_id:int, days:int, total_questions:int, topics:array}
      */
     public function faq_topics(int $courseid, int $days = 30): array {
+        // The questions live in Moodle (DATA-05): send them grouped, the backend only groups them by topic.
+        $since = time() - $days * DAYSECS;
+        $questions = array_slice(\local_nexusai\local\course_analytics::question_counts($courseid, $since), 0, 500);
         $payload = [
             'course_id' => $courseid,
             'days'      => $days,
+            'questions' => array_map(static fn($q) => [
+                'question' => \core_text::substr($q['question'], 0, 2000),
+                'count' => $q['count'],
+            ], $questions),
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
         return $this->post('/api/v1/analytics/faq-topics', $body);
-    }
-
-    /**
-     * Aggregated metrics dashboard of a course for the teacher (ANALYTICS-01/02):
-     * top queries, daily usage, quiz score distribution and gaps ratio.
-     *
-     * @param int $courseid Course ID.
-     * @param int $days     Time window (1..365).
-     * @return array{course_id:int, period_days:int, top_queries:array,
-     *               daily_message_counts:array, quiz_score_distribution:array,
-     *               gaps_ratio:array}
-     */
-    public function analytics_dashboard(int $courseid, int $days = 30): array {
-        return $this->get('/api/v1/admin/analytics?course_id=' . $courseid . '&days=' . $days);
     }
 
     /**
@@ -477,6 +278,8 @@ class backend_client {
             'num_questions' => $numquestions,
             'question_type' => $questiontype,
             'difficulty'    => $difficulty,
+            // DATA-05: flashcards are stored in Moodle, not in the backend.
+            'persist_flashcards' => false,
         ];
         if ($topic !== null && trim($topic) !== '') {
             $payload['topic'] = trim($topic);
@@ -485,7 +288,15 @@ class backend_client {
         if ($body === false) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
-        return $this->post('/api/v1/quiz/generate', $body);
+        $response = $this->post('/api/v1/quiz/generate', $body);
+        if ($questiontype === 'flashcard' && !empty($response['questions']) && is_array($response['questions'])) {
+            $response['questions'] = \local_nexusai\local\flashcard_store::save_generated(
+                $courseid,
+                $topic,
+                $response['questions']
+            );
+        }
+        return $response;
     }
 
     /**
@@ -567,133 +378,6 @@ class backend_client {
     }
 
     /**
-     * Persists the questions a student got wrong in a quiz (SP-10).
-     *
-     * @param int   $courseid Course ID.
-     * @param int   $userid   Real $USER->id.
-     * @param array $errors   List of errors (QuizErrorItem shape from the backend).
-     * @return array{stored:int}
-     */
-    public function record_quiz_errors(int $courseid, int $userid, array $errors): array {
-        $payload = [
-            'course_id' => $courseid,
-            'user_id'   => $userid,
-            'errors'    => $errors,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/errors', $body);
-    }
-
-    /**
-     * Lists the student's quiz error history in a course (SP-10).
-     *
-     * @param int $courseid Course ID.
-     * @param int $userid   Real $USER->id.
-     * @param int $days     Days back (1..365).
-     * @param int $limit    Max items (1..200).
-     * @param int $offset   Number of items to skip (pagination, UX-19 #389).
-     * @return array{course_id:int, total:int, items:array}
-     */
-    public function list_quiz_errors(int $courseid, int $userid, int $days = 90, int $limit = 100, int $offset = 0): array {
-        $payload = [
-            'course_id' => $courseid,
-            'user_id'   => $userid,
-            'days'      => $days,
-            'limit'     => $limit,
-            'offset'    => $offset,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/errors/list', $body);
-    }
-
-    /**
-     * Clears the student's quiz error history in a course (SP-10).
-     *
-     * @param int $courseid Course ID.
-     * @param int $userid   Real $USER->id.
-     * @return array{deleted:int}
-     */
-    public function clear_quiz_errors(int $courseid, int $userid): array {
-        $payload = [
-            'course_id' => $courseid,
-            'user_id'   => $userid,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/errors/clear', $body);
-    }
-
-    /**
-     * Persists the result of a quiz completed by the student (SP-09).
-     *
-     * @param int         $courseid       Course ID.
-     * @param int         $userid         Real $USER->id.
-     * @param string      $questiontype   Quiz type (multiple_choice|flashcard|fill_blank|…).
-     * @param string      $difficulty     Difficulty (easy|medium|hard).
-     * @param string|null $topic          Optional topic.
-     * @param int         $totalquestions Total number of questions.
-     * @param int         $correctcount   Number of correct answers.
-     * @return array{id:string, created_at:string}
-     */
-    public function save_quiz_attempt(
-        int $courseid,
-        int $userid,
-        string $questiontype,
-        string $difficulty,
-        ?string $topic,
-        int $totalquestions,
-        int $correctcount
-    ): array {
-        $payload = [
-            'course_id'       => $courseid,
-            'user_id'         => $userid,
-            'question_type'   => $questiontype,
-            'difficulty'      => $difficulty,
-            'total_questions' => $totalquestions,
-            'correct_answers'   => $correctcount,
-        ];
-        if ($topic !== null && trim($topic) !== '') {
-            $payload['topic'] = trim($topic);
-        }
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/attempts', $body);
-    }
-
-    /**
-     * Lists the quizzes the student completed in a course (SP-09).
-     *
-     * @param int $courseid Course ID.
-     * @param int $userid   Real $USER->id.
-     * @param int $days     Days back (1..365).
-     * @param int $limit    Max items (1..100).
-     * @return array{course_id:int, total:int, items:array}
-     */
-    public function list_quiz_attempts(int $courseid, int $userid, int $days = 90, int $limit = 20): array {
-        $payload = [
-            'course_id' => $courseid,
-            'user_id'   => $userid,
-            'days'      => $days,
-            'limit'     => $limit,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/attempts/list', $body);
-    }
-
-    /**
      * Review suggestions based on the student's most frequent errors (SP-10).
      *
      * @param int $courseid Course ID.
@@ -706,6 +390,8 @@ class backend_client {
             'course_id' => $courseid,
             'user_id'   => $userid,
             'days'      => $days,
+            // DATA-05: the errors live in Moodle.
+            'errors'    => \local_nexusai\local\quiz_store::errors_for_backend($courseid, $userid, $days, false),
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
@@ -727,183 +413,15 @@ class backend_client {
             'course_id' => $courseid,
             'user_id'   => $userid,
             'days'      => $days,
+            // DATA-05: errors and unanswered questions live in Moodle, without what the student dismissed.
+            'errors'    => \local_nexusai\local\quiz_store::errors_for_backend($courseid, $userid, $days, true),
+            'gaps'      => \local_nexusai\local\quiz_store::gaps_for_backend($courseid, $userid, $days),
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
         return $this->post('/api/v1/quiz/study-plan', $body);
-    }
-
-    /**
-     * SP-12 (#322): suggests a starting difficulty for the quiz generator,
-     * based on the student's `quiz_attempts` history.
-     *
-     * @param int         $courseid Course ID.
-     * @param int         $userid   Student's real $USER->id.
-     * @param string|null $topic    Chosen topic, or null for general history.
-     * @return array{difficulty:?string, reason:?string, based_on_attempts:int, accuracy_pct:?int}
-     */
-    public function suggest_difficulty(int $courseid, int $userid, ?string $topic): array {
-        $payload = [
-            'course_id' => $courseid,
-            'user_id'   => $userid,
-            'topic'     => $topic,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/suggest-difficulty', $body);
-    }
-
-    /**
-     * SP-16 (#354): student's consecutive-day activity streak in the
-     * course (quiz_attempts + chat messages, no new table).
-     *
-     * @param int $courseid Course ID.
-     * @param int $userid   Student's real $USER->id.
-     * @return array{current_streak:int, practiced_today:bool}
-     */
-    public function get_streak(int $courseid, int $userid): array {
-        $payload = [
-            'course_id' => $courseid,
-            'user_id'   => $userid,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/streak', $body);
-    }
-
-    /**
-     * SP-13 (#323): dismisses a specific topic from the student's study plan
-     * (operates on real row IDs, not on the topic text).
-     *
-     * @param int      $courseid       Course ID.
-     * @param int      $userid         Student's real $USER->id.
-     * @param string[] $quizerrorids   quiz_errors IDs to dismiss.
-     * @param string[] $gapquestionids unanswered_questions IDs to dismiss.
-     * @return array{affected:int}
-     */
-    public function dismiss_study_plan_topic(
-        int $courseid,
-        int $userid,
-        array $quizerrorids,
-        array $gapquestionids
-    ): array {
-        $payload = [
-            'course_id'        => $courseid,
-            'user_id'          => $userid,
-            'quiz_error_ids'   => $quizerrorids,
-            'gap_question_ids' => $gapquestionids,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/study-plan/dismiss', $body);
-    }
-
-    /**
-     * SP-11 (#315): how many already-generated flashcards are "due today" vs. the total.
-     *
-     * @param int         $courseid Course ID.
-     * @param int         $userid   Student's real $USER->id.
-     * @param string|null $topic    Topic (optional).
-     * @return array{due_count:int, total_count:int}
-     */
-    public function flashcards_summary(int $courseid, int $userid, ?string $topic): array {
-        $payload = [
-            'course_id' => $courseid,
-            'user_id'   => $userid,
-            'topic'     => $topic,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/flashcards/summary', $body);
-    }
-
-    /**
-     * SP-11 (#315): already-generated flashcards that are "due today" (most
-     * overdue first) — doesn't call the LLM, serves from the persisted bank.
-     *
-     * @param int         $courseid Course ID.
-     * @param int         $userid   Student's real $USER->id.
-     * @param string|null $topic    Topic (optional).
-     * @param int         $limit    Maximum amount.
-     * @return array{course_id:int, questions:array}
-     */
-    public function flashcards_due(int $courseid, int $userid, ?string $topic, int $limit): array {
-        $payload = [
-            'course_id' => $courseid,
-            'user_id'   => $userid,
-            'topic'     => $topic,
-            'limit'     => $limit,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/flashcards/due', $body);
-    }
-
-    /**
-     * SP-11 (#315): applies spaced repetition (SM-2) over the self-assessment
-     * result of a flashcards session. Called once at the end of the session
-     * (same pattern as save_quiz_attempt/record_quiz_errors).
-     *
-     * @param int   $courseid Course ID.
-     * @param int   $userid   Student's real $USER->id.
-     * @param array $reviews  [{flashcard_id: string, knew_it: bool}, ...]
-     * @return array{updated:int}
-     */
-    public function flashcards_review_batch(int $courseid, int $userid, array $reviews): array {
-        $payload = [
-            'course_id' => $courseid,
-            'user_id'   => $userid,
-            'reviews'   => $reviews,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/quiz/flashcards/review-batch', $body);
-    }
-
-    /**
-     * ASIST-01 (#321): saves the student's 👍/👎 vote on a specific chat
-     * answer.
-     *
-     * @param string      $messageid Message ID (UUID from `messages`).
-     * @param int         $courseid  Course ID.
-     * @param int         $userid    Student's real $USER->id.
-     * @param bool        $ishelpful true = 👍, false = 👎.
-     * @param string|null $comment   Optional short comment (only with 👎).
-     * @return array{ok:bool}
-     */
-    public function submit_message_feedback(
-        string $messageid,
-        int $courseid,
-        int $userid,
-        bool $ishelpful,
-        ?string $comment
-    ): array {
-        $payload = [
-            'message_id'  => $messageid,
-            'course_id'   => $courseid,
-            'user_id'     => $userid,
-            'is_helpful'  => $ishelpful,
-            'comment'     => $comment,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/chat/messages/feedback', $body);
     }
 
     /**
@@ -1188,40 +706,14 @@ class backend_client {
             'course_id'   => $courseid,
             'days'        => $days,
             'discussions' => $discussions,
+            // DATA-05: the course's webhook lives in Moodle ("" = none).
+            'webhook_url' => (string) \local_nexusai\local\calendar_store::webhook($courseid),
         ];
         $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($body === false) {
             throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
         }
         return $this->post('/api/v1/forums/weekly-digest', $body);
-    }
-
-    /**
-     * Saves (or deletes, with $url = '') the course's webhook URL for the
-     * weekly forum digest (FOR-07, #378).
-     *
-     * @return array {webhook_url}
-     */
-    public function save_forum_webhook(int $courseid, string $url): array {
-        $payload = ['course_id' => $courseid, 'webhook_url' => $url];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/forums/webhook-config/save', $body);
-    }
-
-    /**
-     * Reads the webhook URL configured for the course (FOR-07, #378).
-     *
-     * @return array {webhook_url}
-     */
-    public function get_forum_webhook(int $courseid): array {
-        $body = json_encode(['course_id' => $courseid], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/forums/webhook-config/get', $body);
     }
 
     /**
@@ -1355,118 +847,7 @@ class backend_client {
 
     // CAL-02 — Calendar alerts configurable by the student.
 
-    /**
-     * Upsert of a calendar alert. days_before=0 removes the alert.
-     *
-     * @param int    $userid         Real $USER->id.
-     * @param int    $courseid       Course ID.
-     * @param int    $eventid        Event ID in Moodle.
-     * @param string $eventname      Event name (stored for the cron).
-     * @param int    $eventtimestamp Event's unix timestamp.
-     * @param int    $daysbefore     0 = no alert, 1, 3 or 7 days before.
-     * @return array{id:string|null, days_before:int}
-     */
-    public function save_calendar_alert(
-        int $userid,
-        int $courseid,
-        int $eventid,
-        string $eventname,
-        int $eventtimestamp,
-        int $daysbefore
-    ): array {
-        $payload = [
-            'user_id'         => $userid,
-            'course_id'       => $courseid,
-            'event_id'        => $eventid,
-            'event_name'      => $eventname,
-            'event_timestamp' => $eventtimestamp,
-            'days_before'     => $daysbefore,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/calendar/alerts/save', $body);
-    }
-
-    /**
-     * Lists the student's active alerts in the course.
-     *
-     * @param int $userid   Real $USER->id.
-     * @param int $courseid Course ID.
-     * @return array{alerts:array}
-     */
-    public function list_calendar_alerts(int $userid, int $courseid): array {
-        $payload = [
-            'user_id'   => $userid,
-            'course_id' => $courseid,
-        ];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/calendar/alerts/list', $body);
-    }
-
-    /**
-     * Gets all alerts due globally (called by the cron).
-     *
-     * @return array{alerts:array}
-     */
-    public function get_due_calendar_alerts(): array {
-        $body = '{}';
-        return $this->post('/api/v1/calendar/alerts/due', $body);
-    }
-
-    /**
-     * Marks an alert as already notified so the cron doesn't resend it.
-     *
-     * @param string $alertid Alert UUID.
-     * @return array{ok:bool}
-     */
-    public function mark_calendar_alert_notified(string $alertid): array {
-        $payload = ['alert_id' => $alertid];
-        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        if ($body === false) {
-            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
-        }
-        return $this->post('/api/v1/calendar/alerts/mark-notified', $body);
-    }
-
     // PRIV-01 — Export and deletion of personal data (issue #310).
-
-    /**
-     * Exports the student's entire personal history in a course (chat
-     * messages, active quiz attempts, quiz errors).
-     *
-     * @param int $userid   Real $USER->id — never a parameter editable by the student.
-     * @param int $courseid Course ID.
-     * @return array{user_id:int, course_id:int, messages:array, quiz_attempts:array, quiz_errors:array}
-     */
-    public function privacy_export(int $userid, int $courseid): array {
-        return $this->get('/api/v1/privacy/export?user_id=' . $userid . '&course_id=' . $courseid);
-    }
-
-    /**
-     * Deletes the student's personal history in a course. Quiz attempts are
-     * anonymized (not deleted) so as not to break the teacher's Analytics
-     * dashboard — see the docstring in app/privacy/router.py.
-     *
-     * @param int $userid   Real $USER->id — never a parameter editable by the student.
-     * @param int $courseid Course ID.
-     * @return array{messages_deleted:int, quiz_errors_deleted:int, quiz_attempts_anonymized:int}
-     */
-    public function privacy_delete(int $userid, int $courseid): array {
-        // We don't use the delete() helper below: that one assumes 204 No
-        // Content (expectjson: false). This endpoint DOES return JSON with
-        // the counts of what was deleted/anonymized, so we call request()
-        // directly with expectjson at its default (true).
-        return $this->request(
-            'DELETE',
-            '/api/v1/privacy/data?user_id=' . $userid . '&course_id=' . $courseid,
-            ''
-        );
-    }
 
     // ONB-02 — Course setup status (issue #425).
 
@@ -1520,6 +901,42 @@ class backend_client {
             );
         }
         return $this->request('POST', $path, $body);
+    }
+
+    /**
+     * Stores the AI calls the backend reports in the X-NexusAI-Usage header (DATA-05).
+     *
+     * The user is the one in the request body, or the logged-in user; calls made
+     * by tasks and observers (role system) have no user. Never breaks the request.
+     *
+     * @param \curl $curl Finished request.
+     * @param string $path Relative path.
+     * @param string $body Signed body.
+     * @param string|null $role Role sent to the backend.
+     */
+    private function store_usage(\curl $curl, string $path, string $body, ?string $role): void {
+        global $USER;
+        $headers = array_change_key_case((array) $curl->getResponse(), CASE_LOWER);
+        $value = $headers['x-nexusai-usage'] ?? '';
+        if (!is_string($value) || $value === '') {
+            return;
+        }
+        $calls = \local_nexusai\local\usage_store::parse_header($value);
+        if (!$calls) {
+            return;
+        }
+        $data = $body !== '' ? json_decode($body, true) : null;
+        $data = is_array($data) ? $data : [];
+        $query = [];
+        parse_str((string) parse_url($path, PHP_URL_QUERY), $query);
+        $courseid = (int) ($data['course_id'] ?? $query['course_id'] ?? 0);
+        $role = $role ?? 'system';
+        $userid = null;
+        if ($role !== 'system') {
+            $userid = (int) ($data['user_id'] ?? $data['uploader_id'] ?? 0) ?: (isloggedin() ? (int) $USER->id : null);
+        }
+        $requestid = isset($headers['x-request-id']) && is_string($headers['x-request-id']) ? $headers['x-request-id'] : null;
+        \local_nexusai\local\usage_store::record_calls($userid, $courseid, $role, $calls, $requestid);
     }
 
     /**
@@ -1618,6 +1035,8 @@ class backend_client {
                 'HTTP ' . $httpcode . ': ' . $detail
             );
         }
+
+        $this->store_usage($curl, $path, $body, $role);
 
         // 204 No Content has an empty body — never attempt json_decode on it.
         if ($httpcode === 204) {

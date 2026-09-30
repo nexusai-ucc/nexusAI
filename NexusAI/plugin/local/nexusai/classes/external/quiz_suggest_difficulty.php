@@ -94,8 +94,7 @@ class quiz_suggest_difficulty extends external_api {
         require_capability('local/nexusai:use', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        $client   = new backend_client();
-        $response = $client->suggest_difficulty(
+        $response = \local_nexusai\local\quiz_store::suggest_difficulty(
             (int) $params['courseid'],
             (int) $USER->id,
             trim($params['topic']) === '' ? null : trim($params['topic'])

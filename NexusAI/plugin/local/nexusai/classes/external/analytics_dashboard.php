@@ -119,8 +119,7 @@ class analytics_dashboard extends external_api {
 
         $days = max(1, min(365, (int) $params['days']));
 
-        $client   = new backend_client();
-        $response = $client->analytics_dashboard((int) $params['courseid'], $days);
+        $response = \local_nexusai\local\course_analytics::dashboard((int) $params['courseid'], $days);
 
         $qsd = is_array($response['quiz_score_distribution'] ?? null) ? $response['quiz_score_distribution'] : [];
         $gr  = is_array($response['gaps_ratio'] ?? null) ? $response['gaps_ratio'] : [];

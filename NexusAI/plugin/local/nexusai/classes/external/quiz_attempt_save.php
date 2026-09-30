@@ -115,8 +115,7 @@ class quiz_attempt_save extends external_api {
             $cleantopic = mb_substr($cleantopic, 0, 200);
         }
 
-        $client   = new backend_client();
-        $response = $client->save_quiz_attempt(
+        $response = \local_nexusai\local\quiz_store::save_attempt(
             (int) $params['courseid'],
             (int) $USER->id,
             $qtype,

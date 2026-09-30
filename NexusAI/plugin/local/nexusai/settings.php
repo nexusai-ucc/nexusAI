@@ -69,6 +69,25 @@ if ($hassiteconfig) {
         0
     ));
 
+    // Token limits per role (DATA-05): sent to the backend with each chat
+    // question and shown to the user as the limit bar in the widget.
+    $settings->add(new admin_setting_heading(
+        'local_nexusai/section_limits',
+        get_string('section_limits', 'local_nexusai'),
+        get_string('section_limits_desc', 'local_nexusai')
+    ));
+    foreach (\local_nexusai\local\usage_store::DEFAULT_LIMITS as $role => $windows) {
+        foreach ($windows as $window => $default) {
+            $settings->add(new admin_setting_configtext(
+                "local_nexusai/token_limit_{$role}_{$window}",
+                get_string("token_limit_{$role}_{$window}", 'local_nexusai'),
+                get_string('token_limit_desc', 'local_nexusai'),
+                $default,
+                PARAM_INT
+            ));
+        }
+    }
+
     // Backend section.
     $settings->add(new admin_setting_heading(
         'local_nexusai/section_backend',

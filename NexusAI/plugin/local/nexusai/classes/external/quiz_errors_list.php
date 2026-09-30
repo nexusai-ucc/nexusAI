@@ -143,8 +143,13 @@ class quiz_errors_list extends external_api {
         $limit  = max(1, min(200, (int) $params['limit']));
         $offset = max(0, (int) $params['offset']);
 
-        $client   = new backend_client();
-        $response = $client->list_quiz_errors((int) $params['courseid'], (int) $USER->id, $days, $limit, $offset);
+        $response = \local_nexusai\local\quiz_store::list_errors(
+            (int) $params['courseid'],
+            (int) $USER->id,
+            $days,
+            $limit,
+            $offset
+        );
 
         return [
             'course_id' => (int) ($response['course_id'] ?? $params['courseid']),

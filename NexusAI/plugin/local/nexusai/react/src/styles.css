@@ -4023,3 +4023,41 @@
         box-shadow: none;
     }
 }
+
+/* DATA-05 (#525): barra de límite de tokens del alumno */
+.nexusai-budget {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 14px 0;
+    font-size: 11px;
+    color: var(--nexusai-fg-subtle);
+}
+.nexusai-budget__track {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--nexusai-border);
+    overflow: hidden;
+}
+.nexusai-budget__fill {
+    height: 100%;
+    background: var(--nexusai-primary, #2563eb);
+    transition: width 0.3s ease;
+}
+.nexusai-budget--warn .nexusai-budget__fill {
+    background: #d97706;
+}
+.nexusai-budget--warn .nexusai-budget__text {
+    color: #b45309;
+}
+.nexusai-budget--out .nexusai-budget__fill {
+    background: #dc2626;
+}
+.nexusai-budget--out .nexusai-budget__text {
+    color: #b91c1c;
+}
+@media (prefers-reduced-motion: reduce) {
+    .nexusai-budget__fill {
+        transition: none;
+    }
+}

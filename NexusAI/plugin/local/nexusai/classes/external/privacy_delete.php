@@ -81,9 +81,8 @@ class privacy_delete extends external_api {
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
 
-        $client = new backend_client();
         // Uses the session's real $USER->id — never a parameter the student
         // could manipulate to delete someone else's history.
-        return $client->privacy_delete((int) $USER->id, (int) $params['courseid']);
+        return \local_nexusai\local\privacy_store::delete((int) $USER->id, (int) $params['courseid']);
     }
 }

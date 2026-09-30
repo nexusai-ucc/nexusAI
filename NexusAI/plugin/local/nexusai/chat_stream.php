@@ -93,12 +93,6 @@ if (!\local_nexusai\local\course_guard::is_enabled($courseid)) {
     exit;
 }
 
-// Resolved server-side, same capability visibility_helper.php already uses
-// to compute 'isteacher' for the frontend. Drives the backend's per-role
-// token budget (app/shared/token_budget.py) — NEVER trust a role sent by
-// the client.
-$isteacher = has_capability('local/nexusai:manage', $context);
-
 // Business validations.
 $cleanquestion = trim($question);
 if ($cleanquestion === '') {
@@ -118,52 +112,26 @@ if ($cleansessionid !== '' && (strlen($cleansessionid) < 8 || strlen($cleansessi
     exit;
 }
 
-// Build the payload for the Python backend.
-$bodyarray = [
-    'question'   => $cleanquestion,
-    'course_id'  => $courseid,
-    'user_id'    => (int) $USER->id,
-    'is_teacher' => $isteacher,
-];
-if ($cleansessionid !== '') {
-    $bodyarray['session_id'] = $cleansessionid;
-}
+// The answer is stored when the backend finishes, even if the student closes
+// the tab halfway: keep running after the browser goes away (DATA-05).
+ignore_user_abort(true);
 
-// Feature B: resolve the student's courses if multicourse=true.
-if ($multicourse) {
-    $enrolled = enrol_get_users_courses(
+// Store the question and build the request (DATA-05): the conversation lives in
+// Moodle and the backend gets the history. userid is always the session's.
+try {
+    $turn = new \local_nexusai\local\chat_turn(
         (int) $USER->id,
-        true,
-        ['id', 'shortname', 'fullname']
+        $courseid,
+        $cleanquestion,
+        $cleansessionid !== '' ? $cleansessionid : null,
+        $multicourse
     );
-    $courseids   = [];
-    $coursenames = [];
-    // Same reasoning as chat_send.php: multicourse searches every enrolled
-    // course, so $isteacher (computed above from only $courseid's context)
-    // needs to be recomputed across all of them, not just the "current" one.
-    $isteachermulticourse = false;
-    foreach ($enrolled as $course) {
-        $cid = (int) $course->id;
-        // Courses with NexusAI off stay out of the search (CURSO-01).
-        if (!\local_nexusai\local\course_guard::is_enabled($cid)) {
-            continue;
-        }
-        $courseids[] = $cid;
-        $coursenames[(string) $cid] = $course->fullname ?? $course->shortname ?? 'Course';
-        if (has_capability('local/nexusai:manage', context_course::instance($cid))) {
-            $isteachermulticourse = true;
-        }
-    }
-    if (empty($courseids)) {
-        $courseids   = [$courseid];
-        $coursenames = [(string) $courseid => 'Current course'];
-        $isteachermulticourse = $isteacher;
-    }
-    $bodyarray['course_id']    = (int) $courseids[0];
-    $bodyarray['course_ids']   = $courseids;
-    $bodyarray['course_names'] = $coursenames;
-    $bodyarray['is_teacher']   = $isteachermulticourse;
+} catch (\moodle_exception $e) {
+    http_response_code(404);
+    echo json_encode(['error' => 'session not found']);
+    exit;
 }
+$bodyarray = $turn->payload();
 
 // Only material from activities this user can see (VIS-02). Computed here, on
 // the server, for the courses in the body: never taken from the browser.
@@ -224,6 +192,10 @@ while (ob_get_level() > 0) {
 // as a properly-built SSE error event instead of passing it through raw.
 $httpstatus = null;
 $errorbuffer = '';
+$relay = new \local_nexusai\local\sse_relay($turn, function (string $bytes): void {
+    echo $bytes;
+    @flush();
+});
 
 $ch = curl_init();
 curl_setopt_array($ch, [
@@ -239,7 +211,7 @@ curl_setopt_array($ch, [
         'Accept: text/event-stream',
         'Accept-Language: ' . \local_nexusai\external\backend_client::interface_language(),
         // Who originated the call, for the backend usage ledger (tokens by role).
-        'X-NexusAI-Role: ' . (!empty($bodyarray['is_teacher']) ? 'teacher' : 'student'),
+        'X-NexusAI-Role: ' . $turn->role(),
     ],
     CURLOPT_TIMEOUT        => 300,
     CURLOPT_CONNECTTIMEOUT => 10,
@@ -256,14 +228,13 @@ curl_setopt_array($ch, [
     // Callback that runs every time bytes arrive from the backend. If we
     // already know the response isn't 2xx, we accumulate instead of
     // forwarding (best effort: in case the error arrives across several chunks).
-    CURLOPT_WRITEFUNCTION  => function ($curl, $chunk) use (&$httpstatus, &$errorbuffer) {
+    CURLOPT_WRITEFUNCTION  => function ($curl, $chunk) use (&$httpstatus, &$errorbuffer, $relay) {
         if ($httpstatus !== null && $httpstatus >= 400) {
             $errorbuffer .= $chunk;
             return strlen($chunk);
         }
-        echo $chunk;
-        @flush();
-        return strlen($chunk);
+        // The relay forwards the events and stores the answer on `done`.
+        return $relay->write($chunk);
     },
 ]);
 

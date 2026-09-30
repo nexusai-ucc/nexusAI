@@ -81,11 +81,16 @@ class forum_webhook_save extends external_api {
         require_capability('local/nexusai:manage', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        $client = new backend_client();
-        $response = $client->save_forum_webhook($params['courseid'], $params['webhookurl']);
+        $url = trim((string) $params['webhookurl']);
+        if ($url !== '' && !preg_match('#^https?://#i', $url)) {
+            throw new \invalid_parameter_exception('The webhook URL must start with http:// or https://');
+        }
+        if (\core_text::strlen($url) > 2000) {
+            throw new \invalid_parameter_exception('The webhook URL is too long');
+        }
 
         return [
-            'webhook_url' => $response['webhook_url'] ?? null,
+            'webhook_url' => \local_nexusai\local\calendar_store::save_webhook((int) $params['courseid'], $url),
         ];
     }
 }

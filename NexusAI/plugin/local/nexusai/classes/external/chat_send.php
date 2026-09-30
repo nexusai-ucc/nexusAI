@@ -150,12 +150,6 @@ class chat_send extends external_api {
         require_capability('local/nexusai:use', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        // Resolved server-side, same capability visibility_helper.php already
-        // uses to compute 'isteacher' for the frontend. Drives the backend's
-        // per-role token budget (app/shared/token_budget.py) — NEVER trust a
-        // role sent by the client.
-        $isteacher = has_capability('local/nexusai:manage', $context);
-
         // 3. Business-rule validation.
         $cleanquestion = trim($params['question']);
         if ($cleanquestion === '') {
@@ -172,79 +166,22 @@ class chat_send extends external_api {
             throw new \invalid_parameter_exception('Invalid session id format');
         }
         if ($cleansessionid === '') {
-            $cleansessionid = null;  // The backend accepts null to create a new session.
+            $cleansessionid = null;  // Null starts a new conversation.
         }
 
-        // 4. Call the Python backend.
-        // userid is ALWAYS from $USER, NEVER from the parameter. If an
-        // attacker sends a userid other than their own, we silently ignore it.
-        $client = new backend_client();
+        // 4. Store the question and ask the backend (DATA-05): the conversation
+        // lives in Moodle and the backend gets the history in the request.
+        // userid is ALWAYS from $USER, NEVER from the parameter.
+        $turn = new \local_nexusai\local\chat_turn(
+            (int) $USER->id,
+            (int) $params['courseid'],
+            $cleanquestion,
+            $cleansessionid,
+            !empty($params['multicourse'])
+        );
+        $response = (new backend_client())->chat($turn->payload());
 
-        if (!empty($params['multicourse'])) {
-            // Feature B: resolve the courses the student is enrolled in.
-            // enrol_get_users_courses() is native to Moodle and respects
-            // course visibility and active enrolments.
-            $enrolledcourses = enrol_get_users_courses(
-                (int) $USER->id,
-                true,
-                ['id', 'shortname', 'fullname']
-            );
-            $courseids   = [];
-            $coursenames = [];
-            // Multicourse mode searches material across EVERY enrolled
-            // course, not just $params['courseid'] — so $isteacher (computed
-            // above from only the current course's context) would under- or
-            // over-grant the per-role token budget depending on which course
-            // happened to be "current" when the student opened the chat.
-            // Recomputed here as true if the user manages ANY of the courses
-            // actually being searched (has_capability is already O(1) per
-            // context, no extra DB round trip beyond what enrol_get_users_courses
-            // already did).
-            $isteachermulticourse = false;
-            foreach ($enrolledcourses as $course) {
-                $cid = (int) $course->id;
-                // Courses with NexusAI off stay out of the search (CURSO-01).
-                if (!\local_nexusai\local\course_guard::is_enabled($cid)) {
-                    continue;
-                }
-                $courseids[] = $cid;
-                $coursenames[(string) $cid] = $course->fullname
-                    ?? $course->shortname
-                    ?? 'Course';
-                if (has_capability('local/nexusai:manage', \context_course::instance($cid))) {
-                    $isteachermulticourse = true;
-                }
-            }
-            // Defensive fallback: if it couldn't be resolved, use the current course.
-            if (empty($courseids)) {
-                $courseids   = [(int) $params['courseid']];
-                $coursenames = [(string) $params['courseid'] => 'Current course'];
-                $isteachermulticourse = $isteacher;
-            }
-
-            $response = $client->send_message_multicourse(
-                $courseids,
-                $coursenames,
-                (int) $USER->id,
-                $cleanquestion,
-                $cleansessionid,
-                $isteachermulticourse
-            );
-        } else {
-            $response = $client->send_message(
-                (int) $params['courseid'],
-                (int) $USER->id,
-                $cleanquestion,
-                $cleansessionid,
-                $isteacher
-            );
-        }
-
-        // 5. Validate the response's shape.
-        // The backend already validated internally with Pydantic, but as an
-        // external function we have to return exactly the shape declared in
-        // execute_returns() or Moodle will reject it.
-        if (!isset($response['session_id'], $response['answer'], $response['messages'])) {
+        if (!isset($response['answer'])) {
             throw new \moodle_exception(
                 'errorbackend',
                 'local_nexusai',
@@ -252,19 +189,13 @@ class chat_send extends external_api {
                 'Backend response is missing required fields'
             );
         }
+        $turn->finish((string) $response['answer'], $response, 'messages', false);
 
+        $history = \local_nexusai\local\chat_store::session_messages((int) $USER->id, $turn->session->uuid);
         return [
-            'session_id' => (string) $response['session_id'],
+            'session_id' => $history['session_id'],
             'answer'     => (string) $response['answer'],
-            'messages'   => array_map(
-                static fn(array $m) => [
-                    'id'         => (string) ($m['id'] ?? ''),
-                    'role'       => (string) ($m['role'] ?? ''),
-                    'content'    => (string) ($m['content'] ?? ''),
-                    'created_at' => (string) ($m['created_at'] ?? ''),
-                ],
-                $response['messages']
-            ),
+            'messages'   => $history['messages'],
         ];
     }
 }

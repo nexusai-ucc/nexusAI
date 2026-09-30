@@ -108,13 +108,12 @@ class quiz_study_plan_dismiss extends external_api {
             throw new \invalid_parameter_exception('At least one id must be provided');
         }
 
-        $client   = new backend_client();
-        $response = $client->dismiss_study_plan_topic(
+        $response = ['affected' => \local_nexusai\local\quiz_store::dismiss_study_plan(
             (int) $params['courseid'],
             (int) $USER->id,
             array_map('strval', $params['quizerrorids']),
             array_map('strval', $params['gapquestionids'])
-        );
+        )];
 
         return [
             'affected' => (int) ($response['affected'] ?? 0),

@@ -100,8 +100,8 @@ class quiz_flashcards_review_batch extends external_api {
             'knew_it'      => (bool) $r['knewit'],
         ], $cleanreviews);
 
-        $client   = new backend_client();
-        $response = $client->flashcards_review_batch((int) $params['courseid'], (int) $USER->id, $cleanreviews);
+        $updated = \local_nexusai\local\flashcard_store::review_batch((int) $params['courseid'], (int) $USER->id, $cleanreviews);
+        $response = ['updated' => $updated];
 
         return [
             'updated' => (int) ($response['updated'] ?? 0),
