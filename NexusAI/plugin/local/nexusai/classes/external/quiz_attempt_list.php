@@ -107,8 +107,7 @@ class quiz_attempt_list extends external_api {
         $days  = max(1, min(365, (int) $params['days']));
         $limit = max(1, min(100, (int) $params['limit']));
 
-        $client   = new backend_client();
-        $response = $client->list_quiz_attempts((int) $params['courseid'], (int) $USER->id, $days, $limit);
+        $response = \local_nexusai\local\quiz_store::list_attempts((int) $params['courseid'], (int) $USER->id, $days, $limit);
 
         return [
             'course_id' => (int) ($response['course_id'] ?? $params['courseid']),

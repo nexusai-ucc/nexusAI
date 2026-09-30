@@ -17,7 +17,7 @@
 /**
  * Scheduled task — sends NexusAI calendar notifications (CAL-02).
  *
- * Runs every hour. Queries the FastAPI backend for alerts whose notification
+ * Runs every hour. Reads local_nexusai_cal_alerts for alerts whose notification
  * time has already arrived (now >= event_timestamp - days_before * 1 day), sends
  * Moodle's native notification to each student, and then marks the alert as
  * notified to avoid duplicates.
@@ -43,19 +43,20 @@ class send_calendar_alerts extends \core\task\scheduled_task {
     }
 
     /**
-     * Queries the backend for due alerts, notifies each student and marks them as sent.
+     * Finds the due alerts in Moodle's own table (DATA-05), notifies each student and marks them as sent.
      */
     public function execute(): void {
-        // Off site-wide: nothing to send and no reason to call the backend (CURSO-01).
+        // Off site-wide: nothing to send (CURSO-01).
         if (!\local_nexusai\local\course_guard::plugin_enabled()) {
             return;
         }
 
-        $client = new \local_nexusai\external\backend_client();
-        $client->set_role('system');
-
-        $due = $client->get_due_calendar_alerts();
-        $alerts = $due['alerts'] ?? [];
+        $alerts = array_map(static fn($a) => [
+            'id' => (int) $a->id,
+            'user_id' => (int) $a->userid,
+            'course_id' => (int) $a->courseid,
+            'event_name' => (string) $a->eventname,
+        ], \local_nexusai\local\calendar_store::due(time()));
 
         if (empty($alerts)) {
             return;
@@ -104,10 +105,7 @@ class send_calendar_alerts extends \core\task\scheduled_task {
 
             message_send($message);
 
-            $alertid = (string) ($alert['id'] ?? '');
-            if ($alertid !== '') {
-                $client->mark_calendar_alert_notified($alertid);
-            }
+            \local_nexusai\local\calendar_store::mark_notified($alert['id']);
         }
     }
 }

@@ -83,11 +83,11 @@ class quiz_flashcards_summary extends external_api {
         require_capability('local/nexusai:use', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        $client   = new backend_client();
-        $response = $client->flashcards_summary(
+        $response = \local_nexusai\local\flashcard_store::summary(
             (int) $params['courseid'],
             (int) $USER->id,
-            trim($params['topic']) === '' ? null : trim($params['topic'])
+            trim($params['topic']) === '' ? null : trim($params['topic']),
+            \local_nexusai\local\visible_material::for_course((int) $params['courseid'])
         );
 
         return [

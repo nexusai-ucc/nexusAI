@@ -55,16 +55,19 @@ final class privacy_provider_test extends \advanced_testcase {
         $this->assertCount(0, $contextlist->get_contextids());
     }
 
-    public function test_get_contexts_for_userid_includes_enrolled_course_with_capability(): void {
+    /**
+     * Being enrolled is not data: with everything in Moodle's tables (DATA-05), only
+     * courses where the user has NexusAI rows are listed.
+     */
+    public function test_get_contexts_for_userid_ignores_enrolment_without_data(): void {
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course();
         $student = $this->getDataGenerator()->create_user();
         $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
 
         $contextlist = provider::get_contexts_for_userid($student->id);
-        $coursecontext = \context_course::instance($course->id);
 
-        $this->assertContains((int) $coursecontext->id, array_map('intval', $contextlist->get_contextids()));
+        $this->assertCount(0, $contextlist->get_contextids());
     }
 
     public function test_get_contexts_for_userid_excludes_course_without_capability(): void {
@@ -84,7 +87,10 @@ final class privacy_provider_test extends \advanced_testcase {
 
     // Tests for get_users_in_context().
 
-    public function test_get_users_in_context_returns_enrolled_users_with_capability(): void {
+    /**
+     * Enrolled users without NexusAI rows are not listed (DATA-05).
+     */
+    public function test_get_users_in_context_ignores_enrolment_without_data(): void {
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course();
         $student = $this->getDataGenerator()->create_user();
@@ -94,7 +100,7 @@ final class privacy_provider_test extends \advanced_testcase {
         $userlist = new userlist($coursecontext, 'local_nexusai');
         provider::get_users_in_context($userlist);
 
-        $this->assertContains((int) $student->id, array_map('intval', $userlist->get_userids()));
+        $this->assertCount(0, $userlist->get_userids());
     }
 
     public function test_get_users_in_context_ignores_non_course_context(): void {

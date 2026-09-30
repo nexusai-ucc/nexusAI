@@ -90,6 +90,8 @@ class calendar_alert_save extends external_api {
         int $eventtimestamp,
         int $daysbefore
     ): array {
+        global $USER;
+
         $params = self::validate_parameters(self::execute_parameters(), [
             'userid'         => $userid,
             'courseid'       => $courseid,
@@ -104,14 +106,16 @@ class calendar_alert_save extends external_api {
         require_capability('local/nexusai:use', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        $client   = new backend_client();
-        $response = $client->save_calendar_alert(
-            (int)    $params['userid'],
+        // The alert is always the logged-in user's: the userid parameter is kept for
+        // the frontend's contract but not trusted (another user's id would let a
+        // student read or change someone else's reminders).
+        $response = \local_nexusai\local\calendar_store::save(
+            (int)    $USER->id,
             (int)    $params['courseid'],
             (int)    $params['eventid'],
             (string) $params['eventname'],
             (int)    $params['eventtimestamp'],
-            (int)    $params['daysbefore']
+            max(0, (int) $params['daysbefore'])
         );
 
         return [

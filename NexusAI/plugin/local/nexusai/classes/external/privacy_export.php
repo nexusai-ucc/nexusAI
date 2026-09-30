@@ -123,9 +123,8 @@ class privacy_export extends external_api {
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
 
-        $client = new backend_client();
         // Uses the session's real $USER->id — never a parameter the student
         // could manipulate to request someone else's history.
-        return $client->privacy_export((int) $USER->id, (int) $params['courseid']);
+        return \local_nexusai\local\privacy_store::export((int) $USER->id, (int) $params['courseid']);
     }
 }

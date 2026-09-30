@@ -116,13 +116,16 @@ class quiz_flashcards_due extends external_api {
 
         $lim = max(1, min(50, (int) $params['limit']));
 
-        $client   = new backend_client();
-        $response = $client->flashcards_due(
-            (int) $params['courseid'],
-            (int) $USER->id,
-            trim($params['topic']) === '' ? null : trim($params['topic']),
-            $lim
-        );
+        $response = [
+            'course_id' => (int) $params['courseid'],
+            'questions' => \local_nexusai\local\flashcard_store::due(
+                (int) $params['courseid'],
+                (int) $USER->id,
+                trim($params['topic']) === '' ? null : trim($params['topic']),
+                $lim,
+                \local_nexusai\local\visible_material::for_course((int) $params['courseid'])
+            ),
+        ];
 
         $questions = is_array($response['questions'] ?? null) ? $response['questions'] : [];
 

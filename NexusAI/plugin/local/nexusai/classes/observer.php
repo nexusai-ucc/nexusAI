@@ -98,6 +98,34 @@ class observer {
     }
 
     /**
+     * Callback for the course_deleted event (DATA-05): removes the course's NexusAI data.
+     *
+     * Runs even when NexusAI is off, so nothing is left behind.
+     *
+     * @param \core\event\course_deleted $event
+     */
+    public static function course_deleted(\core\event\course_deleted $event): void {
+        try {
+            \local_nexusai\local\data_cleanup::delete_course((int) $event->objectid);
+        } catch (\Throwable $e) {
+            debugging('[NexusAI] Cleanup of course ' . $event->objectid . ' failed: ' . $e->getMessage(), DEBUG_NORMAL);
+        }
+    }
+
+    /**
+     * Callback for the user_deleted event (DATA-05): removes the user's NexusAI data.
+     *
+     * @param \core\event\user_deleted $event
+     */
+    public static function user_deleted(\core\event\user_deleted $event): void {
+        try {
+            \local_nexusai\local\data_cleanup::delete_user((int) $event->objectid);
+        } catch (\Throwable $e) {
+            debugging('[NexusAI] Cleanup of user ' . $event->objectid . ' failed: ' . $e->getMessage(), DEBUG_NORMAL);
+        }
+    }
+
+    /**
      * Callback for the course_module_deleted event (VIS-04).
      *
      * A "File" activity deleted in Moodle stops being used: its document leaves

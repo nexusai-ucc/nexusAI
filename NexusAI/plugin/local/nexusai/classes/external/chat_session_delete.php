@@ -85,8 +85,8 @@ class chat_session_delete extends external_api {
             throw new \invalid_parameter_exception('Invalid session id');
         }
 
-        $client   = new backend_client();
-        $response = $client->delete_chat_session((int) $USER->id, $cleansessionid);
+        \local_nexusai\local\chat_store::delete_session((int) $USER->id, $cleansessionid);
+        $response = ['success' => true];
 
         return [
             'success' => (bool) ($response['success'] ?? false),

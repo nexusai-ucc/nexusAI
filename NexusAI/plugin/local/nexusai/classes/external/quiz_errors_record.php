@@ -67,7 +67,8 @@ class quiz_errors_record extends external_api {
                     ),
                     'options'             => new external_multiple_structure(
                         new external_value(PARAM_RAW, 'Option'),
-                        VALUE_OPTIONAL,
+                        'Answer options',
+                        VALUE_DEFAULT,
                         []
                     ),
                     'correct_index'       => new external_value(
@@ -166,8 +167,8 @@ class quiz_errors_record extends external_api {
             ];
         }, $cleanerrors);
 
-        $client   = new backend_client();
-        $response = $client->record_quiz_errors((int) $params['courseid'], (int) $USER->id, $cleanerrors);
+        $stored = \local_nexusai\local\quiz_store::record_errors((int) $params['courseid'], (int) $USER->id, $cleanerrors);
+        $response = ['stored' => $stored];
 
         return [
             'stored' => (int) ($response['stored'] ?? 0),

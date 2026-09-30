@@ -75,8 +75,7 @@ class quiz_errors_clear extends external_api {
         require_capability('local/nexusai:use', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        $client   = new backend_client();
-        $response = $client->clear_quiz_errors((int) $params['courseid'], (int) $USER->id);
+        $response = ['deleted' => \local_nexusai\local\quiz_store::clear_errors((int) $params['courseid'], (int) $USER->id)];
 
         return [
             'deleted' => (int) ($response['deleted'] ?? 0),

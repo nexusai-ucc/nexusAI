@@ -128,8 +128,13 @@ class gaps_list extends external_api {
         $limit  = max(1, min(100, (int) $params['limit']));
         $offset = max(0, (int) $params['offset']);
 
-        $client   = new backend_client();
-        $response = $client->list_gaps((int) $params['courseid'], $days, $limit, (bool) $params['includearchived'], $offset);
+        $response = \local_nexusai\local\gap_store::list(
+            (int) $params['courseid'],
+            $days,
+            $limit,
+            $offset,
+            (bool) $params['includearchived']
+        );
 
         return [
             'course_id' => (int) ($response['course_id'] ?? $params['courseid']),

@@ -81,8 +81,7 @@ class quiz_streak extends external_api {
         require_capability('local/nexusai:use', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        $client   = new backend_client();
-        $response = $client->get_streak((int) $params['courseid'], (int) $USER->id);
+        $response = \local_nexusai\local\quiz_store::streak((int) $params['courseid'], (int) $USER->id);
 
         return [
             'currentstreak'  => (int) ($response['current_streak'] ?? 0),

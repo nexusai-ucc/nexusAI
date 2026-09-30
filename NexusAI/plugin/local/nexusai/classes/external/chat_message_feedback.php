@@ -94,17 +94,16 @@ class chat_message_feedback extends external_api {
             $cleancomment = mb_substr($cleancomment, 0, 1000);
         }
 
-        $client   = new backend_client();
-        $response = $client->submit_message_feedback(
-            $params['messageid'],
-            (int) $params['courseid'],
+        $message = \local_nexusai\local\chat_store::record_feedback(
             (int) $USER->id,
+            (int) $params['courseid'],
+            $params['messageid'],
             (bool) $params['ishelpful'],
             $cleancomment !== '' ? $cleancomment : null
         );
 
         return [
-            'ok' => (bool) ($response['ok'] ?? true),
+            'ok' => $message !== null,
         ];
     }
 }
