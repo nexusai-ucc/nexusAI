@@ -210,6 +210,10 @@ class Settings(BaseSettings):
     # resuma por día (13 meses por default).
     usage_ledger_enabled: bool = True
     usage_ledger_detail_days: int = 396
+    # DATA-04 (#524): en la opción C el consumo por persona lo guarda Moodle
+    # (local_nexusai_usage). En el corte se apaga y llm_usage queda sin
+    # user_id: conserva curso, rol e instalación, sin datos personales.
+    usage_ledger_store_user_id: bool = True
 
     # Visibilidad del material (VIS-01, issue #536) — ver app/shared/visibility.py.
     #
@@ -218,6 +222,11 @@ class Settings(BaseSettings):
     #   rechaza. Es lo que impide saltear el filtro. Apagarlo solo tiene sentido
     #   para un despliegue escalonado: sin la lista, el pedido ve todo el curso.
     require_visible_cmids: bool = True
+
+    # Export temporal de los datos del alumno para migrarlos a Moodle
+    # (DATA-04, issue #524) — ver app/migration/router.py. Apagado por
+    # defecto: se prende solo durante el corte.
+    migration_export_enabled: bool = False
 
     class Config:
         env_file = ".env"
