@@ -27,73 +27,75 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Lists all NexusAI-indexed documents of a course.
  */
-class document_list extends \external_api {
+class document_list extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
             // UX-17 (#387): optional — without limit, the backend returns
             // everything up to its internal cap (used by ExamGeneratorPanel.jsx,
             // which needs to choose among all indexed documents).
-            'limit'    => new \external_value(
+            'limit'    => new external_value(
                 PARAM_INT,
                 'Max items per page (no value: unpaginated, internal cap)',
                 VALUE_DEFAULT,
                 null,
                 NULL_ALLOWED
             ),
-            'offset'   => new \external_value(PARAM_INT, 'Position to paginate from', VALUE_DEFAULT, 0),
+            'offset'   => new external_value(PARAM_INT, 'Position to paginate from', VALUE_DEFAULT, 0),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'total' => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'total' => new external_value(
                 PARAM_INT,
                 'Total number of course documents (for pagination, not the count already trimmed by limit)'
             ),
-            'items' => new \external_multiple_structure(
-                new \external_single_structure([
-                    'id'            => new \external_value(PARAM_ALPHANUMEXT, 'Document UUID'),
-                    'course_id'     => new \external_value(PARAM_INT, 'Course ID'),
-                    'uploader_id'   => new \external_value(PARAM_INT, 'ID of the teacher who uploaded it'),
-                    'filename'      => new \external_value(PARAM_RAW, 'File name'),
-                    'mime_type'     => new \external_value(PARAM_RAW, 'MIME type'),
-                    'status'        => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
-                    'error_message' => new \external_value(PARAM_RAW, 'Error message, if applicable', VALUE_OPTIONAL),
-                    'section'       => new \external_value(PARAM_INT, 'Unit number', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'section_name'  => new \external_value(PARAM_TEXT, 'Unit name in the course', VALUE_OPTIONAL),
-                    'cmid'          => new \external_value(
+            'items' => new external_multiple_structure(
+                new external_single_structure([
+                    'id'            => new external_value(PARAM_ALPHANUMEXT, 'Document UUID'),
+                    'course_id'     => new external_value(PARAM_INT, 'Course ID'),
+                    'uploader_id'   => new external_value(PARAM_INT, 'ID of the teacher who uploaded it'),
+                    'filename'      => new external_value(PARAM_RAW, 'File name'),
+                    'mime_type'     => new external_value(PARAM_RAW, 'MIME type'),
+                    'status'        => new external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
+                    'error_message' => new external_value(PARAM_RAW, 'Error message, if applicable', VALUE_OPTIONAL),
+                    'section'       => new external_value(PARAM_INT, 'Unit number', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'section_name'  => new external_value(PARAM_TEXT, 'Unit name in the course', VALUE_OPTIONAL),
+                    'cmid'          => new external_value(
                         PARAM_INT,
                         'Activity the document comes from',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'activity_url'  => new \external_value(PARAM_URL, 'Link to the activity in the classroom', VALUE_OPTIONAL),
-                    'activity_status' => new \external_value(
+                    'activity_url'  => new external_value(PARAM_URL, 'Link to the activity in the classroom', VALUE_OPTIONAL),
+                    'activity_status' => new external_value(
                         PARAM_ALPHA,
                         'visible | hidden | missing | none: state of the activity in the classroom',
                         VALUE_OPTIONAL
                     ),
-                    'created_at'    => new \external_value(PARAM_TEXT, 'Upload date (ISO 8601)', VALUE_OPTIONAL),
-                    'updated_at'    => new \external_value(PARAM_TEXT, 'Last update date (ISO 8601)', VALUE_OPTIONAL),
+                    'created_at'    => new external_value(PARAM_TEXT, 'Upload date (ISO 8601)', VALUE_OPTIONAL),
+                    'updated_at'    => new external_value(PARAM_TEXT, 'Last update date (ISO 8601)', VALUE_OPTIONAL),
                 ]),
                 'Course documents, ordered by upload date descending'
             ),

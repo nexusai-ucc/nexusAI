@@ -28,36 +28,38 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Returns the list of files pending confirmation for the current teacher in a given course.
  */
-class get_pending_uploads extends \external_api {
+class get_pending_uploads extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_multiple_structure {
-        return new \external_multiple_structure(
-            new \external_single_structure([
-                'cmid'     => new \external_value(PARAM_INT, 'Course module ID of the resource'),
-                'filename' => new \external_value(PARAM_TEXT, 'File name'),
-                'mimetype' => new \external_value(PARAM_TEXT, 'File MIME type'),
+    public static function execute_returns(): external_multiple_structure {
+        return new external_multiple_structure(
+            new external_single_structure([
+                'cmid'     => new external_value(PARAM_INT, 'Course module ID of the resource'),
+                'filename' => new external_value(PARAM_TEXT, 'File name'),
+                'mimetype' => new external_value(PARAM_TEXT, 'File MIME type'),
             ])
         );
     }

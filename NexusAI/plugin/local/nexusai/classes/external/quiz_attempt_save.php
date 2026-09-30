@@ -29,38 +29,40 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Persists the result of a quiz completed by the student (SP-09 — quiz history).
  */
-class quiz_attempt_save extends \external_api {
+class quiz_attempt_save extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'       => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'questiontype'   => new \external_value(PARAM_ALPHANUMEXT, 'Generated quiz type', VALUE_REQUIRED),
-            'difficulty'     => new \external_value(PARAM_ALPHA, 'Difficulty (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
-            'topic'          => new \external_value(PARAM_RAW, 'Topic (optional)', VALUE_DEFAULT, ''),
-            'totalquestions' => new \external_value(PARAM_INT, 'Total number of questions (1..10)', VALUE_REQUIRED),
-            'correctcount'   => new \external_value(PARAM_INT, 'Number of correct answers (0..10)', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'       => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'questiontype'   => new external_value(PARAM_ALPHANUMEXT, 'Generated quiz type', VALUE_REQUIRED),
+            'difficulty'     => new external_value(PARAM_ALPHA, 'Difficulty (easy|medium|hard)', VALUE_DEFAULT, 'medium'),
+            'topic'          => new external_value(PARAM_RAW, 'Topic (optional)', VALUE_DEFAULT, ''),
+            'totalquestions' => new external_value(PARAM_INT, 'Total number of questions (1..10)', VALUE_REQUIRED),
+            'correctcount'   => new external_value(PARAM_INT, 'Number of correct answers (0..10)', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'id'    => new \external_value(PARAM_RAW, 'UUID of the saved attempt'),
-            'score' => new \external_value(PARAM_FLOAT, 'Score 0.0-1.0 computed server-side'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'id'    => new external_value(PARAM_RAW, 'UUID of the saved attempt'),
+            'score' => new external_value(PARAM_FLOAT, 'Score 0.0-1.0 computed server-side'),
         ]);
     }
 

@@ -27,37 +27,39 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Proxy between React and the Python backend's /api/v1/documents/summarize endpoint.
  */
-class document_summarize extends \external_api {
+class document_summarize extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'documentid' => new \external_value(PARAM_RAW, 'UUID of the document to summarize', VALUE_REQUIRED),
-            'courseid'   => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'documentid' => new external_value(PARAM_RAW, 'UUID of the document to summarize', VALUE_REQUIRED),
+            'courseid'   => new external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'document_id'       => new \external_value(PARAM_RAW, 'Document UUID'),
-            'document_filename' => new \external_value(PARAM_TEXT, 'File name'),
-            'summary'           => new \external_value(PARAM_RAW, 'AI-generated summary'),
-            'chunks_used'       => new \external_value(PARAM_INT, 'Chunks used for the summary'),
-            'total_chunks'      => new \external_value(PARAM_INT, 'Total chunks of the document'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'document_id'       => new external_value(PARAM_RAW, 'Document UUID'),
+            'document_filename' => new external_value(PARAM_TEXT, 'File name'),
+            'summary'           => new external_value(PARAM_RAW, 'AI-generated summary'),
+            'chunks_used'       => new external_value(PARAM_INT, 'Chunks used for the summary'),
+            'total_chunks'      => new external_value(PARAM_INT, 'Total chunks of the document'),
         ]);
     }
 

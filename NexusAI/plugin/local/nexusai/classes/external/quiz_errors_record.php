@@ -28,73 +28,76 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Persists the questions the student answered wrong in a quiz just finished (SP-10 —
  * error-based review).
  */
-class quiz_errors_record extends \external_api {
+class quiz_errors_record extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'errors'   => new \external_multiple_structure(
-                new \external_single_structure([
-                    'question_type'       => new \external_value(
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'errors'   => new external_multiple_structure(
+                new external_single_structure([
+                    'question_type'       => new external_value(
                         PARAM_ALPHANUMEXT,
                         'Question type',
                         VALUE_DEFAULT,
                         'multiple_choice'
                     ),
-                    'question'            => new \external_value(PARAM_RAW, 'Question text', VALUE_REQUIRED),
-                    'explanation'         => new \external_value(PARAM_RAW, 'Explanation / model answer', VALUE_DEFAULT, ''),
-                    'source_filename'     => new \external_value(PARAM_TEXT, 'Source file', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'source_document_id'  => new \external_value(
+                    'question'            => new external_value(PARAM_RAW, 'Question text', VALUE_REQUIRED),
+                    'explanation'         => new external_value(PARAM_RAW, 'Explanation / model answer', VALUE_DEFAULT, ''),
+                    'source_filename'     => new external_value(PARAM_TEXT, 'Source file', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id'  => new external_value(
                         PARAM_RAW,
                         'Source document ID (best-effort)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'options'             => new \external_multiple_structure(
-                        new \external_value(PARAM_RAW, 'Option'),
+                    'options'             => new external_multiple_structure(
+                        new external_value(PARAM_RAW, 'Option'),
                         VALUE_OPTIONAL,
                         []
                     ),
-                    'correct_index'       => new \external_value(
+                    'correct_index'       => new external_value(
                         PARAM_INT,
                         'Index of the correct option (-1..3)',
                         VALUE_DEFAULT,
                         -1
                     ),
-                    'user_selected_index' => new \external_value(
+                    'user_selected_index' => new external_value(
                         PARAM_INT,
                         'Index chosen by the student (MC/TF)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'user_answer'         => new \external_value(
+                    'user_answer'         => new external_value(
                         PARAM_RAW,
                         'Student\'s free-text answer (open)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'ai_feedback'         => new \external_value(
+                    'ai_feedback'         => new external_value(
                         PARAM_RAW,
                         'AI evaluator feedback (open)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'ai_score'            => new \external_value(
+                    'ai_score'            => new external_value(
                         PARAM_FLOAT,
                         'AI evaluator score (open)',
                         VALUE_OPTIONAL,
@@ -110,11 +113,11 @@ class quiz_errors_record extends \external_api {
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'stored' => new \external_value(PARAM_INT, 'Number of errors persisted'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'stored' => new external_value(PARAM_INT, 'Number of errors persisted'),
         ]);
     }
 

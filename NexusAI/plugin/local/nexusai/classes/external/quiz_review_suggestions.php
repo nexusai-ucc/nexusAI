@@ -27,49 +27,52 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Analyzes the student's quiz error history and returns review suggestions, grouped by the
  * course's source file (SP-10).
  */
-class quiz_review_suggestions extends \external_api {
+class quiz_review_suggestions extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 90),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'days'     => new external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 90),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'course_id'    => new \external_value(PARAM_INT, 'Course ID'),
-            'total_errors' => new \external_value(PARAM_INT, 'Total errors considered'),
-            'suggestions'  => new \external_multiple_structure(
-                new \external_single_structure([
-                    'source_filename'    => new \external_value(PARAM_TEXT, 'Source file', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'source_document_id' => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'course_id'    => new external_value(PARAM_INT, 'Course ID'),
+            'total_errors' => new external_value(PARAM_INT, 'Total errors considered'),
+            'suggestions'  => new external_multiple_structure(
+                new external_single_structure([
+                    'source_filename'    => new external_value(PARAM_TEXT, 'Source file', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id' => new external_value(
                         PARAM_RAW,
                         'Source document ID (best-effort)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'error_count'        => new \external_value(PARAM_INT, 'Number of errors in the group'),
-                    'last_error_at'      => new \external_value(PARAM_RAW, 'ISO timestamp of the group\'s last error'),
-                    'topic'              => new \external_value(PARAM_RAW, 'Sub-topic identified by the AI'),
-                    'suggestion'         => new \external_value(PARAM_RAW, 'Review suggestion'),
+                    'error_count'        => new external_value(PARAM_INT, 'Number of errors in the group'),
+                    'last_error_at'      => new external_value(PARAM_RAW, 'ISO timestamp of the group\'s last error'),
+                    'topic'              => new external_value(PARAM_RAW, 'Sub-topic identified by the AI'),
+                    'suggestion'         => new external_value(PARAM_RAW, 'Review suggestion'),
                 ])
             ),
         ]);

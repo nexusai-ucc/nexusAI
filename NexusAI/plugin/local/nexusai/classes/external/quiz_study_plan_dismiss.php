@@ -35,30 +35,33 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * SP-13 (#323): dismisses a specific topic from the student's own Study Plan without deleting
  * the underlying history (quiz_errors/unanswered_questions stay intact for the teacher).
  */
-class quiz_study_plan_dismiss extends \external_api {
+class quiz_study_plan_dismiss extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'       => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'quizerrorids'   => new \external_multiple_structure(
-                new \external_value(PARAM_ALPHANUMEXT, 'UUID of a quiz_errors row'),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'       => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'quizerrorids'   => new external_multiple_structure(
+                new external_value(PARAM_ALPHANUMEXT, 'UUID of a quiz_errors row'),
                 'Quiz error IDs to dismiss',
                 VALUE_DEFAULT,
                 []
             ),
-            'gapquestionids' => new \external_multiple_structure(
-                new \external_value(PARAM_ALPHANUMEXT, 'UUID of an unanswered_questions row'),
+            'gapquestionids' => new external_multiple_structure(
+                new external_value(PARAM_ALPHANUMEXT, 'UUID of an unanswered_questions row'),
                 'Unanswered question IDs to dismiss',
                 VALUE_DEFAULT,
                 []
@@ -69,11 +72,11 @@ class quiz_study_plan_dismiss extends \external_api {
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'affected' => new \external_value(PARAM_INT, 'Number of rows updated'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'affected' => new external_value(PARAM_INT, 'Number of rows updated'),
         ]);
     }
 

@@ -28,44 +28,46 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Saves or updates a student's alert for a calendar event.
  */
-class calendar_alert_save extends \external_api {
+class calendar_alert_save extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'userid'         => new \external_value(PARAM_INT, 'User ID', VALUE_REQUIRED),
-            'courseid'       => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'eventid'        => new \external_value(PARAM_INT, 'Event ID in Moodle', VALUE_REQUIRED),
-            'eventname'      => new \external_value(PARAM_TEXT, 'Event name', VALUE_REQUIRED),
-            'eventtimestamp' => new \external_value(PARAM_INT, 'Unix timestamp of the event', VALUE_REQUIRED),
-            'daysbefore'     => new \external_value(PARAM_INT, '0 = no alert, 1, 3 or 7 days before', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'userid'         => new external_value(PARAM_INT, 'User ID', VALUE_REQUIRED),
+            'courseid'       => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'eventid'        => new external_value(PARAM_INT, 'Event ID in Moodle', VALUE_REQUIRED),
+            'eventname'      => new external_value(PARAM_TEXT, 'Event name', VALUE_REQUIRED),
+            'eventtimestamp' => new external_value(PARAM_INT, 'Unix timestamp of the event', VALUE_REQUIRED),
+            'daysbefore'     => new external_value(PARAM_INT, '0 = no alert, 1, 3 or 7 days before', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'id'          => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'id'          => new external_value(
                 PARAM_TEXT,
                 'Alert UUID (null if deleted)',
                 VALUE_OPTIONAL,
                 null,
                 NULL_ALLOWED
             ),
-            'days_before' => new \external_value(PARAM_INT, 'Configured days'),
+            'days_before' => new external_value(PARAM_INT, 'Configured days'),
         ]);
     }
 

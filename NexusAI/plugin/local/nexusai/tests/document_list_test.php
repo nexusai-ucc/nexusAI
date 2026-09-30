@@ -35,6 +35,9 @@
 
 namespace local_nexusai;
 
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+
 /**
  * Tests for the document_list external function.
  *
@@ -56,7 +59,7 @@ final class document_list_test extends \advanced_testcase {
         $returns = \local_nexusai\external\document_list::execute_returns();
 
         $this->assertInstanceOf(
-            \external_single_structure::class,
+            external_single_structure::class,
             $returns,
             'execute_returns() must return external_single_structure with {total, items}'
         );
@@ -67,14 +70,14 @@ final class document_list_test extends \advanced_testcase {
 
         $items = $topkeys['items'];
         $this->assertInstanceOf(
-            \external_multiple_structure::class,
+            external_multiple_structure::class,
             $items,
             'items must be external_multiple_structure'
         );
 
         $inner = $items->content;
         $this->assertInstanceOf(
-            \external_single_structure::class,
+            external_single_structure::class,
             $inner,
             'items\' content must be external_single_structure'
         );

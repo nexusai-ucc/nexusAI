@@ -32,29 +32,31 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Saves, for the current user and a specific course, whether the tutorial was dismissed
  * (`dismissed`) and which optional steps are marked "not applicable" (`skipped`).
  */
-class onboarding_state_set extends \external_api {
+class onboarding_state_set extends external_api {
     /** Cap on `skipped` items — there are at most 6 possible steps today, 20 gives margin. */
     private const MAX_SKIPPED = 20;
 
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'  => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'dismissed' => new \external_value(PARAM_BOOL, 'Dismiss (true) or reopen (false) the tutorial', VALUE_REQUIRED),
-            'skipped'   => new \external_multiple_structure(
-                new \external_value(PARAM_ALPHANUMEXT, 'Key of the step marked "not applicable"'),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'  => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'dismissed' => new external_value(PARAM_BOOL, 'Dismiss (true) or reopen (false) the tutorial', VALUE_REQUIRED),
+            'skipped'   => new external_multiple_structure(
+                new external_value(PARAM_ALPHANUMEXT, 'Key of the step marked "not applicable"'),
                 'Optional steps excluded from future reviews',
                 VALUE_REQUIRED
             ),
@@ -64,11 +66,11 @@ class onboarding_state_set extends \external_api {
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'success' => new \external_value(PARAM_BOOL, 'Saved successfully'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'success' => new external_value(PARAM_BOOL, 'Saved successfully'),
         ]);
     }
 

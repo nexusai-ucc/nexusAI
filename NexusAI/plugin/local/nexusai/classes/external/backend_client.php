@@ -1644,10 +1644,8 @@ class backend_client {
     /**
      * Generates a UUIDv4-compatible nonce (32 hex chars, no dashes).
      *
-     * We don't use `\core\uuid::generate()` because it only exists from
-     * Moodle 3.10 onward with a namespace, and we want maximum compat with
-     * the 4.1-4.5 range. `random_bytes()` has been available since PHP 7.0
-     * — more than enough.
+     * A plain `random_bytes()` hex string is all the backend needs (it only
+     * checks that the nonce was not seen before), so `\core\uuid` is not used.
      *
      * @return string 32 hex chars
      */

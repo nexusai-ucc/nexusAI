@@ -28,39 +28,40 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Returns the first characters of an indexed document's extracted text (CONT-08 / #357).
  */
-class document_preview extends \external_api {
+class document_preview extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'   => new \external_value(PARAM_INT, 'Course ID (to validate the capability)', VALUE_REQUIRED),
-            'documentid' => new \external_value(PARAM_ALPHANUMEXT, 'Document UUID', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'   => new external_value(PARAM_INT, 'Course ID (to validate the capability)', VALUE_REQUIRED),
+            'documentid' => new external_value(PARAM_ALPHANUMEXT, 'Document UUID', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'document_id' => new \external_value(PARAM_ALPHANUMEXT, 'Document UUID'),
-            'filename'    => new \external_value(PARAM_RAW, 'File name'),
-            'status'      => new \external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
-            'preview'     => new \external_value(PARAM_RAW, 'Trimmed extracted text, or null if not available yet', VALUE_OPTIONAL),
-            'char_count'  => new \external_value(PARAM_INT, 'Number of characters in the preview'),
-            'truncated'   => new \external_value(PARAM_BOOL, 'True if the extracted text is longer than the preview'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'document_id' => new external_value(PARAM_ALPHANUMEXT, 'Document UUID'),
+            'filename'    => new external_value(PARAM_RAW, 'File name'),
+            'status'      => new external_value(PARAM_ALPHA, 'pending | indexing | indexed | error'),
+            'preview'     => new external_value(PARAM_RAW, 'Trimmed extracted text, or null if not available yet', VALUE_OPTIONAL),
+            'char_count'  => new external_value(PARAM_INT, 'Number of characters in the preview'),
+            'truncated'   => new external_value(PARAM_BOOL, 'True if the extracted text is longer than the preview'),
         ]);
     }
 

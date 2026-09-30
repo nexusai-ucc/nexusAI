@@ -27,14 +27,16 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Reads the forum thread from the Moodle DB and asks the backend to generate a reply
  * suggestion using RAG + LLM (F-05 / F-11).
  */
-class forum_suggest_reply extends \external_api {
+class forum_suggest_reply extends external_api {
     /** @var int Max thread posts sent to the backend as context. */
     const MAX_POSTS = 30;
 
@@ -44,26 +46,26 @@ class forum_suggest_reply extends \external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'discussionid'  => new \external_value(PARAM_INT, 'Forum discussion ID', VALUE_REQUIRED),
-            'courseid'      => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
-            'replytopostid' => new \external_value(PARAM_INT, 'ID of the post being replied to', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'discussionid'  => new external_value(PARAM_INT, 'Forum discussion ID', VALUE_REQUIRED),
+            'courseid'      => new external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+            'replytopostid' => new external_value(PARAM_INT, 'ID of the post being replied to', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'suggested_reply'     => new \external_value(PARAM_RAW, 'Text suggested by the LLM'),
-            'has_course_material' => new \external_value(PARAM_BOOL, 'Whether RAG found relevant course material'),
-            'sources_used'        => new \external_value(PARAM_INT, 'Number of course chunks used'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'suggested_reply'     => new external_value(PARAM_RAW, 'Text suggested by the LLM'),
+            'has_course_material' => new external_value(PARAM_BOOL, 'Whether RAG found relevant course material'),
+            'sources_used'        => new external_value(PARAM_INT, 'Number of course chunks used'),
         ]);
     }
 

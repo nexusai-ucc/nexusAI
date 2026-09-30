@@ -29,68 +29,71 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Returns a course's aggregated metrics dashboard for the teacher (ANALYTICS-01/02): most
  * frequent questions, daily usage, quiz score distribution and content-gaps ratio.
  */
-class analytics_dashboard extends \external_api {
+class analytics_dashboard extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 30),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'days'     => new external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 30),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'course_id'   => new \external_value(PARAM_INT, 'Course ID'),
-            'period_days' => new \external_value(PARAM_INT, 'Time window'),
-            'top_queries' => new \external_multiple_structure(
-                new \external_single_structure([
-                    'question' => new \external_value(PARAM_RAW, 'Question'),
-                    'count'    => new \external_value(PARAM_INT, 'Times asked'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'course_id'   => new external_value(PARAM_INT, 'Course ID'),
+            'period_days' => new external_value(PARAM_INT, 'Time window'),
+            'top_queries' => new external_multiple_structure(
+                new external_single_structure([
+                    'question' => new external_value(PARAM_RAW, 'Question'),
+                    'count'    => new external_value(PARAM_INT, 'Times asked'),
                 ])
             ),
-            'daily_message_counts' => new \external_multiple_structure(
-                new \external_single_structure([
-                    'date'           => new \external_value(PARAM_RAW, 'Date (YYYY-MM-DD)'),
-                    'message_count'  => new \external_value(PARAM_INT, 'Messages that day'),
+            'daily_message_counts' => new external_multiple_structure(
+                new external_single_structure([
+                    'date'           => new external_value(PARAM_RAW, 'Date (YYYY-MM-DD)'),
+                    'message_count'  => new external_value(PARAM_INT, 'Messages that day'),
                 ])
             ),
-            'quiz_score_distribution' => new \external_single_structure([
-                'total_attempts' => new \external_value(PARAM_INT, 'Total number of attempts'),
-                'average_score'  => new \external_value(PARAM_FLOAT, 'Average score'),
-                'buckets'        => new \external_multiple_structure(
-                    new \external_single_structure([
-                        'range' => new \external_value(PARAM_RAW, 'Bucket range (e.g. "0-20")'),
-                        'count' => new \external_value(PARAM_INT, 'Attempts in that range'),
+            'quiz_score_distribution' => new external_single_structure([
+                'total_attempts' => new external_value(PARAM_INT, 'Total number of attempts'),
+                'average_score'  => new external_value(PARAM_FLOAT, 'Average score'),
+                'buckets'        => new external_multiple_structure(
+                    new external_single_structure([
+                        'range' => new external_value(PARAM_RAW, 'Bucket range (e.g. "0-20")'),
+                        'count' => new external_value(PARAM_INT, 'Attempts in that range'),
                     ])
                 ),
             ]),
-            'gaps_ratio' => new \external_single_structure([
-                'gaps_detected'      => new \external_value(PARAM_INT, 'Detected content gaps'),
-                'questions_answered' => new \external_value(PARAM_INT, 'Questions answered'),
-                'ratio'              => new \external_value(PARAM_FLOAT, 'gaps / (gaps + answered)'),
+            'gaps_ratio' => new external_single_structure([
+                'gaps_detected'      => new external_value(PARAM_INT, 'Detected content gaps'),
+                'questions_answered' => new external_value(PARAM_INT, 'Questions answered'),
+                'ratio'              => new external_value(PARAM_FLOAT, 'gaps / (gaps + answered)'),
             ]),
-            'feedback_ratio' => new \external_single_structure([
-                'helpful_count' => new \external_value(PARAM_INT, 'Answers marked helpful (👍)'),
-                'total_rated'   => new \external_value(PARAM_INT, 'Total rated answers'),
-                'useful_pct'    => new \external_value(PARAM_FLOAT, '% marked helpful'),
+            'feedback_ratio' => new external_single_structure([
+                'helpful_count' => new external_value(PARAM_INT, 'Answers marked helpful (👍)'),
+                'total_rated'   => new external_value(PARAM_INT, 'Total rated answers'),
+                'useful_pct'    => new external_value(PARAM_FLOAT, '% marked helpful'),
             ]),
-            'topics_consulted' => new \external_value(PARAM_INT, 'Distinct (grouped) questions consulted in the period'),
+            'topics_consulted' => new external_value(PARAM_INT, 'Distinct (grouped) questions consulted in the period'),
         ]);
     }
 

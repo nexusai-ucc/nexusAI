@@ -32,10 +32,6 @@ use local_nexusai\local\material_sync;
 /**
  * Covers material_sync and the two observers that use it.
  *
- * Runs in a separate process because backend_client is loaded from the external classes,
- * which require externallib.php.
- *
- * @runTestsInSeparateProcesses
  * @covers \local_nexusai\local\material_sync
  * @covers \local_nexusai\observer
  */

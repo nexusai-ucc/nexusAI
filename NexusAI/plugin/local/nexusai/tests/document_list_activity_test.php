@@ -30,10 +30,6 @@ use local_nexusai\local\material_activity;
 /**
  * Covers where each listed document lives in the classroom.
  *
- * Runs in a separate process because it loads the external function class,
- * which requires externallib.php.
- *
- * @runTestsInSeparateProcesses
  * @covers \local_nexusai\external\document_list
  */
 final class document_list_activity_test extends \advanced_testcase {

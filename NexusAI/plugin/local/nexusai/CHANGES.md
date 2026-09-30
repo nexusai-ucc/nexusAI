@@ -5,6 +5,12 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.19.0] — Unreleased
 
+- Changed: the minimum is now **Moodle 4.5 LTS** (build 2024100700), and 4.5
+  to 5.2 are supported (the UCC runs 5.0). The external functions use the
+  `core_external` classes instead of the legacy aliases from `externallib.php`,
+  and the old `local_nexusai_before_footer()` callback for Moodle 4.1-4.3 is
+  gone (the widget uses the hooks API). CI runs on 4.5 (PostgreSQL and MySQL),
+  5.0 and 5.2. No visible change for users.
 - New: teachers turn NexusAI on or off for their course from "NexusAI in this
   course" (course navigation, needs `local/nexusai:manage`). When it is off,
   students see no widget or icon, every NexusAI web service and script refuses

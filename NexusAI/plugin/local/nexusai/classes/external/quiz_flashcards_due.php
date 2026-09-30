@@ -30,53 +30,56 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * SP-11 (#315): already-generated flashcards that are "due today" according to spaced
  * repetition (SM-2), most overdue first.
  */
-class quiz_flashcards_due extends \external_api {
+class quiz_flashcards_due extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'topic'    => new \external_value(PARAM_TEXT, 'Topic (optional)', VALUE_DEFAULT, ''),
-            'limit'    => new \external_value(PARAM_INT, 'Maximum amount (1..50)', VALUE_DEFAULT, 10),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'topic'    => new external_value(PARAM_TEXT, 'Topic (optional)', VALUE_DEFAULT, ''),
+            'limit'    => new external_value(PARAM_INT, 'Maximum amount (1..50)', VALUE_DEFAULT, 10),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
-            'questions' => new \external_multiple_structure(
-                new \external_single_structure([
-                    'id'                  => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'course_id' => new external_value(PARAM_INT, 'Course ID'),
+            'questions' => new external_multiple_structure(
+                new external_single_structure([
+                    'id'                  => new external_value(
                         PARAM_ALPHANUMEXT,
                         'Flashcard ID (UUID)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'question_type'       => new \external_value(PARAM_ALPHANUMEXT, 'Question type'),
-                    'question'            => new \external_value(PARAM_RAW, 'Front of the card'),
-                    'options'             => new \external_multiple_structure(
-                        new \external_value(PARAM_RAW, 'Option')
+                    'question_type'       => new external_value(PARAM_ALPHANUMEXT, 'Question type'),
+                    'question'            => new external_value(PARAM_RAW, 'Front of the card'),
+                    'options'             => new external_multiple_structure(
+                        new external_value(PARAM_RAW, 'Option')
                     ),
-                    'correct_index'       => new \external_value(PARAM_INT, 'Always -1 for flashcards'),
-                    'explanation'         => new \external_value(PARAM_RAW, 'Back of the card'),
-                    'source_filename'     => new \external_value(PARAM_TEXT, 'Source file'),
-                    'source_document_id'  => new \external_value(
+                    'correct_index'       => new external_value(PARAM_INT, 'Always -1 for flashcards'),
+                    'explanation'         => new external_value(PARAM_RAW, 'Back of the card'),
+                    'source_filename'     => new external_value(PARAM_TEXT, 'Source file'),
+                    'source_document_id'  => new external_value(
                         PARAM_ALPHANUMEXT,
                         'Source document ID',
                         VALUE_OPTIONAL,

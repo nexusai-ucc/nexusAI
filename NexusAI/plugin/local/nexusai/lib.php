@@ -17,14 +17,10 @@
 /**
  * Library functions for local_nexusai.
  *
- * Hook system:
- *   - Moodle 4.4+ → uses db/hooks.php + classes/hook/output/before_footer_listener.php
- *   - Moodle 4.1-4.3 → uses this file's `local_nexusai_before_footer()` function
- *
- * In Moodle 4.4+, the old function is still invoked for backward compat but its
- * return value is ignored (it only emits a deprecation warning). That's why we
- * detect the Moodle version here and skip on 4.4+ to avoid duplicating logic
- * or generating useless warnings.
+ * The widget is injected through the hooks API (db/hooks.php and
+ * classes/hook/output/before_footer_listener.php). The old
+ * `local_nexusai_before_footer()` callback for Moodle 4.1-4.3 was removed when
+ * the minimum became Moodle 4.5 (DATA-02).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -48,80 +44,6 @@ function local_nexusai_frontend_lang(): string {
     // Keep only the primary subtag: "es_ar" -> "es", "en_us" -> "en".
     $primary = explode('_', $lang)[0];
     return $primary === 'es' ? 'es' : 'en';
-}
-
-/**
- * Hook run by Moodle 4.1-4.3 before closing </body>.
- *
- * In Moodle 4.4+ hook handling happens in
- * classes/hook/output/before_footer_listener.php, so this function returns
- * empty to avoid duplication.
- *
- * @return string HTML that Moodle inserts before the footer (Moodle ≤ 4.3).
- */
-function local_nexusai_before_footer(): string {
-    global $CFG, $PAGE, $USER, $COURSE;
-
-    // In Moodle 4.4+ the new hook system takes care of it.
-    // Build 2024042200 = 4.4 LTS / 4.5. Anything from 2024 onward → use the new system.
-    if ((int)$CFG->version >= 2024041600) {
-        return '';
-    }
-
-    // Logic for Moodle 4.1-4.3 (legacy hook system).
-
-    if (!isloggedin() || isguestuser() || !\local_nexusai\local\course_guard::plugin_enabled()) {
-        return '';
-    }
-
-    // ONB-03: on the course-creation screen the widget shows the setup
-    // tutorial. It's evaluated before the real-course guard because that's
-    // precisely where there's no course yet ($COURSE->id === 1).
-    $onboarding = \local_nexusai\visibility_helper::onboarding_hint();
-
-    if (empty($COURSE->id) || $COURSE->id <= 1) {
-        if ($onboarding === null || !\local_nexusai\local\course_guard::show_outside_course()) {
-            // Other course-less pages: the full out-of-course experience is
-            // 4.4+ only (new hook). On 4.1-4.3 it stays as before.
-            return '';
-        }
-
-        $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
-            [
-                'courseid'   => 0,
-                'userid'     => (int) $USER->id,
-                'sesskey'    => sesskey(),
-                'wwwroot'    => (string) (new moodle_url('/'))->out(false),
-                'lang'       => local_nexusai_frontend_lang(),
-                'isteacher'  => 0,
-                'onboarding' => $onboarding,
-            ],
-        ]);
-
-        return '<div id="local-nexusai-container" data-plugin="nexusai"></div>';
-    }
-
-    if (!\local_nexusai\local\course_guard::is_enabled((int) $COURSE->id)) {
-        return '';
-    }
-    $context = context_course::instance($COURSE->id);
-    if (!has_capability('local/nexusai:use', $context)) {
-        return '';
-    }
-
-    $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
-        [
-            'courseid'   => (int) $COURSE->id,
-            'userid'     => (int) $USER->id,
-            'sesskey'    => sesskey(),
-            'wwwroot'    => (string) (new moodle_url('/'))->out(false),
-            'lang'       => local_nexusai_frontend_lang(),
-            'isteacher'  => (int) has_capability('local/nexusai:manage', $context),
-            'onboarding' => $onboarding,
-        ],
-    ]);
-
-    return '<div id="local-nexusai-container" data-plugin="nexusai"></div>';
 }
 
 /**
@@ -203,8 +125,8 @@ function local_nexusai_calfeed_url(int $userid, int $courseid): string {
  * to users with the local/nexusai:manage capability (teachers and admins).
  * Students don't see this link — they interact with the floating chat only.
  *
- * This hook works on ALL supported versions (Moodle 4.1 LTS through 4.5) —
- * it was not migrated to the new Hook API.
+ * This callback works on every supported version (Moodle 4.5 LTS through 5.2);
+ * Moodle has not moved it to the hooks API.
  *
  * @param navigation_node $navigation Course node we add the item to.
  * @param stdClass        $course     Current course object.

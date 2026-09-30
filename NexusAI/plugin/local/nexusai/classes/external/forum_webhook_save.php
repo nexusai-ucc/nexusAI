@@ -29,35 +29,36 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Saves (or deletes, with url = '') the course's Slack/Discord/Teams webhook URL for the weekly
  * forum digest (FOR-07, #378).
  */
-class forum_webhook_save extends \external_api {
+class forum_webhook_save extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'   => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'webhookurl' => new \external_value(PARAM_URL, 'Webhook URL (empty to delete)', VALUE_DEFAULT, ''),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'   => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'webhookurl' => new external_value(PARAM_URL, 'Webhook URL (empty to delete)', VALUE_DEFAULT, ''),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'webhook_url' => new \external_value(PARAM_URL, 'Saved URL', VALUE_OPTIONAL, null, NULL_ALLOWED),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'webhook_url' => new external_value(PARAM_URL, 'Saved URL', VALUE_OPTIONAL, null, NULL_ALLOWED),
         ]);
     }
 
