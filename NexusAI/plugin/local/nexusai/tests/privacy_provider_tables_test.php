@@ -106,8 +106,9 @@ final class privacy_provider_tables_test extends \core_privacy\tests\provider_te
     private function personal_rows(int $userid): int {
         global $DB;
         $count = 0;
-        foreach (['chat_sessions', 'msg_feedback', 'gaps', 'quiz_attempts', 'quiz_errors', 'fc_reviews', 'cal_alerts',
-                'usage', 'interactions', 'qbank_use', 'exams'] as $table) {
+        $tables = ['chat_sessions', 'msg_feedback', 'gaps', 'quiz_attempts', 'quiz_errors', 'fc_reviews', 'cal_alerts',
+            'usage', 'interactions', 'qbank_use', 'exams'];
+        foreach ($tables as $table) {
             $count += $DB->count_records("local_nexusai_$table", ['userid' => $userid]);
         }
         return $count;
@@ -207,8 +208,8 @@ final class privacy_provider_tables_test extends \core_privacy\tests\provider_te
         $this->seed((int) $other->id, (int) $course->id, 'ajeno');
         $before = $this->personal_rows((int) $other->id);
 
-        provider::delete_data_for_user(new approved_contextlist($user, 'local_nexusai',
-            [\context_course::instance($course->id)->id]));
+        $contextid = \context_course::instance($course->id)->id;
+        provider::delete_data_for_user(new approved_contextlist($user, 'local_nexusai', [$contextid]));
 
         $this->assertSame(0, $this->personal_rows((int) $user->id));
         $this->assertFalse($DB->record_exists('local_nexusai_messages', ['sessionid' => $mine['session']]));
@@ -236,8 +237,8 @@ final class privacy_provider_tables_test extends \core_privacy\tests\provider_te
         $this->seed((int) $user->id, (int) $course->id, 'a');
         $this->seed((int) $user->id, (int) $other->id, 'b');
 
-        provider::delete_data_for_user(new approved_contextlist($user, 'local_nexusai',
-            [\context_course::instance($course->id)->id]));
+        $contextid = \context_course::instance($course->id)->id;
+        provider::delete_data_for_user(new approved_contextlist($user, 'local_nexusai', [$contextid]));
 
         $this->assertSame(0, $DB->count_records('local_nexusai_gaps', ['courseid' => $course->id]));
         $this->assertSame(1, $DB->count_records('local_nexusai_gaps', ['courseid' => $other->id]));
@@ -259,8 +260,8 @@ final class privacy_provider_tables_test extends \core_privacy\tests\provider_te
         $vote = $DB->insert_record('local_nexusai_msg_feedback', ['courseid' => $course->id, 'userhash' => $hash,
             'ishelpful' => 1, 'timecreated' => time(), 'timemodified' => time()]);
 
-        provider::delete_data_for_user(new approved_contextlist($user, 'local_nexusai',
-            [\context_course::instance($course->id)->id]));
+        $contextid = \context_course::instance($course->id)->id;
+        provider::delete_data_for_user(new approved_contextlist($user, 'local_nexusai', [$contextid]));
 
         $this->assertNull($DB->get_field('local_nexusai_interactions', 'userhash', ['id' => $id]));
         $this->assertFalse($DB->record_exists('local_nexusai_msg_feedback', ['id' => $vote]));
@@ -278,8 +279,8 @@ final class privacy_provider_tables_test extends \core_privacy\tests\provider_te
         $this->seed((int) $two->id, (int) $course->id, 'b');
         $before = $this->personal_rows((int) $two->id);
 
-        provider::delete_data_for_users(new approved_userlist(\context_course::instance($course->id), 'local_nexusai',
-            [(int) $one->id]));
+        $context = \context_course::instance($course->id);
+        provider::delete_data_for_users(new approved_userlist($context, 'local_nexusai', [(int) $one->id]));
 
         $this->assertSame(0, $this->personal_rows((int) $one->id));
         $this->assertSame($before, $this->personal_rows((int) $two->id));
@@ -303,8 +304,8 @@ final class privacy_provider_tables_test extends \core_privacy\tests\provider_te
 
         $this->assertSame(0, $DB->count_records('local_nexusai_chat_sessions', ['courseid' => $course->id]));
         $this->assertSame(0, $DB->count_records('local_nexusai_quiz_errors', ['courseid' => $course->id]));
-        $this->assertSame(0, $DB->count_records_select('local_nexusai_usage', 'courseid = ? AND userid IS NOT NULL',
-            [$course->id]));
+        $withuser = $DB->count_records_select('local_nexusai_usage', 'courseid = ? AND userid IS NOT NULL', [$course->id]);
+        $this->assertSame(0, $withuser);
         $this->assertSame(1, $DB->count_records('local_nexusai_chat_sessions', ['courseid' => $other->id]));
     }
 
