@@ -17,31 +17,21 @@
 /**
  * Privacy API provider for local_nexusai.
  *
- * Moodle 3.5+ requires every plugin to declare what personal data it handles, to comply
- * with GDPR/Law 25.326. See docs/adr/006-privacy-strategy.md for the full context of
- * this decision (two-stage strategy: null_provider while there was no way to
- * export/delete the remote data, metadata\provider once the backend exposed that
- * API — see ADR-006's trigger table, "The NexusAI backend exposes an
- * export/delete API per user").
+ * The student data is moving from the external NexusAI backend to the plugin's
+ * own tables (DATA-03, issue #523; see docs/adr/014). While both hold data, this
+ * provider covers both:
  *
- * The plugin itself still doesn't store personal data in Moodle tables — all the
- * history (chat messages, quiz attempts and errors) lives in the external NexusAI
- * backend (Postgres). PRIV-01 (issue #310) implemented `metadata\provider` and the
- * student self-service (external functions `local_nexusai_privacy_export`/
- * `local_nexusai_privacy_delete`, see classes/external/).
- *
- * This file adds the step ADR-006 left pending: `plugin\provider` and
- * `core_userlist_provider`, which hook into Moodle's admin tool
- * (Site administration → Users → Privacy → Data requests) so an ADMIN can
- * process a GDPR request without depending on the student using self-service.
- *
- * The NexusAI backend has no "list me the courses with this user's data"
- * endpoint — only export/delete by an already-known user_id+course_id. That's why
- * `get_contexts_for_userid()`/`get_users_in_context()` approximate via what Moodle
- * knows locally: courses where the user is enrolled and has the
- * `local/nexusai:use` capability. Over-including is safe (a course with no real
- * activity gives an empty export/delete); under-including would be a real
- * non-compliance.
+ * - The plugin tables (`local_nexusai_*`): contexts, users, export and deletion
+ *   are worked out with SQL. Usage and interaction metrics are anonymised instead
+ *   of deleted, so course totals stay right; everything else is deleted.
+ * - The backend: exported and deleted through `backend_client`, one call per
+ *   course. The backend has no "which courses does this user have data in"
+ *   endpoint, so for it the courses where the user is enrolled with
+ *   `local/nexusai:use` are included. Over-including is safe (an empty export);
+ *   under-including would not be. When the plugin is not configured to reach a
+ *   backend there is nothing there to export or delete, and it is skipped.
+ * - Three user preferences: onboarding state per course, files pending
+ *   indexing and the calendar feed token.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -54,20 +44,53 @@ use core_privacy\local\metadata\collection;
 use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\contextlist;
+use core_privacy\local\request\transform;
 use core_privacy\local\request\userlist;
+use core_privacy\local\request\writer;
 use local_nexusai\external\backend_client;
 
 /**
- * Declares via metadata\provider what personal data travels to the external NexusAI
- * backend, and via plugin\provider/core_userlist_provider hooks into the admin
- * Data requests flow.
+ * Declares, lists, exports and deletes the personal data NexusAI keeps.
  */
 class provider implements
     \core_privacy\local\metadata\provider,
     \core_privacy\local\request\core_userlist_provider,
-    \core_privacy\local\request\plugin\provider {
+    \core_privacy\local\request\plugin\provider,
+    \core_privacy\local\request\user_preference_provider {
     /**
-     * Describes what personal data travels to the external NexusAI backend.
+     * Tables with a userid and a courseid of their own, and the fields exported for each.
+     *
+     * Messages, flashcard reviews and bank use hang from another table and are handled apart.
+     */
+    private const COURSE_TABLES = [
+        'local_nexusai_chat_sessions' => ['uuid', 'multicourse', 'courseids', 'timecreated', 'timemodified'],
+        'local_nexusai_interactions' => ['questionchars', 'answerchars', 'chunksretrieved', 'hascontext', 'multicourse',
+            'tokensprompt', 'tokenscompletion', 'latencyms', 'endpoint', 'timecreated'],
+        'local_nexusai_msg_feedback' => ['ishelpful', 'comment', 'timecreated', 'timemodified'],
+        'local_nexusai_gaps' => ['uuid', 'question', 'maxsimilarity', 'chunksretrieved', 'timecreated', 'timearchived',
+            'timestudentdismissed'],
+        'local_nexusai_quiz_attempts' => ['uuid', 'questiontype', 'difficulty', 'topic', 'totalquestions', 'correctanswers',
+            'score', 'timecreated', 'timedeleted'],
+        'local_nexusai_quiz_errors' => ['uuid', 'questiontype', 'question', 'explanation', 'sourcefilename', 'options',
+            'correctindex', 'userselectedindex', 'useranswer', 'aifeedback', 'aiscore', 'timecreated', 'timedismissed'],
+        'local_nexusai_cal_alerts' => ['uuid', 'eventid', 'eventname', 'eventtimestamp', 'daysbefore', 'notified', 'timecreated'],
+        'local_nexusai_usage' => ['role', 'feature', 'provider', 'model', 'fallback', 'prompttokens', 'completiontokens',
+            'cachedprompttokens', 'embeddingtokens', 'audioseconds', 'costusd', 'cachehit', 'savedtokens', 'latencyms',
+            'status', 'timecreated'],
+        'local_nexusai_exams' => ['uuid', 'params', 'includepracticed', 'allnew', 'examdate', 'timereleased', 'timecreated'],
+    ];
+
+    /** Tables whose rows are kept without the user on a deletion request: they hold metrics, not content. */
+    private const ANONYMISED_TABLES = ['local_nexusai_interactions', 'local_nexusai_usage'];
+
+    /** Tables that also hold rows migrated from the backend, identified only by a hash of the user id. */
+    private const HASHED_TABLES = ['local_nexusai_interactions', 'local_nexusai_msg_feedback'];
+
+    /** Prefixes of the per-course onboarding preferences (the course id follows). */
+    private const PREFERENCE_PREFIXES = ['local_nexusai_onb_dismissed_', 'local_nexusai_onb_skipped_'];
+
+    /**
+     * Describes the personal data NexusAI stores and sends.
      *
      * @param collection $collection Metadata collection to fill in.
      * @return collection The same collection, completed.
@@ -84,26 +107,40 @@ class provider implements
             'privacy:metadata:nexusai_backend'
         );
 
-        // CURSO-01: who last changed the per-course NexusAI switch.
-        $collection->add_database_table(
-            'local_nexusai_course',
-            [
-                'usermodified' => 'privacy:metadata:local_nexusai_course:usermodified',
-                'timemodified' => 'privacy:metadata:local_nexusai_course:timemodified',
-            ],
-            'privacy:metadata:local_nexusai_course'
-        );
+        $tables = [
+            'local_nexusai_course' => ['usermodified', 'timemodified'],
+            'local_nexusai_chat_sessions' => ['userid', 'courseid', 'courseids', 'timecreated'],
+            'local_nexusai_messages' => ['role', 'content', 'tokensprompt', 'tokenscompletion', 'timecreated'],
+            'local_nexusai_interactions' => ['userid', 'courseid', 'questionchars', 'tokensprompt', 'tokenscompletion',
+                'latencyms', 'timecreated'],
+            'local_nexusai_msg_feedback' => ['userid', 'ishelpful', 'comment', 'timecreated'],
+            'local_nexusai_gaps' => ['userid', 'courseid', 'question', 'timecreated'],
+            'local_nexusai_quiz_attempts' => ['userid', 'courseid', 'topic', 'score', 'timecreated'],
+            'local_nexusai_quiz_errors' => ['userid', 'courseid', 'question', 'useranswer', 'aifeedback', 'timecreated'],
+            'local_nexusai_fc_reviews' => ['userid', 'easefactor', 'timelastreviewed', 'timenextreview'],
+            'local_nexusai_cal_alerts' => ['userid', 'courseid', 'eventname', 'daysbefore', 'timecreated'],
+            'local_nexusai_usage' => ['userid', 'courseid', 'role', 'feature', 'prompttokens', 'completiontokens', 'costusd',
+                'timecreated'],
+            'local_nexusai_qbank_use' => ['userid', 'purpose', 'timecreated'],
+            'local_nexusai_exams' => ['userid', 'courseid', 'params', 'examdate', 'timecreated'],
+        ];
+        foreach ($tables as $table => $fields) {
+            $described = [];
+            foreach ($fields as $field) {
+                $described[$field] = "privacy:metadata:{$table}:{$field}";
+            }
+            $collection->add_database_table($table, $described, "privacy:metadata:{$table}");
+        }
+
+        $collection->add_user_preference('local_nexusai_pending_uploads', 'privacy:metadata:preference:pending_uploads');
+        $collection->add_user_preference('local_nexusai_calfeedtoken', 'privacy:metadata:preference:calfeedtoken');
+        $collection->add_user_preference('local_nexusai_onb', 'privacy:metadata:preference:onboarding');
 
         return $collection;
     }
 
     /**
-     * Courses (contexts) where the user has personal data in the backend.
-     *
-     * Approximation: every course where they're enrolled and still hold the
-     * `local/nexusai:use` capability — the backend doesn't expose its own
-     * index of "which courses does this user have history in", so we
-     * over-include rather than risk leaving out a real context.
+     * Course contexts where the user has data in the plugin tables or may have it in the backend.
      *
      * @param int $userid User ID.
      * @return contextlist Course contexts to include in the request.
@@ -111,14 +148,24 @@ class provider implements
     public static function get_contexts_for_userid(int $userid): contextlist {
         $contextlist = new contextlist();
 
-        $courses = enrol_get_users_courses($userid, true, ['id']);
-        foreach ($courses as $course) {
+        foreach (self::course_user_sql() as [$from, $useridfield, $hashed]) {
+            $where = $hashed ? "($useridfield = :userid OR c.userhash = :userhash)" : "$useridfield = :userid";
+            $params = ['contextlevel' => CONTEXT_COURSE, 'userid' => $userid];
+            if ($hashed) {
+                $params['userhash'] = self::user_hash($userid);
+            }
+            $contextlist->add_from_sql(
+                "SELECT ctx.id FROM {context} ctx
+                  WHERE ctx.contextlevel = :contextlevel
+                    AND ctx.instanceid IN (SELECT c.courseid FROM $from WHERE $where)",
+                $params
+            );
+        }
+
+        // The backend's data: every course where the user is enrolled and can use NexusAI.
+        foreach (enrol_get_users_courses($userid, true, ['id']) as $course) {
             $context = \context_course::instance((int) $course->id);
             if (has_capability('local/nexusai:use', $context, $userid)) {
-                // Careful: contextlist::add_user_context(int $userid) adds the
-                // user's PERSONAL context (CONTEXT_USER) -- it doesn't accept a
-                // course $context as a second argument (it was silently ignored).
-                // The course context has to be added explicitly by id.
                 $contextlist->add_from_sql(
                     'SELECT id FROM {context} WHERE id = :contextid',
                     ['contextid' => $context->id]
@@ -130,10 +177,32 @@ class provider implements
     }
 
     /**
-     * Exports the user's personal data in each approved context.
+     * Lists the users with data in a course context.
      *
-     * Reuses `backend_client::privacy_export()` (the same one used by the
-     * student's self-service), one call per approved course.
+     * @param userlist $userlist User collection to fill in.
+     */
+    public static function get_users_in_context(userlist $userlist): void {
+        $context = $userlist->get_context();
+        if ($context->contextlevel !== CONTEXT_COURSE) {
+            return;
+        }
+
+        // Rows kept only with a hash of the user id cannot be turned back into a user.
+        foreach (self::course_user_sql() as [$from, $useridfield]) {
+            $userlist->add_from_sql(
+                'userid',
+                "SELECT $useridfield AS userid FROM $from WHERE c.courseid = :courseid AND $useridfield > 0",
+                ['courseid' => (int) $context->instanceid]
+            );
+        }
+
+        foreach (get_enrolled_users($context, 'local/nexusai:use', 0, 'u.id') as $user) {
+            $userlist->add_user((int) $user->id);
+        }
+    }
+
+    /**
+     * Exports the user's data in each approved course.
      *
      * @param approved_contextlist $contextlist Approved contexts to export.
      */
@@ -143,30 +212,50 @@ class provider implements
             return;
         }
 
-        // Only instantiated if there's at least one course context to process --
-        // backend_client validates the plugin config in its constructor and
-        // throws if it's missing, even if there's nothing to export.
         $client = null;
-
         foreach ($contextlist->get_contexts() as $context) {
             if ($context->contextlevel !== CONTEXT_COURSE) {
                 continue;
             }
-
-            $client ??= new backend_client();
             $courseid = (int) $context->instanceid;
-            $data = $client->privacy_export($userid, $courseid);
+            self::export_course_tables($context, $userid, $courseid);
 
-            \core_privacy\local\request\writer::with_context($context)
-                ->export_data(
+            $client ??= self::backend();
+            if ($client) {
+                writer::with_context($context)->export_data(
                     [get_string('pluginname', 'local_nexusai')],
-                    (object) $data
+                    (object) $client->privacy_export($userid, $courseid)
                 );
+            }
         }
     }
 
     /**
-     * Deletes the user's personal data in each approved context.
+     * Exports the user's NexusAI preferences.
+     *
+     * @param int $userid User ID.
+     */
+    public static function export_user_preferences(int $userid): void {
+        $preferences = get_user_preferences(null, null, $userid);
+        foreach ($preferences as $name => $value) {
+            if (!self::is_plugin_preference($name)) {
+                continue;
+            }
+            if ($name === 'local_nexusai_calfeedtoken') {
+                // A secret that opens the user's calendar feed: say it exists, never export it.
+                $value = get_string('privacy:preference:secret', 'local_nexusai');
+            }
+            writer::export_user_preference(
+                'local_nexusai',
+                $name,
+                $value,
+                get_string('privacy:metadata:preference:' . self::preference_key($name), 'local_nexusai')
+            );
+        }
+    }
+
+    /**
+     * Deletes the user's data in each approved course.
      *
      * @param approved_contextlist $contextlist Approved contexts to delete.
      */
@@ -177,17 +266,232 @@ class provider implements
         }
 
         $client = null;
-
         foreach ($contextlist->get_contexts() as $context) {
             if ($context->contextlevel !== CONTEXT_COURSE) {
                 continue;
             }
+            $courseid = (int) $context->instanceid;
+            self::delete_course_rows($courseid, [$userid]);
 
-            $client ??= new backend_client();
-            $client->privacy_delete($userid, (int) $context->instanceid);
+            $client ??= self::backend();
+            if ($client) {
+                $client->privacy_delete($userid, $courseid);
+            }
         }
 
         self::anonymise_course_settings([$userid]);
+    }
+
+    /**
+     * Deletes the data of an approved set of users in a course.
+     *
+     * @param approved_userlist $userlist Approved users to delete, with their context.
+     */
+    public static function delete_data_for_users(approved_userlist $userlist): void {
+        $context = $userlist->get_context();
+        if ($context->contextlevel !== CONTEXT_COURSE) {
+            return;
+        }
+        $userids = array_map('intval', $userlist->get_userids());
+        if (empty($userids)) {
+            return;
+        }
+
+        $courseid = (int) $context->instanceid;
+        self::delete_course_rows($courseid, $userids);
+
+        $client = self::backend();
+        foreach ($client ? $userids : [] as $userid) {
+            $client->privacy_delete($userid, $courseid);
+        }
+
+        self::anonymise_course_settings($userids);
+    }
+
+    /**
+     * Deletes the data of every user in a course (for example when the course is deleted).
+     *
+     * @param \context $context Context (must be a course; ignored otherwise).
+     */
+    public static function delete_data_for_all_users_in_context(\context $context): void {
+        if ($context->contextlevel !== CONTEXT_COURSE) {
+            return;
+        }
+
+        $courseid = (int) $context->instanceid;
+        self::delete_course_rows($courseid, null);
+
+        $client = self::backend();
+        $users = $client ? get_enrolled_users($context, 'local/nexusai:use', 0, 'u.id') : [];
+        foreach ($users as $user) {
+            $client->privacy_delete((int) $user->id, $courseid);
+        }
+    }
+
+    /**
+     * Where each kind of row keeps its user and its course.
+     *
+     * The table holding the course is always aliased `c`.
+     *
+     * @return array[] [FROM clause, user id field, whether the table also has hash-only rows].
+     */
+    private static function course_user_sql(): array {
+        $sql = [];
+        foreach (array_keys(self::COURSE_TABLES) as $table) {
+            $sql[] = ["{{$table}} c", 'c.userid', in_array($table, self::HASHED_TABLES, true)];
+        }
+        $sql[] = ['{local_nexusai_fc_reviews} r JOIN {local_nexusai_flashcards} c ON c.id = r.flashcardid', 'r.userid', false];
+        $sql[] = ['{local_nexusai_qbank_use} u JOIN {local_nexusai_qbank} c ON c.id = u.questionid', 'u.userid', false];
+        return $sql;
+    }
+
+    /**
+     * Writes the user's rows of one course, grouped by kind of data.
+     *
+     * @param \context $context Course context.
+     * @param int $userid User ID.
+     * @param int $courseid Course ID.
+     */
+    private static function export_course_tables(\context $context, int $userid, int $courseid): void {
+        global $DB;
+
+        $root = get_string('pluginname', 'local_nexusai');
+        foreach (self::COURSE_TABLES as $table => $fields) {
+            $params = ['courseid' => $courseid, 'userid' => $userid];
+            $where = 'courseid = :courseid AND userid = :userid';
+            if (in_array($table, self::HASHED_TABLES, true)) {
+                $params['userhash'] = self::user_hash($userid);
+                $where = 'courseid = :courseid AND (userid = :userid OR userhash = :userhash)';
+            }
+            $rows = $DB->get_records_select($table, $where, $params, 'timecreated, id');
+            if (!$rows) {
+                continue;
+            }
+            $out = [];
+            foreach ($rows as $row) {
+                $item = self::pick($row, $fields);
+                if ($table === 'local_nexusai_chat_sessions') {
+                    $item['messages'] = array_values(array_map(
+                        static fn($m) => self::pick($m, ['role', 'content', 'tokensprompt', 'tokenscompletion', 'timecreated']),
+                        $DB->get_records('local_nexusai_messages', ['sessionid' => $row->id], 'timecreated, id')
+                    ));
+                }
+                $out[] = $item;
+            }
+            writer::with_context($context)->export_data(
+                [$root, get_string("privacy:metadata:{$table}", 'local_nexusai')],
+                (object) ['items' => $out]
+            );
+        }
+
+        $reviews = $DB->get_records_sql(
+            'SELECT r.*, f.question FROM {local_nexusai_fc_reviews} r
+               JOIN {local_nexusai_flashcards} f ON f.id = r.flashcardid
+              WHERE r.userid = :userid AND f.courseid = :courseid',
+            ['userid' => $userid, 'courseid' => $courseid]
+        );
+        if ($reviews) {
+            writer::with_context($context)->export_data(
+                [$root, get_string('privacy:metadata:local_nexusai_fc_reviews', 'local_nexusai')],
+                (object) ['items' => array_values(array_map(static fn($r) => self::pick($r, ['question', 'easefactor',
+                    'intervaldays', 'repetitions', 'timelastreviewed', 'timenextreview', 'timecreated']), $reviews))]
+            );
+        }
+
+        $uses = $DB->get_records_sql(
+            'SELECT u.*, q.questiontype, q.topic FROM {local_nexusai_qbank_use} u
+               JOIN {local_nexusai_qbank} q ON q.id = u.questionid
+              WHERE u.userid = :userid AND q.courseid = :courseid',
+            ['userid' => $userid, 'courseid' => $courseid]
+        );
+        if ($uses) {
+            writer::with_context($context)->export_data(
+                [$root, get_string('privacy:metadata:local_nexusai_qbank_use', 'local_nexusai')],
+                (object) ['items' => array_values(array_map(
+                    static fn($u) => self::pick($u, ['purpose', 'questiontype', 'topic', 'timecreated']),
+                    $uses
+                ))]
+            );
+        }
+    }
+
+    /**
+     * Deletes (or anonymises) the rows of some users, or of everyone, in one course.
+     *
+     * Moodle creates no foreign keys, so the rows that hang from a deleted one are
+     * removed here too: a conversation's messages, and votes and metrics that point at them.
+     *
+     * @param int $courseid Course ID.
+     * @param int[]|null $userids Users to delete, or null for every user of the course.
+     */
+    private static function delete_course_rows(int $courseid, ?array $userids): void {
+        global $DB;
+
+        // Two filters: by user id, and by user id or hash for the tables with rows migrated from the backend.
+        $params = ['courseid' => $courseid];
+        $hashparams = $params;
+        $userwhere = '';
+        $hashwhere = '';
+        if ($userids !== null) {
+            [$insql, $inparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'u');
+            [$hashsql, $hashinparams] = $DB->get_in_or_equal(
+                array_map([self::class, 'user_hash'], $userids),
+                SQL_PARAMS_NAMED,
+                'h'
+            );
+            $params += $inparams;
+            $hashparams = $params + $hashinparams;
+            $userwhere = " AND userid $insql";
+            $hashwhere = " AND (userid $insql OR userhash $hashsql)";
+        }
+
+        // Conversations and their messages; votes and metrics stop pointing at the deleted messages.
+        $sessionids = $DB->get_fieldset_select('local_nexusai_chat_sessions', 'id', 'courseid = :courseid' . $userwhere, $params);
+        if ($sessionids) {
+            [$sessql, $sesparams] = $DB->get_in_or_equal($sessionids, SQL_PARAMS_NAMED, 's');
+            $messageids = $DB->get_fieldset_select('local_nexusai_messages', 'id', "sessionid $sessql", $sesparams);
+            if ($messageids) {
+                [$msgsql, $msgparams] = $DB->get_in_or_equal($messageids, SQL_PARAMS_NAMED, 'm');
+                $DB->set_field_select('local_nexusai_interactions', 'messageid', null, "messageid $msgsql", $msgparams);
+                $DB->set_field_select('local_nexusai_msg_feedback', 'messageid', null, "messageid $msgsql", $msgparams);
+                $DB->delete_records_select('local_nexusai_messages', "id $msgsql", $msgparams);
+            }
+            $DB->delete_records_select('local_nexusai_chat_sessions', "id $sessql", $sesparams);
+        }
+
+        foreach (array_keys(self::COURSE_TABLES) as $table) {
+            if ($table === 'local_nexusai_chat_sessions') {
+                continue;
+            }
+            $hashed = in_array($table, self::HASHED_TABLES, true);
+            $where = 'courseid = :courseid' . ($hashed ? $hashwhere : $userwhere);
+            $whereparams = $hashed ? $hashparams : $params;
+            if (in_array($table, self::ANONYMISED_TABLES, true)) {
+                if ($hashed) {
+                    // Both in one go: after clearing userid the rows would no longer match the filter.
+                    $DB->execute("UPDATE {{$table}} SET userid = NULL, userhash = NULL WHERE $where", $whereparams);
+                } else {
+                    $DB->set_field_select($table, 'userid', null, $where, $whereparams);
+                }
+            } else if ($table === 'local_nexusai_exams') {
+                // The exam belongs to the course; only the link to the teacher goes.
+                $DB->set_field_select($table, 'userid', 0, $where, $whereparams);
+            } else {
+                $DB->delete_records_select($table, $where, $whereparams);
+            }
+        }
+
+        // Flashcard reviews and bank use, found through the course of the card or question.
+        $DB->delete_records_select(
+            'local_nexusai_fc_reviews',
+            'flashcardid IN (SELECT id FROM {local_nexusai_flashcards} WHERE courseid = :courseid)' . $userwhere,
+            $params
+        );
+        $DB->delete_records_select(
+            'local_nexusai_qbank_use',
+            'questionid IN (SELECT id FROM {local_nexusai_qbank} WHERE courseid = :courseid)' . $userwhere,
+            $params
+        );
     }
 
     /**
@@ -195,7 +499,6 @@ class provider implements
      * deletion request the row stays and stops pointing at the user.
      *
      * @param int[] $userids Users to detach from the course settings.
-     * @return void
      */
     private static function anonymise_course_settings(array $userids): void {
         global $DB;
@@ -207,68 +510,76 @@ class provider implements
     }
 
     /**
-     * Deletes the data of ALL users in a context (e.g. when deleting a course).
+     * Backend client, or null when the plugin is not configured to reach a backend.
      *
-     * No bulk endpoint on the backend: iterates enrolled users with the
-     * `local/nexusai:use` capability and calls `privacy_delete()` one by one.
-     * Acceptable for a course's typical size (tens/hundreds of students).
-     *
-     * @param \context $context Context (must be a course; ignored otherwise).
+     * @return backend_client|null
      */
-    public static function delete_data_for_all_users_in_context(\context $context): void {
-        if ($context->contextlevel !== CONTEXT_COURSE) {
-            return;
+    private static function backend(): ?backend_client {
+        foreach (['api_endpoint', 'api_key', 'shared_secret'] as $setting) {
+            if (trim((string) get_config('local_nexusai', $setting)) === '') {
+                return null;
+            }
         }
-
-        $courseid = (int) $context->instanceid;
-        $client = null;
-
-        $users = get_enrolled_users($context, 'local/nexusai:use', 0, 'u.id');
-        foreach ($users as $user) {
-            $client ??= new backend_client();
-            $client->privacy_delete((int) $user->id, $courseid);
-        }
+        return new backend_client();
     }
 
     /**
-     * Lists the users with personal data in a course context.
+     * Pseudonymous id the backend used for some rows: SHA-256 of the user id (analytics/logger.py).
      *
-     * Same over-inclusion criterion as get_contexts_for_userid(): everyone
-     * enrolled with the `local/nexusai:use` capability.
-     *
-     * @param userlist $userlist User collection to fill in.
+     * @param int $userid User ID.
+     * @return string
      */
-    public static function get_users_in_context(userlist $userlist): void {
-        $context = $userlist->get_context();
-        if ($context->contextlevel !== CONTEXT_COURSE) {
-            return;
-        }
-
-        $users = get_enrolled_users($context, 'local/nexusai:use', 0, 'u.id');
-        foreach ($users as $user) {
-            $userlist->add_user((int) $user->id);
-        }
+    private static function user_hash(int $userid): string {
+        return hash('sha256', (string) $userid);
     }
 
     /**
-     * Deletes the data of an approved set of users in a context.
+     * Copies some fields of a row, turning timestamps into readable dates.
      *
-     * @param approved_userlist $userlist Approved users to delete, with their context.
+     * @param \stdClass $row Database row.
+     * @param string[] $fields Fields to copy.
+     * @return array
      */
-    public static function delete_data_for_users(approved_userlist $userlist): void {
-        $context = $userlist->get_context();
-        if ($context->contextlevel !== CONTEXT_COURSE) {
-            return;
+    private static function pick(\stdClass $row, array $fields): array {
+        $out = [];
+        foreach ($fields as $field) {
+            $value = $row->$field ?? null;
+            if ($value !== null && strpos($field, 'time') === 0) {
+                $value = transform::datetime((int) $value);
+            }
+            $out[$field] = $value;
         }
+        return $out;
+    }
 
-        $courseid = (int) $context->instanceid;
-        $client = null;
+    /**
+     * Whether a preference name belongs to NexusAI.
+     *
+     * @param string $name Preference name.
+     * @return bool
+     */
+    private static function is_plugin_preference(string $name): bool {
+        return self::preference_key($name) !== null;
+    }
 
-        foreach ($userlist->get_userids() as $userid) {
-            $client ??= new backend_client();
-            $client->privacy_delete((int) $userid, $courseid);
+    /**
+     * Key of the language string that describes a NexusAI preference.
+     *
+     * @param string $name Preference name.
+     * @return string|null Null when the preference is not NexusAI's.
+     */
+    private static function preference_key(string $name): ?string {
+        if ($name === 'local_nexusai_pending_uploads') {
+            return 'pending_uploads';
         }
-
-        self::anonymise_course_settings(array_map('intval', $userlist->get_userids()));
+        if ($name === 'local_nexusai_calfeedtoken') {
+            return 'calfeedtoken';
+        }
+        foreach (self::PREFERENCE_PREFIXES as $prefix) {
+            if (strpos($name, $prefix) === 0) {
+                return 'onboarding';
+            }
+        }
+        return null;
     }
 }

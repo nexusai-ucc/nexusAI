@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/nexusai/db" VERSION="20260926" COMMENT="NexusAI local plugin schema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd">
+<XMLDB PATH="local/nexusai/db" VERSION="20260930" COMMENT="NexusAI local plugin schema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd">
   <TABLES>
     <TABLE NAME="local_nexusai_course" COMMENT="Per-course NexusAI settings: whether the course uses NexusAI">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Course the setting applies to"/>
         <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 when NexusAI is on for the whole course"/>
+        <FIELD NAME="features" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON per-feature switches, unused for now"/>
         <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="User who last changed the setting"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
@@ -14,6 +15,371 @@
         <KEY NAME="courseid" TYPE="foreign-unique" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
         <KEY NAME="usermodified" TYPE="foreign" FIELDS="usermodified" REFTABLE="user" REFFIELDS="id"/>
       </KEYS>
+    </TABLE>
+    <TABLE NAME="local_nexusai_chat_sessions" COMMENT="Chat conversations: one per student and course where the chat was opened">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" COMMENT="Public id used by the web services and the frontend"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Student who owns the conversation"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Course where the chat was opened"/>
+        <FIELD NAME="multicourse" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 when the conversation searched several courses"/>
+        <FIELD NAME="courseids" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="JSON list of the courses searched, for multi-course conversations"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="uuid" UNIQUE="true" FIELDS="uuid"/>
+        <INDEX NAME="userid-courseid" UNIQUE="false" FIELDS="userid, courseid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_messages" COMMENT="Questions and answers of each chat conversation">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" COMMENT="Public id used by the web services and the frontend"/>
+        <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Conversation the message belongs to"/>
+        <FIELD NAME="role" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="user or assistant"/>
+        <FIELD NAME="content" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Message text"/>
+        <FIELD NAME="tokensprompt" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Prompt tokens, assistant messages only"/>
+        <FIELD NAME="tokenscompletion" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Completion tokens, assistant messages only"/>
+        <FIELD NAME="cachekey" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false" COMMENT="Answer cache entry the reply came from, to invalidate it on a negative vote"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="sessionid" TYPE="foreign" FIELDS="sessionid" REFTABLE="local_nexusai_chat_sessions" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="uuid" UNIQUE="true" FIELDS="uuid"/>
+        <INDEX NAME="sessionid-timecreated" UNIQUE="false" FIELDS="sessionid, timecreated"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_interactions" COMMENT="Metrics of each chat question, without its text">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Null once anonymised"/>
+        <FIELD NAME="userhash" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false" COMMENT="Pseudonymous hash of the user, for rows migrated from the backend"/>
+        <FIELD NAME="messageid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Question message, when it still exists"/>
+        <FIELD NAME="questionchars" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="answerchars" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="chunksretrieved" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="hascontext" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 when the course material was relevant"/>
+        <FIELD NAME="multicourse" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="tokensprompt" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="tokenscompletion" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="latencyms" TYPE="number" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" DECIMALS="1"/>
+        <FIELD NAME="endpoint" TYPE="char" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="messages or stream"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="messageid" TYPE="foreign" FIELDS="messageid" REFTABLE="local_nexusai_messages" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="courseid-timecreated" UNIQUE="false" FIELDS="courseid, timecreated"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_msg_feedback" COMMENT="Helpful or not helpful votes on chat answers">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="messageid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Answer that was voted"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Null once anonymised"/>
+        <FIELD NAME="userhash" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false" COMMENT="Pseudonymous hash of the user, for rows migrated from the backend"/>
+        <FIELD NAME="ishelpful" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="comment" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="messageid" TYPE="foreign" FIELDS="messageid" REFTABLE="local_nexusai_messages" REFFIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="messageid-userid" UNIQUE="true" FIELDS="messageid, userid"/>
+        <INDEX NAME="courseid-timecreated" UNIQUE="false" FIELDS="courseid, timecreated"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_gaps" COMMENT="Questions the course material could not answer">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" COMMENT="Public id used by the web services and the frontend"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="question" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="questionhash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="Hash of the normalised question, to group repeated questions"/>
+        <FIELD NAME="maxsimilarity" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false" DECIMALS="5"/>
+        <FIELD NAME="chunksretrieved" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="embedding" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Question embedding as JSON, to cluster similar questions"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timearchived" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="When the teacher archived it"/>
+        <FIELD NAME="timestudentdismissed" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="When the student dismissed it from the study plan"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="uuid" UNIQUE="true" FIELDS="uuid"/>
+        <INDEX NAME="courseid-timecreated" UNIQUE="false" FIELDS="courseid, timecreated"/>
+        <INDEX NAME="courseid-questionhash" UNIQUE="false" FIELDS="courseid, questionhash"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_quiz_attempts" COMMENT="Practice quiz attempts">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" COMMENT="Public id used by the web services and the frontend"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="questiontype" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="difficulty" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="medium" SEQUENCE="false"/>
+        <FIELD NAME="topic" TYPE="char" LENGTH="200" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="totalquestions" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="correctanswers" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="score" TYPE="number" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" DECIMALS="5"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timedeleted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="uuid" UNIQUE="true" FIELDS="uuid"/>
+        <INDEX NAME="userid-courseid-timecreated" UNIQUE="false" FIELDS="userid, courseid, timecreated"/>
+        <INDEX NAME="courseid-timecreated" UNIQUE="false" FIELDS="courseid, timecreated"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_quiz_errors" COMMENT="Quiz questions the student answered wrong, for review">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" COMMENT="Public id used by the web services and the frontend"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="questiontype" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="question" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="explanation" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="sourcefilename" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="sourcedocumentid" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="options" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Answer options as JSON"/>
+        <FIELD NAME="correctindex" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="-1" SEQUENCE="false"/>
+        <FIELD NAME="userselectedindex" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="useranswer" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="aifeedback" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="aiscore" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false" DECIMALS="5"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timedismissed" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="uuid" UNIQUE="true" FIELDS="uuid"/>
+        <INDEX NAME="userid-courseid-timecreated" UNIQUE="false" FIELDS="userid, courseid, timecreated"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_flashcards" COMMENT="Flashcards generated for a course, shared by its students">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" COMMENT="Public id used by the web services and the frontend"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="topic" TYPE="char" LENGTH="200" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="contenthash" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="question" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="explanation" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="sourcefilename" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="sourcedocumentid" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="sourcecmid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Activity the source material comes from, to hide cards of material the user cannot see"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="uuid" UNIQUE="true" FIELDS="uuid"/>
+        <INDEX NAME="courseid-contenthash" UNIQUE="true" FIELDS="courseid, contenthash"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_fc_reviews" COMMENT="Spaced repetition (SM-2) state of each flashcard for each student">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="flashcardid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="easefactor" TYPE="number" LENGTH="10" NOTNULL="true" DEFAULT="2.5" SEQUENCE="false" DECIMALS="5"/>
+        <FIELD NAME="intervaldays" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="repetitions" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timelastreviewed" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timenextreview" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timedeleted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="flashcardid" TYPE="foreign" FIELDS="flashcardid" REFTABLE="local_nexusai_flashcards" REFFIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="flashcardid-userid" UNIQUE="true" FIELDS="flashcardid, userid"/>
+        <INDEX NAME="userid-timenextreview" UNIQUE="false" FIELDS="userid, timenextreview"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_cal_alerts" COMMENT="Reminders a student asked for before a calendar event">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" COMMENT="Public id used by the web services and the frontend"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="eventid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="eventname" TYPE="char" LENGTH="200" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="eventtimestamp" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="daysbefore" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="notified" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+        <KEY NAME="eventid" TYPE="foreign" FIELDS="eventid" REFTABLE="event" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="uuid" UNIQUE="true" FIELDS="uuid"/>
+        <INDEX NAME="userid-eventid" UNIQUE="true" FIELDS="userid, eventid"/>
+        <INDEX NAME="userid-courseid" UNIQUE="false" FIELDS="userid, courseid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_forum_webhooks" COMMENT="Where the weekly forum digest of a course is sent">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="webhookurl" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign-unique" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_nexusai_usage" COMMENT="Tokens and cost of every AI call made on behalf of a user">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Null once anonymised"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="role" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="unknown" SEQUENCE="false" COMMENT="student, teacher or system"/>
+        <FIELD NAME="feature" TYPE="char" LENGTH="80" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="provider" TYPE="char" LENGTH="40" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="model" TYPE="char" LENGTH="120" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="fallback" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="prompttokens" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="completiontokens" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="cachedprompttokens" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="embeddingtokens" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="audioseconds" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false" DECIMALS="2"/>
+        <FIELD NAME="costusd" TYPE="number" LENGTH="14" NOTNULL="false" SEQUENCE="false" DECIMALS="8"/>
+        <FIELD NAME="cachehit" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="savedtokens" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="latencyms" TYPE="number" LENGTH="10" NOTNULL="false" SEQUENCE="false" DECIMALS="1"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="ok" SEQUENCE="false"/>
+        <FIELD NAME="requestid" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="courseid-timecreated" UNIQUE="false" FIELDS="courseid, timecreated"/>
+        <INDEX NAME="userid-timecreated" UNIQUE="false" FIELDS="userid, timecreated"/>
+        <INDEX NAME="courseid-role-timecreated" UNIQUE="false" FIELDS="courseid, role, timecreated"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_qbank" COMMENT="Question bank of a course, shared by practice quizzes and teacher exams">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" COMMENT="Public id used by the web services and the frontend"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="topic" TYPE="char" LENGTH="200" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="topichash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="questiontype" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="difficulty" TYPE="char" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="contenthash" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="payload" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Question, options, answer, explanation and source as JSON"/>
+        <FIELD NAME="sourcedocumentid" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="sourcecmid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Activity the source material comes from"/>
+        <FIELD NAME="sourcefilehash" TYPE="char" LENGTH="64" NOTNULL="false" SEQUENCE="false" COMMENT="Hash of the source file, to invalidate questions when it changes"/>
+        <FIELD NAME="visibility" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="public" SEQUENCE="false" COMMENT="public, or private for exam questions before the exam date"/>
+        <FIELD NAME="timereleased" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timeinvalidated" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="uuid" UNIQUE="true" FIELDS="uuid"/>
+        <INDEX NAME="courseid-contenthash" UNIQUE="true" FIELDS="courseid, contenthash"/>
+        <INDEX NAME="courseid-topichash-type-diff" UNIQUE="false" FIELDS="courseid, topichash, questiontype, difficulty"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_qbank_use" COMMENT="Which bank questions each user already got, so they are not repeated">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="purpose" TYPE="char" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="practice or exam"/>
+        <FIELD NAME="refid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Quiz attempt or exam the question was used in"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="questionid" TYPE="foreign" FIELDS="questionid" REFTABLE="local_nexusai_qbank" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid-questionid-purpose" UNIQUE="true" FIELDS="userid, questionid, purpose"/>
+        <INDEX NAME="purpose-refid" UNIQUE="false" FIELDS="purpose, refid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_nexusai_exams" COMMENT="Exams generated by teachers">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="uuid" TYPE="char" LENGTH="36" NOTNULL="true" SEQUENCE="false" COMMENT="Public id used by the web services and the frontend"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Teacher who generated the exam"/>
+        <FIELD NAME="params" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Documents, type, difficulty and topics as JSON"/>
+        <FIELD NAME="includepracticed" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 to allow questions students already practised"/>
+        <FIELD NAME="allnew" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 to generate every question instead of using the bank"/>
+        <FIELD NAME="examdate" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Date of the exam; its questions become practice questions after it"/>
+        <FIELD NAME="timereleased" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="uuid" UNIQUE="true" FIELDS="uuid"/>
+        <INDEX NAME="courseid-userid" UNIQUE="false" FIELDS="courseid, userid"/>
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

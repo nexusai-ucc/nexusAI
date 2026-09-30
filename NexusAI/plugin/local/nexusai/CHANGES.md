@@ -5,6 +5,20 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.19.0] — Unreleased
 
+- New: the plugin's own tables for the student data (DATA-03). Fifteen
+  `local_nexusai_*` tables are created on install and upgrade: the eleven that
+  will receive the data the NexusAI backend keeps today (chat, interaction
+  metrics, votes, unanswered questions, quiz attempts and errors, flashcards and
+  their reviews, calendar reminders, forum webhooks) and four new ones (usage
+  per user, question bank, bank use and teacher exams); `local_nexusai_course`
+  gains an unused `features` column. They stay empty for now: nothing changes
+  for users until the plugin starts using them and the data is migrated.
+- Changed: the Privacy API provider covers the new tables (contexts and users
+  found with SQL, export and deletion; usage and interaction metrics are
+  anonymised instead of deleted, including rows that only carry the backend's
+  hash of the user id) and the three user preferences, and keeps exporting and
+  deleting what is still in the backend. The calendar feed token is never
+  exported.
 - Changed: the minimum is now **Moodle 4.5 LTS** (build 2024100700), and 4.5
   to 5.2 are supported (the UCC runs 5.0). The external functions use the
   `core_external` classes instead of the legacy aliases from `externallib.php`,
