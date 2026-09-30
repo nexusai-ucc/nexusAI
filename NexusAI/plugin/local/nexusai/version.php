@@ -30,7 +30,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026093000;
+$plugin->version   = 2026093001;
 // Beta: feature complete, CI on PostgreSQL and MySQL, English-only strings and
 // comments, input handling hardened for the Marketplace submission.
 $plugin->release   = '0.19.0';
