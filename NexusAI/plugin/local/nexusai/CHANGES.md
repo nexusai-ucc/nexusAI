@@ -5,6 +5,13 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.19.0] — Unreleased
 
+- New: `cli/migrate_from_backend.php` brings the student data the backend
+  kept into the plugin's tables (DATA-06). It keeps the backend ids, rebuilds
+  the relations, skips and counts rows of users or courses that no longer
+  exist, resumes where it stopped if interrupted, does not duplicate when run
+  again, and compares row counts and token sums per course and month with the
+  backend at the end. Flashcards get the activity of their document, so
+  material visibility applies to them. See `docs/CORTE_DATOS_MOODLE.md`.
 - Changed: the student data now lives in Moodle (DATA-05). Chat history,
   votes, interaction metrics, unanswered questions, quiz attempts and errors,
   flashcards and their spaced repetition, calendar reminders and the forum

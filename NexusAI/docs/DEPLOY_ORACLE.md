@@ -183,6 +183,11 @@ modelo. Para resumir por día el detalle de más de 13 meses, cron diario en la 
 30 3 * * * docker exec nexusai-api python scripts/rollup_llm_usage.py >> /var/log/nexusai-rollup.log 2>&1
 ```
 
+### Corte de los datos del alumno a Moodle (una vez por ambiente)
+
+Migrar los datos del alumno a Moodle, verificar y archivar las tablas viejas:
+ver [CORTE_DATOS_MOODLE.md](CORTE_DATOS_MOODLE.md) (DATA-06, #526).
+
 ### Reiniciar todo el stack (sin rebuild)
 
 ```bash

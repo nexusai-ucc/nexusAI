@@ -866,6 +866,33 @@ class backend_client {
     }
 
     /**
+     * One page of a backend table with student data, for the migration (DATA-06).
+     *
+     * Only answers while the backend has MIGRATION_EXPORT_ENABLED on.
+     *
+     * @param string $table Backend table name (chat_sessions, messages...).
+     * @param string|null $after Cursor returned by the previous page.
+     * @param int $limit Rows per page (1..1000).
+     * @return array{table:string, rows:array, next:?string}
+     */
+    public function migration_export(string $table, ?string $after, int $limit): array {
+        $query = ['table' => $table, 'limit' => $limit];
+        if ($after !== null) {
+            $query['after'] = $after;
+        }
+        return $this->get('/api/v1/migration/export?' . http_build_query($query, '', '&'));
+    }
+
+    /**
+     * Row counts and token sums per course and month of the backend data (DATA-06).
+     *
+     * @return array{counts:array, message_tokens:array, interaction_tokens:array}
+     */
+    public function migration_summary(): array {
+        return $this->get('/api/v1/migration/export/summary');
+    }
+
+    /**
      * HMAC-authenticated GET. Signed body = empty string.
      *
      * @param string $path Relative path (e.g. '/api/v1/documents?course_id=1').
