@@ -50,6 +50,12 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (needed for SSE, see the code comment) without the site's HTTP security
   blocklist Moodle's `\curl` class applies everywhere else. It now checks the
   backend URL against that same blocklist by hand before calling it.
+- Fixed: the widget and its navigation icon showed up even when the backend
+  connection was not filled in (so the chat could not answer anything), and on
+  page layouts where a floating widget cannot work (embedded iframes, popups,
+  print view, redirects, install/upgrade screens, the quiz secure window).
+- Removed: the `local/nexusai:viewanalytics` capability, which nothing used;
+  the analytics dashboard keeps requiring `local/nexusai:manage`.
 - Note: the data already in the backend is not visible until it is migrated
   (DATA-06).
 - New: the plugin's own tables for the student data (DATA-03). Fifteen

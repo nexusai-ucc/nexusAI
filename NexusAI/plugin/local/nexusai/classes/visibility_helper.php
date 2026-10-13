@@ -38,11 +38,21 @@ namespace local_nexusai;
  */
 class visibility_helper {
     /**
+     * Page layouts where a floating chat widget cannot work or does not belong:
+     * iframes (LTI/H5P), popups, print view, redirects, install/upgrade screens
+     * and the quiz secure window.
+     */
+    const EXCLUDED_LAYOUTS = ['embedded', 'popup', 'frametop', 'print', 'redirect', 'maintenance', 'secure'];
+
+    /**
      * Resolves whether the current user should see the widget on the current
      * page and, if inside a real course, whether they have the capability to use it.
      *
      * Rules:
      *   - Logged in and not a guest, always.
+     *   - Never while Moodle is installing or upgrading, on a page layout in
+     *     EXCLUDED_LAYOUTS, or while the backend connection is not filled in
+     *     (the chat could not answer anything).
      *   - Inside a real course ($COURSE->id > 1): NexusAI must be on for the
      *     course (course_guard, which also checks the site-wide switch) and the
      *     user needs `local/nexusai:use` there — otherwise nothing is shown
@@ -54,9 +64,18 @@ class visibility_helper {
      * @return array{courseid:int, isteacher:bool}|null null if nothing should be shown.
      */
     public static function resolve(): ?array {
-        global $COURSE;
+        global $COURSE, $PAGE, $CFG;
 
         if (!isloggedin() || isguestuser()) {
+            return null;
+        }
+        if (during_initial_install() || !empty($CFG->upgraderunning)) {
+            return null;
+        }
+        if (in_array($PAGE->pagelayout, self::EXCLUDED_LAYOUTS, true)) {
+            return null;
+        }
+        if (!local\course_guard::backend_configured()) {
             return null;
         }
 

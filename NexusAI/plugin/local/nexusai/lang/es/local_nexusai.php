@@ -122,7 +122,6 @@ $string['newmaterial_small'] = 'Nuevo material: {$a}';
 $string['newmaterial_subject'] = 'Nuevo material en {$a}';
 $string['nexusai:manage'] = 'Gestionar materiales del curso para indexación con NexusAI';
 $string['nexusai:use'] = 'Usar el asistente NexusAI en un curso';
-$string['nexusai:viewanalytics'] = 'Ver el dashboard de analytics de NexusAI';
 $string['pluginname'] = 'NexusAI';
 $string['privacy:metadata:local_nexusai_cal_alerts'] = 'Recordatorios que el usuario pidió antes de eventos del calendario.';
 $string['privacy:metadata:local_nexusai_cal_alerts:courseid'] = 'El curso del evento.';

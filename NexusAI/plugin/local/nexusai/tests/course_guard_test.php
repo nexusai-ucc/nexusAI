@@ -35,6 +35,15 @@ use local_nexusai\local\course_guard;
  */
 final class course_guard_test extends \advanced_testcase {
     /**
+     * Fills in the backend connection, without which the widget never shows.
+     */
+    private function configure_backend(): void {
+        set_config('api_endpoint', 'https://backend.example.com', 'local_nexusai');
+        set_config('api_key', 'test-key', 'local_nexusai');
+        set_config('shared_secret', 'test-secret', 'local_nexusai');
+    }
+
+    /**
      * A course with no setting of its own is off, because the admin default ships off.
      */
     public function test_courses_are_off_by_default(): void {
@@ -187,6 +196,7 @@ final class course_guard_test extends \advanced_testcase {
         $generator->enrol_user($student->id, $course->id, 'student');
         $this->setUser($student);
         $COURSE = get_course($course->id);
+        $this->configure_backend();
 
         $this->assertNull(visibility_helper::resolve(), 'Off by default.');
 
@@ -211,12 +221,62 @@ final class course_guard_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->setUser($this->getDataGenerator()->create_user());
         $COURSE = $SITE;
+        $this->configure_backend();
 
         $this->assertNull(visibility_helper::resolve());
 
         set_config('show_outside_course', 1, 'local_nexusai');
         $resolved = visibility_helper::resolve();
         $this->assertSame(0, $resolved['courseid']);
+    }
+
+    /**
+     * Without the backend connection filled in the chat cannot answer, so nothing shows.
+     */
+    public function test_nothing_shows_without_the_backend_configured(): void {
+        global $COURSE;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $course = $this->getDataGenerator()->create_course();
+        course_guard::set_enabled((int) $course->id, true);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($student);
+        $COURSE = get_course($course->id);
+
+        $this->assertFalse(course_guard::backend_configured());
+        $this->assertNull(visibility_helper::resolve());
+
+        $this->configure_backend();
+        $this->assertTrue(course_guard::backend_configured());
+        $this->assertNotNull(visibility_helper::resolve());
+
+        set_config('shared_secret', '  ', 'local_nexusai');
+        $this->assertNull(visibility_helper::resolve(), 'A blank value counts as missing.');
+    }
+
+    /**
+     * Layouts where a floating widget cannot work (iframes, popups, print...) get nothing.
+     */
+    public function test_nothing_shows_on_excluded_page_layouts(): void {
+        global $COURSE, $PAGE;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $course = $this->getDataGenerator()->create_course();
+        course_guard::set_enabled((int) $course->id, true);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($student);
+        $COURSE = get_course($course->id);
+        $this->configure_backend();
+
+        $PAGE = new \moodle_page();
+        $PAGE->set_pagelayout('incourse');
+        $this->assertNotNull(visibility_helper::resolve());
+
+        foreach (visibility_helper::EXCLUDED_LAYOUTS as $layout) {
+            $PAGE = new \moodle_page();
+            $PAGE->set_pagelayout($layout);
+            $this->assertNull(visibility_helper::resolve(), "No widget on the '$layout' layout.");
+        }
     }
 
     /**
