@@ -62,7 +62,11 @@ $healthlatency = null;
 if (empty($endpoint)) {
     $healthstatus = 'unconfigured';
 } else {
-    $curl = new \curl();
+    // ignoresecurity, like backend_client and chat_stream.php: the endpoint is set by
+    // the administrator, and Moodle's default blocked hosts list covers localhost,
+    // private networks and ports other than 80/443, where the backend usually runs.
+    // Without it this page reported "The URL is blocked" while the plugin worked.
+    $curl = new \curl(['ignoresecurity' => true]);
     $curl->setopt([
         'CURLOPT_TIMEOUT'        => 10,
         'CURLOPT_CONNECTTIMEOUT' => 5,

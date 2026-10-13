@@ -83,6 +83,11 @@ if (!is_enrolled($context, $userid, '', true)) {
     http_response_code(403);
     die(get_string('errorusernotenrolled', 'local_nexusai'));
 }
+// Same rule as the rest of NexusAI: the feed is only for who may use it in the course.
+if (!has_capability('local/nexusai:use', $context, $userid)) {
+    http_response_code(403);
+    die(get_string('erroraccessdenied', 'local_nexusai'));
+}
 if (!\local_nexusai\local\course_guard::is_enabled((int) $course->id)) {
     http_response_code(403);
     die(get_string('coursedisabled', 'local_nexusai'));
