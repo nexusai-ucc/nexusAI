@@ -63,6 +63,11 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   long question, search or topic, no document selected, bad session) were
   fixed English text; they now come from the language pack. The streaming chat
   also sends them in the format the widget shows, instead of raw JSON.
+- Fixed: the remaining validation errors (document upload and replace,
+  voice recording, forum webhook, chat sessions, gaps and study plan) were
+  fixed English text that only reached the debug info; they now come from
+  the language pack, like the chat and search ones. `local_nexusai_dismiss_pending_upload`
+  now validates its context like every other web service.
 - Changed: the admin status page (`admin.php`) is rendered with the
   `local_nexusai/admin_status` Mustache template instead of HTML built in PHP;
   the configuration labels now come from the language pack too.

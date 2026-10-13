@@ -83,10 +83,10 @@ class forum_webhook_save extends external_api {
 
         $url = trim((string) $params['webhookurl']);
         if ($url !== '' && !preg_match('#^https?://#i', $url)) {
-            throw new \invalid_parameter_exception('The webhook URL must start with http:// or https://');
+            throw new \moodle_exception('errorwebhookurl', 'local_nexusai');
         }
         if (\core_text::strlen($url) > 2000) {
-            throw new \invalid_parameter_exception('The webhook URL is too long');
+            throw new \moodle_exception('errorwebhookurltoolong', 'local_nexusai', '', 2000);
         }
 
         return [

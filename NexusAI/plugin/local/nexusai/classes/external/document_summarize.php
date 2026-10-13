@@ -85,7 +85,7 @@ class document_summarize extends external_api {
 
         $cleandocid = trim($params['documentid']);
         if ($cleandocid === '') {
-            throw new \invalid_parameter_exception('Document ID cannot be empty');
+            throw new \moodle_exception('errorinvalidparams', 'local_nexusai');
         }
 
         $client   = new backend_client();
