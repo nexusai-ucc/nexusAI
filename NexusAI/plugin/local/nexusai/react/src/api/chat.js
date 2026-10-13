@@ -1,7 +1,7 @@
 /**
- * Cliente API del chat — capa de transporte entre React y el plugin Moodle.
+ * Chat API client — transport layer between React and the Moodle plugin.
  *
- * Flujo arquitectónico (ver ADR-001 + ADR-005):
+ * Architecture flow (see ADR-001 + ADR-005):
  *
  *   React  ─→  core/ajax (Moodle)  ─→  External Function PHP
  *                                              │
@@ -11,18 +11,18 @@
  *                                              ▼
  *                                   FastAPI /api/v1/chat/messages
  *
- * El plugin Moodle expone una External Function `local_nexusai_chat_send` que
- * hace de proxy. React solo le pasa la pregunta, courseid, userid y session_id;
- * la firma HMAC y el endpoint del backend los gestiona PHP del lado del server.
+ * The Moodle plugin exposes an External Function `local_nexusai_chat_send` that
+ * acts as a proxy. React only passes the question, courseid, userid and session_id;
+ * the HMAC signature and the backend endpoint are handled by PHP on the server.
  *
  * MOCK MODE:
- * Si el módulo `core/ajax` de Moodle no está disponible (ej. dev local de
- * React fuera de Moodle, o pruebas Storybook), caemos a un mock que simula
- * respuestas con delay y demuestra la UI sin necesidad de backend.
+ * If Moodle's `core/ajax` module is not available (e.g. local React dev
+ * outside Moodle, or Storybook), we fall back to a mock that simulates
+ * delayed answers and shows the UI without a backend.
  */
 
 // ============================================================
-// MOCK SERVER (solo para dev fuera de Moodle)
+// MOCK SERVER (only for dev outside Moodle)
 // ============================================================
 const MOCK_RESPONSES = [
     "Esta es una respuesta de prueba del asistente. Cuando el cliente PHP esté implementado, vas a ver respuestas reales del LLM con contexto del material del curso.",
@@ -35,7 +35,7 @@ let mockSessionMessages = [];
 let mockResponseIdx = 0;
 
 async function mockSendMessage({ question, sessionId }) {
-    // Simular latencia del LLM (entre 600ms y 1.4s)
+    // Simulate the LLM's latency (between 600ms and 1.4s)
     const delay = 600 + Math.random() * 800;
     await new Promise((resolve) => setTimeout(resolve, delay));
 
@@ -69,9 +69,9 @@ async function mockSendMessage({ question, sessionId }) {
 let cachedFetchMany = null;
 
 async function getMoodleAjax() {
-    // Lazy-loaded porque core/ajax es un módulo AMD que solo existe dentro
-    // de Moodle. Si lo importamos a nivel top-level, Webpack rompe en el
-    // build standalone (Storybook / dev fuera de Moodle).
+    // Lazy-loaded because core/ajax is an AMD module that only exists inside
+    // Moodle. Importing it at the top level breaks Webpack in the standalone
+    // build (Storybook / dev outside Moodle).
     if (cachedFetchMany) return cachedFetchMany;
 
     if (typeof window === "undefined" || !window.M || !window.M.cfg) {
@@ -93,14 +93,14 @@ async function getMoodleAjax() {
 }
 
 /**
- * Envía un mensaje al asistente. Devuelve { session_id, answer, messages }.
+ * Sends a message to the assistant. Returns { session_id, answer, messages }.
  *
  * @param {Object}  params
- * @param {string}  params.question     Pregunta del alumno (1..2000 chars).
- * @param {number}  params.courseId     ID del curso de Moodle.
- * @param {number}  params.userId       ID del usuario logueado.
- * @param {string}  [params.sessionId]  UUID de sesión existente (opcional).
- * @param {boolean} [params.multiCourse] Si true, busca en todos los cursos del alumno.
+ * @param {string}  params.question     Student's question (1..2000 chars).
+ * @param {number}  params.courseId     Moodle course ID.
+ * @param {number}  params.userId       ID of the logged-in user.
+ * @param {string}  [params.sessionId]  Existing session UUID (optional).
+ * @param {boolean} [params.multiCourse] If true, searches all of the student's courses.
  * @returns {Promise<{session_id:string, answer:string, messages:Array}>}
  */
 export async function sendMessage({ question, courseId, userId, sessionId, multiCourse = false }) {
@@ -113,14 +113,14 @@ export async function sendMessage({ question, courseId, userId, sessionId, multi
 
     const fetchMany = await getMoodleAjax();
 
-    // Modo mock — solo cuando NO estamos en Moodle.
+    // Mock mode — only when we are NOT inside Moodle.
     if (!fetchMany) {
         return mockSendMessage({ question, sessionId });
     }
 
-    // Modo real — vamos por core/ajax al External Function de Moodle.
-    // Cuando Marcos termine db/services.php + classes/external/chat_send.php,
-    // este methodname tiene que coincidir con el declarado allí.
+    // Real mode — through core/ajax to Moodle's External Function.
+    // This methodname must match the one declared in db/services.php
+    // (classes/external/chat_send.php).
     const args = {
         question,
         courseid:    courseId,
@@ -138,14 +138,14 @@ export async function sendMessage({ question, courseId, userId, sessionId, multi
         },
     ]);
 
-    // Si el External Function devuelve un error, core/ajax lo rechaza solo.
-    // Si devuelve OK, esperamos la misma forma que el backend Python:
+    // If the External Function returns an error, core/ajax rejects on its own.
+    // If it returns OK, we expect the same shape as the Python backend:
     //   { session_id, answer, messages: [{id, role, content, created_at}, ...] }
     return response;
 }
 
 /**
- * Reset del estado mock (útil para tests o para "nueva conversación").
+ * Resets the mock state (handy for tests or for "new conversation").
  */
 export function resetMockState() {
     mockSessionMessages = [];
@@ -153,22 +153,22 @@ export function resetMockState() {
 }
 
 /**
- * Guarda el voto 👍/👎 del alumno sobre una respuesta puntual del chat
- * (ASIST-01 / #321). Best-effort: si falla, no debe bloquear la UI del chat
- * — el caller solo usa el resultado para actualizar el estado visual local.
+ * Stores the student's 👍/👎 vote on one chat answer
+ * (ASIST-01 / #321). Best effort: if it fails, it must not block the chat UI
+ * — the caller only uses the result to update the local visual state.
  *
  * @param {Object} params
- * @param {string} params.messageId  UUID real del mensaje (no el id local
- *   temporal que usa el streaming antes de que llegue `done`).
+ * @param {string} params.messageId  Real UUID of the message (not the temporary
+ *   local id streaming uses before `done` arrives).
  * @param {number} params.courseId
  * @param {boolean} params.isHelpful true = 👍, false = 👎.
- * @param {string} [params.comment]  Comentario corto opcional (solo con 👎).
+ * @param {string} [params.comment]  Optional short comment (only with 👎).
  * @returns {Promise<{ok:boolean}>}
  */
 export async function submitMessageFeedback({ messageId, courseId, isHelpful, comment = "" }) {
     const fetchMany = await getMoodleAjax();
     if (!fetchMany) {
-        // Modo mock (fuera de Moodle): no hay backend real para persistir.
+        // Mock mode (outside Moodle): there is no real backend to store it.
         return { ok: true };
     }
 
@@ -189,14 +189,14 @@ export async function submitMessageFeedback({ messageId, courseId, isHelpful, co
 
 
 // ============================================================
-// STREAMING — Server-Sent Events vía endpoint PHP proxy
+// STREAMING — Server-Sent Events through the PHP proxy endpoint
 // ============================================================
 
 /**
- * Envía un mensaje en modo streaming. Los tokens llegan uno por uno via SSE.
+ * Sends a message in streaming mode. Tokens arrive one by one via SSE.
  *
- * Flujo: React → fetch a /local/nexusai/chat_stream.php → cURL al backend
- *        Python → LLM streaming → SSE de vuelta al browser tal como llega.
+ * Flow: React → fetch to /local/nexusai/chat_stream.php → cURL to the Python
+ *       backend → LLM streaming → SSE back to the browser as it arrives.
  *
  * @param {Object}  params
  * @param {string}  params.question
@@ -208,7 +208,7 @@ export async function submitMessageFeedback({ messageId, courseId, isHelpful, co
  * @param {(token:string) => void}                          callbacks.onToken
  * @param {(stats:{prompt_tokens:number,completion_tokens:number,total_tokens:number}) => void} [callbacks.onDone]
  * @param {(detail:string) => void}                         [callbacks.onError]
- * @returns {Promise<void>} resuelve cuando termina el stream
+ * @returns {Promise<void>} resolves when the stream ends
  */
 export async function sendMessageStream(
     { question, courseId, sessionId, multiCourse = false },
@@ -218,11 +218,11 @@ export async function sendMessageStream(
         throw new Error("La pregunta no puede estar vacía");
     }
 
-    // Fuera de Moodle: caer al mock sync (no hay streaming en mock).
+    // Outside Moodle: fall back to the sync mock (no streaming in mock mode).
     if (typeof window === "undefined" || !window.M?.cfg) {
         const fake = await mockSendMessage({ question, sessionId });
         onMeta?.({ session_id: fake.session_id, chunks: 0 });
-        // Simular streaming partiendo la respuesta en palabras.
+        // Simulate streaming by splitting the answer into words.
         const words = fake.answer.split(" ");
         for (const w of words) {
             await new Promise((r) => setTimeout(r, 30));
@@ -258,10 +258,10 @@ export async function sendMessageStream(
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
-    // Si el stream se corta (proxy con timeout, conexión perdida) sin que
-    // llegue nunca un evento "done" o "error", antes no se disparaba ningún
-    // callback: el alumno se quedaba viendo la burbuja de respuesta vacía
-    // para siempre, sin error visible. Lo trackeamos para poder avisar.
+    // If the stream is cut (proxy timeout, lost connection) without a "done"
+    // or "error" event ever arriving, no callback used to fire: the student
+    // kept seeing the empty answer bubble forever, with no visible error.
+    // We track it to be able to warn.
     let receivedTerminalEvent = false;
 
     const processRawEvent = (rawEvent) => {
@@ -289,8 +289,8 @@ export async function sendMessageStream(
 
         buffer += decoder.decode(value, { stream: true });
 
-        // SSE delimita eventos con "\n\n". Procesamos los completos y dejamos
-        // en el buffer cualquier evento parcial.
+        // SSE separates events with "\n\n". We process the complete ones and
+        // leave any partial event in the buffer.
         let idx;
         while ((idx = buffer.indexOf("\n\n")) >= 0) {
             const rawEvent = buffer.slice(0, idx);
@@ -299,16 +299,16 @@ export async function sendMessageStream(
         }
     }
 
-    // El reader terminó. Si quedó un evento sin el "\n\n" final en el buffer
-    // (la conexión se cortó a mitad de un evento), lo procesamos igual —
-    // mejor esfuerzo, pero recupera el caso común de que solo faltaba el
-    // delimitador de cierre.
+    // The reader finished. If an event without the final "\n\n" is left in the
+    // buffer (the connection was cut in the middle of an event), we process it
+    // anyway — best effort, but it recovers the common case where only the
+    // closing delimiter was missing.
     if (buffer.trim()) {
         processRawEvent(buffer);
     }
 
-    // Nadie disparó "done" ni "error": la conexión se cerró sin ningún
-    // indicio explícito. Avisamos para que la UI no quede colgada.
+    // Nobody fired "done" or "error": the connection closed without any
+    // explicit sign. We warn so the UI does not hang.
     if (!receivedTerminalEvent) {
         onError?.("La conexión se cerró antes de terminar la respuesta.");
     }

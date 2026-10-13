@@ -1,23 +1,23 @@
 /**
- * QuizPanel — generador de quiz de práctica / modo estudio (Feature F /
+ * QuizPanel — practice quiz generator / study mode (Feature F /
  * SP-03 / SP-05 / SP-06 / SP-08).
  *
- * Estados:
- *   - "setup":    selector de tema + tipo de pregunta + dificultad + cantidad + botón Generar
- *   - "loading":  spinner mientras el LLM genera
- *   - "playing":  una pregunta por vez con feedback inmediato
- *   - "finished": score final + opción de empezar otro
- *   - "error":    mensaje de error + botón Reintentar
+ * States:
+ *   - "setup":    topic + question type + difficulty + count selector + Generate button
+ *   - "loading":  spinner while the LLM generates
+ *   - "playing":  one question at a time with immediate feedback
+ *   - "finished": final score + option to start another one
+ *   - "error":    error message + Retry button
  *
- * Tipos de pregunta:
- *   - multiple_choice: 4 opciones A/B/C/D
- *   - true_false:      2 opciones Verdadero / Falso
- *   - open:            textarea libre evaluado por IA
- *   - flashcard:       tarjeta pregunta/respuesta autoevaluada por el alumno (SP-06)
- *   - mix:             combinación de multiple_choice/true_false/open
+ * Question types:
+ *   - multiple_choice: 4 options A/B/C/D
+ *   - true_false:      2 options True / False
+ *   - open:            free textarea graded by the AI
+ *   - flashcard:       question/answer card self-assessed by the student (SP-06)
+ *   - mix:             combination of multiple_choice/true_false/open
  *
- * Dificultad (SP-08): easy | medium | hard, se envía al backend y ajusta
- * la complejidad de las preguntas generadas por el LLM.
+ * Difficulty (SP-08): easy | medium | hard, sent to the backend; it adjusts
+ * the complexity of the questions the LLM generates.
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -28,19 +28,19 @@ import {
 import { IconBook, IconCheck, IconChevronRight, IconClock, IconDownload, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 import { getFriendlyErrorMessage } from "./errors.js";
 
-// SP-17 (#363): "Exportar a PDF" — client-side, mismo criterio que gift.js
-// (sin round-trip al backend). A diferencia de GIFT (texto plano, Blob +
-// <a download>), un PDF real necesitaría una librería (jsPDF, ~200KB+) —
-// el bundle de este widget (chatwidget-lazy) ya está por encima del límite
-// de tamaño recomendado, sin margen para sumar una. En cambio, se abre una
-// ventana nueva con HTML formateado para impresión y se dispara
-// window.print() — el diálogo nativo del navegador ya ofrece "Guardar como
-// PDF", sin agregar ni un byte al bundle.
+// SP-17 (#363): "Export to PDF" — client-side, same approach as gift.js
+// (no round-trip to the backend). Unlike GIFT (plain text, Blob +
+// <a download>), a real PDF would need a library (jsPDF, ~200KB+) —
+// this widget's bundle (chatwidget-lazy) is already above the recommended
+// size limit, with no room to add one. Instead, a new window opens with
+// HTML formatted for printing and window.print() is fired — the browser's
+// native dialog already offers "Save as PDF", without adding a single byte
+// to the bundle.
 //
-// Genera desde `quiz.questions` (las preguntas tal como las devolvió el
-// generador), NUNCA desde `answersRef`/el estado de "review" — ese sí
-// revela cuál era la opción correcta, y el criterio de aceptación pide
-// explícitamente que el PDF no revele las respuestas.
+// Generated from `quiz.questions` (the questions as the generator returned
+// them), NEVER from `answersRef`/the "review" state — that one does reveal
+// which option was correct, and the acceptance criteria explicitly ask that
+// the PDF does not reveal the answers.
 export function escapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = String(text ?? "");
@@ -49,7 +49,7 @@ export function escapeHtml(text) {
 
 export function printQuizAsPdf(quiz, topic, lang) {
     const win = window.open("", "_blank");
-    if (!win) return; // popup bloqueado por el navegador — sin fallback, no hay mucho más que hacer
+    if (!win) return; // popup blocked by the browser — no fallback, not much else to do
 
     const title = (topic && topic.trim()) || (lang === "es" ? "Quiz de práctica" : "Practice quiz");
     const answerSpaceLabel = lang === "es" ? "Respuesta:" : "Answer:";
@@ -90,9 +90,9 @@ ${questionsHtml}
     win.print();
 }
 
-// ── Persistencia de errores del quiz en el backend (SP-10) ──
-// Best-effort: si falla, no bloquea el flujo del quiz (el alumno ya vio su
-// resultado). El historial vive en Postgres, no en localStorage.
+// ── Storing quiz errors on the server (SP-10) ──
+// Best effort: if it fails, it does not block the quiz flow (the student has
+// already seen the result). The history lives on the server, not in localStorage.
 function persistErrors(courseId, newErrors) {
     if (!newErrors.length) return;
     recordQuizErrors({ courseId, errors: newErrors }).catch(() => { /* best-effort */ });
@@ -109,34 +109,34 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     const [numQuestions, setNumQuestions] = useState(5);
     const [questionType, setQuestionType] = useState("multiple_choice");
     const [difficulty, setDifficulty] = useState("medium");
-    // SP-12 (#322): sugerencia de dificultad de partida, calculada una sola
-    // vez al abrir el generador (no se re-consulta si el alumno edita el
-    // campo de tema después — es solo el punto de partida, override manual
-    // en cualquier momento vía los botones de dificultad de siempre).
+    // SP-12 (#322): starting difficulty suggestion, computed only once when
+    // the generator opens (it is not asked again if the student edits the
+    // topic field afterwards — it is only the starting point, with manual
+    // override at any time through the usual difficulty buttons).
     const [difficultySuggestion, setDifficultySuggestion] = useState(null);
-    // SP-11 (#315): cuántas flashcards ya generadas "tocan hoy" vs. el total
-    // — solo se pide cuando el alumno elige el tipo "flashcard" en el setup.
+    // SP-11 (#315): how many already generated flashcards are "due today" vs. the
+    // total — only requested when the student picks the "flashcard" type in the setup.
     const [flashcardsSummary, setFlashcardsSummary] = useState(null);
     const [quiz, setQuiz] = useState(null);
     const [error, setError] = useState(null);
     const [topicError, setTopicError] = useState(null);
 
-    // Estado del juego en curso
+    // State of the game in progress
     const [currentIdx, setCurrentIdx] = useState(0);
     const [selectedIdx, setSelectedIdx] = useState(null);  // MC / T/F
-    const [openAnswer, setOpenAnswer] = useState("");       // preguntas abiertas
-    const [evaluating, setEvaluating] = useState(false);   // spinner inline de evaluación
+    const [openAnswer, setOpenAnswer] = useState("");       // open questions
+    const [evaluating, setEvaluating] = useState(false);   // inline grading spinner
     const [evaluation, setEvaluation] = useState(null);    // { correct, score, feedback }
     const [reveal, setReveal] = useState(false);
     const [score, setScore] = useState(0);
 
-    // Acumula respuestas incorrectas durante la partida (no causa re-render)
+    // Collects wrong answers during the game (does not cause a re-render)
     const wrongAnswersRef = useRef([]);
-    // SP-11 (#315): acumula el resultado de autoevaluación {flashcardId, knewIt}
-    // de cada flashcard de la sesión, para aplicar SM-2 una sola vez al final.
+    // SP-11 (#315): collects the self-assessment result {flashcardId, knewIt}
+    // of each flashcard of the session, to apply SM-2 only once at the end.
     const flashcardReviewsRef = useRef([]);
-    // SP-14: acumula TODAS las respuestas (correctas e incorrectas) del
-    // intento en curso, para la pantalla de revisión post-quiz.
+    // SP-14: collects ALL the answers (right and wrong) of the attempt in
+    // progress, for the post-quiz review screen.
     const answersRef = useRef([]);
 
     // Historial de quizzes (SP-09)
@@ -301,9 +301,9 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         try {
             let data;
             if (questionType === "flashcard") {
-                // SP-11: prioriza mostrar primero las flashcards ya generadas
-                // que "tocan hoy" (banco persistido, sin llamar al LLM) — solo
-                // completa con generación nueva el remanente que falte.
+                // SP-11: shows first the already generated flashcards that are
+                // "due today" (stored bank, without calling the LLM) — new
+                // generation only fills in whatever is missing.
                 const due = await getDueFlashcards(courseId, topic, numQuestions);
                 const dueQuestions = due?.questions || [];
                 if (dueQuestions.length >= numQuestions) {
@@ -331,7 +331,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         }
     };
 
-    // ── Verificar respuesta de opción múltiple o V/F ──
+    // ── Check a multiple choice or T/F answer ──
     const verify = () => {
         if (selectedIdx === null) return;
         setReveal(true);
@@ -366,12 +366,12 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         });
     };
 
-    // ── Autoevaluación de flashcard (sin IA): el alumno juzga si la sabía ──
+    // ── Flashcard self-assessment (no AI): the student judges whether they knew it ──
     const markFlashcard = (knewIt) => {
         const q = quiz.questions[currentIdx];
-        // SP-11: q.id solo falta si la flashcard es efímera (no debería pasar
-        // ya que /generate y /flashcards/due persisten todo lo que devuelven,
-        // pero se valida igual antes de acumular para el review-batch final).
+        // SP-11: q.id is only missing if the flashcard is ephemeral (should not
+        // happen since /generate and /flashcards/due store everything they return,
+        // but it is checked anyway before collecting it for the final review batch).
         if (q.id) {
             flashcardReviewsRef.current.push({ flashcardId: q.id, knewIt });
         }
@@ -403,7 +403,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         next();
     };
 
-    // ── Verificar respuesta abierta (llama al LLM evaluador) ──
+    // ── Check an open answer (calls the grading LLM) ──
     const verifyOpen = async () => {
         if (!openAnswer.trim()) return;
         const q = quiz.questions[currentIdx];
@@ -455,9 +455,9 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         }
     };
 
-    // SP-15: factorizado de next() para poder cerrar el intento tanto al
-    // llegar naturalmente a la última pregunta como al agotarse el tiempo
-    // (finishEarly), sin duplicar la lógica de persistencia.
+    // SP-15: factored out of next() so the attempt can be closed both when the
+    // last question is reached naturally and when time runs out
+    // (finishEarly), without duplicating the storing logic.
     const finalizeAttempt = (reachedQuestions) => {
         const correctCount = answersRef.current.filter((a) => a.correct).length;
         persistErrors(courseId, wrongAnswersRef.current);
@@ -485,8 +485,8 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         }
     };
 
-    // SP-15: se llama cuando se agota el tiempo del modo cronometrado —
-    // cierra el quiz con lo respondido hasta el momento, sin perderlo.
+    // SP-15: called when the time of the timed mode runs out —
+    // closes the quiz with what was answered so far, without losing it.
     const finishEarly = () => {
         const reached = currentIdx + (reveal ? 1 : 0);
         finalizeAttempt(reached);
@@ -518,7 +518,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         }
     };
 
-    // SP-15: cuenta regresiva mientras se juega en modo cronometrado.
+    // SP-15: countdown while playing in timed mode.
     useEffect(() => {
         if (stage !== "playing" || !timedMode) return;
         const intervalId = setInterval(() => {
@@ -528,7 +528,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stage, timedMode]);
 
-    // Se agotó el tiempo — cierra el intento con lo respondido hasta ahora.
+    // Time ran out — closes the attempt with what was answered so far.
     useEffect(() => {
         if (stage === "playing" && timedMode && timeRemaining === 0) {
             finishEarly();
@@ -536,7 +536,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [timeRemaining]);
 
-    // SP-12: sugerencia de dificultad al abrir el generador — una sola vez.
+    // SP-12: difficulty suggestion when the generator opens — only once.
     useEffect(() => {
         let cancelled = false;
         suggestDifficulty(courseId, initialTopic)
@@ -546,14 +546,14 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 setDifficulty(data.difficulty);
             })
             .catch(() => {
-                // Sin sugerencia: se mantiene el comportamiento actual (medium, manual).
+                // No suggestion: the current behavior stays (medium, manual).
             });
         return () => { cancelled = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseId]);
 
-    // SP-11 (#315): banner de "cuántas flashcards tocan hoy" — solo se pide
-    // cuando el alumno elige ese tipo de pregunta en el setup.
+    // SP-11 (#315): "how many flashcards are due today" banner — only requested
+    // when the student picks that question type in the setup.
     useEffect(() => {
         if (questionType !== "flashcard") {
             setFlashcardsSummary(null);
@@ -562,7 +562,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
         let cancelled = false;
         getFlashcardsSummary(courseId, topic)
             .then((data) => { if (!cancelled) setFlashcardsSummary(data); })
-            .catch(() => { /* sin banner: no bloquea el flujo */ });
+            .catch(() => { /* no banner: does not block the flow */ });
         return () => { cancelled = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [courseId, questionType]);
@@ -834,7 +834,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     </div>
                 )}
 
-                {/* ── Dorso de la flashcard ── */}
+                {/* ── Back of the flashcard ── */}
                 {isFlashcard && reveal && (
                     <div className="nexusai-quiz__feedback nexusai-quiz__feedback--flashcard">
                         <p className="nexusai-quiz__explanation">{q.explanation}</p>
@@ -847,7 +847,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     </div>
                 )}
 
-                {/* ── Feedback después de verificar ── */}
+                {/* ── Feedback after checking ── */}
                 {reveal && !isFlashcard && (
                     <div role="status" className={`nexusai-quiz__feedback ${
                         (isOpen || isFillBlank)

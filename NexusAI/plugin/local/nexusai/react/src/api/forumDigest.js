@@ -1,7 +1,7 @@
 /**
- * Cliente del resumen semanal del foro (FOR-06, #367) + señal de urgencia
- * por hilo (FOR-05, #366) — un solo endpoint combinado, ver
- * `local_nexusai_forum_weekly_digest` (docente).
+ * Client of the weekly forum digest (FOR-06, #367) + urgency signal
+ * per thread (FOR-05, #366) — a single combined endpoint, see
+ * `local_nexusai_forum_weekly_digest` (teacher).
  */
 
 const MOCK_DIGEST = {
@@ -41,7 +41,7 @@ async function getMoodleAjax() {
 }
 
 /**
- * Resumen semanal del foro del curso, para el docente.
+ * Weekly digest of the course forum, for the teacher.
  *
  * @param {number} courseId
  * @param {number} [days=7]
@@ -64,8 +64,8 @@ export async function getWeeklyDigest(courseId, days = 7) {
     return response;
 }
 
-// FOR-07 (#378): URL de webhook (Slack/Discord/Teams) configurada por el
-// docente para recibir el digest semanal también fuera de Moodle.
+// FOR-07 (#378): webhook URL (Slack/Discord/Teams) set by the teacher to
+// also receive the weekly digest outside Moodle.
 
 let _mockWebhookUrl = null;
 
@@ -90,7 +90,7 @@ export async function getForumWebhook(courseId) {
 
 /**
  * @param {number} courseId
- * @param {string} url URL vacía borra la configuración.
+ * @param {string} url An empty URL deletes the setting.
  * @returns {Promise<string|null>}
  */
 export async function saveForumWebhook(courseId, url) {

@@ -1,11 +1,11 @@
 /**
- * Drop zone con drag-and-drop HTML5 + click para abrir el file picker.
+ * Drop zone with HTML5 drag-and-drop + click to open the file picker.
  *
- * CONT-06 (#320): acepta varios archivos a la vez (drag-and-drop o picker).
- * El componente padre (DocumentsManager) le pasa `onUpload(files)` — un
- * array, aunque sea de un solo archivo — y `disabled` (true mientras hay
- * una cola de uploads en curso, para evitar soltar una segunda tanda antes
- * de que termine la primera).
+ * CONT-06 (#320): accepts several files at once (drag-and-drop or picker).
+ * The parent component (DocumentsManager) passes it `onUpload(files)` — an
+ * array, even for a single file — and `disabled` (true while an upload queue
+ * is in progress, to avoid dropping a second batch before the first one
+ * finishes).
  */
 
 import { useRef, useState } from "react";
@@ -20,8 +20,8 @@ const ACCEPT_TYPES = [
     "text/csv",
     "text/markdown",
     "text/html",
-    // Algunos navegadores no resuelven bien estos MIME types por extensión;
-    // se agregan explícitamente para que el file picker los muestre siempre.
+    // Some browsers do not resolve these MIME types well by extension;
+    // they are added explicitly so the file picker always shows them.
     ".csv",
     ".md",
     ".html",
@@ -71,7 +71,7 @@ export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES, 
     };
     const onInputChange = (e) => {
         handleFiles(e.target.files);
-        // Reset para permitir subir el mismo archivo dos veces seguidas (cambio de versión).
+        // Reset to allow uploading the same file twice in a row (new version).
         e.target.value = "";
     };
 

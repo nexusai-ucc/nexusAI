@@ -1,9 +1,9 @@
 /**
- * Cliente API de secciones del curso (BUS-05).
+ * API client of the course sections (BUS-05).
  *
- * Llama a `local_nexusai_course_sections_list` — usado tanto por el
- * selector de sección al subir material (DocumentsManager.jsx) como por
- * el filtro de búsqueda (SearchPanel.jsx).
+ * Calls `local_nexusai_course_sections_list` — used both by the section
+ * selector when uploading material (DocumentsManager.jsx) and by the
+ * search filter (SearchPanel.jsx).
  */
 
 async function getMoodleAjax() {
@@ -20,7 +20,7 @@ async function getMoodleAjax() {
 }
 
 /**
- * Lista las secciones (número + nombre) de un curso.
+ * Lists the sections (number + name) of a course.
  *
  * @param {number} courseId
  * @returns {Promise<Array<{section: number, name: string}>>}

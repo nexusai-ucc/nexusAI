@@ -1,8 +1,8 @@
 /**
- * Cliente API del generador de quiz (Feature F / SP-03 / SP-05 / SP-10).
- * Llama a local_nexusai_quiz_generate, local_nexusai_quiz_evaluate y a las
- * funciones de repaso de errores (quiz_errors_*, quiz_review_suggestions)
- * vía core/ajax.
+ * API client of the quiz generator (Feature F / SP-03 / SP-05 / SP-10).
+ * Calls local_nexusai_quiz_generate, local_nexusai_quiz_evaluate and the
+ * error review functions (quiz_errors_*, quiz_review_suggestions)
+ * through core/ajax.
  */
 
 const MOCK_QUIZ = {
@@ -58,14 +58,14 @@ async function getMoodleAjax() {
 }
 
 /**
- * Genera un quiz de práctica.
+ * Generates a practice quiz.
  *
  * @param {Object} params
  * @param {number} params.courseId
- * @param {string} [params.topic]           Tema opcional (default: variedad).
- * @param {number} [params.numQuestions]    Cantidad de preguntas (default 5).
- * @param {string} [params.questionType]    Tipo: multiple_choice | true_false | open | mix | flashcard
- * @param {string} [params.difficulty]      Dificultad: easy | medium | hard (default medium)
+ * @param {string} [params.topic]           Optional topic (default: a mix).
+ * @param {number} [params.numQuestions]    Number of questions (default 5).
+ * @param {string} [params.questionType]    Type: multiple_choice | true_false | open | mix | flashcard
+ * @param {string} [params.difficulty]      Difficulty: easy | medium | hard (default medium)
  * @returns {Promise<{course_id:number, topic:?string, questions:Array}>}
  */
 export async function generateQuiz({ courseId, topic = "", numQuestions = 5, questionType = "multiple_choice", difficulty = "medium" }) {
@@ -99,21 +99,21 @@ export async function generateQuiz({ courseId, topic = "", numQuestions = 5, que
 }
 
 /**
- * Genera un banco de preguntas de EXAMEN para el docente (EVAL-01, issue #235).
+ * Generates an EXAM question bank for the teacher (EVAL-01, issue #235).
  *
- * A diferencia de generateQuiz, el docente elige explícitamente de qué
- * archivos del curso salen las preguntas (documentIds), en vez de un topic
- * libre o material aleatorio de todo el curso.
+ * Unlike generateQuiz, the teacher explicitly picks which course files the
+ * questions come from (documentIds), instead of a free topic or random
+ * material from the whole course.
  *
  * @param {Object} params
  * @param {number} params.courseId
- * @param {string[]} params.documentIds     UUIDs de los documentos elegidos (al menos 1).
- * @param {string} [params.topic]           Tema opcional para enfocar las preguntas.
- * @param {number} [params.numQuestions]    Cantidad de preguntas (default 10).
- * @param {string} [params.questionType]    Tipo: multiple_choice | true_false | open | mix
- * @param {string} [params.difficulty]      Dificultad: easy | medium | hard (default medium)
+ * @param {string[]} params.documentIds     UUIDs of the chosen documents (at least 1).
+ * @param {string} [params.topic]           Optional topic to focus the questions.
+ * @param {number} [params.numQuestions]    Number of questions (default 10).
+ * @param {string} [params.questionType]    Type: multiple_choice | true_false | open | mix
+ * @param {string} [params.difficulty]      Difficulty: easy | medium | hard (default medium)
  * @param {Array<{label:string, source:string}>} [params.focusTopics]
- *   Temas con dificultad detectada (Gaps/FAQ) a priorizar (DOC-D09, issue #390).
+ *   Topics with detected difficulty (Gaps/FAQ) to prioritize (DOC-D09, issue #390).
  * @returns {Promise<{course_id:number, topic:?string, questions:Array}>}
  */
 export async function generateExam({ courseId, documentIds, topic = "", numQuestions = 10, questionType = "multiple_choice", difficulty = "medium", focusTopics = [] }) {
@@ -149,13 +149,13 @@ export async function generateExam({ courseId, documentIds, topic = "", numQuest
 }
 
 /**
- * Evalúa la respuesta libre de un alumno a una pregunta abierta (SP-05).
+ * Grades a student's free answer to an open question (SP-05).
  *
  * @param {Object} params
  * @param {number} params.courseId
- * @param {string} params.question      Texto de la pregunta.
- * @param {string} params.modelAnswer   Respuesta modelo (explanation del quiz).
- * @param {string} params.userAnswer    Respuesta escrita por el alumno.
+ * @param {string} params.question      Question text.
+ * @param {string} params.modelAnswer   Model answer (the quiz explanation).
+ * @param {string} params.userAnswer    Answer written by the student.
  * @returns {Promise<{correct:boolean, score:number, feedback:string}>}
  */
 export async function evaluateOpenAnswer({ courseId, question, modelAnswer, userAnswer }) {
@@ -187,13 +187,13 @@ export async function evaluateOpenAnswer({ courseId, question, modelAnswer, user
 }
 
 /**
- * Persiste las preguntas que el alumno respondió mal en un quiz (SP-10).
- * Best-effort: si falla (red, Moodle no disponible), el caller no debe
- * bloquear el flujo del quiz por esto.
+ * Stores the questions the student got wrong in a quiz (SP-10).
+ * Best effort: if it fails (network, Moodle unavailable), the caller must not
+ * block the quiz flow because of it.
  *
  * @param {Object} params
  * @param {number} params.courseId
- * @param {Array}  params.errors  Errores en el shape que arma QuizPanel.
+ * @param {Array}  params.errors  Errors in the shape QuizPanel builds.
  * @returns {Promise<{stored:number}>}
  */
 export async function recordQuizErrors({ courseId, errors }) {
@@ -225,7 +225,7 @@ export async function recordQuizErrors({ courseId, errors }) {
 }
 
 /**
- * Lista el historial de errores de quiz del alumno en el curso (SP-10).
+ * Lists the student's quiz error history in the course (SP-10).
  *
  * @param {number} courseId
  * @param {number} [days=90]
@@ -246,7 +246,7 @@ export async function listQuizErrors(courseId, days = 90, limit = 100, offset = 
 }
 
 /**
- * Borra el historial de errores de quiz del alumno en el curso (SP-10).
+ * Deletes the student's quiz error history in the course (SP-10).
  *
  * @param {number} courseId
  * @returns {Promise<{deleted:number}>}
@@ -264,8 +264,8 @@ export async function clearQuizErrors(courseId) {
 }
 
 /**
- * Persiste el resultado de un quiz completado por el alumno (SP-09).
- * Best-effort: el caller no debe bloquear el flujo si falla.
+ * Stores the result of a quiz the student completed (SP-09).
+ * Best effort: the caller must not block the flow if it fails.
  *
  * @param {Object} params
  * @param {number} params.courseId
@@ -295,7 +295,7 @@ export async function saveQuizAttempt({ courseId, questionType, difficulty = "me
 }
 
 /**
- * Lista el historial de quizzes completados por el alumno en el curso (SP-09).
+ * Lists the quizzes the student completed in the course (SP-09).
  *
  * @param {number} courseId
  * @param {number} [days=90]
@@ -323,7 +323,7 @@ export async function listQuizAttempts(courseId, days = 90, limit = 20) {
 }
 
 /**
- * Sugerencias de repaso basadas en los errores más frecuentes del alumno (SP-10).
+ * Review suggestions based on the student's most frequent errors (SP-10).
  *
  * @param {number} courseId
  * @param {number} [days=90]
@@ -342,7 +342,7 @@ export async function getReviewSuggestions(courseId, days = 90) {
 }
 
 /**
- * Plan de estudio personalizado: combina errores de quiz + gaps del chat.
+ * Personalized study plan: combines quiz errors + chat gaps.
  *
  * @param {number} courseId
  * @param {number} [days=30]
@@ -376,11 +376,11 @@ export async function getStudyPlan(courseId, days = 30) {
 }
 
 /**
- * Descarta un tema puntual del plan de estudio (SP-13 / #323) — sin borrar
- * el historial subyacente de quiz_errors/unanswered_questions. Opera sobre
- * los IDs reales de fila (`StudyPlanTopic.quiz_error_ids`/`gap_question_ids`),
- * no sobre el texto del topic (lo genera el LLM en cada llamada, no es una
- * clave estable).
+ * Dismisses one topic of the study plan (SP-13 / #323) — without deleting
+ * the underlying quiz_errors/unanswered_questions history. Works on the real
+ * row IDs (`StudyPlanTopic.quiz_error_ids`/`gap_question_ids`), not on the
+ * topic text (the LLM generates it on every call, it is not a stable
+ * key).
  *
  * @param {number} courseId
  * @param {string[]} quizErrorIds
@@ -407,12 +407,12 @@ export async function dismissStudyPlanTopic(courseId, quizErrorIds = [], gapQues
 }
 
 /**
- * Sugiere una dificultad de partida para el generador de quiz, basada en el
- * historial de intentos del alumno (SP-12 / #322). Es solo una sugerencia —
- * el alumno siempre puede elegir otra dificultad a mano.
+ * Suggests a starting difficulty for the quiz generator, based on the
+ * student's attempt history (SP-12 / #322). It is only a suggestion —
+ * the student can always pick another difficulty by hand.
  *
  * @param {number} courseId
- * @param {string} [topic] Tema elegido; vacío = historial general del curso.
+ * @param {string} [topic] Chosen topic; empty = general course history.
  * @returns {Promise<{difficulty:?string, reason:?string, based_on_attempts:number, accuracy_pct:?number}>}
  */
 export async function suggestDifficulty(courseId, topic = "") {
@@ -436,10 +436,10 @@ export async function suggestDifficulty(courseId, topic = "") {
 }
 
 /**
- * Repetición espaciada de flashcards (SM-2) — SP-11 / #315.
+ * Spaced repetition of flashcards (SM-2) — SP-11 / #315.
  *
- * Cuántas flashcards ya generadas "tocan hoy" vs. el total generado hasta
- * ahora en el curso (persistidas por generateQuiz cuando questionType es
+ * How many already generated flashcards are "due today" vs. the total
+ * generated so far in the course (stored by generateQuiz when questionType is
  * "flashcard").
  *
  * @param {number} courseId
@@ -465,8 +465,8 @@ export async function getFlashcardsSummary(courseId, topic = "") {
 }
 
 /**
- * Flashcards ya generadas que "tocan hoy" (más vencidas primero), del banco
- * persistido — sin llamar al LLM (SP-11 / #315).
+ * Already generated flashcards that are "due today" (most overdue first), from
+ * the stored bank — without calling the LLM (SP-11 / #315).
  *
  * @param {number} courseId
  * @param {string} [topic]
@@ -486,9 +486,9 @@ export async function getDueFlashcards(courseId, topic = "", limit = 10) {
 }
 
 /**
- * Aplica repetición espaciada (SM-2) sobre el resultado de autoevaluación de
- * una sesión de flashcards. Se llama UNA vez al final de la sesión (SP-11 /
- * #315), no por-tarjeta. Best-effort: no debe bloquear el flujo si falla.
+ * Applies spaced repetition (SM-2) to the self-assessment result of a
+ * flashcard session. Called ONCE at the end of the session (SP-11 /
+ * #315), not per card. Best effort: must not block the flow if it fails.
  *
  * @param {number} courseId
  * @param {Array<{flashcardId:string, knewIt:boolean}>} reviews
@@ -511,8 +511,8 @@ export async function submitFlashcardReviews(courseId, reviews) {
 }
 
 /**
- * Racha de días consecutivos de actividad del alumno en el curso (intentos
- * de quiz o preguntas al chat) — SP-16 / #354.
+ * Streak of consecutive days of activity of the student in the course (quiz
+ * attempts or chat questions) — SP-16 / #354.
  *
  * @param {number} courseId
  * @returns {Promise<{current_streak:number, practiced_today:boolean}>}

@@ -1,9 +1,9 @@
 /**
- * GapsPanel — vista del docente con preguntas que el material no respondió.
+ * GapsPanel — teacher view with the questions the material did not answer.
  *
- * Feedback loop pedagógico: muestra los temas que los alumnos consultan pero
- * que el material indexado no cubre bien. Datos vienen del backend Python
- * a través de la external function `local_nexusai_gaps_list`.
+ * Teaching feedback loop: shows the topics students ask about but the
+ * indexed material does not cover well. The data comes from the external
+ * function `local_nexusai_gaps_list`.
  */
 
 import { useEffect, useState } from "react";
@@ -51,8 +51,8 @@ function similarityLabel(sim, lang = "es") {
     return { text: "partial match", level: "low" };
 }
 
-// UX-15 (#385): cantidad de gaps que se piden por página, tanto en la
-// carga inicial como en cada "Cargar más".
+// UX-15 (#385): number of gaps requested per page, both on the initial
+// load and on each "Load more".
 const PAGE_SIZE = 30;
 
 export default function GapsPanel({ courseId, lang = "es" }) {
@@ -178,8 +178,8 @@ export default function GapsPanel({ courseId, lang = "es" }) {
         try {
             await archiveGap(courseId, item.question_ids, nextArchived);
             if (!showArchived) {
-                // Vista default: un gap recién archivado deja de matchear el
-                // filtro (archived_at IS NULL), así que sale de la lista.
+                // Default view: a just archived gap stops matching the
+                // filter (archived_at IS NULL), so it leaves the list.
                 setItems((prev) => prev.filter((_, i) => i !== idx));
                 setTotal((prev) => Math.max(0, prev - 1));
             } else {

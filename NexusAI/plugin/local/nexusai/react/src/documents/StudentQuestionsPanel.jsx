@@ -1,10 +1,10 @@
 /**
- * StudentQuestionsPanel — unifica "Preguntas frecuentes" y "Gaps
- * detectados" bajo un solo destino de navegación, con un selector
- * interno (RDS-08, #416). Mismo patrón que StudyPanel.jsx del alumno
- * (selector Plan/Practicar/Repaso envolviendo sub-paneles
- * independientes). No modifica la lógica de FaqDashboardPanel ni
- * GapsPanel — solo decide cuál de los dos montar.
+ * StudentQuestionsPanel — brings "Frequent questions" and "Detected gaps"
+ * under a single navigation destination, with an inner selector
+ * (RDS-08, #416). Same pattern as the student's StudyPanel.jsx
+ * (Plan/Practice/Review selector wrapping independent sub-panels).
+ * It does not change the logic of FaqDashboardPanel or
+ * GapsPanel — it only decides which of the two to mount.
  */
 
 import { useState } from "react";

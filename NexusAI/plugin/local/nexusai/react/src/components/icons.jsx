@@ -1,15 +1,15 @@
 /**
- * Iconos inline estilo lucide (lo que usa shadcn/ui).
+ * Inline lucide-style icons (what shadcn/ui uses).
  *
- * Convención:
+ * Convention:
  *   - viewBox 24x24
- *   - stroke=currentColor, fill=none (excepto los "filled" indicados)
+ *   - stroke=currentColor, fill=none (except the "filled" ones noted)
  *   - strokeLinecap/Linejoin="round", strokeWidth=2
- *   - default size=16 (overrideable con prop size)
+ *   - default size=16 (overridable with the size prop)
  *
- * Reemplazan emojis para que la UI quede consistente con el resto del sistema
- * shadcn (sin variaciones tipográficas, sin OS-specific glyphs, color hereda
- * del padre via currentColor).
+ * They replace emojis so the UI stays consistent with the rest of the
+ * shadcn system (no typographic variations, no OS-specific glyphs, the color
+ * is inherited from the parent via currentColor).
  */
 
 import React from "react";
@@ -51,7 +51,7 @@ export const IconBookOpen = ({ size = 14 }) => (
     </svg>
 );
 
-// ── Globe (multi-curso) ────────────────────────────────────────────────────
+// ── Globe (multi-course) ───────────────────────────────────────────────────
 export const IconGlobe = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <circle cx="12" cy="12" r="10" />
@@ -78,7 +78,7 @@ export const IconClock = ({ size = 14 }) => (
     </svg>
 );
 
-// ── RefreshCw (regenerar respuesta — ASIST-03) ──────────────────────────────
+// ── RefreshCw (regenerate answer — ASIST-03) ────────────────────────────────
 export const IconRefreshCw = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <polyline points="23 4 23 10 17 10" />
@@ -97,7 +97,7 @@ export const IconTarget = ({ size = 14 }) => (
     </svg>
 );
 
-// ── Calendar (exámenes / entregas — CAL-01) ─────────────────────────────────
+// ── Calendar (exams / due dates — CAL-01) ───────────────────────────────────
 export const IconCalendar = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -116,7 +116,7 @@ export const IconHelpCircle = ({ size = 14 }) => (
     </svg>
 );
 
-// ── Info (pestaña Ayuda, ONB-07 — círculo con "i", distinto del "?" de HelpCircle) ──
+// ── Info (Help tab, ONB-07 — circle with "i", different from HelpCircle's "?") ──
 export const IconInfo = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <circle cx="12" cy="12" r="10" />
@@ -184,7 +184,7 @@ export const IconFlame = ({ size = 16 }) => (
     </svg>
 );
 
-// ── ThumbsDown (ASIST-01: feedback negativo sobre una respuesta) ───────────
+// ── ThumbsDown (ASIST-01: negative feedback on an answer) ──────────────────
 export const IconThumbsDown = ({ size = 22 }) => (
     <svg {...baseProps(size)}>
         <path d="M17 14V2" />
@@ -208,7 +208,7 @@ export const IconSearch = ({ size = 14 }) => (
     </svg>
 );
 
-// ── Grid (menú de navegación — UX-01) ───────────────────────────────────────
+// ── Grid (navigation menu — UX-01) ──────────────────────────────────────────
 export const IconGrid = ({ size = 16 }) => (
     <svg {...baseProps(size)}>
         <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -225,7 +225,7 @@ export const IconChevronRight = ({ size = 12 }) => (
     </svg>
 );
 
-// ── Chevron left (CAL-05: navegación de mes) ───────────────────────────────
+// ── Chevron left (CAL-05: month navigation) ────────────────────────────────
 export const IconChevronLeft = ({ size = 12 }) => (
     <svg {...baseProps(size)}>
         <polyline points="15 18 9 12 15 6" />
@@ -240,7 +240,7 @@ export const IconArrowUpRight = ({ size = 14 }) => (
     </svg>
 );
 
-// ── ClipboardList (generador de exámenes — DOC-D04) ─────────────────────────
+// ── ClipboardList (exam generator — DOC-D04) ────────────────────────────────
 export const IconClipboardList = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <rect x="8" y="2" width="8" height="4" rx="1" />
@@ -287,14 +287,14 @@ export const IconAlertTriangle = ({ size = 14 }) => (
     </svg>
 );
 
-// ── MessageSquare (FOR-06: hilo de foro en el digest semanal) ──────────────
+// ── MessageSquare (FOR-06: forum thread in the weekly digest) ──────────────
 export const IconMessageSquare = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
 );
 
-// ── Mic (VOICE-01: entrada de voz en el composer del chat) ─────────────────
+// ── Mic (VOICE-01: voice input in the chat composer) ───────────────────────
 export const IconMic = ({ size = 16 }) => (
     <svg {...baseProps(size)}>
         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />

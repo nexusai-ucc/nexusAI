@@ -1,9 +1,9 @@
 /**
- * Cliente de alertas de calendario (CAL-02).
+ * Calendar alerts client (CAL-02).
  *
- * Usa las external functions de Moodle:
- *   - local_nexusai_calendar_alert_save  → guarda/actualiza/elimina una alerta
- *   - local_nexusai_calendar_alerts_list → lista alertas activas del alumno
+ * Uses Moodle's external functions:
+ *   - local_nexusai_calendar_alert_save  → saves/updates/deletes an alert
+ *   - local_nexusai_calendar_alerts_list → lists the student's active alerts
  */
 
 const MOCK_ALERTS = [
@@ -24,7 +24,7 @@ async function getMoodleAjax() {
 }
 
 /**
- * Guarda o actualiza la alerta para un evento. daysBefore=0 la elimina.
+ * Saves or updates the alert for an event. daysBefore=0 deletes it.
  *
  * @param {{ userId: number, courseId: number, eventId: number, eventName: string, eventTimestamp: number, daysBefore: number }} params
  * @returns {Promise<{ id: string|null, days_before: number }>}
@@ -53,7 +53,7 @@ export async function saveCalendarAlert({ userId, courseId, eventId, eventName, 
 }
 
 /**
- * Lista las alertas activas del alumno en el curso.
+ * Lists the student's active alerts in the course.
  *
  * @param {number} userId
  * @param {number} courseId
@@ -77,10 +77,10 @@ export async function listCalendarAlerts(userId, courseId) {
 }
 
 /**
- * URL del feed .ics suscribible del alumno para el curso (CAL-07 / #377).
+ * URL of the student's subscribable .ics feed for the course (CAL-07 / #377).
  *
  * @param {number} courseId
- * @returns {Promise<string>} URL absoluta del feed.
+ * @returns {Promise<string>} Absolute URL of the feed.
  */
 export async function getCalendarFeedUrl(courseId) {
     const ajax = await getMoodleAjax();
@@ -99,11 +99,11 @@ export async function getCalendarFeedUrl(courseId) {
 }
 
 /**
- * Rota el token del feed: la URL anterior deja de funcionar y se devuelve una
- * nueva. Corta las suscripciones de todos los cursos del alumno.
+ * Rotates the feed token: the old URL stops working and a new one is
+ * returned. It cuts the subscriptions of all the student's courses.
  *
  * @param {number} courseId
- * @returns {Promise<string>} Nueva URL absoluta del feed.
+ * @returns {Promise<string>} New absolute URL of the feed.
  */
 export async function revokeCalendarFeed(courseId) {
     const ajax = await getMoodleAjax();

@@ -1,20 +1,20 @@
 /**
- * Entrypoint del bundle de vista docente.
+ * Entry point of the teacher view bundle.
  *
- * Lo invoca Moodle desde plugin/local/nexusai/documents.php:
+ * Moodle calls it from plugin/local/nexusai/documents.php:
  *
  *   $PAGE->requires->js_call_amd('local_nexusai/documents-manager-lazy', 'init', [params]);
  *
- * Monta el componente DocumentsManager en el div #local-nexusai-documents-app
- * que la página PHP ya rendereó.
+ * Mounts the DocumentsManager component in the #local-nexusai-documents-app div
+ * the PHP page already rendered.
  */
 
 import React from "react";
 import { createRoot } from "react-dom/client";
 
 import DocumentsManager from "./DocumentsManager.jsx";
-import "../styles.css";          // Reutilizamos los estilos del chat para FAB/colores
-import "./documents.css";        // Estilos específicos de la vista docente
+import "../styles.css";          // We reuse the chat styles for FAB/colors
+import "./documents.css";        // Styles specific to the teacher view
 
 export const init = (params = {}) => {
     const container = document.getElementById("local-nexusai-documents-app");

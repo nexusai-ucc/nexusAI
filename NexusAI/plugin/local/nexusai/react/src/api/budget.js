@@ -1,7 +1,7 @@
 /**
- * Límite de tokens del usuario (DATA-05, #525): cuánto le queda por hora y
- * por día, para la barra del widget. Lo calcula Moodle con el último valor que
- * informó el backend o, si no hay, con su propio registro de consumo.
+ * The user's token limit (DATA-05, #525): how much is left per hour and
+ * per day, for the widget's bar. Moodle computes it with the last value the
+ * backend reported or, if there is none, with its own usage record.
  */
 
 async function getMoodleAjax() {
@@ -19,7 +19,7 @@ async function getMoodleAjax() {
 /**
  * @param {number} courseId
  * @returns {Promise<null|{role:string, source:string, hourly:Object, daily:Object}>}
- *   null fuera de Moodle (modo demo) o si la llamada falla: la barra no se muestra.
+ *   null outside Moodle (demo mode) or if the call fails: the bar is not shown.
  */
 export async function getBudgetStatus(courseId) {
     const ajax = await getMoodleAjax();

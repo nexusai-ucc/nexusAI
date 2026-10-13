@@ -1,12 +1,12 @@
-// UX-12 (#370): bloque de carga reutilizable. Antes los tres paneles del
-// docente (Material, Analytics, FAQ) mostraban el mismo spinner centrado
-// genérico (`.nexusai-loading` → "Cargando..."). Este componente chico y
-// sin estado dibuja barras/bloques con shimmer para armar la silueta
-// aproximada del contenido real mientras carga. Mismo criterio liviano
-// que Tooltip.jsx / Toast.jsx: cero dependencias, solo CSS.
+// UX-12 (#370): reusable loading block. Before, the three teacher panels
+// (Material, Analytics, FAQ) showed the same generic centered spinner
+// (`.nexusai-loading` → "Loading..."). This small stateless component draws
+// bars/blocks with a shimmer to build the approximate outline of the real
+// content while it loads. Same lightweight approach as Tooltip.jsx /
+// Toast.jsx: zero dependencies, only CSS.
 
-// Una barra/bloque individual. `width` y `height` aceptan cualquier unidad
-// CSS (por defecto ancho 100%, alto 12px). `radius` para cuadrados/círculos.
+// A single bar/block. `width` and `height` accept any CSS unit
+// (by default width 100%, height 12px). `radius` for squares/circles.
 export default function Skeleton({ width, height, radius, className = "", style }) {
     return (
         <span
@@ -22,9 +22,9 @@ export default function Skeleton({ width, height, radius, className = "", style 
     );
 }
 
-// Contenedor de un skeleton de pantalla completa. Envuelve la silueta y
-// expone el estado de carga a lectores de pantalla con un texto sr-only
-// (los <Skeleton> individuales van `aria-hidden`).
+// Container of a full-screen skeleton. Wraps the outline and exposes the
+// loading state to screen readers with an sr-only text
+// (the individual <Skeleton> elements are `aria-hidden`).
 export function SkeletonScreen({ label, className = "", children }) {
     return (
         <div className={`nexusai-skeleton-screen ${className}`} role="status" aria-live="polite">
@@ -34,8 +34,8 @@ export function SkeletonScreen({ label, className = "", children }) {
     );
 }
 
-// Grupo de N líneas de texto de anchos decrecientes (la última más corta),
-// útil para párrafos y listas.
+// Group of N text lines of decreasing widths (the last one shorter),
+// handy for paragraphs and lists.
 export function SkeletonText({ lines = 3, className = "" }) {
     return (
         <span className={`nexusai-skeleton-text ${className}`} aria-hidden="true">

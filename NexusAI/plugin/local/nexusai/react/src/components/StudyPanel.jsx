@@ -1,14 +1,14 @@
 /**
- * StudyPanel — "Modo Estudio" (UX-01 + Plan de Estudio Personalizado).
+ * StudyPanel — "Study mode" (UX-01 + Personalized Study Plan).
  *
- * Wrapper liviano que unifica Plan (recomendaciones), Quiz (práctica) y
- * Repaso (historial de errores) bajo un solo destino de navegación, con
- * un selector interno. "Plan" es el modo por default: es lo primero que
- * ve el alumno al entrar a Modo Estudio, para que el producto sea
- * proactivo (le dice qué hacer) en vez de reactivo (esperar a que
- * se le ocurra qué pedir). No modifica la lógica de QuizPanel ni
- * ReviewPanel — solo decide cuál de los tres montar, y le pasa a
- * QuizPanel el tema elegido desde el Plan cuando corresponde.
+ * Light wrapper that brings Plan (recommendations), Quiz (practice) and
+ * Review (error history) under a single navigation destination, with an
+ * inner selector. "Plan" is the default mode: it is the first thing the
+ * student sees when entering Study mode, so the product is proactive
+ * (tells them what to do) instead of reactive (waiting for them to think
+ * of what to ask). It does not change the logic of QuizPanel or
+ * ReviewPanel — it only decides which of the three to mount, and passes
+ * QuizPanel the topic chosen from the Plan when it applies.
  */
 
 import { useEffect, useState } from "react";
@@ -21,16 +21,16 @@ import { IconFlame } from "./icons.jsx";
 export default function StudyPanel({ courseId, sesskey, lang = "es" }) {
     const [mode, setMode] = useState("plan"); // "plan" | "practice" | "review"
     const [plannedTopic, setPlannedTopic] = useState("");
-    // SP-16 (#354): racha visible en las 3 tabs (Plan/Practicar/Repaso) — la
-    // actividad de quiz pasa en "Practicar", no solo en "Plan", así que vive
-    // en el wrapper persistente y no adentro de StudyPlanPanel.
+    // SP-16 (#354): streak visible in the 3 tabs (Plan/Practice/Review) — quiz
+    // activity happens in "Practice", not only in "Plan", so it lives in the
+    // persistent wrapper and not inside StudyPlanPanel.
     const [streak, setStreak] = useState(null);
 
     useEffect(() => {
         let cancelled = false;
         getStudyStreak(courseId)
             .then((data) => { if (!cancelled) setStreak(data); })
-            .catch(() => { /* sin racha visible: no bloquea el resto del panel */ });
+            .catch(() => { /* no visible streak: does not block the rest of the panel */ });
         return () => { cancelled = true; };
     }, [courseId]);
 

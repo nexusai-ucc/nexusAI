@@ -13,6 +13,13 @@
 # El bundle de React (amd/build/*.min.js) ya viene commiteado en ese repo
 # (ver su .gitignore), así que no hace falta Node/npm para nada acá.
 #
+# La fuente de React SÍ viaja en el ZIP (MMR-301 item 8, GPL: quien recibe el
+# bundle minificado tiene que recibir con qué se armó): react/src, package.json,
+# package-lock.json, webpack.config.js, .babelrc y README.md. Solo quedan
+# afuera los tests (*.test.js/jsx, vitest.*, scripts/run-vitest.js) y lo que
+# genera npm (node_modules, dist, coverage, .cache), que no hacen falta para
+# volver a compilar el bundle.
+#
 # lang/es/ se excluye SOLO del ZIP (queda intacto en el repo, para quien
 # quiera clonar y usar el plugin en local en español). La guía de
 # Marketplace dice explícitamente que la publicación inicial debe incluir
@@ -80,16 +87,14 @@ zip -r "${REPO_ROOT}/${DIST_DIR}/${ZIP_NAME}" "nexusai" \
     -x "nexusai/.gitignore" \
     -x "nexusai/react/node_modules/*" \
     -x "nexusai/react/.cache/*" \
-    -x "nexusai/react/src/*" \
-    -x "nexusai/react/package-lock.json" \
-    -x "nexusai/react/webpack.config.js" \
-    -x "nexusai/react/babel.config.json" \
-    -x "nexusai/react/.babelrc" \
+    -x "nexusai/react/dist/*" \
+    -x "nexusai/react/coverage/*" \
+    -x "nexusai/react/src/*.test.js" \
+    -x "nexusai/react/src/*.test.jsx" \
     -x "nexusai/react/vitest.setup.js" \
     -x "nexusai/react/vitest.config.js" \
     -x "nexusai/react/scripts/*" \
     -x "nexusai/react/.eslintrc*" \
-    -x "nexusai/react/README.md" \
     -x "nexusai/lang/es/*" \
     -x "*.gitignore" \
     -x "*.gitkeep" \

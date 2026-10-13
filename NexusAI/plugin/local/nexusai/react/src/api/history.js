@@ -1,10 +1,10 @@
 /**
- * Cliente API del historial de conversaciones (Feature E).
+ * API client of the conversation history (Feature E).
  *
- * Llama a las external functions:
- *   - local_nexusai_chat_sessions_list  → listado del sidebar
- *   - local_nexusai_chat_session_messages → mensajes para retomar conversación
- *   - local_nexusai_chat_session_delete → borrar una sesión puntual (ASIST-02)
+ * Calls the external functions:
+ *   - local_nexusai_chat_sessions_list  → sidebar list
+ *   - local_nexusai_chat_session_messages → messages to resume a conversation
+ *   - local_nexusai_chat_session_delete → deletes one session (ASIST-02)
  */
 
 async function getMoodleAjax() {
@@ -21,11 +21,11 @@ async function getMoodleAjax() {
 }
 
 /**
- * Lista sesiones previas del usuario.
+ * Lists the user's previous sessions.
  *
  * @param {Object}  params
  * @param {number}  params.courseId
- * @param {boolean} [params.scopeCourse]  Default true: solo este curso. false: todas.
+ * @param {boolean} [params.scopeCourse]  Default true: only this course. false: all.
  * @param {number}  [params.limit]        Default 20.
  */
 export async function listSessions({ courseId, scopeCourse = true, limit = 20 }) {
@@ -63,7 +63,7 @@ export async function listSessions({ courseId, scopeCourse = true, limit = 20 })
 }
 
 /**
- * Carga los mensajes de una sesión existente.
+ * Loads the messages of an existing session.
  *
  * @param {Object} params
  * @param {number} params.courseId
@@ -91,7 +91,7 @@ export async function getSessionMessages({ courseId, sessionId }) {
 }
 
 /**
- * Borra una sesión puntual del historial (ASIST-02, #350).
+ * Deletes one session from the history (ASIST-02, #350).
  *
  * @param {Object} params
  * @param {number} params.courseId

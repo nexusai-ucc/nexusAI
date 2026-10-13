@@ -1,12 +1,12 @@
 /**
- * HelpPanel — pestaña "Ayuda" de NexusAI Materiales (ONB-07 / #430).
+ * HelpPanel — "Help" tab of NexusAI Materials (ONB-07 / #430).
  *
- * Explica qué es y para qué sirve cada una de las 5 herramientas del panel
- * docente. Copy transcripto de `AYUDA_DOCENTE_ONBOARDING.md` sección 5
- * (ONB-08 / #431) — traducción directa al inglés, el doc fuente solo tiene
- * español.
+ * Explains what each of the 5 tools of the teacher panel is and what it is
+ * for. Copy taken from `AYUDA_DOCENTE_ONBOARDING.md` section 5
+ * (ONB-08 / #431) — direct translation to English, the source doc is only
+ * in Spanish.
  *
- * Contenido 100% estático, sin llamadas a la API.
+ * 100% static content, no API calls.
  */
 
 const T = {

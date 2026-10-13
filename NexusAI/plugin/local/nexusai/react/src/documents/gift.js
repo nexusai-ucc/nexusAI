@@ -1,16 +1,16 @@
 /**
- * Conversor a formato GIFT de Moodle (EVAL-02, issue #235).
+ * Converter to Moodle's GIFT format (EVAL-02, issue #235).
  *
- * GIFT es el formato de texto plano que Moodle usa para importar preguntas
- * al banco de preguntas de un curso (Site administration → Question bank →
- * Import). La conversión y la descarga se hacen enteramente en el browser —
- * no hay round-trip al backend para esto.
+ * GIFT is the plain-text format Moodle uses to import questions into a
+ * course's question bank (Site administration → Question bank →
+ * Import). The conversion and the download happen entirely in the browser —
+ * there is no round-trip to the backend for this.
  *
- * Referencia: https://docs.moodle.org/en/GIFT_format
+ * Reference: https://docs.moodle.org/en/GIFT_format
  */
 
-// Caracteres con significado especial en GIFT que hay que escapar dentro de
-// texto de pregunta/respuesta: ~ = # { } y el propio backslash.
+// Characters with a special meaning in GIFT that must be escaped inside
+// question/answer text: ~ = # { } and the backslash itself.
 function escapeGift(text) {
     return String(text ?? "").replace(/[\\~=#{}]/g, (ch) => `\\${ch}`);
 }
@@ -32,14 +32,14 @@ function questionToGift(q, index, lang) {
     }
 
     if (q.question_type === "open") {
-        // GIFT no tiene "pregunta abierta evaluada por IA" — se exporta como
-        // essay (grading manual en Moodle). La respuesta modelo va como
-        // comentario del docente, no como parte del bloque de respuesta.
+        // GIFT has no "open question graded by AI" — it is exported as an
+        // essay (manual grading in Moodle). The model answer goes as a
+        // teacher comment, not as part of the answer block.
         const modelAnswer = q.explanation ? `\n// ${T.modelAnswer}: ${q.explanation.replace(/\n/g, " ")}` : "";
         return `::${title}::${stem} {}${modelAnswer}`;
     }
 
-    // multiple_choice (y cualquier otro tipo con options, por si "mix" trae algo inesperado)
+    // multiple_choice (and any other type with options, in case "mix" brings something unexpected)
     const options = (q.options || []).map((opt, i) => {
         const marker = i === q.correct_index ? "=" : "~";
         return `${marker}${escapeGift(opt)}`;
@@ -48,8 +48,8 @@ function questionToGift(q, index, lang) {
 }
 
 /**
- * Convierte una lista de preguntas (shape QuizQuestion del backend) a un
- * string GIFT completo, listo para descargar como .txt.
+ * Converts a list of questions (the backend's QuizQuestion shape) to a
+ * complete GIFT string, ready to download as .txt.
  *
  * @param {Array} questions
  * @param {string} [lang] 'es' | 'en' — language of the generated titles/comments.
@@ -60,7 +60,7 @@ export function toGiftFormat(questions, lang = "es") {
 }
 
 /**
- * Dispara la descarga de un archivo .txt GIFT en el browser (sin request al server).
+ * Fires the download of a GIFT .txt file in the browser (no request to the server).
  *
  * @param {Array} questions
  * @param {string} [filename]

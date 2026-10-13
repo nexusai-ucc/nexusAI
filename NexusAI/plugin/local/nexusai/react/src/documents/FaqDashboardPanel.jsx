@@ -1,10 +1,10 @@
 /**
- * FaqDashboardPanel — vista del docente con las preguntas más repetidas de
- * sus alumnos, agrupadas por tema (DOC-D02).
+ * FaqDashboardPanel — teacher view with the questions their students repeat
+ * the most, grouped by topic (DOC-D02).
  *
- * No hay clustering semántico en el schema: el backend agrupa primero por
- * texto normalizado y le pide a un LLM que sintetice esos grupos en temas.
- * Datos vienen de la external function `local_nexusai_analytics_faq_topics`.
+ * There is no semantic clustering in the schema: the questions are first
+ * grouped by normalized text and an LLM synthesizes those groups into topics.
+ * The data comes from the external function `local_nexusai_analytics_faq_topics`.
  */
 
 import { useEffect, useState } from "react";
@@ -14,8 +14,8 @@ import { IconHelpCircle, IconDownload } from "../components/icons.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
 import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
 
-// UX-12 (#370): silueta de carga — grilla de cards de tema, cada una con
-// título + un par de líneas de preguntas de ejemplo.
+// UX-12 (#370): loading skeleton — grid of topic cards, each one with a
+// title + a couple of lines of example questions.
 function FaqSkeleton({ lang = "es" }) {
     return (
         <SkeletonScreen label={lang === "es" ? "Cargando preguntas frecuentes..." : "Loading frequently asked questions..."}>

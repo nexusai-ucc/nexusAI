@@ -1,19 +1,19 @@
 /**
- * StudyPlanPanel — plan de estudio personalizado.
+ * StudyPlanPanel — personalized study plan.
  *
- * Combina errores de quiz + preguntas de chat que el material no pudo
- * responder bien (`local_nexusai_quiz_study_plan`) con el próximo evento
- * del calendario del curso (`getUpcomingEvents`, CAL-01, 100% client-side)
- * para decirle al alumno qué repasar y por qué, sin que tenga que
- * pedirlo. El banner de examen y la lista de temas son dos señales en
- * paralelo — no se correlaciona un examen puntual con un tema específico
- * (ver plan de esta feature para el porqué).
+ * Combines quiz errors + chat questions the material could not answer well
+ * (`local_nexusai_quiz_study_plan`) with the next event of the course
+ * calendar (`getUpcomingEvents`, CAL-01, 100% client-side)
+ * to tell the student what to review and why, without them having to
+ * ask. The exam banner and the topic list are two parallel signals —
+ * a specific exam is not correlated with a specific topic (see this
+ * feature's plan for the reason).
  *
- * También ofrece el resumen de repaso pre-parcial (BUS-04): el alumno elige
- * opcionalmente una unidad y genera un resumen combinado de todo el material
- * indexado relevante — reusa `getPreExamSummary`, sin vincular automáticamente
- * el examen del banner con una unidad (mismo motivo que arriba: no hay ese
- * dato hoy, lo elige el alumno).
+ * It also offers the pre-exam review summary (BUS-04): the student
+ * optionally picks a section and generates a combined summary of all the
+ * relevant indexed material — it reuses `getPreExamSummary`, without
+ * automatically linking the banner's exam to a section (same reason as above:
+ * that data does not exist today, the student picks it).
  */
 
 import { useEffect, useState } from "react";
@@ -79,10 +79,10 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
         sourcesLabel:   (n) => `Based on ${n} document${n === 1 ? "" : "s"}`,
     };
 
-    // `topic` es texto generado por el LLM en cada llamada, no una clave
-    // estable (ver StudyPlanTopic en app/quiz/router.py) — identificamos cada
-    // tema por los IDs reales que lo sustentan, no por su posición en la
-    // lista, así dos dismissals concurrentes no se pisan entre sí.
+    // `topic` is text the LLM generates on every call, not a stable key (see
+    // StudyPlanTopic in app/quiz/router.py) — we identify each topic by the
+    // real IDs behind it, not by its position in the list, so two concurrent
+    // dismissals do not overwrite each other.
     const topicKey = (t) => `${(t.quiz_error_ids || []).join(",")}|${(t.gap_question_ids || []).join(",")}`;
 
     const handleDismissTopic = async (t) => {
@@ -92,7 +92,7 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
             await dismissStudyPlanTopic(courseId, t.quiz_error_ids || [], t.gap_question_ids || []);
             setTopics((prev) => prev.filter((topic) => topicKey(topic) !== key));
         } catch {
-            // Falla silenciosa: el tema queda visible, el alumno puede reintentar.
+            // Silent failure: the topic stays visible, the student can retry.
         } finally {
             setDismissingKey(null);
         }
@@ -122,11 +122,11 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
         setLoading(true);
         setError(null);
 
-        // Fetches independientes: el calendario es una señal secundaria (el
-        // banner de deadline) y no debe tumbar el plan de estudio si falla
-        // — ej. core_calendar_get_action_events_by_course tira excepción en
-        // Moodle para usuarios no matriculados en el curso (admin sin rol de
-        // alumno), un caso real que no debería romper el plan en sí.
+        // Independent fetches: the calendar is a secondary signal (the
+        // deadline banner) and must not take down the study plan if it fails
+        // — e.g. core_calendar_get_action_events_by_course throws in Moodle
+        // for users not enrolled in the course (admin without a student role),
+        // a real case that should not break the plan itself.
         getStudyPlan(courseId)
             .then((planData) => { if (!cancelled) setTopics(planData?.topics || []); })
             .catch(() => { if (!cancelled) setError(L.error); })
