@@ -128,8 +128,9 @@ class forum_search_similar extends external_api {
         $posts = [];
         foreach (($response['similar_posts'] ?? []) as $p) {
             $discussionid = (int) ($p['discussion_id'] ?? 0);
-            if ($discussionid <= 0 ||
-                    !\local_nexusai\local\forum_access_guard::can_view_discussion($discussionid, (int) $params['courseid'])) {
+            $canview = $discussionid > 0 &&
+                \local_nexusai\local\forum_access_guard::can_view_discussion($discussionid, (int) $params['courseid']);
+            if (!$canview) {
                 continue;
             }
             $posts[] = [
