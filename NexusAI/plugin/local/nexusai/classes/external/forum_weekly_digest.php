@@ -159,11 +159,10 @@ class forum_weekly_digest extends external_api {
 
         $discussions = [];
         foreach ($discussionrows as $drow) {
+            // Authors go out as pseudonyms, numbered per discussion: no name leaves Moodle.
             $postrows = $DB->get_records_sql(
-                "SELECT fp.id, fp.message,
-                        " . $DB->sql_fullname('u.firstname', 'u.lastname') . " AS author
+                "SELECT fp.id, fp.message, fp.userid
                    FROM {forum_posts} fp
-                   JOIN {user} u ON u.id = fp.userid
                   WHERE fp.discussion = :discussionid
                     AND fp.created >= :since
                ORDER BY fp.created ASC",
@@ -173,6 +172,7 @@ class forum_weekly_digest extends external_api {
             );
 
             $posts = [];
+            $aliases = new \local_nexusai\local\forum_author_alias();
             foreach ($postrows as $prow) {
                 $content = strip_tags($prow->message);
                 $content = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -185,7 +185,7 @@ class forum_weekly_digest extends external_api {
                 }
                 $posts[] = [
                     'post_id' => (int) $prow->id,
-                    'author'  => (string) $prow->author,
+                    'author'  => $aliases->for_user((int) $prow->userid),
                     'content' => $content,
                 ];
             }

@@ -104,12 +104,10 @@ class forum_summarize_thread extends external_api {
             (int) $params['courseid']
         );
 
-        // Read the discussion's posts along with the author's name.
-        // We order by created ASC so the LLM reads them in chronological order.
-        $sql = "SELECT fp.id, fp.message, fp.created,
-                       " . $DB->sql_fullname('u.firstname', 'u.lastname') . " AS author
+        // Read the discussion's posts in chronological order, so the LLM reads them in order.
+        // Authors go out as pseudonyms (forum_author_alias): no name leaves Moodle.
+        $sql = "SELECT fp.id, fp.message, fp.created, fp.userid
                   FROM {forum_posts} fp
-                  JOIN {user} u ON u.id = fp.userid
                  WHERE fp.discussion = :discussionid
               ORDER BY fp.created ASC";
 
@@ -127,6 +125,7 @@ class forum_summarize_thread extends external_api {
 
         // Build the posts array for the backend, truncating if needed.
         $posts         = [];
+        $aliases       = new \local_nexusai\local\forum_author_alias();
         $poststruncated = false;
         $count         = 0;
 
@@ -151,7 +150,7 @@ class forum_summarize_thread extends external_api {
 
             $posts[] = [
                 'post_id' => (int) $row->id,
-                'author'  => (string) $row->author,
+                'author'  => $aliases->for_user((int) $row->userid),
                 'content' => $content,
             ];
             $count++;

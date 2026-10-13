@@ -39,6 +39,13 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Fixed: deleting a user's data through the Privacy API removed the plugin's
   own tables but left that user's forum posts indexed in the backend's
   similarity search; it is now purged as part of the same deletion.
+- Changed: forum posts go to the backend with each author replaced by a
+  pseudonym ("Participant 1"…), numbered per thread, in thread summaries,
+  reply suggestions and the weekly digest; author names no longer leave Moodle.
+- Changed: the Privacy API declares everything that leaves Moodle: forum
+  posts, voice recordings and the user's role are added to what the backend
+  receives, and two new external locations cover the AI provider the backend
+  uses and the forum digest webhook.
 - Fixed: a multi-course chat question searched every enrolled course with
   NexusAI on, without checking the user still has `local/nexusai:use` in each
   one individually.
