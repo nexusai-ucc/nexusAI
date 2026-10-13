@@ -82,7 +82,6 @@ After saving: **Site administration → Development → Purge all caches**.
 |---|---|---|
 | `local/nexusai:use` | student, teacher, manager | Use the chat, search, quizzes, study plan, calendar and AI-powered forums |
 | `local/nexusai:manage` | editingteacher, manager | Manage material, view Analytics, generate exams, configure the forum digest |
-| `local/nexusai:viewanalytics` | editingteacher, manager | View the course Analytics dashboard |
 
 ## Compatibility
 

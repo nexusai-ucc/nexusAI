@@ -129,4 +129,19 @@ class course_guard {
     public static function show_outside_course(): bool {
         return self::plugin_enabled() && !empty(get_config('local_nexusai', 'show_outside_course'));
     }
+
+    /**
+     * Whether the connection to the backend is filled in (endpoint, API key and
+     * shared secret). Without it the chat cannot answer anything.
+     *
+     * @return bool
+     */
+    public static function backend_configured(): bool {
+        foreach (['api_endpoint', 'api_key', 'shared_secret'] as $name) {
+            if (trim((string) get_config('local_nexusai', $name)) === '') {
+                return false;
+            }
+        }
+        return true;
+    }
 }

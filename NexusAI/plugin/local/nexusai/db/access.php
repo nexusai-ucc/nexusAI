@@ -54,16 +54,4 @@ $capabilities = [
             'manager'        => CAP_ALLOW,
         ],
     ],
-
-    // Allows viewing a course's aggregated analytics dashboard (learning
-    // gaps, frequent questions, etc.).
-    // Post-MVP, but we define it now to avoid migrating it later.
-    'local/nexusai:viewanalytics' => [
-        'captype'      => 'read',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes'   => [
-            'editingteacher' => CAP_ALLOW,
-            'manager'        => CAP_ALLOW,
-        ],
-    ],
 ];
