@@ -70,6 +70,12 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   backend. The forum observers queue the new `sync_forum_post` ad hoc task,
   which indexes the post as it is when cron runs (or removes it); an identical
   pending task is not queued twice.
+- Changed: no event observer calls the backend any more. Editing or deleting a
+  "File" activity queues the new `sync_material` ad hoc task (which may
+  re-upload the file), and deleting a course or a user's data queues
+  `purge_backend_data` for the backend's copies (the course's documents, the
+  user's indexed forum posts in batches of 200). The plugin's own rows are
+  still removed right away.
 - Changed: the release ZIP now includes the React source of the chat widget
   and of the teacher view (`react/src`, `package.json`, `package-lock.json`,
   `webpack.config.js`, `.babelrc` and a build `README.md`), so the minified

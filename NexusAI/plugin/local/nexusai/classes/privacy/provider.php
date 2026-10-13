@@ -469,8 +469,9 @@ class provider implements
      *
      * The backend indexes forum posts for the similarity search (MMR-301 item 4); that
      * copy was only purged reactively through the `forum_post_deleted` event, never as
-     * part of an actual data-deletion request. Best-effort: a backend failure is logged
-     * and must not stop the rest of the deletion.
+     * part of an actual data-deletion request. The post ids are worked out here and the
+     * calls go in an ad hoc task (task\purge_backend_data), so the deletion never waits
+     * for the backend.
      *
      * @param int $courseid Course ID.
      * @param int[] $userids Users whose forum posts' embeddings should be removed.
@@ -490,21 +491,8 @@ class provider implements
             "discussion IN (SELECT id FROM {forum_discussions} WHERE course = :courseid) AND userid $insql",
             $params
         );
-        if (empty($postids)) {
-            return;
-        }
-
-        try {
-            $client = new \local_nexusai\external\backend_client();
-            $client->set_role('system');
-            foreach ($postids as $postid) {
-                $client->delete_forum_post((int) $postid);
-            }
-        } catch (\Throwable $e) {
-            debugging(
-                '[NexusAI] Could not delete forum post embeddings for course ' . $courseid . ': ' . $e->getMessage(),
-                DEBUG_NORMAL
-            );
+        if ($postids) {
+            \local_nexusai\task\purge_backend_data::queue_forum_posts($postids);
         }
     }
 

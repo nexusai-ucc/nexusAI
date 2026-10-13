@@ -15,22 +15,22 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Event observer for local_nexusai — auto-sync on course module creation.
+ * Event observers of local_nexusai.
  *
- * When a teacher creates a "resource" module (File) containing a supported
- * format (PDF, DOCX, PPTX, XLSX, CSV, MD, HTML or TXT), this observer
- * automatically sends it to the NexusAI backend for RAG indexing.
+ * No observer calls the NexusAI backend: they run inside the user's request,
+ * so anything that needs the backend is queued as an ad hoc task and runs in
+ * cron (task\sync_forum_post, task\sync_material, task\purge_backend_data).
  *
- * Error behavior:
- *   - If the plugin is disabled → silent skip.
- *   - If the module isn't of type "resource" → silent skip.
- *   - If the file isn't in a supported format → silent skip.
- *   - If the backend fails → log error, does NOT interrupt Moodle (exception caught).
+ * - A new "File" activity is offered to the teacher for indexing (a user
+ *   preference read on the next page load), not indexed on its own.
+ * - An updated or deleted "File" activity queues the index sync.
+ * - Forum posts queue their indexing or removal.
+ * - A deleted course or user has its NexusAI rows removed right away; the
+ *   backend's copies are purged by a queued task.
  *
- * Dependencies:
- *   - `local_nexusai\external\backend_client` — sends the file to the backend.
- *   - Moodle's filestore — reads the bytes of the uploaded file.
- *   - `course_guard::is_enabled()` — site-wide switch and per-course switch.
+ * The activity and forum observers skip courses where NexusAI is off (the
+ * deletion ones run anyway, so nothing is left behind), and none interrupts
+ * Moodle if something fails.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -134,9 +134,7 @@ class observer {
      * @param \core\event\course_module_deleted $event
      */
     public static function course_module_deleted(\core\event\course_module_deleted $event): void {
-        self::sync_resource($event, static function (\local_nexusai\local\material_sync $sync, int $courseid, int $cmid) {
-            $sync->remove_activity($courseid, $cmid);
-        });
+        self::sync_resource($event, 'remove');
     }
 
     /**
@@ -148,22 +146,20 @@ class observer {
      * @param \core\event\course_module_updated $event
      */
     public static function course_module_updated(\core\event\course_module_updated $event): void {
-        self::sync_resource($event, static function (\local_nexusai\local\material_sync $sync, int $courseid, int $cmid) {
-            $sync->sync_activity($courseid, $cmid);
-        });
+        self::sync_resource($event, 'sync');
     }
 
     /**
-     * Runs a sync action for a "File" activity event, off the request's back.
+     * Queues the index sync for a "File" activity event (\local_nexusai\task\sync_material):
+     * the calls to the backend run in cron, never in the teacher's request.
      *
      * Skips courses where NexusAI is off, other kinds of activity and what
-     * NexusAI is creating itself. A backend failure is logged and never
-     * interrupts Moodle.
+     * NexusAI is creating itself.
      *
      * @param \core\event\base $event Deleted or updated event of a course module.
-     * @param callable $action fn(material_sync, courseid, cmid)
+     * @param string $action 'remove' or 'sync'.
      */
-    private static function sync_resource(\core\event\base $event, callable $action): void {
+    private static function sync_resource(\core\event\base $event, string $action): void {
         $courseid = (int) $event->courseid;
         if (!\local_nexusai\local\course_guard::is_enabled($courseid)) {
             return;
@@ -175,17 +171,7 @@ class observer {
             return;
         }
 
-        $cmid = (int) $event->objectid;
-        try {
-            $client = new \local_nexusai\external\backend_client();
-            $client->set_role('system');
-            $action(new \local_nexusai\local\material_sync($client), $courseid, $cmid);
-        } catch (\Throwable $e) {
-            debugging(
-                '[NexusAI] Syncing the index failed for cmid=' . $cmid . ': ' . $e->getMessage(),
-                DEBUG_NORMAL
-            );
-        }
+        \local_nexusai\task\sync_material::queue($action, $courseid, (int) $event->objectid);
     }
 
     /**

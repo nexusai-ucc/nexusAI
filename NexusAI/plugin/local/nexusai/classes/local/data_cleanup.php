@@ -39,8 +39,9 @@ class data_cleanup {
     /**
      * Deletes everything NexusAI keeps for a course that no longer exists.
      *
-     * Also asks the backend to delete the course's indexed documents, when the
-     * plugin is on; a backend failure is logged and does not stop Moodle.
+     * When the plugin is on, it also queues the removal of the course's indexed
+     * documents from the backend (task\purge_backend_data), so deleting a course
+     * never waits for the backend.
      *
      * @param int $courseid Deleted course.
      */
@@ -64,18 +65,8 @@ class data_cleanup {
             $DB->delete_records($table, ['courseid' => $courseid]);
         }
 
-        if (!course_guard::plugin_enabled()) {
-            return;
-        }
-        try {
-            $client = new \local_nexusai\external\backend_client();
-            $client->set_role('system');
-            $documents = $client->list_documents($courseid)['items'] ?? [];
-            foreach ($documents as $doc) {
-                $client->delete_document((string) $doc['id']);
-            }
-        } catch (\Throwable $e) {
-            debugging('[NexusAI] Could not delete the documents of course ' . $courseid . ': ' . $e->getMessage(), DEBUG_NORMAL);
+        if (course_guard::plugin_enabled()) {
+            \local_nexusai\task\purge_backend_data::queue_course_documents($courseid);
         }
     }
 
