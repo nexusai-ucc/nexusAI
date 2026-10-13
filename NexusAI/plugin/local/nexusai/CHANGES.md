@@ -103,6 +103,11 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   hash of the user id) and the three user preferences, and keeps exporting and
   deleting what is still in the backend. The calendar feed token is never
   exported.
+- Changed: Moodle 5.3 is supported too (`$plugin->supported = [405, 503]`),
+  and CI tests every supported version: 4.5 (PostgreSQL and MySQL), 5.0,
+  5.1, 5.2 and 5.3 (PostgreSQL, and MySQL with PHP 8.4). The public plugin
+  repository runs the same matrix; it was still testing 4.1, which the
+  plugin no longer installs on.
 - Changed: the minimum is now **Moodle 4.5 LTS** (build 2024100700), and 4.5
   to 5.2 are supported (the UCC runs 5.0). The external functions use the
   `core_external` classes instead of the legacy aliases from `externallib.php`,

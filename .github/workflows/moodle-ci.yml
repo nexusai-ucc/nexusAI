@@ -42,9 +42,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # DATA-02 (#522): el mínimo pasa a Moodle 4.5 LTS. Se prueba el
-        # mínimo, la versión que usa la UCC (5.0) y la última estable (5.2),
-        # cada una con el PHP más bajo que acepta.
+        # MMR-301 ítem 12: se prueba cada versión declarada en version.php
+        # ($plugin->supported = [405, 503]), cada una con el PHP más bajo que
+        # acepta, más la última estable con MySQL y el PHP más alto.
+        # Mantener igual a .github/sync-overlays/moodle-local_nexusai/.github/workflows/moodle-ci.yml
+        # (el CI del repo público) salvo las rutas.
         include:
           # Moodle 4.5 LTS (PHP 8.1+)
           - php: '8.1'
@@ -59,13 +61,24 @@ jobs:
           - php: '8.2'
             moodle-branch: 'MOODLE_500_STABLE'
             database: 'pgsql'
-          # Moodle 5.2: última estable, con el directorio public/ (PHP 8.3+)
+          # Moodle 5.1 (PHP 8.2+), con el directorio public/
+          - php: '8.2'
+            moodle-branch: 'MOODLE_501_STABLE'
+            database: 'pgsql'
+          # Moodle 5.2 (PHP 8.3+)
           - php: '8.3'
             moodle-branch: 'MOODLE_502_STABLE'
             database: 'pgsql'
+          # Moodle 5.3: última estable (PHP 8.3+)
+          - php: '8.3'
+            moodle-branch: 'MOODLE_503_STABLE'
+            database: 'pgsql'
+          - php: '8.4'
+            moodle-branch: 'MOODLE_503_STABLE'
+            database: 'mysqli'
 
     services:
-      # PostgreSQL 16 y MySQL 8.4 son los mínimos de Moodle 5.2 y 5.0; 4.5
+      # PostgreSQL 16 y MySQL 8.4 cumplen los mínimos de Moodle 5.0 a 5.3; 4.5
       # también los acepta, así que la misma imagen sirve para toda la matriz.
       postgres:
         image: pgvector/pgvector:pg16
