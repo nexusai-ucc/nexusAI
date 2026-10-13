@@ -1,13 +1,13 @@
 /**
- * Exportador genérico a CSV (DOC-D07, issue #355).
+ * Generic CSV exporter (DOC-D07, issue #355).
  *
- * Igual criterio que gift.js: la conversión y la descarga se hacen enteramente
- * en el browser — sin round-trip al backend, ya que los paneles que exportan
- * (Gaps, FAQ) tienen los datos cargados en pantalla.
+ * Same approach as gift.js: the conversion and the download happen entirely
+ * in the browser — no round-trip to the backend, since the panels that export
+ * (Gaps, FAQ) already have the data loaded on screen.
  */
 
-// Escapa un valor para una celda CSV: si contiene coma, comilla doble o salto
-// de línea, se envuelve entre comillas dobles duplicando las internas (RFC 4180).
+// Escapes a value for a CSV cell: if it contains a comma, double quote or line
+// break, it is wrapped in double quotes, doubling the inner ones (RFC 4180).
 function escapeCsvCell(value) {
     const text = String(value ?? "");
     if (/[",\n]/.test(text)) {
@@ -17,7 +17,7 @@ function escapeCsvCell(value) {
 }
 
 /**
- * Arma un string CSV a partir de encabezados y filas.
+ * Builds a CSV string from headers and rows.
  *
  * @param {string[]} headers
  * @param {Array<Array<string|number>>} rows
@@ -25,12 +25,12 @@ function escapeCsvCell(value) {
  */
 export function toCsv(headers, rows) {
     const lines = [headers, ...rows].map((row) => row.map(escapeCsvCell).join(","));
-    // BOM inicial para que Excel detecte UTF-8 (acentos/ñ) sin configuración manual.
+    // Leading BOM so Excel detects UTF-8 (accents/ñ) without manual configuration.
     return "﻿" + lines.join("\r\n") + "\r\n";
 }
 
 /**
- * Dispara la descarga de un archivo .csv en el browser (sin request al server).
+ * Fires the download of a .csv file in the browser (no request to the server).
  *
  * @param {string[]} headers
  * @param {Array<Array<string|number>>} rows

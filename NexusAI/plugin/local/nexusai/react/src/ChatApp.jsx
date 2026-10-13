@@ -1,20 +1,20 @@
 /**
- * ChatApp — componente principal del widget de NexusAI.
+ * ChatApp — main component of the NexusAI widget.
  *
- * Sprint 1: UI completa de chat (lista de mensajes, input, loader,
- * manejo de errores, auto-scroll) + cliente API que apunta al endpoint
- * `local_nexusai_chat_send` de Moodle.
+ * Sprint 1: full chat UI (message list, input, loader,
+ * error handling, auto-scroll) + API client pointing at Moodle's
+ * `local_nexusai_chat_send` endpoint.
  *
- * Sprint 2: markdown rendering en respuestas del LLM y pills de fuentes.
+ * Sprint 2: markdown rendering of the LLM's answers and source pills.
  *
- * Sprint 3+: rediseño shadcn/ui — header neutro con avatar y dot de estado,
- * suggestion chips en bienvenida, footer limpio, FAB SVG, tipografía refinada.
+ * Sprint 3+: shadcn/ui redesign — neutral header with avatar and status dot,
+ * suggestion chips on the welcome screen, clean footer, SVG FAB, refined typography.
  *
- * Props (vienen desde lib.php / classes/hook/output/before_footer_listener.php):
- *   - courseid:  ID del curso actual de Moodle
- *   - userid:    ID del usuario logueado
- *   - sesskey:   token CSRF de Moodle
- *   - wwwroot:   URL base de Moodle (debug)
+ * Props (come from lib.php / classes/hook/output/before_footer_listener.php):
+ *   - courseid:  ID of the current Moodle course
+ *   - userid:    ID of the logged-in user
+ *   - sesskey:   Moodle's CSRF token
+ *   - wwwroot:   Moodle base URL (debug)
  *   - lang:      'es' | 'en'
  */
 
@@ -39,8 +39,8 @@ import BudgetBar from "./components/BudgetBar.jsx";
 import { getSessionMessages } from "./api/history.js";
 import { useOnboardingState } from "./onboarding/useOnboardingState.js";
 
-// UX-14 (#373): clave de sessionStorage para el tab activo, por curso —
-// evita que el tab de un curso "contamine" a otro en la misma sesión.
+// UX-14 (#373): sessionStorage key for the active tab, per course —
+// keeps one course's tab from "leaking" into another in the same session.
 function TAB_STORAGE_KEY(courseid) {
     return Number(courseid) > 0 ? `nexusai_tab_${courseid}` : null;
 }
@@ -152,9 +152,9 @@ const IconBack = () => (
 export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es", isteacher = 0 }) {
     const isTeacher = !!isteacher;
     const hasCourse = Number(courseid) > 0;
-    // El click en el ícono de la navbar (fuera de este árbol de React) puede
-    // llegar antes de que el bundle termine de hidratar — window.__nexusaiPanelOpenState
-    // lo deja "pegado" para que el estado inicial ya lo refleje al montar.
+    // The click on the navbar icon (outside this React tree) can arrive
+    // before the bundle finishes hydrating — window.__nexusaiPanelOpenState
+    // keeps it "stuck" so the initial state already reflects it on mount.
     const [open, setOpen] = useState(
         () => typeof window !== "undefined" && !!window.__nexusaiPanelOpenState
     );
@@ -164,12 +164,12 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [error, setError] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
-    // DATA-05: se incrementa con cada respuesta para refrescar la barra de límite.
+    // DATA-05: increased with each answer to refresh the limit bar.
     const [budgetTick, setBudgetTick] = useState(0);
-    // UX-14 (#373): tab activo persistido en sessionStorage, por curso —
-    // no se pierde al navegar a otra página del curso y volver en la misma
-    // sesión de navegador. Solo los 4 tabs "destino" (no history/review,
-    // que son vistas de acción puntual, no un lugar al que volver).
+    // UX-14 (#373): active tab stored in sessionStorage, per course —
+    // not lost when navigating to another course page and coming back in the
+    // same browser session. Only the 4 "destination" tabs (not history/review,
+    // which are one-off action views, not a place to come back to).
     const [activeTab, setActiveTab] = useState(() => {
         if (typeof window === "undefined" || !TAB_STORAGE_KEY(courseid)) return "chat";
         try {
@@ -181,8 +181,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     }); // "chat" | "history" | "study" | "calendar" | "search" | "review"
     const [navOpen, setNavOpen] = useState(false);
 
-    // ONB-06: estado de revisión del curso, fetch solo mientras ese tab está
-    // activo — mismo criterio "bajo demanda" que StudyPanel/CalendarPanel.
+    // ONB-06: course review state, fetched only while that tab is active —
+    // same "on demand" approach as StudyPanel/CalendarPanel.
     const {
         setupState: reviewSetupState,
         skipped: reviewSkipped,
@@ -201,30 +201,30 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         if (el) el.scrollIntoView({ behavior: "smooth", block: "end" });
     }, [messages, loading, open]);
 
-    // Sincronización con el ícono de la navbar (fuera de React) — ver
-    // amd/src/nav-trigger.js, que dispara este evento en cada click.
+    // Sync with the navbar icon (outside React) — see
+    // amd/src/nav-trigger.js, which fires this event on every click.
     useEffect(() => {
         const handleToggle = () => setOpen((v) => !v);
         window.addEventListener("nexusai:toggle-panel", handleToggle);
         return () => window.removeEventListener("nexusai:toggle-panel", handleToggle);
     }, []);
 
-    // UX-14 (#373): persistir el tab activo. Try/catch porque sessionStorage
-    // puede tirar en modo privado/con storage bloqueado — no debe romper el
-    // render del widget.
+    // UX-14 (#373): store the active tab. Try/catch because sessionStorage
+    // can throw in private mode/with blocked storage — it must not break the
+    // widget's render.
     useEffect(() => {
         const key = TAB_STORAGE_KEY(courseid);
         if (!key || !PERSISTABLE_TABS.has(activeTab)) return;
         try {
             sessionStorage.setItem(key, activeTab);
         } catch {
-            // Storage bloqueado — no afecta la sesión actual.
+            // Storage blocked — does not affect the current session.
         }
     }, [activeTab, courseid]);
 
-    // UX-13 (#372): atajos globales, solo mientras el widget está abierto
-    // (fuera de `open` no intercepta nada de la página — menos superficie
-    // de conflicto con atajos nativos del navegador/Moodle).
+    // UX-13 (#372): global shortcuts, only while the widget is open
+    // (outside `open` it intercepts nothing on the page — less surface
+    // for conflicts with the browser's/Moodle's native shortcuts).
     useEffect(() => {
         if (!open) return undefined;
         const onKeyDown = (e) => {
@@ -233,11 +233,11 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                 return;
             }
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-                // Mismo criterio que NavMenu para ocultar "Buscar": los
-                // docentes no tienen ese tab acá (tienen su propio buscador
-                // en NexusAI Materiales).
+                // Same rule as NavMenu to hide "Search": teachers do not have
+                // that tab here (they have their own search in NexusAI
+                // Materials).
                 if (!hasCourse || isTeacher) return;
-                e.preventDefault(); // pisa "borrar hasta fin de línea" (Ctrl+K, macOS) en el textarea
+                e.preventDefault(); // overrides "delete to end of line" (Ctrl+K, macOS) in the textarea
                 setNavOpen(false);
                 setActiveTab("search");
             }
@@ -270,8 +270,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         setMessages((prev) => [...prev, optimisticUserMsg, initialAssistant]);
         setLoading(true);
 
-        // Acumulador local — los callbacks de SSE corren en ráfagas y queremos
-        // evitar batch races. Usamos ref vía closure.
+        // Local accumulator — SSE callbacks run in bursts and we want to
+        // avoid batch races. We use a ref through a closure.
         let acc = "";
         const appendToken = (token) => {
             acc += token;
@@ -282,8 +282,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
             );
         };
 
-        // Bufferamos grounded para aplicarlo DESPUÉS de que el stream cierre,
-        // evitando cualquier race con el estado de streaming.
+        // We buffer grounded to apply it AFTER the stream closes,
+        // avoiding any race with the streaming state.
         let bufferedGrounded;
 
         try {
@@ -317,12 +317,12 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         bufferedGrounded = grounded;
                     },
                     onDone: (doneEvent) => {
-                        // ASIST-01 (#321): el id local (`local-asst-...`) no es un
-                        // UUID real de `messages` — guardamos el real en `realId`
-                        // (en vez de pisar `id`, que rompería el matcher de
-                        // `bufferedGrounded` de más abajo, capturado con el id
-                        // local) para poder habilitar el feedback 👍/👎 recién
-                        // ahora que el mensaje ya está persistido.
+                        // ASIST-01 (#321): the local id (`local-asst-...`) is not a
+                        // real `messages` UUID — we store the real one in `realId`
+                        // (instead of overwriting `id`, which would break the
+                        // `bufferedGrounded` matcher below, captured with the local
+                        // id) to be able to enable the 👍/👎 feedback only now that
+                        // the message is stored.
                         setMessages((prev) =>
                             prev.map((m) =>
                                 m.id === streamingAssistantId
@@ -336,9 +336,9 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     },
                 }
             );
-            // Aplicar la señal grounded del backend tras el cierre del stream.
-            // Si grounded===false el LLM no pudo responder con el material →
-            // ocultar fuentes aunque el retrieval haya devuelto chunks.
+            // Apply the backend's grounded signal after the stream closes.
+            // If grounded===false the LLM could not answer with the material →
+            // hide the sources even if retrieval returned chunks.
             if (bufferedGrounded === false) {
                 setMessages((prev) =>
                     prev.map((m) =>
@@ -349,7 +349,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                 );
             }
         } catch (err) {
-            // Sacamos el bubble de assistant vacío + user optimista si el stream falló.
+            // Remove the empty assistant bubble + optimistic user one if the stream failed.
             setMessages((prev) =>
                 prev.filter(
                     (m) => m.id !== optimisticUserMsg.id && m.id !== streamingAssistantId
@@ -364,10 +364,10 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
     const retry = () => { if (lastQuestion) send(lastQuestion); };
 
-    // ASIST-03 (#359): reenvía la última pregunta, reemplazando el último
-    // par usuario+asistente visible en vez de agregar uno duplicado.
-    // send() siempre agrega un par nuevo al final — por eso hay que sacar
-    // el anterior antes de reinvocarlo.
+    // ASIST-03 (#359): resends the last question, replacing the last visible
+    // user+assistant pair instead of adding a duplicate one.
+    // send() always adds a new pair at the end — that is why the previous one
+    // has to be removed before calling it again.
     const regenerate = () => {
         if (!lastQuestion || loading) return;
         setMessages((prev) => {
@@ -397,9 +397,9 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
             setSessionId(data.session_id);
             const loadedMessages = data.messages || [];
             setMessages(loadedMessages);
-            // ASIST-03: derivar lastQuestion del último mensaje de usuario
-            // cargado, para que "Regenerar" funcione también sobre una
-            // conversación retomada desde el historial (antes quedaba null).
+            // ASIST-03: derive lastQuestion from the last loaded user message,
+            // so "Regenerate" also works on a conversation resumed from the
+            // history (it used to stay null).
             const lastUserMsg = [...loadedMessages].reverse().find((m) => m.role === "user");
             setLastQuestion(lastUserMsg?.content || null);
         } catch (err) {
@@ -672,9 +672,9 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             currentSessionId={sessionId}
                             onSelectSession={loadSession}
                             onSessionDeleted={(deletedId) => {
-                                // ASIST-02: si se borró la sesión activa, limpiar el
-                                // chat para no seguir apuntando a un id inexistente
-                                // (el próximo mensaje pegaría un 404 contra el backend).
+                                // ASIST-02: if the active session was deleted, clear the
+                                // chat so it does not keep pointing at a nonexistent id
+                                // (the next message would hit a 404 on the backend).
                                 if (deletedId === sessionId) clearChat();
                             }}
                             lang={lang}

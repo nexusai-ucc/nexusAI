@@ -1,16 +1,16 @@
 /**
- * Definición de los pasos del tutorial de armado de curso (ONB-03 / ONB-04).
+ * Definition of the steps of the course setup tutorial (ONB-03 / ONB-04).
  *
- * Cada paso:
- *   - `key`      identificador estable (también la señal de `course_setup_state`
- *                que lo marca ✓ en modo revisión — ONB-04).
- *   - `title` / `why`  copy ES/EN. El texto final se pule en ONB-08; acá va una
- *                versión funcional, no un placeholder.
- *   - `href(ctx)`  arma el link a la pantalla nativa de Moodle. `ctx` trae
- *                `{ wwwroot, courseid }`. NexusAI nunca ejecuta la acción:
- *                solo abre la pantalla donde el docente la hace.
+ * Each step:
+ *   - `key`      stable identifier (also the `course_setup_state` signal that
+ *                marks it ✓ in review mode — ONB-04).
+ *   - `title` / `why`  ES/EN copy. The final text is polished in ONB-08; this is a
+ *                working version, not a placeholder.
+ *   - `href(ctx)`  builds the link to Moodle's native screen. `ctx` carries
+ *                `{ wwwroot, courseid }`. NexusAI never runs the action:
+ *                it only opens the screen where the teacher does it.
  *
- * El orden del array es el orden en que se muestran.
+ * The order of the array is the order they are shown in.
  */
 
 function url(wwwroot, path) {
@@ -105,14 +105,14 @@ export const COURSE_SETUP_STEPS = [
 ];
 
 /**
- * En modo revisión (ONB-04): dada la respuesta de `course_setup_state`, decide
- * el estado de cada paso. `skipped` (ONB-05) marca pasos opcionales que el
- * docente excluyó a mano ("no aplica") — solo pesa cuando la señal real
- * todavía no está presente; si el paso ya se cumplió, gana "done" igual.
+ * In review mode (ONB-04): given the `course_setup_state` response, decides
+ * the state of each step. `skipped` (ONB-05) marks optional steps the
+ * teacher excluded by hand ("not applicable") — it only counts while the real
+ * signal is not present yet; if the step is already met, "done" wins anyway.
  *
- * @param {object} step  Un elemento de COURSE_SETUP_STEPS.
- * @param {object|null} state  Respuesta de getCourseSetupState(), o null.
- * @param {string[]} [skipped]  Respuesta de getOnboardingState().skipped.
+ * @param {object} step  An element of COURSE_SETUP_STEPS.
+ * @param {object|null} state  Response of getCourseSetupState(), or null.
+ * @param {string[]} [skipped]  Response of getOnboardingState().skipped.
  * @returns {"done"|"pending"|"skipped"|"unknown"}
  */
 export function stepStatus(step, state, skipped = []) {

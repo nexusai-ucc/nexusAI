@@ -1,25 +1,25 @@
 /**
- * OnboardingApp — widget de NexusAI en la pantalla de crear un curso (ONB-03).
+ * OnboardingApp — NexusAI widget on the create-course screen (ONB-03).
  *
- * Reemplaza al ChatApp normal cuando el plugin detecta que el docente está en
- * `course/edit.php` sin curso todavía (pagetype `course-edit`, sin `id`,
- * capability `moodle/course:create`). Ese flag lo pasa
- * `classes/hook/output/before_footer_listener.php` como `params.onboarding`;
- * `index.jsx` decide qué componente montar.
+ * Replaces the normal ChatApp when the plugin detects that the teacher is on
+ * `course/edit.php` with no course yet (pagetype `course-edit`, no `id`,
+ * capability `moodle/course:create`). That flag is passed by
+ * `classes/hook/output/before_footer_listener.php` as `params.onboarding`;
+ * `index.jsx` decides which component to mount.
  *
- * Misma estética que ChatApp (rail flotante + panel), pero el cuerpo es el
- * checklist de armado de curso (`OnboardingPanel`) en vez del chat.
+ * Same look as ChatApp (floating rail + panel), but the body is the
+ * course setup checklist (`OnboardingPanel`) instead of the chat.
  *
- * ONB-04: en modo `review` (editar un curso existente) busca el estado real
- * de setup del curso y se lo pasa a `OnboardingPanel`, que lo usa para
- * marcar ✓/pendiente cada paso.
+ * ONB-04: in `review` mode (editing an existing course) it fetches the real
+ * setup state of the course and passes it to `OnboardingPanel`, which uses it
+ * to mark each step ✓/pending.
  *
- * ONB-05: cerrar el panel en modo `review` (header X o botón "Cerrar" del
- * panel) persiste el dismissal — `visibility_helper::onboarding_hint()` no
- * vuelve a devolver `'review-course'` para este curso hasta que el docente
- * lo reabra a mano desde el tab "Revisión del curso" del widget normal
- * (ONB-06). En modo `create` no hay `courseid` todavía: cerrar es puramente
- * local, `useOnboardingState` no dispara ningún fetch/persist con courseid=0.
+ * ONB-05: closing the panel in `review` mode (header X or the panel's "Close"
+ * button) stores the dismissal — `visibility_helper::onboarding_hint()` does
+ * not return `'review-course'` again for this course until the teacher
+ * reopens it by hand from the "Course review" tab of the normal widget
+ * (ONB-06). In `create` mode there is no `courseid` yet: closing is purely
+ * local, `useOnboardingState` fires no fetch/persist with courseid=0.
  */
 
 import { useEffect, useState } from "react";
@@ -60,16 +60,16 @@ export default function OnboardingApp({
 }) {
     const t = STRINGS[lang] || STRINGS.es;
 
-    // En la pantalla de crear curso arrancamos abierto: es el momento en que
-    // el docente más necesita la guía. En otras páginas (ONB-04/06) el default
-    // será cerrado.
+    // On the create-course screen we start open: it is when the teacher needs
+    // the guide the most. On other pages (ONB-04/06) the default will be
+    // closed.
     const [open, setOpen] = useState(mode === "create");
 
-    // ONB-04/05: estado de setup + dismissal/"no aplica" del curso. Mientras
-    // setupState es `null` (todavía no llegó, o falló la llamada),
-    // OnboardingPanel muestra cada paso como "unknown" — el mismo estado que
-    // ya usa cuando el backend de material no responde, no hace falta un
-    // loading aparte. Con courseid=0 (modo create) el hook no fetchea nada.
+    // ONB-04/05: setup state + dismissal/"not applicable" of the course. While
+    // setupState is `null` (not arrived yet, or the call failed),
+    // OnboardingPanel shows each step as "unknown" — the same state it already
+    // uses when the material backend does not answer, no separate loading
+    // state is needed. With courseid=0 (create mode) the hook fetches nothing.
     const { setupState, skipped, dismiss, skip, unskip } = useOnboardingState(
         courseid,
         { enabled: mode === "review" }
@@ -80,7 +80,7 @@ export default function OnboardingApp({
         setOpen(false);
     };
 
-    // Sincronía con el ícono de la navbar (fuera de React), igual que ChatApp.
+    // Sync with the navbar icon (outside React), same as ChatApp.
     useEffect(() => {
         if (typeof window === "undefined") return undefined;
         const onToggle = () => setOpen((v) => !v);

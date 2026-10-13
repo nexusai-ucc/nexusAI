@@ -1,10 +1,10 @@
 /**
- * Cliente de transcripción de voz para el chat (VOICE-01, #314).
+ * Voice transcription client for the chat (VOICE-01, #314).
  *
- * `transcribeAudio` convierte el Blob grabado con MediaRecorder a base64
- * (mismo enfoque que `documents/api.js::fileToBase64`, adaptado a Blob) y
- * llama `local_nexusai_chat_voice_transcribe`. El resultado NUNCA se envía
- * solo como mensaje de chat — el composer lo muestra para confirmar/editar.
+ * `transcribeAudio` converts the Blob recorded with MediaRecorder to base64
+ * (same approach as `documents/api.js::fileToBase64`, adapted to Blob) and
+ * calls `local_nexusai_chat_voice_transcribe`. The result is NEVER sent
+ * on its own as a chat message — the composer shows it to confirm/edit.
  */
 
 async function getMoodleAjax() {
@@ -21,7 +21,7 @@ async function getMoodleAjax() {
 }
 
 /**
- * Convierte un Blob de audio a string base64 (sin el prefijo data URL).
+ * Converts an audio Blob to a base64 string (without the data URL prefix).
  *
  * @param {Blob} blob
  * @returns {Promise<string>}
@@ -40,11 +40,11 @@ function blobToBase64(blob) {
 }
 
 /**
- * Transcribe un audio corto grabado en el composer del chat.
+ * Transcribes a short audio recorded in the chat composer.
  *
  * @param {number} courseId
- * @param {Blob} blob Audio grabado con MediaRecorder.
- * @returns {Promise<string>} Texto transcripto.
+ * @param {Blob} blob Audio recorded with MediaRecorder.
+ * @returns {Promise<string>} Transcribed text.
  */
 export async function transcribeAudio(courseId, blob) {
     const contentB64 = await blobToBase64(blob);
@@ -52,7 +52,7 @@ export async function transcribeAudio(courseId, blob) {
 
     const ajax = await getMoodleAjax();
     if (!ajax) {
-        // Mock fuera de Moodle: no hay forma de transcribir de verdad.
+        // Mock outside Moodle: there is no way to really transcribe.
         await new Promise((r) => setTimeout(r, 800));
         return "Esto es una transcripción de prueba (modo mock, sin Moodle).";
     }

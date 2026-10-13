@@ -1,17 +1,17 @@
 /**
- * MessageBubble — burbuja individual de mensaje.
+ * MessageBubble — a single message bubble.
  *
- * Cambios sprint 3 (rediseño shadcn/ui):
- *   - Avatar del asistente (icono N con fondo violeta suave) a la izquierda.
- *   - Burbuja del asistente: fondo blanco + border + shadow-sm (estilo card).
- *   - Copy button on-hover en bloques de código (post-render con useEffect).
- *   - Source pills refinadas con borde y color primary.
- *   - Timestamp más sutil.
+ * Sprint 3 changes (shadcn/ui redesign):
+ *   - Assistant avatar (N icon on a soft violet background) on the left.
+ *   - Assistant bubble: white background + border + shadow-sm (card style).
+ *   - On-hover copy button in code blocks (post-render with useEffect).
+ *   - Refined source pills with border and primary color.
+ *   - Subtler timestamp.
  *
  * Roles:
- *   - "user"      → alineado a la derecha, fondo primary violeta.
- *   - "assistant" → alineado a la izquierda, card blanca con borde.
- *   - "system"    → no se muestra.
+ *   - "user"      → aligned right, violet primary background.
+ *   - "assistant" → aligned left, white card with border.
+ *   - "system"    → not shown.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -21,22 +21,22 @@ import temml from "temml";
 import { IconFile, IconRefreshCw, IconSparkles, IconThumbsDown, IconThumbsUp, IconX } from "./icons.jsx";
 import { submitMessageFeedback } from "../api/chat.js";
 
-// Regex conservador para detectar archivos citados en el texto del LLM.
+// Conservative regex to detect files cited in the LLM's text.
 const SOURCE_REGEX = /([\w\-]+\.(pdf|docx|txt))/gi;
 
-// ASIST-04 (#360): notación matemática en LaTeX.
+// ASIST-04 (#360): math notation in LaTeX.
 //
-// El chat no usa react-markdown (el import está en package.json pero nadie lo
-// usa) — renderiza con `marked` + DOMPurify. Así que en vez de remark-math +
-// rehype-katex sumamos una extensión de `marked` que matchea $...$ / $$...$$ y
-// los renderiza con Temml (LaTeX → MathML).
+// The chat does not use react-markdown (it is in package.json but nothing
+// uses it) — it renders with `marked` + DOMPurify. So instead of remark-math +
+// rehype-katex we add a `marked` extension that matches $...$ / $$...$$ and
+// renders them with Temml (LaTeX → MathML).
 //
-// Temml en vez de KaTeX porque KaTeX pesa ~110KB más y necesita su CSS +
-// ~1MB de fuentes woff (webpack acá no tiene regla para assets de fuente, y
-// los chunks/publicPath de Moodle ya dieron problemas antes — ver
-// webpack.config.js). Temml genera MathML puro que el navegador dibuja
-// nativo, sin CSS ni fuentes. Cubre todo lo que el chat mostraría (pérdidas,
-// distancias, probabilidades, sumatorias, fracciones).
+// Temml instead of KaTeX because KaTeX weighs ~110KB more and needs its CSS +
+// ~1MB of woff fonts (webpack here has no rule for font assets, and Moodle's
+// chunks/publicPath already caused trouble before — see
+// webpack.config.js). Temml produces plain MathML that the browser draws
+// natively, without CSS or fonts. It covers everything the chat would show
+// (losses, distances, probabilities, sums, fractions).
 const mathExtension = {
     name: "nexusaiMath",
     level: "inline",
@@ -49,8 +49,8 @@ const mathExtension = {
         if (block) {
             return { type: "nexusaiMath", raw: block[0], text: block[1].trim(), display: true };
         }
-        // Inline: sin espacio pegado a los $, sin $ ni saltos de línea adentro.
-        // Evita falsos positivos tipo "cuesta $5 o $10".
+        // Inline: no space next to the $, no $ or line breaks inside.
+        // Avoids false positives like "it costs $5 or $10".
         const inline = /^\$(?!\s)([^$\n]+?)(?<!\s)\$/.exec(src);
         if (inline) {
             return { type: "nexusaiMath", raw: inline[0], text: inline[1].trim(), display: false };
@@ -69,7 +69,7 @@ const mathExtension = {
     },
 };
 
-// Marked: GFM + links en nueva pestaña + fórmulas LaTeX.
+// Marked: GFM + links in a new tab + LaTeX formulas.
 marked.use({
     gfm: true,
     breaks: true,
@@ -82,10 +82,10 @@ marked.use({
     },
 });
 
-// Tags/atributos de MathML que emite Temml. Se suman al allowlist de
-// DOMPurify para que las fórmulas sobrevivan al sanitizado sin abrir la
-// puerta a HTML arbitrario (no se permite `style` ni `class`: el MathML
-// renderiza igual sin ellos).
+// MathML tags/attributes Temml emits. They are added to DOMPurify's
+// allowlist so formulas survive sanitizing without opening the door to
+// arbitrary HTML (`style` and `class` are not allowed: the MathML
+// renders the same without them).
 const MATHML_TAGS = [
     "math", "semantics", "annotation", "mrow", "mi", "mo", "mn", "ms", "mtext",
     "mspace", "msup", "msub", "msubsup", "mfrac", "msqrt", "mroot", "mstyle",
@@ -137,7 +137,7 @@ function extractSources(text) {
     return unique;
 }
 
-/* ---- Icono del avatar del asistente ---- */
+/* ---- Assistant avatar icon ---- */
 const IconAssistant = () => (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z"/>
@@ -157,8 +157,8 @@ const COPY_L = {
 };
 
 /**
- * Hook que inyecta botones "Copiar" en los bloques <pre> del markdown
- * del asistente, después de que React renderiza el HTML sanitizado.
+ * Hook that injects "Copy" buttons into the <pre> blocks of the assistant's
+ * markdown, after React renders the sanitized HTML.
  */
 function useCopyButtons(ref, htmlContent, lang = "es") {
     useEffect(() => {
@@ -167,10 +167,10 @@ function useCopyButtons(ref, htmlContent, lang = "es") {
         const pres = ref.current.querySelectorAll("pre");
 
         pres.forEach((pre) => {
-            // Evitar doble inyección si el componente re-renderiza.
+            // Avoid injecting twice if the component re-renders.
             if (pre.querySelector(".nexusai-copy-btn")) return;
 
-            // Wrapeamos el pre con un div relativo para poder posicionar el botón.
+            // We wrap the pre in a relative div to be able to position the button.
             const wrapper = document.createElement("div");
             wrapper.className = "nexusai-code-block";
             pre.parentNode.insertBefore(wrapper, pre);
@@ -238,33 +238,33 @@ const FEEDBACK_L = {
 
 export default function MessageBubble({ message, sesskey, courseId, lang = "es", canRegenerate = false, onRegenerate }) {
     if (!message || message.role === "system") return null;
-    // Ocultar burbuja del asistente vacía (esperando primer token del stream).
-    // El TypingIndicator se muestra en su lugar.
+    // Hide an empty assistant bubble (waiting for the first token of the stream).
+    // The TypingIndicator is shown in its place.
     if (message.role === "assistant" && !message.content && message.streaming) {
         return null;
     }
 
     const isUser = message.role === "user";
-    // Si el backend mandó sources estructuradas (streaming meta event), usarlas.
-    // Si no (mensajes viejos sin sources), fallback al regex sobre el texto.
+    // If the backend sent structured sources (streaming meta event), use them.
+    // If not (old messages without sources), fall back to the regex on the text.
     const structuredSources = !isUser && Array.isArray(message.sources) ? message.sources : null;
     const rawSources = isUser
         ? []
         : (structuredSources && structuredSources.length > 0
             ? structuredSources
             : extractSources(message.content).map((filename) => ({ document_filename: filename })));
-    // Dedup por archivo (+curso en multi-curso): nos quedamos con el chunk de
-    // mayor similarity de cada (filename, course_id) único. Reduce ruido visual
-    // cuando el retrieval devuelve N chunks del mismo PDF — el alumno solo ve
-    // UN bubble por archivo. Normalizamos el filename con trim+lower para
-    // capturar variaciones invisibles (whitespace, casing) que vengan del
-    // backend o del extractor de PDF.
+    // Dedup by file (+course in multi-course): we keep the chunk with the
+    // highest similarity for each unique (filename, course_id). Reduces visual
+    // noise when retrieval returns N chunks of the same PDF — the student only
+    // sees ONE bubble per file. We normalize the filename with trim+lower to
+    // catch invisible variations (whitespace, casing) coming from the
+    // backend or the PDF extractor.
     const sources = useMemo(() => {
         const seen = new Map();
         for (const src of rawSources) {
             const normFile = (src.document_filename || "?").trim().toLowerCase();
-            // En multi-curso conservamos un slot por (file, course_id) para no
-            // colapsar el mismo PDF subido a dos materias distintas.
+            // In multi-course we keep one slot per (file, course_id) so the same
+            // PDF uploaded to two different subjects is not collapsed.
             const key = src.course_id != null ? `${src.course_id}::${normFile}` : normFile;
             const prev = seen.get(key);
             const sim     = typeof src.similarity === "number" ? src.similarity : -1;
@@ -275,16 +275,16 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
         }
         return Array.from(seen.values());
     }, [rawSources]);
-    // Mapa { course_id (string|number) → nombre } cuando es multi-curso.
+    // Map { course_id (string|number) → name } in multi-course.
     const courseNames = !isUser && message.course_names ? message.course_names : null;
 
     const [expandedIdx, setExpandedIdx] = useState(null);
     const markdownRef = useRef(null);
 
-    // ASIST-01 (#321): feedback 👍/👎 sobre esta respuesta puntual.
-    // `realId` lo asigna ChatApp cuando llega el evento `done` del stream
-    // (el id local `local-asst-...` no es un UUID real de `messages` todavía);
-    // los mensajes recargados desde el historial ya traen un UUID real en `id`.
+    // ASIST-01 (#321): 👍/👎 feedback on this specific answer.
+    // `realId` is set by ChatApp when the stream's `done` event arrives
+    // (the local id `local-asst-...` is not a real `messages` UUID yet);
+    // messages reloaded from history already carry a real UUID in `id`.
     const feedbackMessageId = message.realId || (!String(message.id || "").startsWith("local-") ? message.id : null);
     const FL = FEEDBACK_L[lang] || FEEDBACK_L.es;
     const [feedbackVote, setFeedbackVote] = useState(null); // null | "up" | "down"
@@ -301,7 +301,7 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
             setShowCommentBox(false);
             setCommentText("");
         } catch {
-            // Best-effort: sin feedback visual de error, no bloquea el chat.
+            // Best effort: no visual error feedback, does not block the chat.
         } finally {
             setFeedbackSubmitting(false);
         }
@@ -319,18 +319,18 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
 
     useCopyButtons(markdownRef, htmlContent, lang);
 
-    // ASIST-06 (#384): respuestas largas se cortan con fade + "Mostrar más".
-    // No se evalúa mientras el mensaje sigue en streaming (el alto todavía
-    // está cambiando, cortarlo en el medio se vería roto).
+    // ASIST-06 (#384): long answers are cut with a fade + "Show more".
+    // Not evaluated while the message is still streaming (the height is
+    // still changing, cutting it in the middle would look broken).
     const [longExpanded, setLongExpanded] = useState(false);
     const [needsCollapse, setNeedsCollapse] = useState(false);
     useEffect(() => {
         if (isUser || message.streaming) return;
         const el = markdownRef.current;
         if (!el) return;
-        // Truco sin doble render: con el clamp de max-height ya aplicado por
-        // CSS, scrollHeight sigue reportando el alto real del contenido —
-        // si es mayor al alto visible clampeado, hace falta el botón.
+        // Trick without a double render: with the max-height clamp already applied
+        // by CSS, scrollHeight still reports the real height of the content —
+        // if it is bigger than the clamped visible height, the button is needed.
         setNeedsCollapse(el.scrollHeight > el.clientHeight + 4);
     }, [isUser, message.streaming, htmlContent]);
 
@@ -347,7 +347,7 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
         );
     }
 
-    // Mensaje del asistente — layout con avatar
+    // Assistant message — layout with avatar
     return (
         <div className="nexusai-msg nexusai-msg--assistant">
             <div className="nexusai-msg__row">
@@ -361,14 +361,14 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
                             className={[
                                 "nexusai-msg__markdown",
                                 message.streaming ? "nexusai-msg__markdown--streaming" : "",
-                                // El clamp se aplica siempre que no esté expandido y no esté
-                                // streameando — si el contenido ya entra en el alto máximo, no
-                                // tiene ningún efecto visual (scrollHeight === clientHeight,
-                                // needsCollapse da false solo). Es lo que permite medir "¿hizo
-                                // falta cortar?" después de renderizar, sin un segundo render
-                                // sin clamp. Mientras streamea NO se clampea — si no, el texto
-                                // que sigue llegando se recortaría en silencio, sin fade ni
-                                // botón todavía (needsCollapse recién se calcula al terminar).
+                                // The clamp always applies while not expanded and not
+                                // streaming — if the content already fits in the max height, it
+                                // has no visual effect (scrollHeight === clientHeight,
+                                // needsCollapse turns false on its own). That is what lets us
+                                // measure "did it need cutting?" after rendering, without a second
+                                // render without clamp. While streaming it is NOT clamped — otherwise
+                                // the text that keeps arriving would be cut silently, with no fade or
+                                // button yet (needsCollapse is only computed when it finishes).
                                 !message.streaming && !longExpanded ? "nexusai-msg__markdown--collapsed" : "",
                             ].filter(Boolean).join(" ")}
                             dangerouslySetInnerHTML={{ __html: htmlContent }}
@@ -399,7 +399,7 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
                             const hasContent = !!src.content;
                             const isClickable = hasDownload || hasContent;
                             const isOpen = expandedIdx === i;
-                            // En multi-curso, mostrar el nombre del curso al lado del archivo.
+                            // In multi-course, show the course name next to the file.
                             const courseLabel = (courseNames && src.course_id)
                                 ? (courseNames[String(src.course_id)] || courseNames[src.course_id])
                                 : null;

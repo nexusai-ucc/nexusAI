@@ -1,7 +1,13 @@
 # React widget — local_nexusai
 
-Source de React del widget del chat. Webpack lo compila a un bundle AMD único en
-`../amd/build/chatwidget-lazy.min.js` que Moodle carga vía `js_call_amd()`.
+React source of the chat widget and of the teacher view (document manager).
+Webpack compiles it to two AMD bundles that Moodle loads with `js_call_amd()`:
+
+- `../amd/build/chatwidget-lazy.min.js` — the chat widget (`src/index.jsx`).
+- `../amd/build/documents-manager-lazy.min.js` — the teacher view (`src/documents/index.jsx`).
+
+Both bundles are committed, so the plugin works without Node. This directory is
+what you need to rebuild them.
 
 ## Setup
 
@@ -9,60 +15,67 @@ Source de React del widget del chat. Webpack lo compila a un bundle AMD único e
 npm install
 ```
 
-Instala React 18, Webpack 5, Babel y plugins. Tarda ~2-3 minutos la primera vez.
+Installs React 18, Webpack 5, Babel and the plugins (`package-lock.json` pins the
+exact versions). Takes ~2-3 minutes the first time.
 
 ## Build
 
-**Producción** (minificado, sin source maps):
+**Production** (minified, no source maps):
 
 ```bash
 npm run build
 ```
 
-**Desarrollo** (con source maps + watch mode, rebuilda en cada cambio):
+**Development** (with source maps + watch mode, rebuilds on every change):
 
 ```bash
 npm run dev
 ```
 
-## Estructura
+## Structure
 
 ```
 src/
-├── index.jsx          # Entrypoint. Exporta `init(params)` que Moodle invoca.
-├── ChatApp.jsx        # Componente raíz del widget.
-└── styles.css         # Estilos con prefijo .nexusai-* (no chocan con Moodle)
+├── index.jsx          # Chat widget entry point. Exports `init(params)`, which Moodle calls.
+├── ChatApp.jsx        # Root component of the chat widget.
+├── OnboardingApp.jsx  # Course setup tutorial shown on the create-course screen.
+├── api/               # Calls to the plugin's web services (core/ajax) and the streaming endpoint.
+├── components/        # Chat widget panels and shared components.
+├── documents/         # Teacher view: entry point, panels and its own CSS.
+├── onboarding/        # Course setup steps and state hook.
+└── styles.css         # Styles with the .nexusai-* prefix (no clashes with Moodle).
 ```
 
-## Cómo Moodle carga este bundle
+## How Moodle loads the bundle
 
 ```
-PHP (lib.php)                    Browser
-─────────────                    ───────
-before_footer()
-   ↓
+PHP (classes/hook/output/before_footer_listener.php)      Browser
+────────────────────────────────────────────────────      ───────
 $PAGE->requires->js_call_amd(
    'local_nexusai/chatwidget-lazy',
    'init',
    [params]
 )
    ↓
-RequireJS pide:
+RequireJS requests:
 GET /local/nexusai/amd/build/chatwidget-lazy.min.js
    ↓
                                 define([], function() {
                                     return { init: function(params) {...} }
                                 })
    ↓
-init(params) se ejecuta
+init(params) runs
    ↓
-React monta en #local-nexusai-container
+React mounts on #local-nexusai-container
 ```
 
-## Externals (NO se bundlean)
+The teacher view works the same way from `documents.php`, with
+`local_nexusai/documents-manager-lazy` and `#local-nexusai-documents-app`.
 
-Webpack está configurado para NO incluir estas libs en el bundle, porque Moodle ya
-las provee como módulos AMD globales:
+## Externals (NOT bundled)
+
+Webpack is configured NOT to include these libraries in the bundle, because Moodle
+already provides them as global AMD modules:
 
 - `jquery`
 - `core/ajax`
@@ -70,74 +83,48 @@ las provee como módulos AMD globales:
 - `core/str`
 - `core/templates`
 
-Si necesitás usarlas desde React, importalas como cualquier dep:
+To use them from React, import them like any other dependency:
 
 ```jsx
 import { call as fetchMany } from 'core/ajax';
 
 const [result] = await fetchMany([{
-    methodname: 'local_nexusai_send_message',
-    args: { courseid, message },
+    methodname: 'local_nexusai_chat_send',
+    args: { courseid, question },
 }]);
 ```
 
-Webpack las marca como externals → el bundle queda más chico → Moodle resuelve la
-dependencia en runtime.
+Webpack marks them as externals → the bundle stays smaller → Moodle resolves the
+dependency at runtime.
 
 ## Testing
 
-Suite con **Vitest + React Testing Library** (`jsdom` como entorno de DOM).
+The test suite (Vitest + React Testing Library, `jsdom` as the DOM environment)
+lives next to each component as `*.test.js(x)` in the plugin repository. It is
+not part of the release ZIP, since it is not needed to build the bundles.
 
 ```bash
-npm test          # corre toda la suite una vez (lo mismo que corre CI)
-npm run test:watch  # modo watch para desarrollo
+npm test            # runs the whole suite once (the same CI runs)
+npm run test:watch  # watch mode for development
 ```
 
-**Nota Node 22+:** Node agregó un `localStorage`/`sessionStorage` global
-experimental que pisa el de `jsdom` y rompe cualquier test que use
-`localStorage` (`Cannot read properties of undefined (reading 'clear')`). Los
-scripts de `package.json` ya pasan `NODE_OPTIONS=--no-experimental-webstorage`
-para desactivarlo — no hace falta configurar nada aparte, pero si corrés
-Vitest directo (`npx vitest ...`) sin pasar por `npm test`, agregá ese mismo
-flag a mano.
-
-Cobertura actual (por prioridad de riesgo, no pareja):
-
-- **Chat** (`ChatApp.test.jsx`): envío de pregunta, render de la respuesta
-  streameada, fuentes citadas como pills clickeables, estado "no encontré
-  esto en el material" (`grounded: false`), y recuperación con "Reintentar"
-  ante errores 5xx/429 del backend.
-- **Mensajes de error** (`components/errors.test.js`): `getFriendlyErrorMessage()`
-  para 401/403/422/429/5xx y fallback ante errores sin código HTTP (timeout,
-  red).
-- Resto de paneles (búsqueda, calendario, foro, quiz/flashcards, analytics,
-  documentos, onboarding): ver los `*.test.jsx` junto a cada componente en
-  `src/`.
-
-**Pendiente para una próxima iteración** (no cubierto todavía):
-
-- `MessageBubble.jsx` en aislamiento (hoy se ejerce indirectamente vía
-  `ChatApp.test.jsx`): sanitizado de markdown/LaTeX, feedback 👍/👎, expansión
-  de "Mostrar más".
-- `sendMessageStream()` (`api/chat.js`) contra un stream SSE real (hoy se
-  mockea a nivel de componente).
-- Flujo completo de sesión de flashcards en `QuizPanel.jsx` (el algoritmo
-  SM-2 en sí vive en el backend, ya cubierto por los 244 tests de
-  `services/api/`).
-- 401/403 específicos de `core/ajax` (Moodle los devuelve como rechazo de
-  promesa, no como `Error: HTTP 401`) — hoy solo está cubierto el path HTTP
-  crudo del proxy de streaming.
+**Node 22+ note:** Node added an experimental global `localStorage`/`sessionStorage`
+that overrides `jsdom`'s and breaks any test that uses `localStorage`. The
+`package.json` scripts already turn it off (`scripts/run-vitest.js` passes
+`--no-experimental-webstorage` when the running Node knows that flag); if you run
+Vitest directly (`npx vitest ...`) without `npm test`, add that flag by hand.
 
 ## Performance budget
 
-Webpack avisa con warning si el bundle supera **500KB**. Si pasa eso, hace falta
-code-splitting (lazy chunks por feature). Hoy estimamos ~150KB con React + el chat
-básico.
+Webpack warns when a bundle goes over **600KB** (`performance` in
+`webpack.config.js`). The chat bundle is above it today because of Temml (LaTeX
+formulas, ASIST-04): the next step there is code splitting / lazy loading, not
+raising the limit again.
 
-## Workflow recomendado
+## Recommended workflow
 
-1. `npm run dev` en una terminal (watch mode).
-2. Editar `src/*.jsx`.
-3. Webpack rebuilda automáticamente en `../amd/build/`.
-4. En Moodle: `Site administration → Development → Purge all caches`.
-5. `Ctrl+Shift+R` en el navegador para forzar reload del JS.
+1. `npm run dev` in a terminal (watch mode).
+2. Edit `src/*.jsx`.
+3. Webpack rebuilds automatically into `../amd/build/`.
+4. In Moodle: `Site administration → Development → Purge all caches`.
+5. `Ctrl+Shift+R` in the browser to force reloading the JS.

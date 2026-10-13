@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { getBudgetStatus } from "../api/budget.js";
 
-// DATA-05 (#525): el alumno ve cuánto le queda de su límite de tokens. Un
-// número de tokens no le dice nada, así que se muestra el porcentaje del día y
-// una cantidad aproximada de preguntas. Aviso desde el 80 %; al agotarse, a qué
-// hora se renueva.
+// DATA-05 (#525): the student sees how much of their token limit is left. A
+// number of tokens tells them nothing, so the percentage of the day and an
+// approximate number of questions are shown. Warning from 80 %; when it runs
+// out, at what time it renews.
 const WARN_AT = 80;
 
 function renewTime(seconds, lang) {

@@ -1,13 +1,13 @@
 /**
- * Cliente API del onboarding al docente (ONB-02 / #425, ONB-05 / #428).
+ * API client of the teacher onboarding (ONB-02 / #425, ONB-05 / #428).
  *
- * Llama a las external functions:
- *   - local_nexusai_course_setup_state    → estado de setup del curso
- *   - local_nexusai_onboarding_state_get  → dismissal + pasos "no aplica"
- *   - local_nexusai_onboarding_state_set  → guarda dismissal + "no aplica"
+ * Calls the external functions:
+ *   - local_nexusai_course_setup_state    → course setup state
+ *   - local_nexusai_onboarding_state_get  → dismissal + "not applicable" steps
+ *   - local_nexusai_onboarding_state_set  → stores dismissal + "not applicable"
  *
- * Fuera de Moodle (Storybook / dev server) devuelve mocks para poder
- * desarrollar el tutorial (ONB-03/04/05/06) aislado.
+ * Outside Moodle (Storybook / dev server) it returns mocks so the tutorial
+ * (ONB-03/04/05/06) can be developed in isolation.
  */
 
 async function getMoodleAjax() {
@@ -34,15 +34,15 @@ const MOCK_STATE = {
 };
 
 /**
- * Estado de setup de un curso: qué señales ya están y cuáles faltan.
+ * Setup state of a course: which signals are already there and which are missing.
  *
- * `material.present` puede ser `null` si el backend de NexusAI no respondió
- * — la UI debe tratar ese caso como "no sé" (ni ✓ ni pendiente), no como
- * "falta".
+ * `material.present` can be `null` if the NexusAI backend did not answer
+ * — the UI must treat that case as "unknown" (neither ✓ nor pending), not as
+ * "missing".
  *
  * @param {number} courseId
  * @returns {Promise<{courseid:number, sections:Signal, groups:Signal, students:Signal, forums:Signal, calendar:Signal, material:Signal}>}
- *   donde Signal = { present: boolean|null, count: number }
+ *   where Signal = { present: boolean|null, count: number }
  */
 export async function getCourseSetupState(courseId) {
     const ajax = await getMoodleAjax();
@@ -62,7 +62,7 @@ export async function getCourseSetupState(courseId) {
 const MOCK_ONBOARDING_STATE = { courseid: 0, dismissed: false, skipped: [] };
 
 /**
- * Estado de dismissal/progreso del tutorial para el usuario actual y un curso.
+ * Dismissal/progress state of the tutorial for the current user and a course.
  *
  * @param {number} courseId
  * @returns {Promise<{courseid:number, dismissed:boolean, skipped:string[]}>}
@@ -83,9 +83,9 @@ export async function getOnboardingState(courseId) {
 }
 
 /**
- * Guarda el estado de dismissal/progreso del tutorial. Reemplazo completo:
- * el caller manda el estado final ya mergeado (read-modify-write del lado
- * del componente), no un delta.
+ * Stores the dismissal/progress state of the tutorial. Full replacement:
+ * the caller sends the final, already merged state (read-modify-write on the
+ * component side), not a delta.
  *
  * @param {number} courseId
  * @param {{dismissed: boolean, skipped: string[]}} state

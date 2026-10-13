@@ -2,10 +2,10 @@ import { useState, useRef } from "react";
 
 const SHOW_DELAY_MS = 400;
 
-// Envuelve un único hijo (normalmente un botón sin texto visible) y le
-// agrega un tooltip custom on-hover/on-focus. El `title=` nativo del hijo
-// NO se toca — sigue siendo la red de seguridad para mobile (long-press) y
-// para cualquier caso borde de esta implementación (UX-05).
+// Wraps a single child (usually a button with no visible text) and adds a
+// custom on-hover/on-focus tooltip. The child's native `title=` is NOT
+// touched — it is still the safety net for mobile (long-press) and for any
+// edge case of this implementation (UX-05).
 export default function Tooltip({ label, placement = "bottom", children }) {
     const [visible, setVisible] = useState(false);
     const timerRef = useRef(null);

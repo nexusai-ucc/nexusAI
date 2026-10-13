@@ -1,9 +1,9 @@
 /**
- * Tabla de documentos.
+ * Documents table.
  *
- * El polling de estado se maneja en DocumentsManager (que usa listDocuments).
- * Esta tabla solo muestra el estado actual recibido via props y maneja la
- * confirmación + ejecución del borrado y del reemplazo de archivo (CONT-07).
+ * State polling is handled in DocumentsManager (which uses listDocuments).
+ * This table only shows the current state received via props and handles the
+ * confirmation + execution of deleting and replacing the file (CONT-07).
  */
 
 import { useRef, useState } from "react";
@@ -102,10 +102,10 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
         close:               "Close",
     };
 
-    // CONT-09 (#358): acciones en lote — selección múltiple + reindexar/borrar
-    // varios documentos de una. Ejecución SECUENCIAL (no Promise.all), mismo
-    // criterio que uploadQueue (SP-13): da feedback de progreso por ítem y no
-    // satura el backend/LLM de golpe si se seleccionan muchos.
+    // CONT-09 (#358): bulk actions — multiple selection + re-index/delete
+    // several documents at once. SEQUENTIAL execution (not Promise.all), same
+    // approach as uploadQueue (SP-13): gives per-item progress feedback and
+    // does not flood the backend/LLM at once if many are selected.
     const [selectedIds, setSelectedIds] = useState(() => new Set());
     const [bulkConfirm, setBulkConfirm] = useState(null); // { type: "delete"|"reindex", docs }
     const [bulkRunning, setBulkRunning] = useState(false);
@@ -175,16 +175,16 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
                     ? L.bulkPartialDelete(ok, docs.length, failed)
                     : L.bulkPartialReindex(ok, docs.length, failed)
             );
-            // La cola queda visible con el detalle de qué falló (se limpia
-            // sola en la próxima corrida, o el docente la descarta a mano).
+            // The queue stays visible with the details of what failed (it clears
+            // itself on the next run, or the teacher dismisses it by hand).
         }
     };
 
     const dismissBulkQueue = () => setBulkQueue([]);
 
-    // CONT-07 (#356): reemplazar el archivo de un documento sin cambiar su id.
-    // Flujo: click "Reemplazar" → abre el file picker (input oculto) → al
-    // elegir un archivo, se pide confirmación antes de llamar al backend.
+    // CONT-07 (#356): replace a document's file without changing its id.
+    // Flow: click "Replace" → opens the file picker (hidden input) → after
+    // choosing a file, confirmation is asked before calling the backend.
     const [replacingId, setReplacingId] = useState(null);
     const [pendingReplaceDoc, setPendingReplaceDoc] = useState(null);
     const [replaceTarget, setReplaceTarget] = useState(null); // { doc, file }
@@ -198,7 +198,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
 
     const handleReplaceFileChosen = (e) => {
         const file = e.target.files?.[0];
-        e.target.value = ""; // permite re-elegir el mismo archivo y disparar onChange igual
+        e.target.value = ""; // allows picking the same file again and still firing onChange
         if (file && pendingReplaceDoc) {
             setReplaceTarget({ doc: pendingReplaceDoc, file });
         }
@@ -220,7 +220,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
         }
     };
 
-    // CONT-08 (#357): preview del texto extraído, por documento y bajo demanda.
+    // CONT-08 (#357): preview of the extracted text, per document and on demand.
     // { [docId]: { loading, error, data } }
     const [previews, setPreviews] = useState({});
     const [openPreviewId, setOpenPreviewId] = useState(null);
@@ -448,7 +448,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
 }
 
 // ============================================================
-// Modal de error — exportado para que DocumentsManager lo use
+// Error modal — exported so DocumentsManager can use it
 // ============================================================
 
 export function ErrorModal({ message, onClose, lang = "es" }) {
@@ -594,12 +594,12 @@ function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, 
 }
 
 // ============================================================
-// Dónde vive el documento en el aula (VIS-03 / #538)
+// Where the document lives in the course (VIS-03 / #538)
 // ============================================================
 
 /**
- * Unidad, enlace a la actividad y si está visible. El estado sale de Moodle
- * (document_list); tras subir, el documento nuevo trae cmid y visible.
+ * Section, link to the activity and whether it is visible. The state comes from
+ * Moodle (document_list); after uploading, the new document carries cmid and visible.
  */
 function ActivityCell({ doc, L }) {
     const status = doc.activity_status || (doc.cmid ? (doc.visible === false ? "hidden" : "visible") : "none");
@@ -619,7 +619,7 @@ function ActivityCell({ doc, L }) {
 }
 
 // ============================================================
-// Preview del texto extraído (CONT-08 / #357)
+// Preview of the extracted text (CONT-08 / #357)
 // ============================================================
 
 function DocumentPreview({ preview, lang = "es" }) {

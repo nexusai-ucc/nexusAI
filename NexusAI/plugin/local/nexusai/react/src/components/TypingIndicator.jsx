@@ -1,6 +1,6 @@
 /**
- * Indicador "el asistente está escribiendo".
- * Rediseñado para usar el mismo layout con avatar que MessageBubble.
+ * "The assistant is typing" indicator.
+ * Redesigned to use the same layout with avatar as MessageBubble.
  */
 
 const IconAssistant = () => (

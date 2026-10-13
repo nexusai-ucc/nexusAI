@@ -1,15 +1,15 @@
 /**
- * Componente raíz de la vista docente.
+ * Root component of the teacher view.
  *
- * Responsabilidades:
- *  - Estado global de la lista de documentos (carga inicial + actualizaciones).
- *  - Polling automático: mientras haya docs pending/indexing, refresca la lista
- *    completa cada POLL_INTERVAL_MS usando listDocuments (que incluye updated_at).
- *  - Upload: agrega el doc nuevo a la lista solo si el backend confirma éxito
- *    y el id no existe ya (evita sobreescribir un doc existente con fecha nula).
- *  - Errores de upload (incl. 409 y duplicados): muestra ErrorModal, no toca lista.
- *  - Tabs Material / Preguntas de alumnos (Gaps + FAQ, RDS-08) / Analytics
- *    (ANALYTICS-01/02) / Generar examen / Buscar.
+ * Responsibilities:
+ *  - Global state of the document list (initial load + updates).
+ *  - Automatic polling: while there are pending/indexing docs, refreshes the whole
+ *    list every POLL_INTERVAL_MS using listDocuments (which includes updated_at).
+ *  - Upload: adds the new doc to the list only if the backend confirms success
+ *    and the id is not there yet (avoids overwriting an existing doc with a null date).
+ *  - Upload errors (incl. 409 and duplicates): shows ErrorModal, does not touch the list.
+ *  - Tabs Material / Student questions (Gaps + FAQ, RDS-08) / Analytics
+ *    (ANALYTICS-01/02) / Generate exam / Search.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -29,8 +29,8 @@ import { ToastProvider, useToast } from "../components/Toast.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
 import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
 
-// UX-12 (#370): silueta de carga de la pestaña Material — párrafo de intro,
-// zona de subida y filas de la tabla de documentos indexados.
+// UX-12 (#370): loading skeleton of the Material tab — intro paragraph,
+// upload area and rows of the indexed documents table.
 function MaterialSkeleton({ lang = "es" }) {
     return (
         <SkeletonScreen label={lang === "es" ? "Cargando documentos..." : "Loading documents..."}>
@@ -54,12 +54,12 @@ function MaterialSkeleton({ lang = "es" }) {
 
 const STABLE_STATUSES = new Set(["indexed", "error"]);
 const POLL_INTERVAL_MS = 3000;
-// UX-17 (#387): cantidad de documentos que se piden por página, tanto en
-// la carga inicial como en cada "Cargar más".
+// UX-17 (#387): number of documents requested per page, both on the
+// initial load and on each "Load more".
 const PAGE_SIZE = 30;
 
-// RDS-05 (#404): nav lateral data-driven — reemplaza las 6 tabs
-// hardcodeadas de antes. ONB-07 (#430) suma "help".
+// RDS-05 (#404): data-driven side nav — replaces the 6 hardcoded tabs
+// from before. ONB-07 (#430) adds "help".
 function navItems(lang) {
     return lang === "es" ? [
         { key: "material",  label: "Material",             Icon: IconBookOpen },
@@ -79,7 +79,7 @@ function navItems(lang) {
 }
 const NAV_KEYS = new Set(navItems("es").map((item) => item.key));
 
-// UX-05 (#345): descripción corta por tab para el tooltip del nav lateral.
+// UX-05 (#345): short description per tab for the side nav tooltip.
 function navTooltips(lang) {
     return lang === "es" ? {
         material:  "Subir y gestionar el material indexado del curso",
@@ -105,20 +105,20 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
     const [loadingMore, setLoadingMore]   = useState(false);
     const [uploading, setUploading]       = useState(false);
     const [error, setError]               = useState(null);
-    // ONB-07 (#430): documents.php puede pedir un tab inicial vía ?tab=
-    // (p.ej. el link "Ayuda" del checklist de revisión) — "material" si no
-    // viene o no es una key válida.
+    // ONB-07 (#430): documents.php can ask for an initial tab via ?tab=
+    // (e.g. the "Help" link of the review checklist) — "material" if it does
+    // not come or is not a valid key.
     const [activeTab, setActiveTab]       = useState(
         NAV_KEYS.has(initialTab) ? initialTab : "material"
     ); // "material" | "questions" | "analytics" | "exam" | "search" | "help"
-    const [sections, setSections]         = useState([]); // BUS-05: secciones del curso para el selector de upload
+    const [sections, setSections]         = useState([]); // BUS-05: course sections for the upload selector
     const [selectedSection, setSelectedSection] = useState("");
-    const [visibleToStudents, setVisibleToStudents] = useState(true); // VIS-03: ojito de la actividad
-    // CONT-06 (#320): cola de archivos subiéndose en secuencia — un item por
-    // archivo, { key, filename, status: "queued"|"uploading"|"error", error }.
-    // "uploading"/"queued" se sacan solos al terminar bien; "error" queda
-    // visible (con botón para descartarlo) porque uno que falla no cancela
-    // a los demás.
+    const [visibleToStudents, setVisibleToStudents] = useState(true); // VIS-03: the activity's eye icon
+    // CONT-06 (#320): queue of files being uploaded in sequence — one item per
+    // file, { key, filename, status: "queued"|"uploading"|"error", error }.
+    // "uploading"/"queued" go away on their own when they finish well; "error" stays
+    // visible (with a button to dismiss it) because one that fails does not cancel
+    // the others.
     const [uploadQueue, setUploadQueue]   = useState([]);
     const { showWarning } = useToast();
 
@@ -160,8 +160,8 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
         loadMore:        (a, b) => `Load more (${a} of ${b})`,
     };
 
-    // Ref para acceder al estado actual desde el closure del setInterval
-    // sin incluirlo como dependencia del effect (evita recrear el interval).
+    // Ref to read the current state from the setInterval closure without
+    // adding it as a dependency of the effect (avoids recreating the interval).
     const documentsRef = useRef([]);
     documentsRef.current = documents;
 
@@ -186,7 +186,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
         return () => { cancelled = true; };
     }, [courseid]);
 
-    // ── Secciones del curso (BUS-05) ────────────────────────────────────────
+    // ── Course sections (BUS-05) ────────────────────────────────────────────
     useEffect(() => {
         let cancelled = false;
         listCourseSections(courseid).then((list) => {
@@ -197,19 +197,19 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
         return () => { cancelled = true; };
     }, [courseid]);
 
-    // ── Polling automático ─────────────────────────────────────────────────
-    // setInterval fijo: cada POLL_INTERVAL_MS consulta listDocuments si hay
-    // algún doc en estado inestable. No depende de `documents` en el dep array,
-    // así el interval no se recrea en cada actualización — usa documentsRef
-    // para leer el estado fresco sin crear una dependencia.
+    // ── Automatic polling ──────────────────────────────────────────────────
+    // Fixed setInterval: every POLL_INTERVAL_MS it calls listDocuments if any
+    // doc is in an unstable state. It does not depend on `documents` in the dep
+    // array, so the interval is not recreated on every update — it uses documentsRef
+    // to read the fresh state without creating a dependency.
     //
-    // UX-17 (#387): pide `limit = documentsRef.current.length` en vez de
-    // paginar desde cero — así el refresco automático respeta cuánto ya
-    // cargó el docente con "Cargar más" en vez de devolverlo a la página 1.
+    // UX-17 (#387): asks for `limit = documentsRef.current.length` instead of
+    // paging from zero — so the automatic refresh respects how much the
+    // teacher already loaded with "Load more" instead of sending them back to page 1.
     useEffect(() => {
         const intervalId = setInterval(async () => {
             if (!documentsRef.current.some((d) => !STABLE_STATUSES.has(d.status))) {
-                return; // nada pendiente, saltar este tick
+                return; // nothing pending, skip this tick
             }
             try {
                 const loadedCount = Math.max(documentsRef.current.length, PAGE_SIZE);
@@ -217,21 +217,21 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                 setDocuments(fresh?.items || []);
                 setTotal(fresh?.total || 0);
             } catch (pollErr) {
-                // Loguear pero no parar el polling — se reintenta en el próximo tick.
+                // Log but do not stop polling — it is retried on the next tick.
                 // eslint-disable-next-line no-console
                 console.warn("[NexusAI/documents] polling failed:", pollErr);
             }
         }, POLL_INTERVAL_MS);
 
         return () => clearInterval(intervalId);
-    }, [courseid]); // solo se recrea si cambia el curso
+    }, [courseid]); // only recreated if the course changes
 
     const hasMore = documents.length < total;
 
-    // UX-17 (#387): wrapper de setDocuments para DocumentsTable — hoy solo
-    // lo usa el borrado, que achica la lista. Mantiene `total` en sincro
-    // con la cantidad real de documentos del curso (si no, quedaría
-    // desactualizado y "Cargar más" ofrecería una página que ya no existe).
+    // UX-17 (#387): setDocuments wrapper for DocumentsTable — today only
+    // deletion uses it, which shrinks the list. Keeps `total` in sync with
+    // the real number of documents of the course (otherwise it would get
+    // stale and "Load more" would offer a page that no longer exists).
     const handleDocumentsChange = (updater) => {
         setDocuments((prev) => {
             const next = updater(prev);
@@ -254,10 +254,10 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
     };
 
     // ── Upload ─────────────────────────────────────────────────────────────
-    // CONT-06 (#320): recibe un array de archivos y los sube EN SECUENCIA
-    // (no en paralelo — más simple y evita condiciones de carrera con la
-    // detección de colisión de nombre y con documentsRef, que asumen un
-    // upload a la vez). Si uno falla, se sigue con el siguiente.
+    // CONT-06 (#320): receives an array of files and uploads them IN SEQUENCE
+    // (not in parallel — simpler and avoids race conditions with the name
+    // collision detection and with documentsRef, which assume one upload at
+    // a time). If one fails, it goes on with the next one.
     const handleUpload = async (files) => {
         const items = files.map((file, idx) => ({
             key: `${Date.now()}-${idx}-${file.name}`,
@@ -269,7 +269,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
         setUploadQueue((prev) => [...prev, ...items]);
         setUploading(true);
 
-        // Sin lista de unidades (no cargó) se sube a General (0).
+        // Without a list of sections (it did not load) it uploads to General (0).
         const section = selectedSection === "" ? 0 : Number(selectedSection);
 
         for (const item of items) {
@@ -278,9 +278,9 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
             );
             try {
                 const newDoc = await uploadDocument(courseid, item.file, section, visibleToStudents);
-                // El backend devuelve 200 con el doc existente cuando el contenido
-                // es idéntico (CONT-04). Si el id ya está en la lista, el doc está
-                // indexado — no sobreescribir con la respuesta que puede traer fecha nula.
+                // The backend returns 200 with the existing doc when the content
+                // is identical (CONT-04). If the id is already in the list, the doc
+                // is indexed — do not overwrite it with the response, which may carry a null date.
                 if (documentsRef.current.some((d) => d.id === newDoc.id)) {
                     showWarning(L.alreadyIndexed(item.filename));
                 } else {

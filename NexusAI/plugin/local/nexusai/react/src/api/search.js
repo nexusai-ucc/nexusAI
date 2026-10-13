@@ -1,7 +1,7 @@
 /**
- * Cliente API del buscador semántico (Feature A).
- * Llama a `local_nexusai_search_query` vía core/ajax. Fuera de Moodle
- * cae a un mock para que la UI sea visible en dev standalone.
+ * API client of the semantic search (Feature A).
+ * Calls `local_nexusai_search_query` through core/ajax. Outside Moodle
+ * it falls back to a mock so the UI can be seen in standalone dev.
  */
 
 const MOCK_RESULTS = [
@@ -54,16 +54,16 @@ async function getMoodleAjax() {
 }
 
 /**
- * Busca fragmentos del material del curso.
+ * Searches fragments of the course material.
  *
  * @param {Object}  params
- * @param {string}  params.query        Consulta de búsqueda.
- * @param {number}  params.courseId     ID del curso de Moodle.
- * @param {number}  [params.topK]       Cantidad de resultados (default 5).
- * @param {boolean} [params.global]     true para buscar en todos los cursos del usuario.
- * @param {string}  [params.materialType] Filtrar por mime type del documento (BUS-02).
- * @param {number}  [params.section]    Filtrar por sección/unidad del curso (BUS-05).
- * @param {boolean} [params.sectionUnassigned] Filtrar solo material sin sección asignada (BUS-05).
+ * @param {string}  params.query        Search query.
+ * @param {number}  params.courseId     Moodle course ID.
+ * @param {number}  [params.topK]       Number of results (default 5).
+ * @param {boolean} [params.global]     true to search all the user's courses.
+ * @param {string}  [params.materialType] Filter by the document's mime type (BUS-02).
+ * @param {number}  [params.section]    Filter by course section (BUS-05).
+ * @param {boolean} [params.sectionUnassigned] Filter only material with no section assigned (BUS-05).
  * @returns {Promise<{query:string, total:number, results:Array}>}
  */
 export async function searchMaterial({

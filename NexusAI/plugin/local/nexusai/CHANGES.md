@@ -67,6 +67,12 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   backend. The forum observers queue the new `sync_forum_post` ad hoc task,
   which indexes the post as it is when cron runs (or removes it); an identical
   pending task is not queued twice.
+- Changed: the release ZIP now includes the React source of the chat widget
+  and of the teacher view (`react/src`, `package.json`, `package-lock.json`,
+  `webpack.config.js`, `.babelrc` and a build `README.md`), so the minified
+  bundles in `amd/build` ship with what they are built from. Its comments and
+  README are now in English; only the comments changed, the compiled code is
+  the same.
 - Note: the data already in the backend is not visible until it is migrated
   (DATA-06).
 - New: the plugin's own tables for the student data (DATA-03). Fifteen
