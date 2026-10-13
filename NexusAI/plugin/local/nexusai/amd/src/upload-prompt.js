@@ -1,10 +1,29 @@
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
-// Shows a confirmation modal to the teacher after they add a file to a course
-// section (outside the NexusAI interface). The teacher can choose to index it in
-// NexusAI or ignore it.
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// Loaded only for users with local/nexusai:manage (teachers/managers).
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Shows a confirmation modal to the teacher after they add a file to a course
+ * section (outside the NexusAI interface). The teacher can choose to index it in
+ * NexusAI or ignore it.
+ *
+ * Loaded only for users with local/nexusai:manage (teachers/managers).
+ *
+ * @module     local_nexusai/upload-prompt
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 define([
     'core/ajax',

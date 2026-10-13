@@ -1,3 +1,25 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Part of the NexusAI plugin (local_nexusai).
+ *
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 /**
  * Chat API client — transport layer between React and the Moodle plugin.
  *
@@ -24,6 +46,21 @@
 // ============================================================
 // MOCK SERVER (only for dev outside Moodle)
 // ============================================================
+// Messages the widget shows when it refuses a question or the stream breaks,
+// in the language of the Moodle interface (the `lang` the widget receives).
+const CHAT_ERRORS = {
+    es: {
+        empty: "La pregunta no puede estar vacía",
+        tooLong: "La pregunta es demasiado larga (máximo 2000 caracteres)",
+        connectionClosed: "La conexión se cerró antes de terminar la respuesta.",
+    },
+    en: {
+        empty: "The question cannot be empty",
+        tooLong: "The question is too long (maximum 2000 characters)",
+        connectionClosed: "The connection closed before the answer was complete.",
+    },
+};
+
 const MOCK_RESPONSES = [
     "Esta es una respuesta de prueba del asistente. Cuando el cliente PHP esté implementado, vas a ver respuestas reales del LLM con contexto del material del curso.",
     "Perfecto, podés seguir preguntando. El historial de la conversación se está guardando en la base de datos.",
@@ -101,14 +138,16 @@ async function getMoodleAjax() {
  * @param {number}  params.userId       ID of the logged-in user.
  * @param {string}  [params.sessionId]  Existing session UUID (optional).
  * @param {boolean} [params.multiCourse] If true, searches all of the student's courses.
+ * @param {string}  [params.lang]       Interface language for the error messages ('es' | 'en').
  * @returns {Promise<{session_id:string, answer:string, messages:Array}>}
  */
-export async function sendMessage({ question, courseId, userId, sessionId, multiCourse = false }) {
+export async function sendMessage({ question, courseId, userId, sessionId, multiCourse = false, lang = "es" }) {
+    const errors = CHAT_ERRORS[lang] || CHAT_ERRORS.es;
     if (!question || !question.trim()) {
-        throw new Error("La pregunta no puede estar vacía");
+        throw new Error(errors.empty);
     }
     if (question.length > 2000) {
-        throw new Error("La pregunta es demasiado larga (máximo 2000 caracteres)");
+        throw new Error(errors.tooLong);
     }
 
     const fetchMany = await getMoodleAjax();
@@ -203,6 +242,7 @@ export async function submitMessageFeedback({ messageId, courseId, isHelpful, co
  * @param {number}  params.courseId
  * @param {string}  [params.sessionId]
  * @param {boolean} [params.multiCourse]
+ * @param {string}  [params.lang]       Interface language for the error messages ('es' | 'en').
  * @param {Object}  callbacks
  * @param {(meta:{session_id:string,chunks:number}) => void} [callbacks.onMeta]
  * @param {(token:string) => void}                          callbacks.onToken
@@ -211,11 +251,12 @@ export async function submitMessageFeedback({ messageId, courseId, isHelpful, co
  * @returns {Promise<void>} resolves when the stream ends
  */
 export async function sendMessageStream(
-    { question, courseId, sessionId, multiCourse = false },
+    { question, courseId, sessionId, multiCourse = false, lang = "es" },
     { onMeta, onToken, onDone, onError, onAnswerMeta } = {}
 ) {
+    const errors = CHAT_ERRORS[lang] || CHAT_ERRORS.es;
     if (!question || !question.trim()) {
-        throw new Error("La pregunta no puede estar vacía");
+        throw new Error(errors.empty);
     }
 
     // Outside Moodle: fall back to the sync mock (no streaming in mock mode).
@@ -310,6 +351,6 @@ export async function sendMessageStream(
     // Nobody fired "done" or "error": the connection closed without any
     // explicit sign. We warn so the UI does not hang.
     if (!receivedTerminalEvent) {
-        onError?.("La conexión se cerró antes de terminar la respuesta.");
+        onError?.(errors.connectionClosed);
     }
 }
