@@ -236,6 +236,7 @@ class provider implements
         foreach ($contextlist->get_contexts() as $context) {
             if ($context->contextlevel === CONTEXT_COURSE) {
                 self::delete_course_rows((int) $context->instanceid, [$userid]);
+                self::delete_backend_forum_posts((int) $context->instanceid, [$userid]);
             }
         }
 
@@ -258,6 +259,7 @@ class provider implements
         }
 
         self::delete_course_rows((int) $context->instanceid, $userids);
+        self::delete_backend_forum_posts((int) $context->instanceid, $userids);
 
         self::anonymise_course_settings($userids);
     }
@@ -439,6 +441,50 @@ class provider implements
             'questionid IN (SELECT id FROM {local_nexusai_qbank} WHERE courseid = :courseid)' . $userwhere,
             $params
         );
+    }
+
+    /**
+     * Removes the backend's copy (embeddings) of the users' forum posts in a course.
+     *
+     * The backend indexes forum posts for the similarity search (MMR-301 item 4); that
+     * copy was only purged reactively through the `forum_post_deleted` event, never as
+     * part of an actual data-deletion request. Best-effort: a backend failure is logged
+     * and must not stop the rest of the deletion.
+     *
+     * @param int $courseid Course ID.
+     * @param int[] $userids Users whose forum posts' embeddings should be removed.
+     */
+    private static function delete_backend_forum_posts(int $courseid, array $userids): void {
+        global $DB;
+
+        if (empty($userids) || !\local_nexusai\local\course_guard::plugin_enabled()) {
+            return;
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal(array_map('intval', $userids), SQL_PARAMS_NAMED);
+        $params['courseid'] = $courseid;
+        $postids = $DB->get_fieldset_select(
+            'forum_posts',
+            'id',
+            "discussion IN (SELECT id FROM {forum_discussions} WHERE course = :courseid) AND userid $insql",
+            $params
+        );
+        if (empty($postids)) {
+            return;
+        }
+
+        try {
+            $client = new \local_nexusai\external\backend_client();
+            $client->set_role('system');
+            foreach ($postids as $postid) {
+                $client->delete_forum_post((int) $postid);
+            }
+        } catch (\Throwable $e) {
+            debugging(
+                '[NexusAI] Could not delete forum post embeddings for course ' . $courseid . ': ' . $e->getMessage(),
+                DEBUG_NORMAL
+            );
+        }
     }
 
     /**
