@@ -15,12 +15,14 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Checks access to a forum discussion before NexusAI reads or sends its posts (MMR-301 item 2).
+ * Checks access to forum discussions and posts before NexusAI reads or sends them (MMR-301 item 2).
  *
  * The external functions that touch forum posts only validated the course-level
  * `local/nexusai:use` capability, which ignores `mod/forum:viewdiscussion`, group
  * separation and hidden or timed discussions. This reuses Moodle's own
- * `forum_user_can_see_discussion()` so the same rules forum itself enforces apply here.
+ * `forum_user_can_see_discussion()` and, for each post, `forum_user_can_see_post()`,
+ * so the same rules forum itself enforces apply here: private replies, deleted posts
+ * and Q&A forums where students only see the other replies after posting.
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -30,7 +32,7 @@
 namespace local_nexusai\local;
 
 /**
- * Validates that the current user can see a forum discussion.
+ * Validates that the current user can see a forum discussion and its posts.
  */
 class forum_access_guard {
     /**
@@ -74,5 +76,75 @@ class forum_access_guard {
         } catch (\Throwable $e) {
             return false;
         }
+    }
+
+    /**
+     * The posts of a discussion the current user can see, oldest first.
+     *
+     * Seeing the discussion is not enough: a private reply is only for its author, its
+     * recipient and whoever has `mod/forum:readprivatereplies`, and a Q&A forum hides the
+     * other replies until the student posts. Each post goes through `forum_user_can_see_post()`.
+     *
+     * @param \stdClass $discussion Discussion record, already checked with require_can_view_discussion().
+     * @param int $since Only posts created at or after this time (0 = all).
+     * @param bool $includeprivatereplies False to leave out every private reply, even the ones
+     *     the user can see (for text that leaves the forum, such as the digest sent to a webhook).
+     * @return \stdClass[] Post records.
+     */
+    public static function visible_posts(\stdClass $discussion, int $since = 0, bool $includeprivatereplies = true): array {
+        global $DB, $USER, $CFG;
+        require_once($CFG->dirroot . '/mod/forum/lib.php');
+
+        $forum = $DB->get_record('forum', ['id' => $discussion->forum], '*', MUST_EXIST);
+        $cm = get_fast_modinfo($discussion->course)->get_instances_of('forum')[(int) $forum->id] ?? null;
+        if (!$cm) {
+            return [];
+        }
+
+        $posts = $DB->get_records_select(
+            'forum_posts',
+            'discussion = :discussionid AND created >= :since',
+            ['discussionid' => (int) $discussion->id, 'since' => $since],
+            'created ASC, id ASC'
+        );
+
+        $visible = [];
+        foreach ($posts as $post) {
+            if (!$includeprivatereplies && !empty($post->privatereplyto)) {
+                continue;
+            }
+            if (forum_user_can_see_post($forum, $discussion, $post, $USER, $cm)) {
+                $visible[] = $post;
+            }
+        }
+        return $visible;
+    }
+
+    /**
+     * Whether the current user can see a forum post of the course.
+     *
+     * @param int $postid mdl_forum_posts ID.
+     * @param int $courseid Moodle course ID the post is expected to belong to.
+     * @return \stdClass|null The post record, or null when it does not exist, is in another
+     *     course or the user cannot see it.
+     */
+    public static function visible_post(int $postid, int $courseid): ?\stdClass {
+        global $DB, $USER, $CFG;
+        require_once($CFG->dirroot . '/mod/forum/lib.php');
+
+        $post = $DB->get_record('forum_posts', ['id' => $postid]);
+        if (!$post) {
+            return null;
+        }
+        $discussion = $DB->get_record('forum_discussions', ['id' => $post->discussion, 'course' => $courseid]);
+        if (!$discussion) {
+            return null;
+        }
+        $forum = $DB->get_record('forum', ['id' => $discussion->forum], '*', MUST_EXIST);
+        $cm = get_fast_modinfo($courseid)->get_instances_of('forum')[(int) $forum->id] ?? null;
+        if (!$cm || !forum_user_can_see_post($forum, $discussion, $post, $USER, $cm)) {
+            return null;
+        }
+        return $post;
     }
 }

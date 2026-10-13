@@ -136,7 +136,7 @@ class forum_weekly_digest extends external_api {
         // Discussions with recent activity in ANY of the course's forums,
         // most recent first, defensive cap before building the payload.
         $discussionrows = $DB->get_records_sql(
-            "SELECT fd.id AS discussionid, fd.name AS discussionname, f.name AS forumname
+            "SELECT fd.*, f.name AS forumname
                FROM {forum_discussions} fd
                JOIN {forum} f ON f.id = fd.forum
               WHERE f.course = :courseid
@@ -159,14 +159,15 @@ class forum_weekly_digest extends external_api {
 
         $discussions = [];
         foreach ($discussionrows as $drow) {
+            // Only what this teacher can see in the forum (MMR-301 item 2), and never a
+            // private reply: the digest can be posted to the course's webhook, where
+            // everyone in that channel reads it.
+            if (!\local_nexusai\local\forum_access_guard::can_view_discussion((int) $drow->id, (int) $params['courseid'])) {
+                continue;
+            }
             // Authors go out as pseudonyms, numbered per discussion: no name leaves Moodle.
-            $postrows = $DB->get_records_sql(
-                "SELECT fp.id, fp.message, fp.userid
-                   FROM {forum_posts} fp
-                  WHERE fp.discussion = :discussionid
-                    AND fp.created >= :since
-               ORDER BY fp.created ASC",
-                ['discussionid' => (int) $drow->discussionid, 'since' => $since],
+            $postrows = array_slice(
+                \local_nexusai\local\forum_access_guard::visible_posts($drow, $since, false),
                 0,
                 self::MAX_POSTS_PER_DISCUSSION
             );
@@ -198,8 +199,8 @@ class forum_weekly_digest extends external_api {
             }
 
             $discussions[] = [
-                'discussion_id'   => (int) $drow->discussionid,
-                'discussion_name' => (string) $drow->discussionname,
+                'discussion_id'   => (int) $drow->id,
+                'discussion_name' => (string) $drow->name,
                 'forum_name'      => (string) $drow->forumname,
                 'posts'           => $posts,
             ];

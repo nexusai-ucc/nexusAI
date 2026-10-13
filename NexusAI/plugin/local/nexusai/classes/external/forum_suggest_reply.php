@@ -79,8 +79,6 @@ class forum_suggest_reply extends external_api {
      * @return array
      */
     public static function execute(int $discussionid, int $courseid, int $replytopostid): array {
-        global $DB;
-
         $params = self::validate_parameters(self::execute_parameters(), [
             'discussionid'  => $discussionid,
             'courseid'      => $courseid,
@@ -94,19 +92,15 @@ class forum_suggest_reply extends external_api {
 
         // Verify the discussion belongs to the course and the current user can actually
         // see it (capability, group separation, hidden/timed discussions — MMR-301 item 2).
-        \local_nexusai\local\forum_access_guard::require_can_view_discussion(
+        $discussion = \local_nexusai\local\forum_access_guard::require_can_view_discussion(
             (int) $params['discussionid'],
             (int) $params['courseid']
         );
 
-        // Read all the thread's posts in chronological order.
+        // The thread's posts this user can see (private replies to others, Q&A forums),
+        // in chronological order.
         // Authors go out as pseudonyms (forum_author_alias): no name leaves Moodle.
-        $sql = "SELECT fp.id, fp.message, fp.created, fp.userid
-                  FROM {forum_posts} fp
-                 WHERE fp.discussion = :discussionid
-              ORDER BY fp.created ASC";
-
-        $rows = $DB->get_records_sql($sql, ['discussionid' => (int) $params['discussionid']]);
+        $rows = \local_nexusai\local\forum_access_guard::visible_posts($discussion);
 
         if (empty($rows)) {
             return [
