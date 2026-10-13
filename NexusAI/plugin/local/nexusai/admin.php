@@ -62,7 +62,7 @@ $healthlatency = null;
 if (empty($endpoint)) {
     $healthstatus = 'unconfigured';
 } else {
-    // ignoresecurity, like backend_client and chat_stream.php: the endpoint is set by
+    // Uses ignoresecurity, like backend_client and chat_stream.php: the endpoint is set by
     // the administrator, and Moodle's default blocked hosts list covers localhost,
     // private networks and ports other than 80/443, where the backend usually runs.
     // Without it this page reported "The URL is blocked" while the plugin worked.
