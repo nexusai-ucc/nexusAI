@@ -63,6 +63,10 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Changed: the admin status page (`admin.php`) is rendered with the
   `local_nexusai/admin_status` Mustache template instead of HTML built in PHP;
   the configuration labels now come from the language pack too.
+- Changed: creating, editing or deleting a forum post no longer waits for the
+  backend. The forum observers queue the new `sync_forum_post` ad hoc task,
+  which indexes the post as it is when cron runs (or removes it); an identical
+  pending task is not queued twice.
 - Note: the data already in the backend is not visible until it is migrated
   (DATA-06).
 - New: the plugin's own tables for the student data (DATA-03). Fifteen

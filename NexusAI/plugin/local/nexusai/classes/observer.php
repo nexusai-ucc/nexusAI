@@ -195,136 +195,77 @@ class observer {
     const PENDING_PREF = 'local_nexusai_pending_uploads';
 
     // Forums — Epic 06.
+    //
+    // The observers only queue \local_nexusai\task\sync_forum_post: the call to
+    // the backend runs in cron, so posting never waits for it (MMR-301 item 10).
 
     /**
-     * Indexes the first post of a new forum discussion.
+     * Queues the indexing of the first post of a new forum discussion.
      *
      * On Moodle 5.x, creating a discussion fires discussion_created but NOT post_created.
-     * We read the firstpost from the m_forum_discussions table to index the content.
+     * We read the firstpost from the m_forum_discussions table.
      *
      * @param \mod_forum\event\discussion_created $event
      */
     public static function forum_discussion_created(\mod_forum\event\discussion_created $event): void {
+        global $DB;
+
         if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
             return;
         }
 
-        global $DB;
-
         $discussionid = (int) $event->objectid;
-        $courseid     = (int) $event->courseid;
-
-        try {
-            $discussion = $DB->get_record('forum_discussions', ['id' => $discussionid], 'id, firstpost');
-            if (!$discussion || empty($discussion->firstpost)) {
-                return;
-            }
-            self::index_forum_post_from_event((int) $discussion->firstpost, $courseid, $discussionid);
-        } catch (\Throwable $e) {
-            debugging(
-                '[NexusAI] forum_discussion_created failed for discussion=' . $discussionid . ': ' . $e->getMessage(),
-                DEBUG_NORMAL
-            );
+        $firstpost = (int) $DB->get_field('forum_discussions', 'firstpost', ['id' => $discussionid]);
+        if ($firstpost > 0) {
+            \local_nexusai\task\sync_forum_post::queue('index', $firstpost, (int) $event->courseid, $discussionid);
         }
     }
 
     /**
-     * Indexes the embedding of a newly created forum post (replies to existing discussions).
+     * Queues the indexing of a newly created forum post (replies to existing discussions).
      *
      * @param \mod_forum\event\post_created $event
      */
     public static function forum_post_created(\mod_forum\event\post_created $event): void {
-        if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
-            return;
-        }
-        self::index_forum_post_from_event(
-            (int) $event->objectid,
-            (int) $event->courseid,
-            (int) ($event->other['discussionid'] ?? 0)
-        );
+        self::queue_forum_post('index', $event);
     }
 
     /**
-     * Re-indexes the embedding of an edited post.
+     * Queues the re-indexing of an edited post.
      *
      * The backend compares the content_hash and skips it if the content didn't change.
      *
      * @param \mod_forum\event\post_updated $event
      */
     public static function forum_post_updated(\mod_forum\event\post_updated $event): void {
-        if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
-            return;
-        }
-        self::index_forum_post_from_event(
-            (int) $event->objectid,
-            (int) $event->courseid,
-            (int) ($event->other['discussionid'] ?? 0)
-        );
+        self::queue_forum_post('index', $event);
     }
 
     /**
-     * Removes the embedding of a deleted post.
-     *
-     * The post is no longer in the DB by the time this event fires, so we
-     * only need the post_id to call the backend.
+     * Queues the removal of a deleted post's embedding.
      *
      * @param \mod_forum\event\post_deleted $event
      */
     public static function forum_post_deleted(\mod_forum\event\post_deleted $event): void {
-        if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
-            return;
-        }
-
-        $postid = (int) $event->objectid;
-
-        try {
-            $client = new \local_nexusai\external\backend_client();
-            $client->set_role('system');
-            $client->delete_forum_post($postid);
-        } catch (\Throwable $e) {
-            debugging(
-                '[NexusAI] forum_post_deleted failed for post=' . $postid . ': ' . $e->getMessage(),
-                DEBUG_NORMAL
-            );
-        }
+        self::queue_forum_post('delete', $event);
     }
 
     /**
-     * Reads the post's content from the DB and calls the backend to index it.
+     * Queues the sync of the post an event is about, if NexusAI is on for its course.
      *
-     * Logic shared between forum_post_created and forum_post_updated.
-     *
-     * @param int $postid       mdl_forum_posts ID.
-     * @param int $courseid     Course ID.
-     * @param int $discussionid mdl_forum_discussions ID.
+     * @param string $action 'index' or 'delete'.
+     * @param \core\event\base $event A forum post event.
      */
-    private static function index_forum_post_from_event(int $postid, int $courseid, int $discussionid): void {
-        global $DB;
-
-        try {
-            $post = $DB->get_record('forum_posts', ['id' => $postid]);
-            if (!$post) {
-                return;
-            }
-
-            // The message is stored as HTML — strip it for clean text.
-            $content = trim(strip_tags($post->message ?? ''));
-
-            // Very short posts ("Thanks" buttons, etc.) add nothing to RAG.
-            if (strlen($content) < 10) {
-                return;
-            }
-
-            $client = new \local_nexusai\external\backend_client();
-            $client->set_role('system');
-            $scope = \local_nexusai\local\visible_material::forum_scope($discussionid, $courseid);
-            $client->index_forum_post($postid, $discussionid, $courseid, $content, $scope['cmid'], $scope['groupid']);
-        } catch (\Throwable $e) {
-            debugging(
-                '[NexusAI] forum post indexing failed for post=' . $postid . ': ' . $e->getMessage(),
-                DEBUG_NORMAL
-            );
+    private static function queue_forum_post(string $action, \core\event\base $event): void {
+        if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
+            return;
         }
+        \local_nexusai\task\sync_forum_post::queue(
+            $action,
+            (int) $event->objectid,
+            (int) $event->courseid,
+            (int) ($event->other['discussionid'] ?? 0)
+        );
     }
 
     // Resource modules (documents).
