@@ -56,6 +56,13 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   print view, redirects, install/upgrade screens, the quiz secure window).
 - Removed: the `local/nexusai:viewanalytics` capability, which nothing used;
   the analytics dashboard keeps requiring `local/nexusai:manage`.
+- Fixed: validation errors of the chat, search, quiz and exam (empty or too
+  long question, search or topic, no document selected, bad session) were
+  fixed English text; they now come from the language pack. The streaming chat
+  also sends them in the format the widget shows, instead of raw JSON.
+- Changed: the admin status page (`admin.php`) is rendered with the
+  `local_nexusai/admin_status` Mustache template instead of HTML built in PHP;
+  the configuration labels now come from the language pack too.
 - Note: the data already in the backend is not visible until it is migrated
   (DATA-06).
 - New: the plugin's own tables for the student data (DATA-03). Fifteen

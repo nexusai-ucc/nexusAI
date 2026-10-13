@@ -113,7 +113,8 @@ final class manage_capability_test extends \advanced_testcase {
         // Courses start with NexusAI off; this one has to be on for the call to get that far.
         \local_nexusai\local\course_guard::set_enabled((int) $course->id, true);
 
-        $this->expectException(\invalid_parameter_exception::class);
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('errornodocuments', 'local_nexusai'));
         \local_nexusai\external\exam_generate::execute($course->id, []);
     }
 

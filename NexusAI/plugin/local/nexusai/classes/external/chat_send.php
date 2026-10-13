@@ -153,17 +153,17 @@ class chat_send extends external_api {
         // 3. Business-rule validation.
         $cleanquestion = trim($params['question']);
         if ($cleanquestion === '') {
-            throw new \invalid_parameter_exception('Question cannot be empty');
+            throw new \moodle_exception('errorquestionempty', 'local_nexusai');
         }
         if (mb_strlen($cleanquestion) > 2000) {
-            throw new \invalid_parameter_exception('Question too long (max 2000 characters)');
+            throw new \moodle_exception('errorquestiontoolong', 'local_nexusai', '', 2000);
         }
 
         // The sessionid has to be a UUID v4 or empty. PARAM_ALPHANUMEXT already
         // blocks injection; we check for a reasonable length here.
         $cleansessionid = trim($params['sessionid']);
         if ($cleansessionid !== '' && (strlen($cleansessionid) < 8 || strlen($cleansessionid) > 64)) {
-            throw new \invalid_parameter_exception('Invalid session id format');
+            throw new \moodle_exception('errorinvalidparams', 'local_nexusai');
         }
         if ($cleansessionid === '') {
             $cleansessionid = null;  // Null starts a new conversation.
