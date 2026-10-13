@@ -78,7 +78,6 @@ $string['documents_page_noscript'] = 'This page requires JavaScript to manage ma
 $string['documents_page_title'] = 'NexusAI · Materials';
 $string['erroraccessdenied'] = 'Access denied';
 $string['errorbackend'] = 'NexusAI backend error: {$a}';
-$string['errorbackendblocked'] = 'The NexusAI backend address is blocked by the site HTTP security settings.';
 $string['errorbackendunreachable'] = 'Cannot reach NexusAI backend: {$a}. Check API endpoint, network, and that the backend container is running.';
 $string['errorconfigmissing'] = 'NexusAI configuration is incomplete. Missing: {$a}. Set it in Site administration → Plugins → Local plugins → NexusAI.';
 $string['errorcourseidrequired'] = 'Course ID required';
