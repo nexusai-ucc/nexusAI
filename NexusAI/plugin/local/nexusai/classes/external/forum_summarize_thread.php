@@ -97,11 +97,12 @@ class forum_summarize_thread extends external_api {
         require_capability('local/nexusai:use', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        // Verify the discussion belongs to the course.
-        $discussion = $DB->get_record('forum_discussions', [
-            'id'     => (int) $params['discussionid'],
-            'course' => (int) $params['courseid'],
-        ], 'id', MUST_EXIST);
+        // Verify the discussion belongs to the course and the current user can actually
+        // see it (capability, group separation, hidden/timed discussions — MMR-301 item 2).
+        $discussion = \local_nexusai\local\forum_access_guard::require_can_view_discussion(
+            (int) $params['discussionid'],
+            (int) $params['courseid']
+        );
 
         // Read the discussion's posts along with the author's name.
         // We order by created ASC so the LLM reads them in chronological order.

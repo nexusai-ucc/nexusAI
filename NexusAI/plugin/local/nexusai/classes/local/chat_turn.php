@@ -98,6 +98,12 @@ class chat_turn {
             if (!course_guard::is_enabled($cid)) {
                 continue;
             }
+            // Same capability check search_query.php already does for its own
+            // multi-course search (MMR-301 item 14): being enrolled and the course
+            // having NexusAI on is not enough, the user needs local/nexusai:use there.
+            if (!has_capability('local/nexusai:use', \context_course::instance($cid))) {
+                continue;
+            }
             $ids[] = $cid;
             $names[(string) $cid] = $course->fullname ?? $course->shortname ?? 'Course';
             if (has_capability('local/nexusai:manage', \context_course::instance($cid))) {

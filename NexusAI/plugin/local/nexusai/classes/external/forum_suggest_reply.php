@@ -92,11 +92,12 @@ class forum_suggest_reply extends external_api {
         require_capability('local/nexusai:use', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        // Verify the discussion belongs to the course.
-        $DB->get_record('forum_discussions', [
-            'id'     => (int) $params['discussionid'],
-            'course' => (int) $params['courseid'],
-        ], 'id', MUST_EXIST);
+        // Verify the discussion belongs to the course and the current user can actually
+        // see it (capability, group separation, hidden/timed discussions — MMR-301 item 2).
+        \local_nexusai\local\forum_access_guard::require_can_view_discussion(
+            (int) $params['discussionid'],
+            (int) $params['courseid']
+        );
 
         // Read all the thread's posts in chronological order.
         $sql = "SELECT fp.id, fp.message, fp.created,

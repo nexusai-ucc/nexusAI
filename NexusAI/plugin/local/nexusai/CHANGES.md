@@ -32,6 +32,16 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   browser; they now always use the logged-in user.
 - Fixed: `local_nexusai_quiz_errors_record` declared its options parameter
   wrongly, which raised a debugging notice.
+- Fixed: the forum web services (thread summary, reply suggestion, similar
+  posts) only checked the course-level capability before reading or sending
+  posts, ignoring `mod/forum:viewdiscussion`, separated groups and hidden or
+  timed discussions. They now reuse Moodle's own discussion-visibility check.
+- Fixed: deleting a user's data through the Privacy API removed the plugin's
+  own tables but left that user's forum posts indexed in the backend's
+  similarity search; it is now purged as part of the same deletion.
+- Fixed: a multi-course chat question searched every enrolled course with
+  NexusAI on, without checking the user still has `local/nexusai:use` in each
+  one individually.
 - Note: the data already in the backend is not visible until it is migrated
   (DATA-06).
 - New: the plugin's own tables for the student data (DATA-03). Fifteen

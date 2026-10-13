@@ -73,6 +73,7 @@ $string['course_site_disabled'] = 'NexusAI is turned off for the whole site by t
 $string['coursedisabled'] = 'NexusAI is turned off in this course.';
 $string['default_course_enabled'] = 'On by default in courses';
 $string['default_course_enabled_desc'] = 'Whether courses without their own setting use NexusAI. Off by default, so courses can be turned on one at a time (teachers from the course settings, or the CLI script cli/enable_course.php).';
+$string['discussionnotaccessible'] = 'You do not have access to this discussion.';
 $string['documents_page_noscript'] = 'This page requires JavaScript to manage materials indexed by the NexusAI assistant.';
 $string['documents_page_title'] = 'NexusAI · Materials';
 $string['erroraccessdenied'] = 'Access denied';
