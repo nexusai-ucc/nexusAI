@@ -177,6 +177,20 @@ class provider implements
             );
         }
 
+        // Courses where the user wrote forum posts: the backend may keep an indexed copy
+        // of them even if the user never used NexusAI (MMR-301 item 4).
+        if (\local_nexusai\local\course_guard::backend_configured()) {
+            $contextlist->add_from_sql(
+                "SELECT ctx.id FROM {context} ctx
+                  WHERE ctx.contextlevel = :contextlevel
+                    AND ctx.instanceid IN (SELECT d.course
+                                             FROM {forum_discussions} d
+                                             JOIN {forum_posts} p ON p.discussion = d.id
+                                            WHERE p.userid = :userid)",
+                ['contextlevel' => CONTEXT_COURSE, 'userid' => $userid]
+            );
+        }
+
         return $contextlist;
     }
 
@@ -196,6 +210,18 @@ class provider implements
             $userlist->add_from_sql(
                 'userid',
                 "SELECT $useridfield AS userid FROM $from WHERE c.courseid = :courseid AND $useridfield > 0",
+                ['courseid' => (int) $context->instanceid]
+            );
+        }
+
+        // Authors of forum posts the backend may keep indexed (see get_contexts_for_userid()).
+        if (\local_nexusai\local\course_guard::backend_configured()) {
+            $userlist->add_from_sql(
+                'userid',
+                "SELECT p.userid
+                   FROM {forum_posts} p
+                   JOIN {forum_discussions} d ON d.id = p.discussion
+                  WHERE d.course = :courseid",
                 ['courseid' => (int) $context->instanceid]
             );
         }
@@ -296,6 +322,7 @@ class provider implements
         }
 
         self::delete_course_rows((int) $context->instanceid, null);
+        self::delete_backend_forum_posts((int) $context->instanceid, null);
     }
 
     /**
@@ -473,24 +500,27 @@ class provider implements
      * calls go in an ad hoc task (task\purge_backend_data), so the deletion never waits
      * for the backend.
      *
+     * It runs whenever the backend is configured, even with NexusAI off: posts indexed
+     * while it was on are still there.
+     *
      * @param int $courseid Course ID.
-     * @param int[] $userids Users whose forum posts' embeddings should be removed.
+     * @param int[]|null $userids Users whose forum posts' embeddings should be removed (null = everyone's).
      */
-    private static function delete_backend_forum_posts(int $courseid, array $userids): void {
+    private static function delete_backend_forum_posts(int $courseid, ?array $userids): void {
         global $DB;
 
-        if (empty($userids) || !\local_nexusai\local\course_guard::plugin_enabled()) {
+        if ($userids === [] || !\local_nexusai\local\course_guard::backend_configured()) {
             return;
         }
 
-        [$insql, $params] = $DB->get_in_or_equal(array_map('intval', $userids), SQL_PARAMS_NAMED);
-        $params['courseid'] = $courseid;
-        $postids = $DB->get_fieldset_select(
-            'forum_posts',
-            'id',
-            "discussion IN (SELECT id FROM {forum_discussions} WHERE course = :courseid) AND userid $insql",
-            $params
-        );
+        $where = 'discussion IN (SELECT id FROM {forum_discussions} WHERE course = :courseid)';
+        $params = ['courseid' => $courseid];
+        if ($userids !== null) {
+            [$insql, $userparams] = $DB->get_in_or_equal(array_map('intval', $userids), SQL_PARAMS_NAMED);
+            $where .= " AND userid $insql";
+            $params += $userparams;
+        }
+        $postids = $DB->get_fieldset_select('forum_posts', 'id', $where, $params);
         if ($postids) {
             \local_nexusai\task\purge_backend_data::queue_forum_posts($postids);
         }

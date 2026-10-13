@@ -141,4 +141,71 @@ final class sync_forum_post_test extends \advanced_testcase {
 
         $this->expectOutputString('');
     }
+
+    /**
+     * A removal task for the given post.
+     *
+     * @param int $postid Post ID.
+     * @param int $courseid Course ID.
+     * @return sync_forum_post
+     */
+    private function removal(int $postid, int $courseid): sync_forum_post {
+        $task = new sync_forum_post();
+        $task->set_custom_data(['action' => 'delete', 'postid' => $postid, 'courseid' => $courseid, 'discussionid' => 0]);
+        return $task;
+    }
+
+    /**
+     * Fills in the backend connection; nothing listens on that port.
+     */
+    private function configure_backend(): void {
+        set_config('api_endpoint', 'http://127.0.0.1:9', 'local_nexusai');
+        set_config('api_key', 'test-key', 'local_nexusai');
+        set_config('shared_secret', 'test-secret', 'local_nexusai');
+    }
+
+    /**
+     * A deleted post is queued for removal even in a course where NexusAI is off now:
+     * it may have been indexed while it was on.
+     */
+    public function test_deleted_post_is_queued_when_the_course_is_off(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $this->configure_backend();
+        [$course, $forum, $discussion] = $this->create_forum_discussion();
+        $this->assertFalse(local\course_guard::is_enabled((int) $course->id));
+
+        observer::forum_post_deleted(\mod_forum\event\post_deleted::create([
+            'context'  => \context_module::instance($forum->cmid),
+            'objectid' => $discussion->firstpost,
+            'other'    => ['discussionid' => $discussion->id, 'forumid' => $forum->id, 'forumtype' => $forum->type],
+        ]));
+
+        $tasks = $this->queued();
+        $this->assertCount(1, $tasks);
+        $this->assertSame('delete', reset($tasks)->get_custom_data()->action);
+    }
+
+    /**
+     * The removal runs for a course that no longer exists, and a backend failure fails the
+     * task so the task API runs it again instead of losing it.
+     */
+    public function test_removal_does_not_depend_on_the_course_and_is_retried(): void {
+        $this->resetAfterTest();
+        $this->configure_backend();
+
+        $this->expectException(\moodle_exception::class);
+        $this->removal(123, 999999)->execute();
+    }
+
+    /**
+     * Without a backend the removal has nothing to do.
+     */
+    public function test_removal_without_a_backend_does_nothing(): void {
+        $this->resetAfterTest();
+
+        $this->removal(123, 999999)->execute();
+
+        $this->expectOutputString('');
+    }
 }
