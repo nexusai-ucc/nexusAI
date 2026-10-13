@@ -57,17 +57,21 @@ final class sync_forum_post_test extends \advanced_testcase {
     }
 
     /**
-     * Fires the post_created event of the discussion's first post.
+     * Hands the post_created event of the discussion's first post to the observer.
+     *
+     * The observer is called directly instead of triggering the event: what is
+     * tested is what the observer does, not Moodle's event dispatching.
      *
      * @param \stdClass $forum Forum.
      * @param \stdClass $discussion Discussion.
      */
-    private function trigger_post_created(\stdClass $forum, \stdClass $discussion): void {
-        \mod_forum\event\post_created::create([
+    private function notify_post_created(\stdClass $forum, \stdClass $discussion): void {
+        $event = \mod_forum\event\post_created::create([
             'context'  => \context_module::instance($forum->cmid),
             'objectid' => $discussion->firstpost,
             'other'    => ['discussionid' => $discussion->id, 'forumid' => $forum->id, 'forumtype' => $forum->type],
-        ])->trigger();
+        ]);
+        observer::forum_post_created($event);
     }
 
     /**
@@ -87,8 +91,9 @@ final class sync_forum_post_test extends \advanced_testcase {
         $this->setAdminUser();
         [$course, $forum, $discussion] = $this->create_forum_discussion();
         local\course_guard::set_enabled((int) $course->id, true);
+        $this->assertTrue(local\course_guard::is_enabled((int) $course->id));
 
-        $this->trigger_post_created($forum, $discussion);
+        $this->notify_post_created($forum, $discussion);
 
         $tasks = $this->queued();
         $this->assertCount(1, $tasks);
@@ -97,7 +102,7 @@ final class sync_forum_post_test extends \advanced_testcase {
         $this->assertEquals($discussion->firstpost, $data->postid);
         $this->assertEquals($course->id, $data->courseid);
 
-        $this->trigger_post_created($forum, $discussion);
+        $this->notify_post_created($forum, $discussion);
         $this->assertCount(1, $this->queued(), 'An identical pending task is not queued twice.');
     }
 
@@ -109,7 +114,7 @@ final class sync_forum_post_test extends \advanced_testcase {
         $this->setAdminUser();
         [, $forum, $discussion] = $this->create_forum_discussion();
 
-        $this->trigger_post_created($forum, $discussion);
+        $this->notify_post_created($forum, $discussion);
 
         $this->assertCount(0, $this->queued());
     }
