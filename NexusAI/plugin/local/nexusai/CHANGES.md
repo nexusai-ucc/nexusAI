@@ -42,6 +42,10 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Fixed: a multi-course chat question searched every enrolled course with
   NexusAI on, without checking the user still has `local/nexusai:use` in each
   one individually.
+- Fixed: the calendar feed (`.ics`) only filtered events by course and group,
+  so a hidden activity or one with an unmet access restriction still showed up
+  with its name and due date. It now also checks the activity's own
+  visibility for that student.
 - Note: the data already in the backend is not visible until it is migrated
   (DATA-06).
 - New: the plugin's own tables for the student data (DATA-03). Fifteen

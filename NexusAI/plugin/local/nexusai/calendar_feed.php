@@ -115,6 +115,18 @@ $events = array_filter($events, static function ($e) use ($course) {
     return (int) $e->courseid === (int) $course->id;
 });
 
+// Drop events tied to an activity the student cannot see: group membership was
+// already filtered above, but not the activity's own visibility/access
+// restrictions (hidden, stealth, "available from") — MMR-301 item 13.
+$modinfo = get_fast_modinfo($course, $userid);
+$events  = array_filter($events, static function ($e) use ($modinfo) {
+    if (empty($e->modulename) || empty($e->instance)) {
+        return true;
+    }
+    $cm = $modinfo->get_instances_of($e->modulename)[(int) $e->instance] ?? null;
+    return $cm ? $cm->uservisible : true;
+});
+
 // Defensive cap: the feed is a login-less endpoint, we don't want to serve
 // giant responses if a course has hundreds of events.
 if (count($events) > 200) {
