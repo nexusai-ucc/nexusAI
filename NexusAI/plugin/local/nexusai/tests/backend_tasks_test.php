@@ -61,6 +61,10 @@ final class backend_tasks_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         course_guard::set_enabled((int) $course->id, true);
         $resource = $this->getDataGenerator()->create_module('resource', ['course' => $course->id]);
+        // Creating the File activity runs course_module_created, which logs a developer
+        // message on some databases (when the creation transaction commits). Only what
+        // the observers under test do matters here.
+        $this->resetDebugging();
         $data = [
             'courseid' => $course->id,
             'context'  => \context_module::instance($resource->cmid),
