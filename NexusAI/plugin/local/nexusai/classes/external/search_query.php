@@ -150,10 +150,10 @@ class search_query extends external_api {
 
         $cleanquery = trim($params['query']);
         if ($cleanquery === '') {
-            throw new \invalid_parameter_exception('Query cannot be empty');
+            throw new \moodle_exception('errorqueryempty', 'local_nexusai');
         }
         if (mb_strlen($cleanquery) > 500) {
-            throw new \invalid_parameter_exception('Query too long (max 500 characters)');
+            throw new \moodle_exception('errorquerytoolong', 'local_nexusai', '', 500);
         }
 
         $topk = max(1, min(10, (int) $params['topk']));

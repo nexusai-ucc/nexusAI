@@ -130,7 +130,7 @@ class quiz_generate extends external_api {
 
         $cleantopic = trim((string) $params['topic']);
         if (mb_strlen($cleantopic) > 200) {
-            throw new \invalid_parameter_exception('Topic too long (max 200 chars)');
+            throw new \moodle_exception('errortopictoolong', 'local_nexusai', '', 200);
         }
         $numq = max(1, min(10, (int) $params['numquestions']));
 

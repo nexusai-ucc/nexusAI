@@ -154,12 +154,12 @@ class exam_generate extends external_api {
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         if (empty($params['documentids'])) {
-            throw new \invalid_parameter_exception('At least one document must be selected');
+            throw new \moodle_exception('errornodocuments', 'local_nexusai');
         }
 
         $cleantopic = trim((string) $params['topic']);
         if (mb_strlen($cleantopic) > 200) {
-            throw new \invalid_parameter_exception('Topic too long (max 200 chars)');
+            throw new \moodle_exception('errortopictoolong', 'local_nexusai', '', 200);
         }
         $numq = max(1, min(20, (int) $params['numquestions']));
 

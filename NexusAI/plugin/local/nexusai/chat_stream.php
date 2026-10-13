@@ -63,6 +63,14 @@ if (isguestuser()) {
 }
 require_sesskey();
 
+// Errors before the stream starts go out as JSON with a translated `detail`:
+// the widget shows that text as is (react/src/components/errors.js).
+$fail = static function (int $status, string $message): void {
+    http_response_code($status);
+    echo json_encode(['detail' => $message], JSON_UNESCAPED_UNICODE);
+    exit;
+};
+
 // Parse input.
 // Supports both a JSON body and form-urlencoded (more flexibility for
 // fetch() from React).
@@ -79,37 +87,27 @@ $sessionid   = isset($payload['sessionid']) ? (string) $payload['sessionid'] : '
 $multicourse = !empty($payload['multicourse']);
 
 if ($courseid <= 0) {
-    http_response_code(400);
-    echo json_encode(['error' => 'courseid required']);
-    exit;
+    $fail(400, get_string('errorcourseidrequired', 'local_nexusai'));
 }
 
 // Validate the capability in the course context.
 $context = context_course::instance($courseid);
 require_capability('local/nexusai:use', $context);
 if (!\local_nexusai\local\course_guard::is_enabled($courseid)) {
-    http_response_code(403);
-    echo json_encode(['error' => get_string('coursedisabled', 'local_nexusai')]);
-    exit;
+    $fail(403, get_string('coursedisabled', 'local_nexusai'));
 }
 
 // Business validations.
 $cleanquestion = trim($question);
 if ($cleanquestion === '') {
-    http_response_code(400);
-    echo json_encode(['error' => 'question required']);
-    exit;
+    $fail(400, get_string('errorquestionempty', 'local_nexusai'));
 }
 if (mb_strlen($cleanquestion) > 2000) {
-    http_response_code(400);
-    echo json_encode(['error' => 'question too long']);
-    exit;
+    $fail(400, get_string('errorquestiontoolong', 'local_nexusai', 2000));
 }
 $cleansessionid = trim($sessionid);
 if ($cleansessionid !== '' && (strlen($cleansessionid) < 8 || strlen($cleansessionid) > 64)) {
-    http_response_code(400);
-    echo json_encode(['error' => 'invalid sessionid']);
-    exit;
+    $fail(400, get_string('errorinvalidparams', 'local_nexusai'));
 }
 
 // The answer is stored when the backend finishes, even if the student closes
@@ -127,9 +125,7 @@ try {
         $multicourse
     );
 } catch (\moodle_exception $e) {
-    http_response_code(404);
-    echo json_encode(['error' => 'session not found']);
-    exit;
+    $fail(404, get_string('errorsessionnotfound', 'local_nexusai'));
 }
 $bodyarray = $turn->payload();
 
@@ -141,9 +137,7 @@ $bodyarray['visible_cmids'] = \local_nexusai\local\visible_material::for_courses
 
 $body = json_encode($bodyarray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 if ($body === false) {
-    http_response_code(500);
-    echo json_encode(['error' => 'json encode failed']);
-    exit;
+    $fail(500, get_string('errorbackend', 'local_nexusai', 'JSON encode failed'));
 }
 
 // Backend config (same as backend_client).
@@ -151,10 +145,12 @@ $endpoint = rtrim(trim((string) get_config('local_nexusai', 'api_endpoint')), '/
 $apikey   = trim((string) get_config('local_nexusai', 'api_key'));
 $secret   = trim((string) get_config('local_nexusai', 'shared_secret'));
 
-if ($endpoint === '' || $apikey === '' || $secret === '') {
-    http_response_code(500);
-    echo json_encode(['error' => 'plugin not configured']);
-    exit;
+$missing = array_keys(array_filter(
+    ['api_endpoint' => $endpoint, 'api_key' => $apikey, 'shared_secret' => $secret],
+    static fn($value) => $value === ''
+));
+if ($missing) {
+    $fail(500, get_string('errorconfigmissing', 'local_nexusai', implode(', ', $missing)));
 }
 
 $streamurl = $endpoint . '/api/v1/chat/stream';
@@ -164,9 +160,7 @@ $streamurl = $endpoint . '/api/v1/chat/stream';
 // Apply the same site-wide HTTP security check \curl would (MMR-301 item 6).
 $securityhelper = new \core\files\curl_security_helper();
 if ($securityhelper->url_is_blocked($streamurl)) {
-    http_response_code(500);
-    echo json_encode(['error' => 'blocked backend url']);
-    exit;
+    $fail(500, get_string('errorbackendblocked', 'local_nexusai'));
 }
 
 // HMAC, same ordering as backend_client::compute_signature.
