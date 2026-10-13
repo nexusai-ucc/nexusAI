@@ -81,6 +81,7 @@ $string['erroraudiotoolarge'] = 'La grabación es demasiado grande (máximo {$a}
 $string['erroraudiotype'] = 'Este formato de audio no es compatible ({$a}).';
 $string['errorbackend'] = 'Error del backend NexusAI: {$a}';
 $string['errorbackendunreachable'] = 'No se puede contactar el backend NexusAI: {$a}. Verificá la URL, la red y que el contenedor del backend esté corriendo.';
+$string['errorchatunavailable'] = 'El asistente no está disponible en este momento. Probá de nuevo en unos minutos.';
 $string['errorconfigmissing'] = 'La configuración de NexusAI está incompleta. Falta: {$a}. Completala en Administración del sitio → Plugins → Plugins locales → NexusAI.';
 $string['errorcourseidrequired'] = 'courseid requerido';
 $string['errorcoursenotfound'] = 'Curso no encontrado.';

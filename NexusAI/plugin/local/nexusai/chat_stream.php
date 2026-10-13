@@ -174,26 +174,23 @@ while (ob_get_level() > 0) {
 }
 @ob_implicit_flush(true);
 
-// A cURL call to the Python backend with WRITEFUNCTION.
-// We use PHP's curl_* directly (not Moodle's \curl class) because we need
-// CURLOPT_WRITEFUNCTION to forward chunks as they arrive, and \curl::apply_opt()
-// unconditionally overwrites CURLOPT_HEADERFUNCTION with its own callback
-// (lib/filelib.php), which would break the status check right below.
-// Like backend_client (which uses \curl with ignoresecurity), this call does
-// not go through the site's blocked hosts list: the endpoint is set by the
-// administrator, not by users, and Moodle's default list blocks localhost,
-// private networks and ports other than 80/443, where the backend usually runs.
+// The call to the Python backend uses Moodle's \curl class, with
+// CURLOPT_WRITEFUNCTION to forward the chunks as they arrive (MMR-301 item 6).
+// Like backend_client, it passes ignoresecurity: the endpoint is set by the
+// administrator, not by users, and Moodle's default blocked hosts list covers
+// localhost, private networks and ports other than 80/443, where the backend
+// usually runs.
 //
-// FEAT-06 (#481, daily limit): before this, a backend error that did NOT
-// arrive in SSE format (e.g. a 429 rate limit, which FastAPI returns as
-// plain JSON `{"detail":{...}}`, not as `data: {...}\n\n`) was forwarded
-// as-is to the browser. React's SSE parser silently discards any line that
-// doesn't start with "data:", so the student was left with the "typing"
-// indicator stuck forever, with no visible error — the 429 never got
-// shown. To avoid this, we inspect the response's real status with
-// CURLOPT_HEADERFUNCTION BEFORE forwarding the body: if it's not 2xx, we
-// buffer the body (it's a small JSON, not a real stream) and reformat it
-// as a properly-built SSE error event instead of passing it through raw.
+// FEAT-06 (#481, daily limit): a backend error that does NOT arrive in SSE
+// format (e.g. a 429 rate limit, which FastAPI returns as plain JSON
+// `{"detail":{...}}`, not as `data: {...}\n\n`) cannot be forwarded as-is:
+// React's SSE parser silently discards any line that doesn't start with
+// "data:", and the student would be left with the "typing" indicator stuck.
+// So the response's status is checked BEFORE forwarding the body: the
+// headers are in by the time the first body bytes reach WRITEFUNCTION, so
+// curl_getinfo() already has the status there. If it's not 2xx, the body is
+// buffered (a small JSON, not a real stream) and turned into a proper SSE
+// error event instead of being passed through raw.
 $httpstatus = null;
 $errorbuffer = '';
 $relay = new \local_nexusai\local\sse_relay($turn, function (string $bytes): void {
@@ -201,39 +198,28 @@ $relay = new \local_nexusai\local\sse_relay($turn, function (string $bytes): voi
     @flush();
 });
 
-$ch = curl_init();
-curl_setopt_array($ch, [
-    CURLOPT_URL            => $streamurl,
-    CURLOPT_POST           => true,
-    CURLOPT_POSTFIELDS     => $body,
-    CURLOPT_HTTPHEADER     => [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . $apikey,
-        'X-Timestamp: ' . $timestamp,
-        'X-Nonce: '     . $nonce,
-        'X-Signature: ' . $signature,
-        'Accept: text/event-stream',
-        'Accept-Language: ' . \local_nexusai\external\backend_client::interface_language(),
-        // Who originated the call, for the backend usage ledger (tokens by role).
-        'X-NexusAI-Role: ' . $turn->role(),
-    ],
-    CURLOPT_TIMEOUT        => 300,
-    CURLOPT_CONNECTTIMEOUT => 10,
-    CURLOPT_RETURNTRANSFER => false,
-    // Runs for every incoming header line — we use the first
-    // "HTTP/x.x <status>" to know whether the backend replied 2xx (a real
-    // stream) or an error (plain JSON, needs buffering and reformatting).
-    CURLOPT_HEADERFUNCTION => function ($curl, $headerline) use (&$httpstatus) {
-        if ($httpstatus === null && preg_match('#^HTTP/\S+\s+(\d{3})#', $headerline, $m)) {
-            $httpstatus = (int) $m[1];
+$curl = new \curl(['ignoresecurity' => true]);
+$curl->setHeader([
+    'Content-Type: application/json',
+    'Authorization: Bearer ' . $apikey,
+    'X-Timestamp: ' . $timestamp,
+    'X-Nonce: '     . $nonce,
+    'X-Signature: ' . $signature,
+    'Accept: text/event-stream',
+    'Accept-Language: ' . \local_nexusai\external\backend_client::interface_language(),
+    // Who originated the call, for the backend usage ledger (tokens by role).
+    'X-NexusAI-Role: ' . $turn->role(),
+]);
+$curl->setopt([
+    'CURLOPT_TIMEOUT'        => 300,
+    'CURLOPT_CONNECTTIMEOUT' => 10,
+    // Runs every time bytes arrive from the backend. Once the status says the
+    // response isn't 2xx, the bytes are kept instead of forwarded.
+    'CURLOPT_WRITEFUNCTION'  => function ($ch, $chunk) use (&$httpstatus, &$errorbuffer, $relay) {
+        if ($httpstatus === null) {
+            $httpstatus = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         }
-        return strlen($headerline);
-    },
-    // Callback that runs every time bytes arrive from the backend. If we
-    // already know the response isn't 2xx, we accumulate instead of
-    // forwarding (best effort: in case the error arrives across several chunks).
-    CURLOPT_WRITEFUNCTION  => function ($curl, $chunk) use (&$httpstatus, &$errorbuffer, $relay) {
-        if ($httpstatus !== null && $httpstatus >= 400) {
+        if ($httpstatus >= 400) {
             $errorbuffer .= $chunk;
             return strlen($chunk);
         }
@@ -242,15 +228,15 @@ curl_setopt_array($ch, [
     },
 ]);
 
-$ok = curl_exec($ch);
+$curl->post($streamurl, $body);
 
-if ($ok === false) {
-    $err = curl_error($ch);
-    // If a first flush already happened, send an inline SSE error event.
+if ($curl->get_errno()) {
+    // The technical reason goes to the log; the student gets a message in their language.
+    debugging('[NexusAI] Chat stream: backend unreachable: ' . $curl->error, DEBUG_NORMAL);
     echo "data: " . json_encode([
         'type'   => 'error',
-        'detail' => 'backend_unreachable: ' . substr($err, 0, 200),
-    ]) . "\n\n";
+        'detail' => get_string('errorchatunavailable', 'local_nexusai'),
+    ], JSON_UNESCAPED_UNICODE) . "\n\n";
     @flush();
 } else if ($httpstatus !== null && $httpstatus >= 400 && $errorbuffer !== '') {
     echo "data: " . json_encode([
@@ -260,5 +246,4 @@ if ($ok === false) {
     @flush();
 }
 
-curl_close($ch);
 exit;
