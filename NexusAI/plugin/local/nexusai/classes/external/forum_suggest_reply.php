@@ -100,10 +100,9 @@ class forum_suggest_reply extends external_api {
         );
 
         // Read all the thread's posts in chronological order.
-        $sql = "SELECT fp.id, fp.message, fp.created,
-                       " . $DB->sql_fullname('u.firstname', 'u.lastname') . " AS author
+        // Authors go out as pseudonyms (forum_author_alias): no name leaves Moodle.
+        $sql = "SELECT fp.id, fp.message, fp.created, fp.userid
                   FROM {forum_posts} fp
-                  JOIN {user} u ON u.id = fp.userid
                  WHERE fp.discussion = :discussionid
               ORDER BY fp.created ASC";
 
@@ -118,6 +117,7 @@ class forum_suggest_reply extends external_api {
         }
 
         $posts    = [];
+        $aliases  = new \local_nexusai\local\forum_author_alias();
         $question = '';
         $count    = 0;
 
@@ -145,7 +145,7 @@ class forum_suggest_reply extends external_api {
 
             $posts[] = [
                 'post_id' => (int) $row->id,
-                'author'  => (string) $row->author,
+                'author'  => $aliases->for_user((int) $row->userid),
                 'content' => $content,
             ];
             $count++;

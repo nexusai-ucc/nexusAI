@@ -93,12 +93,33 @@ class provider implements
         $collection->add_external_location_link(
             'nexusai_backend',
             [
-                'user_id'    => 'privacy:metadata:nexusai_backend:user_id',
-                'course_id'  => 'privacy:metadata:nexusai_backend:course_id',
-                'content'    => 'privacy:metadata:nexusai_backend:content',
-                'created_at' => 'privacy:metadata:nexusai_backend:created_at',
+                'user_id'     => 'privacy:metadata:nexusai_backend:user_id',
+                'course_id'   => 'privacy:metadata:nexusai_backend:course_id',
+                'role'        => 'privacy:metadata:nexusai_backend:role',
+                'content'     => 'privacy:metadata:nexusai_backend:content',
+                'forum_posts' => 'privacy:metadata:nexusai_backend:forum_posts',
+                'voice_audio' => 'privacy:metadata:nexusai_backend:voice_audio',
+                'created_at'  => 'privacy:metadata:nexusai_backend:created_at',
             ],
             'privacy:metadata:nexusai_backend'
+        );
+        // The backend hands the text and audio to the AI provider its administrator configures.
+        $collection->add_external_location_link(
+            'nexusai_ai_provider',
+            [
+                'content'     => 'privacy:metadata:nexusai_ai_provider:content',
+                'forum_posts' => 'privacy:metadata:nexusai_ai_provider:forum_posts',
+                'voice_audio' => 'privacy:metadata:nexusai_ai_provider:voice_audio',
+            ],
+            'privacy:metadata:nexusai_ai_provider'
+        );
+        // A teacher can have the weekly forum digest posted to an outside chat tool.
+        $collection->add_external_location_link(
+            'nexusai_forum_webhook',
+            [
+                'forum_digest' => 'privacy:metadata:nexusai_forum_webhook:forum_digest',
+            ],
+            'privacy:metadata:nexusai_forum_webhook'
         );
 
         $tables = [
