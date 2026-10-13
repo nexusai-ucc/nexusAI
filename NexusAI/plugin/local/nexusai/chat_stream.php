@@ -157,6 +157,18 @@ if ($endpoint === '' || $apikey === '' || $secret === '') {
     exit;
 }
 
+$streamurl = $endpoint . '/api/v1/chat/stream';
+
+// This endpoint cannot use Moodle's \curl class (see the comment above the raw
+// curl_* calls below), so it does not get its blocked-host/port check for free.
+// Apply the same site-wide HTTP security check \curl would (MMR-301 item 6).
+$securityhelper = new \core\files\curl_security_helper();
+if ($securityhelper->url_is_blocked($streamurl)) {
+    http_response_code(500);
+    echo json_encode(['error' => 'blocked backend url']);
+    exit;
+}
+
 // HMAC, same ordering as backend_client::compute_signature.
 $timestamp = (string) time();
 $nonce     = bin2hex(random_bytes(16));
@@ -178,7 +190,11 @@ while (ob_get_level() > 0) {
 
 // A cURL call to the Python backend with WRITEFUNCTION.
 // We use PHP's curl_* directly (not Moodle's \curl class) because we need
-// CURLOPT_WRITEFUNCTION to forward chunks as they arrive.
+// CURLOPT_WRITEFUNCTION to forward chunks as they arrive, and \curl::apply_opt()
+// unconditionally overwrites CURLOPT_HEADERFUNCTION with its own callback
+// (lib/filelib.php), which would break the status check right below. The
+// site's HTTP security blocklist that \curl would apply is checked by hand
+// above instead (MMR-301 item 6).
 //
 // FEAT-06 (#481, daily limit): before this, a backend error that did NOT
 // arrive in SSE format (e.g. a 429 rate limit, which FastAPI returns as
@@ -199,7 +215,7 @@ $relay = new \local_nexusai\local\sse_relay($turn, function (string $bytes): voi
 
 $ch = curl_init();
 curl_setopt_array($ch, [
-    CURLOPT_URL            => $endpoint . '/api/v1/chat/stream',
+    CURLOPT_URL            => $streamurl,
     CURLOPT_POST           => true,
     CURLOPT_POSTFIELDS     => $body,
     CURLOPT_HTTPHEADER     => [
