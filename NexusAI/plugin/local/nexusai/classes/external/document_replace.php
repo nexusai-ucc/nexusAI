@@ -122,24 +122,21 @@ class document_replace extends external_api {
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         if (!in_array($params['mimetype'], self::ALLOWED_MIME_TYPES, true)) {
-            throw new \invalid_parameter_exception(
-                'Unsupported file type. Allowed: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML, TXT. '
-                . 'Got: ' . $params['mimetype']
-            );
+            throw new \moodle_exception('errorunsupportedfiletype', 'local_nexusai', '', s($params['mimetype']));
         }
 
         if (strlen($params['filename']) === 0 || strlen($params['filename']) > 255) {
-            throw new \invalid_parameter_exception('Invalid filename length');
+            throw new \moodle_exception('errorinvalidfilename', 'local_nexusai');
         }
 
         // Base64 inflates by ~33%, so a 20 MB file = ~27 MB in base64.
         if (strlen($params['content_b64']) > 30 * 1024 * 1024) {
-            throw new \invalid_parameter_exception('File too large (max 20MB)');
+            throw new \moodle_exception('errorfiletoolarge', 'local_nexusai', '', '20 MB');
         }
 
         $filebytes = base64_decode($params['content_b64'], true);
         if ($filebytes === false || $filebytes === '') {
-            throw new \invalid_parameter_exception('Invalid base64 content');
+            throw new \moodle_exception('errorinvalidparams', 'local_nexusai');
         }
 
         self::validate_magic_bytes($filebytes, $params['mimetype']);
@@ -213,22 +210,22 @@ class document_replace extends external_api {
         switch ($mimetype) {
             case 'application/pdf':
                 if (substr($bytes, 0, 5) !== '%PDF-') {
-                    throw new \invalid_parameter_exception('File does not look like a valid PDF');
+                    throw new \moodle_exception('errorfilecontent', 'local_nexusai', '', 'PDF');
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
-                    throw new \invalid_parameter_exception('File does not look like a valid DOCX');
+                    throw new \moodle_exception('errorfilecontent', 'local_nexusai', '', 'DOCX');
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
-                    throw new \invalid_parameter_exception('File does not look like a valid PPTX');
+                    throw new \moodle_exception('errorfilecontent', 'local_nexusai', '', 'PPTX');
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
-                    throw new \invalid_parameter_exception('File does not look like a valid XLSX');
+                    throw new \moodle_exception('errorfilecontent', 'local_nexusai', '', 'XLSX');
                 }
                 break;
             case 'text/plain':
@@ -236,7 +233,7 @@ class document_replace extends external_api {
             case 'text/markdown':
             case 'text/html':
                 if (!mb_check_encoding($bytes, 'UTF-8')) {
-                    throw new \invalid_parameter_exception('Text file is not valid UTF-8');
+                    throw new \moodle_exception('errortextencoding', 'local_nexusai');
                 }
                 break;
         }

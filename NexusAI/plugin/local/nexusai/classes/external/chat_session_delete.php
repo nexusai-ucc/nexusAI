@@ -82,7 +82,7 @@ class chat_session_delete extends external_api {
 
         $cleansessionid = trim($params['sessionid']);
         if ($cleansessionid === '' || strlen($cleansessionid) < 8 || strlen($cleansessionid) > 64) {
-            throw new \invalid_parameter_exception('Invalid session id');
+            throw new \moodle_exception('errorinvalidparams', 'local_nexusai');
         }
 
         \local_nexusai\local\chat_store::delete_session((int) $USER->id, $cleansessionid);

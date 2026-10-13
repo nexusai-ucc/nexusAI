@@ -103,19 +103,16 @@ class chat_voice_transcribe extends external_api {
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         if (!in_array($params['mimetype'], self::ALLOWED_MIME_TYPES, true)) {
-            throw new \invalid_parameter_exception(
-                'Unsupported audio type. Allowed: ' . implode(', ', self::ALLOWED_MIME_TYPES)
-                . '. Got: ' . $params['mimetype']
-            );
+            throw new \moodle_exception('erroraudiotype', 'local_nexusai', '', s($params['mimetype']));
         }
 
         if (strlen($params['content_b64']) > self::MAX_B64_BYTES) {
-            throw new \invalid_parameter_exception('Audio too large (max 10MB)');
+            throw new \moodle_exception('erroraudiotoolarge', 'local_nexusai', '', '10 MB');
         }
 
         $audiobytes = base64_decode($params['content_b64'], true);
         if ($audiobytes === false || $audiobytes === '') {
-            throw new \invalid_parameter_exception('Invalid base64 content');
+            throw new \moodle_exception('errorinvalidparams', 'local_nexusai');
         }
 
         $client = new backend_client();

@@ -142,30 +142,27 @@ class document_upload extends external_api {
 
         // Validate the MIME type against the list of allowed types.
         if (!in_array($params['mimetype'], self::ALLOWED_MIME_TYPES, true)) {
-            throw new \invalid_parameter_exception(
-                'Unsupported file type. Allowed: PDF, DOCX, PPTX, XLSX, CSV, MD, HTML, TXT. '
-                . 'Got: ' . $params['mimetype']
-            );
+            throw new \moodle_exception('errorunsupportedfiletype', 'local_nexusai', '', s($params['mimetype']));
         }
 
         // Defense: the filename can't have path traversal or weird characters.
         // PARAM_FILE already filters most of it, but we re-check the length.
         if (strlen($params['filename']) === 0 || strlen($params['filename']) > 255) {
-            throw new \invalid_parameter_exception('Invalid filename length');
+            throw new \moodle_exception('errorinvalidfilename', 'local_nexusai');
         }
 
         // Validate the base64 size before decoding (saves memory if it's oversized).
         // base64 inflates by ~33%, so a 20 MB file = ~27 MB in base64.
         // We give it margin and reject > 30 MB of base64.
         if (strlen($params['content_b64']) > 30 * 1024 * 1024) {
-            throw new \invalid_parameter_exception('File too large (max 20MB)');
+            throw new \moodle_exception('errorfiletoolarge', 'local_nexusai', '', '20 MB');
         }
 
         // Decode base64 to get the binary content and validate magic bytes.
         // base64_decode with strict=true rejects invalid characters.
         $filebytes = base64_decode($params['content_b64'], true);
         if ($filebytes === false || $filebytes === '') {
-            throw new \invalid_parameter_exception('Invalid base64 content');
+            throw new \moodle_exception('errorinvalidparams', 'local_nexusai');
         }
 
         // Validate magic bytes against the declared MIME type.
@@ -252,25 +249,25 @@ class document_upload extends external_api {
             case 'application/pdf':
                 // PDF: "%PDF-".
                 if (substr($bytes, 0, 5) !== '%PDF-') {
-                    throw new \invalid_parameter_exception('File does not look like a valid PDF');
+                    throw new \moodle_exception('errorfilecontent', 'local_nexusai', '', 'PDF');
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
                 // DOCX is a ZIP: magic bytes PK\x03\x04.
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
-                    throw new \invalid_parameter_exception('File does not look like a valid DOCX');
+                    throw new \moodle_exception('errorfilecontent', 'local_nexusai', '', 'DOCX');
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
                 // PPTX is a ZIP, same as DOCX.
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
-                    throw new \invalid_parameter_exception('File does not look like a valid PPTX');
+                    throw new \moodle_exception('errorfilecontent', 'local_nexusai', '', 'PPTX');
                 }
                 break;
             case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
                 // XLSX is a ZIP, same as DOCX.
                 if (substr($bytes, 0, 4) !== "PK\x03\x04") {
-                    throw new \invalid_parameter_exception('File does not look like a valid XLSX');
+                    throw new \moodle_exception('errorfilecontent', 'local_nexusai', '', 'XLSX');
                 }
                 break;
             case 'text/plain':
@@ -279,7 +276,7 @@ class document_upload extends external_api {
             case 'text/html':
                 // Text formats: verify it's valid UTF-8 (mb_check_encoding).
                 if (!mb_check_encoding($bytes, 'UTF-8')) {
-                    throw new \invalid_parameter_exception('Text file is not valid UTF-8');
+                    throw new \moodle_exception('errortextencoding', 'local_nexusai');
                 }
                 break;
         }

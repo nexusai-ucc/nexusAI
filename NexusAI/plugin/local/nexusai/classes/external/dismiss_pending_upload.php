@@ -65,13 +65,15 @@ class dismiss_pending_upload extends external_api {
      * @return array
      */
     public static function execute(int $cmid): array {
+        global $USER;
+
         $params = self::validate_parameters(self::execute_parameters(), [
             'cmid' => $cmid,
         ]);
 
-        // No need to validate a capability here: the worst case is someone
-        // deletes their own preference. require_login is still guaranteed
-        // by loginrequired: true in services.php.
+        // It only touches the caller's own preference, so the user context is the
+        // right one and no capability is needed beyond being logged in.
+        self::validate_context(\context_user::instance((int) $USER->id));
         $raw     = get_user_preferences(\local_nexusai\observer::PENDING_PREF, '{}');
         $pending = json_decode($raw, true);
         if (!is_array($pending)) {

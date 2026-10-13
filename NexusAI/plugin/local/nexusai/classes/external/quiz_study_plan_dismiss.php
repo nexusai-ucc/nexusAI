@@ -105,7 +105,7 @@ class quiz_study_plan_dismiss extends external_api {
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         if (empty($params['quizerrorids']) && empty($params['gapquestionids'])) {
-            throw new \invalid_parameter_exception('At least one id must be provided');
+            throw new \moodle_exception('errorinvalidparams', 'local_nexusai');
         }
 
         $response = ['affected' => \local_nexusai\local\quiz_store::dismiss_study_plan(

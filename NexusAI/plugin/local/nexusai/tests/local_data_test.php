@@ -298,7 +298,8 @@ final class local_data_test extends \advanced_testcase {
         $saved = external\forum_webhook_save::execute($cid, 'https://hooks.test/x');
         $this->assertSame('https://hooks.test/x', $saved['webhook_url']);
         $this->assertSame('https://hooks.test/x', external\forum_webhook_get::execute($cid)['webhook_url']);
-        $this->expectException(\invalid_parameter_exception::class);
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('errorwebhookurl', 'local_nexusai'));
         external\forum_webhook_save::execute($cid, 'ftp://nope');
     }
 
