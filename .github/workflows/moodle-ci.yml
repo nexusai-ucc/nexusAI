@@ -78,10 +78,10 @@ jobs:
             database: 'mysqli'
 
     services:
-      # PostgreSQL 16 y MySQL 8.4 cumplen los mínimos de Moodle 5.0 a 5.3; 4.5
-      # también los acepta, así que la misma imagen sirve para toda la matriz.
+      # PostgreSQL 17 y MySQL 8.4: 5.3 pide PG 17 (admin/environment.xml) y 5.0+
+      # MySQL 8.4; 4.5 a 5.2 aceptan los dos, así que sirven para toda la matriz.
       postgres:
-        image: pgvector/pgvector:pg16
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_USER: 'postgres'
           POSTGRES_HOST_AUTH_METHOD: 'trust'
