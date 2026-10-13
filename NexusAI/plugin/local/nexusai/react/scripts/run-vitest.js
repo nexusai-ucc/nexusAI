@@ -28,6 +28,7 @@
  */
 
 const { spawnSync } = require("node:child_process");
+const path = require("node:path");
 
 const FLAG = "--no-experimental-webstorage";
 const supportsFlag = process.allowedNodeEnvironmentFlags.has(FLAG);
@@ -37,7 +38,8 @@ const nodeOptions = [process.env.NODE_OPTIONS, supportsFlag ? FLAG : null]
     .join(" ")
     .trim();
 
-const vitestEntry = require.resolve("vitest/vitest.mjs");
+// Vitest 4 no longer exports "vitest/vitest.mjs"; its CLI entry sits next to package.json.
+const vitestEntry = path.join(path.dirname(require.resolve("vitest/package.json")), "vitest.mjs");
 const args = process.argv.slice(2);
 
 const result = spawnSync(process.execPath, [vitestEntry, ...args], {
