@@ -46,6 +46,10 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   so a hidden activity or one with an unmet access restriction still showed up
   with its name and due date. It now also checks the activity's own
   visibility for that student.
+- Fixed: the chat streaming endpoint called the backend with raw `curl_init`
+  (needed for SSE, see the code comment) without the site's HTTP security
+  blocklist Moodle's `\curl` class applies everywhere else. It now checks the
+  backend URL against that same blocklist by hand before calling it.
 - Note: the data already in the backend is not visible until it is migrated
   (DATA-06).
 - New: the plugin's own tables for the student data (DATA-03). Fifteen
