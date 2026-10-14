@@ -56,7 +56,8 @@ class sync_forum_post extends \core\task\adhoc_task {
     }
 
     /**
-     * Sends the post as it is now (or removes it). A backend failure is logged, not retried.
+     * Sends the post as it is now (or removes it). An indexing failure is logged; a failed removal
+     * fails the task, so the task API runs it again (up to its attempt limit).
      */
     public function execute(): void {
         global $DB;
@@ -70,7 +71,7 @@ class sync_forum_post extends \core\task\adhoc_task {
             // course has no NexusAI settings left, and a course turned off still has its
             // posts in the backend (MMR-301 item 4). A failure is not swallowed: the task
             // API retries it later, and removing a post twice is harmless.
-            if (\local_nexusai\local\course_guard::backend_configured()) {
+            if (\local_nexusai\local\course_guard::can_purge_backend()) {
                 self::client()->delete_forum_post($postid);
             }
             return;

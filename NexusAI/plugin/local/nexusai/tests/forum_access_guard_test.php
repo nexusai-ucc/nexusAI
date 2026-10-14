@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -179,5 +179,52 @@ final class forum_access_guard_test extends \advanced_testcase {
         $this->setUser($data->studenta);
         $post = forum_access_guard::visible_post((int) $private->id, (int) $data->course->id);
         $this->assertSame('Private note for student A', $post->message);
+    }
+
+    /**
+     * The limit stops reading once enough visible posts are found.
+     */
+    public function test_limit_stops_after_enough_posts(): void {
+        $this->resetAfterTest();
+        $data = $this->setup_forum();
+        $this->reply($data, $data->studentb, 'Reply one');
+        $this->reply($data, $data->studentb, 'Reply two');
+
+        $this->setUser($data->studenta);
+        $this->assertCount(2, forum_access_guard::visible_posts($data->discussion, 0, true, 2));
+    }
+
+    /**
+     * Only discussions every participant can see count as open to the course (for the digest).
+     */
+    public function test_is_open_to_course(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $forumgen = $generator->get_plugin_generator('mod_forum');
+        $data = $this->setup_forum();
+        $this->setUser($data->teacher);
+        $this->assertTrue(forum_access_guard::is_open_to_course($data->discussion));
+
+        $group = $generator->create_group(['courseid' => $data->course->id]);
+        $groupdiscussion = $forumgen->create_discussion([
+            'course' => $data->course->id, 'forum' => $data->forum->id, 'userid' => $data->teacher->id,
+            'groupid' => $group->id,
+        ]);
+        $this->assertFalse(forum_access_guard::is_open_to_course(
+            $DB->get_record('forum_discussions', ['id' => $groupdiscussion->id])
+        ));
+
+        $timed = $forumgen->create_discussion([
+            'course' => $data->course->id, 'forum' => $data->forum->id, 'userid' => $data->teacher->id,
+            'timestart' => time() + DAYSECS,
+        ]);
+        $this->assertFalse(forum_access_guard::is_open_to_course($DB->get_record('forum_discussions', ['id' => $timed->id])));
+
+        $qanda = $this->setup_forum('qanda');
+        $this->assertFalse(forum_access_guard::is_open_to_course($qanda->discussion));
+
+        set_coursemodule_visible($data->forum->cmid, 0);
+        $this->assertFalse(forum_access_guard::is_open_to_course($data->discussion));
     }
 }

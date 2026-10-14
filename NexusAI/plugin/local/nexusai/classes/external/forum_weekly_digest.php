@@ -133,8 +133,9 @@ class forum_weekly_digest extends external_api {
         $days = max(1, min(30, (int) $params['days']));
         $since = time() - ($days * DAYSECS);
 
-        // Discussions with recent activity in ANY of the course's forums,
-        // most recent first, defensive cap before building the payload.
+        // Discussions with recent activity in ANY of the course's forums, most recent
+        // first. More are read than the digest keeps, since some are filtered out below;
+        // MAX_DISCUSSIONS applies to the ones that stay.
         $discussionrows = $DB->get_records_sql(
             "SELECT fd.*, f.name AS forumname
                FROM {forum_discussions} fd
@@ -144,7 +145,7 @@ class forum_weekly_digest extends external_api {
            ORDER BY fd.timemodified DESC",
             ['courseid' => (int) $params['courseid'], 'since' => $since],
             0,
-            self::MAX_DISCUSSIONS
+            self::MAX_DISCUSSIONS * 4
         );
 
         if (empty($discussionrows)) {
@@ -159,18 +160,20 @@ class forum_weekly_digest extends external_api {
 
         $discussions = [];
         foreach ($discussionrows as $drow) {
-            // Only what this teacher can see in the forum (MMR-301 item 2), and never a
-            // private reply: the digest can be posted to the course's webhook, where
-            // everyone in that channel reads it.
-            if (!\local_nexusai\local\forum_access_guard::can_view_discussion((int) $drow->id, (int) $params['courseid'])) {
+            if (count($discussions) >= self::MAX_DISCUSSIONS) {
+                break;
+            }
+            // The digest can be posted to the course's webhook, where everyone in that
+            // channel reads it (MMR-301 item 2). So it only carries what this teacher can
+            // see AND every participant of the course can see: no hidden or restricted
+            // forum, no group discussion, nothing outside its display period, no Q&A
+            // forum, and never a private reply.
+            $guard = \local_nexusai\local\forum_access_guard::class;
+            if (!$guard::can_view_discussion((int) $drow->id, (int) $params['courseid']) || !$guard::is_open_to_course($drow)) {
                 continue;
             }
             // Authors go out as pseudonyms, numbered per discussion: no name leaves Moodle.
-            $postrows = array_slice(
-                \local_nexusai\local\forum_access_guard::visible_posts($drow, $since, false),
-                0,
-                self::MAX_POSTS_PER_DISCUSSION
-            );
+            $postrows = $guard::visible_posts($drow, $since, false, self::MAX_POSTS_PER_DISCUSSION);
 
             $posts = [];
             $aliases = new \local_nexusai\local\forum_author_alias();

@@ -88,10 +88,17 @@ class forum_access_guard {
      * @param \stdClass $discussion Discussion record, already checked with require_can_view_discussion().
      * @param int $since Only posts created at or after this time (0 = all).
      * @param bool $includeprivatereplies False to leave out every private reply, even the ones
-     *     the user can see (for text that leaves the forum, such as the digest sent to a webhook).
+     *     the user can see (for text that may become public: a reply suggestion, the digest
+     *     sent to a webhook).
+     * @param int $limit Stop after this many visible posts (0 = no limit).
      * @return \stdClass[] Post records.
      */
-    public static function visible_posts(\stdClass $discussion, int $since = 0, bool $includeprivatereplies = true): array {
+    public static function visible_posts(
+        \stdClass $discussion,
+        int $since = 0,
+        bool $includeprivatereplies = true,
+        int $limit = 0
+    ): array {
         global $DB, $USER, $CFG;
         require_once($CFG->dirroot . '/mod/forum/lib.php');
 
@@ -115,6 +122,9 @@ class forum_access_guard {
             }
             if (forum_user_can_see_post($forum, $discussion, $post, $USER, $cm)) {
                 $visible[] = $post;
+                if ($limit > 0 && count($visible) >= $limit) {
+                    break;
+                }
             }
         }
         return $visible;
@@ -129,6 +139,23 @@ class forum_access_guard {
      *     course or the user cannot see it.
      */
     public static function visible_post(int $postid, int $courseid): ?\stdClass {
+        try {
+            return self::check_post($postid, $courseid);
+        } catch (\Throwable $e) {
+            // A missing forum, module or author context means the post cannot be shown;
+            // one bad result must not break the whole list it comes from.
+            return null;
+        }
+    }
+
+    /**
+     * Body of visible_post(), which may throw.
+     *
+     * @param int $postid mdl_forum_posts ID.
+     * @param int $courseid Moodle course ID.
+     * @return \stdClass|null
+     */
+    private static function check_post(int $postid, int $courseid): ?\stdClass {
         global $DB, $USER, $CFG;
         require_once($CFG->dirroot . '/mod/forum/lib.php');
 
@@ -146,5 +173,39 @@ class forum_access_guard {
             return null;
         }
         return $post;
+    }
+
+    /**
+     * Whether a discussion is open to every participant of the course, as opposed to what
+     * only the current user (a teacher) can see.
+     *
+     * Used for text that leaves Moodle to an audience nobody checks, such as the weekly
+     * digest posted to the course's webhook: the forum is visible with no access
+     * restriction, the discussion is not limited to a group and is within its display
+     * period, and the forum is not a Q&A one (whose replies students only see after
+     * posting).
+     *
+     * @param \stdClass $discussion Discussion record.
+     * @return bool
+     */
+    public static function is_open_to_course(\stdClass $discussion): bool {
+        global $DB;
+
+        $forum = $DB->get_record('forum', ['id' => $discussion->forum], 'id, type', MUST_EXIST);
+        $cm = get_fast_modinfo($discussion->course)->get_instances_of('forum')[(int) $forum->id] ?? null;
+        if (!$cm || !$cm->visible || !empty($cm->availability) || $forum->type === 'qanda') {
+            return false;
+        }
+        if ((int) $discussion->groupid > 0) {
+            return false;
+        }
+        $now = time();
+        if (!empty($discussion->timestart) && $discussion->timestart > $now) {
+            return false;
+        }
+        if (!empty($discussion->timeend) && $discussion->timeend < $now) {
+            return false;
+        }
+        return true;
     }
 }
