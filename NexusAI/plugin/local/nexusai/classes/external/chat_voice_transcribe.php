@@ -91,6 +91,8 @@ class chat_voice_transcribe extends external_api {
      * @return array
      */
     public static function execute(int $courseid, string $mimetype, string $contentb64): array {
+        global $USER;
+
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'    => $courseid,
             'mimetype'    => $mimetype,
@@ -117,7 +119,7 @@ class chat_voice_transcribe extends external_api {
         }
 
         $client = new backend_client();
-        $response = $client->transcribe_audio($mimetype, $audiobytes);
+        $response = $client->transcribe_audio((int) $params['courseid'], (int) $USER->id, $mimetype, $audiobytes);
 
         return [
             'text' => (string) ($response['text'] ?? ''),
