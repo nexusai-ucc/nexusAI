@@ -60,6 +60,7 @@ El nivel se declara en TPC-01, después de medir la cobertura real.
 ## Subtareas
 
 Línea base medida en TPC-01: [`LINEA_BASE.md`](LINEA_BASE.md).
+Plan de pruebas (TPC-03): [`PLAN_DE_PRUEBAS.md`](PLAN_DE_PRUEBAS.md).
 
 | Issue | Código | Tarea | Fechas | Depende de |
 |---|---|---|---|---|
