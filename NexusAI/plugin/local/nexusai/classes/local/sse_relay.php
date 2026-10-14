@@ -56,6 +56,9 @@ class sse_relay {
     /** @var bool Whether `done` was received and the answer stored. */
     private bool $finished = false;
 
+    /** @var bool Whether a closing event (`done` or `error`) was forwarded. */
+    private bool $ended = false;
+
     /**
      * Constructor.
      *
@@ -93,6 +96,15 @@ class sse_relay {
     }
 
     /**
+     * Whether a closing event (`done` or `error`) already went to the browser.
+     *
+     * @return bool
+     */
+    public function ended(): bool {
+        return $this->ended;
+    }
+
+    /**
      * The answer received so far.
      *
      * @return string
@@ -127,9 +139,13 @@ class sse_relay {
             case 'token':
                 $this->tokens[] = (string) ($payload['content'] ?? '');
                 break;
+            case 'error':
+                $this->ended = true;
+                break;
             case 'done':
                 $message = $this->turn->finish($this->answer(), $payload, 'stream', true);
                 $this->finished = true;
+                $this->ended = true;
                 $payload['assistant_message_id'] = $message->uuid;
                 // What the frontend does not need stays on the server.
                 unset($payload['usage'], $payload['gap']);

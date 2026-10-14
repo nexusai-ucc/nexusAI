@@ -210,16 +210,20 @@ $curl->setHeader([
     // Who originated the call, for the backend usage ledger (tokens by role).
     'X-NexusAI-Role: ' . $turn->role(),
 ]);
-$curl->setopt([
+$curl->setopt(\local_nexusai\external\backend_client::curl_hardening() + [
     'CURLOPT_TIMEOUT'        => 300,
     'CURLOPT_CONNECTTIMEOUT' => 10,
+    // Moodle's \curl returns the body as a string by default; the callback forwards it instead.
+    'CURLOPT_RETURNTRANSFER' => 0,
+    // Compressed responses arrive in blocks, which would batch the tokens.
+    'CURLOPT_ENCODING'       => 'identity',
     // Runs every time bytes arrive from the backend. Once the status says the
     // response isn't 2xx, the bytes are kept instead of forwarded.
     'CURLOPT_WRITEFUNCTION'  => function ($ch, $chunk) use (&$httpstatus, &$errorbuffer, $relay) {
         if ($httpstatus === null) {
             $httpstatus = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         }
-        if ($httpstatus >= 400) {
+        if ($httpstatus < 200 || $httpstatus >= 300) {
             $errorbuffer .= $chunk;
             return strlen($chunk);
         }
@@ -229,19 +233,27 @@ $curl->setopt([
 ]);
 
 $curl->post($streamurl, $body);
+// A response without a body never reaches the callback (e.g. a 502 from a proxy in front).
+$finalstatus = $httpstatus ?? (int) ($curl->get_info()['http_code'] ?? 0);
 
-if ($curl->get_errno()) {
-    // The technical reason goes to the log; the student gets a message in their language.
-    debugging('[NexusAI] Chat stream: backend unreachable: ' . $curl->error, DEBUG_NORMAL);
+if ($relay->ended()) {
+    // The backend already closed the stream with `done` (answer stored) or with its own
+    // `error`: nothing to add, even if the connection dropped right after.
+    exit;
+}
+if ($curl->get_errno() || ($finalstatus >= 200 && $finalstatus < 300) || $errorbuffer === '') {
+    // Unreachable, cut mid-stream or an error without a body. The technical reason
+    // goes to the debugging log; the student gets a message in their language.
+    debugging('[NexusAI] Chat stream failed: HTTP ' . $finalstatus . ' ' . $curl->error, DEBUG_NORMAL);
     echo "data: " . json_encode([
         'type'   => 'error',
         'detail' => get_string('errorchatunavailable', 'local_nexusai'),
     ], JSON_UNESCAPED_UNICODE) . "\n\n";
     @flush();
-} else if ($httpstatus !== null && $httpstatus >= 400 && $errorbuffer !== '') {
+} else {
     echo "data: " . json_encode([
         'type'   => 'error',
-        'detail' => \local_nexusai\external\backend_client::extract_stream_error_detail($errorbuffer, $httpstatus),
+        'detail' => \local_nexusai\external\backend_client::extract_stream_error_detail($errorbuffer, $finalstatus),
     ]) . "\n\n";
     @flush();
 }
