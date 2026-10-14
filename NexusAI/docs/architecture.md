@@ -193,12 +193,13 @@ Cada decisión está formalizada como ADR (Architecture Decision Record):
 | [003](adr/003-multi-provider-llm.md) | **Arquitectura agnóstica** de proveedor LLM (`LLMProvider` / `EmbeddingProvider`) | ✅ Aceptada |
 | [004](adr/004-gemini-mvp-openai-prod.md) | **Gemini 2.5 Flash** en MVP (gratuito), **GPT-4o-mini** en producción | ✅ Aceptada |
 | [005](adr/005-hmac-php-python.md) | **HMAC SHA-256 en 3 capas** (Bearer + firma + nonce Redis) entre PHP y Python | ✅ Aceptada |
-| [006](adr/006-privacy-strategy.md) | **Privacy API**: `null_provider` en MVP, migración planificada a `metadata\\provider` | ✅ Aceptada |
+| [006](adr/006-privacy-strategy.md) | **Privacy API**: `null_provider` en MVP, migración planificada a `metadata\\provider` | Reemplazada por 014 |
 | 007 (TBD) | **Chunking 512 tokens / 64 overlap** (formalizar lo implementado por Marcos) | 🟨 pendiente Sprint 3 |
 | 008 (TBD) | React compilado como **bundle único AMD vía Webpack** (sin chunks lazy, con `publicPath` configurado) | 🟨 pendiente Sprint 3 |
 | 009 (TBD) | Plugin tipo **`local`** con **Hook API nuevo de Moodle 4.4+** y callback legacy para 4.1-4.3 | 🟨 pendiente Sprint 3 |
 | [010](adr/010-onboarding-docente.md) | **Onboarding al docente**: capa de ayuda de solo lectura (crear/editar curso + pestaña Ayuda), un componente reusable, estado en `user_preferences` | 📝 Propuesta |
 | [011](adr/011-deploy-self-hosted-oracle.md) | **Deploy self-hosted en Oracle Cloud** (staging + producción), retiro de Railway y Fly.io | ✅ Aceptada |
+| [014](adr/014-datos-alumno-en-moodle.md) | **Datos del alumno en tablas nativas de Moodle**; el backend conserva solo el índice del material, el registro de consumo y las cachés de contenido | ✅ Aceptada |
 
 ---
 
@@ -326,6 +327,8 @@ erDiagram
 Hoy: solo `local_nexusai_placeholder` definida en `plugin/local/nexusai/db/install.xml` (sin uso real, evita warnings del plugin checker).
 
 **No persistimos en Moodle:** historial de chat, sesiones, documentos indexados, analytics. Todo eso vive en el backend Python externo. Esa decisión está formalizada en [ADR-006](adr/006-privacy-strategy.md) y se mantiene mientras no haya un trigger explícito para migrar.
+
+> **Cambio decidido (2026-09-26):** [ADR-014](adr/014-datos-alumno-en-moodle.md) reemplaza a ADR-006 y mueve los datos del alumno a tablas nativas `local_nexusai_*`. Esta sección describe el estado actual y vale hasta el corte de la migración (#526).
 
 **Triggers que sí van a generar tablas en Moodle (post-MVP):**
 - Audit log de uso del plugin → tabla `local_nexusai_usage`

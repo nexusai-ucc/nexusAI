@@ -1,10 +1,32 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * StudentQuestionsPanel — unifica "Preguntas frecuentes" y "Gaps
- * detectados" bajo un solo destino de navegación, con un selector
- * interno (RDS-08, #416). Mismo patrón que StudyPanel.jsx del alumno
- * (selector Plan/Practicar/Repaso envolviendo sub-paneles
- * independientes). No modifica la lógica de FaqDashboardPanel ni
- * GapsPanel — solo decide cuál de los dos montar.
+ * Part of the NexusAI plugin (local_nexusai).
+ *
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * StudentQuestionsPanel — brings "Frequent questions" and "Detected gaps"
+ * under a single navigation destination, with an inner selector
+ * (RDS-08, #416). Same pattern as the student's StudyPanel.jsx
+ * (Plan/Practice/Review selector wrapping independent sub-panels).
+ * It does not change the logic of FaqDashboardPanel or
+ * GapsPanel — it only decides which of the two to mount.
  */
 
 import { useState } from "react";

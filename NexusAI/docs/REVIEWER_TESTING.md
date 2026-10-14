@@ -23,9 +23,7 @@ site at directly, no setup required on your side.
    - **Backend URL**: `<PROVIDED_SEPARATELY_TO_REVIEWER>`
    - **API key**: `<PROVIDED_SEPARATELY_TO_REVIEWER>`
    - **Shared secret**: `<PROVIDED_SEPARATELY_TO_REVIEWER>`
-3. Save. Enroll a test user in a course, upload a PDF/DOCX as course
-   material, and open the NexusAI chat — it should answer using that
-   material and cite the source.
+3. Save, then follow **Turn NexusAI on in a course** below.
 
 > These are credentials to our real, shared production backend. Please
 > don't use them for anything beyond reviewing this submission, and let us
@@ -118,6 +116,27 @@ depends on where your Moodle runs:
 
 - **API key** / **Shared secret**: the two values you generated in step 2.
 
+The plugin's status page (`/local/nexusai/admin.php`) should then show
+**Connected**.
+
+## Turn NexusAI on in a course
+
+NexusAI ships **off in every course**, so it can be enabled one course at a
+time. Supported Moodle versions: 4.5 LTS to 5.3.
+
+1. As a teacher (or admin), open the course and use **NexusAI in this course**
+   in the course navigation (More menu) to turn it on. Alternatively, an admin
+   can tick **On by default in courses** in the plugin settings.
+2. Add course material: either upload a PDF/DOCX from **NexusAI · Materials**
+   (course navigation), which creates a regular "File" activity in the chosen
+   section, or add a "File" activity the usual way and accept the prompt to
+   index it in NexusAI.
+3. Make sure cron runs (`php admin/cli/cron.php`, or
+   `php admin/cli/adhoc_task.php --execute`). Forum indexing, material sync and
+   backend clean-up run as ad hoc tasks, never inside the user's request.
+4. Log in as an enrolled student and open the NexusAI icon in the top
+   navigation bar: the chat should answer using that material and cite it.
+
 ## What to test
 
 - Chat: ask a question about material you uploaded; confirm the answer
@@ -125,9 +144,14 @@ depends on where your Moodle runs:
   outside the material.
 - Quiz generation and flashcards (student side).
 - Analytics dashboard and material management (teacher side).
-- Privacy: **Site administration → Users → Privacy → Data requests** should
-  let an admin export/delete a user's NexusAI data (routed through the
-  backend, see `classes/privacy/provider.php`).
+- Forums: in a forum of the course, "Summarize thread", "Suggest reply" and the
+  similar-posts banner only use posts the user can see in the forum (groups,
+  private replies, Q&A forums).
+- Privacy: **Site administration → Users → Privacy → Data requests** exports
+  and deletes a user's NexusAI data. The data lives in the plugin's own
+  Moodle tables; the copies the backend keeps for search (indexed material and
+  forum posts) are removed by an ad hoc task (see
+  `classes/privacy/provider.php`).
 
 ## Questions
 

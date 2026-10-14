@@ -1,14 +1,36 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * CalendarPanel — próximos exámenes y entregas del curso (CAL-01 + CAL-02 + CAL-04).
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * CAL-01: Los eventos vienen de la webservice nativa core_calendar_get_action_events_by_course.
- * CAL-02: El alumno puede configurar alertas por evento (sin alerta / 1 / 3 / 7 días antes).
- *         Las alertas se persisten en FastAPI. Un banner muestra los eventos cuyo momento
- *         de alerta ya llegó (calculado client-side).
- * CAL-04: getUpcomingEvents (api/calendar.js) también trae avisos genéricos
- *         de curso (sin Tarea/Quiz asociado) — se distinguen acá con la
- *         entrada "course" de TYPE_LABELS. Las alertas de CAL-02 aplican
- *         igual a estos eventos, sin ningún cambio (ya tienen una fecha real).
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * CalendarPanel — upcoming exams and due dates of the course (CAL-01 + CAL-02 + CAL-04).
+ *
+ * CAL-01: Events come from the native web service core_calendar_get_action_events_by_course.
+ * CAL-02: The student can set alerts per event (no alert / 1 / 3 / 7 days before).
+ *         Alerts are stored on the server. A banner shows the events whose alert
+ *         time has already come (computed client-side).
+ * CAL-04: getUpcomingEvents (api/calendar.js) also returns generic course
+ *         notices (with no Assignment/Quiz attached) — they are told apart here
+ *         with the "course" entry of TYPE_LABELS. CAL-02 alerts apply to these
+ *         events the same way, with no change (they already have a real date).
  */
 
 import { useEffect, useState } from "react";
@@ -45,11 +67,11 @@ function formatDate(timestampSec) {
     }
 }
 
-// CAL-05 (#364): grilla de mes, alternativa a la lista. Helper puro
-// (testeable sin DOM) — agrupa los MISMOS `events` ya cargados por día
-// calendario, sin pedir nada nuevo al backend (no hay forma de pedirle a
-// getUpcomingEvents un mes arbitrario; el criterio de aceptación pide
-// los mismos eventos en ambas vistas, no un rango de datos distinto).
+// CAL-05 (#364): month grid, an alternative to the list. Pure helper
+// (testable without DOM) — groups the SAME already loaded `events` by
+// calendar day, without asking the backend for anything new (there is no way
+// to ask getUpcomingEvents for an arbitrary month; the acceptance criteria ask
+// for the same events in both views, not a different data range).
 const WEEKDAY_LABELS = {
     es: ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"],
     en: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
@@ -67,8 +89,8 @@ export function buildMonthGrid(year, month, events) {
         eventsByDay[key].push(e);
     }
 
-    // Lunes como primer día de la semana: getDay() da 0=domingo..6=sábado,
-    // se rota para que 0=lunes..6=domingo.
+    // Monday as the first day of the week: getDay() gives 0=Sunday..6=Saturday,
+    // it is rotated so that 0=Monday..6=Sunday.
     const firstOfMonth = new Date(year, month, 1);
     const firstWeekday = (firstOfMonth.getDay() + 6) % 7;
 
@@ -111,12 +133,12 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
     const [confirmRevoke, setConfirmRevoke] = useState(false);
     const [revoking, setRevoking] = useState(false);
 
-    // CAL-06 (#365): descarga puntual del mismo feed (?download=1 — ya
-    // soportado por calendar_feed.php desde el PR #437, pensado para esto).
+    // CAL-06 (#365): one-off download of the same feed (?download=1 — already
+    // supported by calendar_feed.php since PR #437, meant for this).
     const [exporting, setExporting] = useState(false);
     const [exportError, setExportError] = useState(null);
 
-    // CAL-05 (#364): toggle lista/grilla + mes mostrado en la grilla.
+    // CAL-05 (#364): list/grid toggle + month shown in the grid.
     const [view, setView] = useState("list"); // "list" | "grid"
     const [gridMonth, setGridMonth] = useState(() => {
         const now = new Date();
@@ -220,7 +242,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
             setFeedCopied(true);
             setTimeout(() => setFeedCopied(false), 2000);
         } catch {
-            /* el input es seleccionable a mano como fallback */
+            /* the input can be selected by hand as a fallback */
         }
     };
 
@@ -237,9 +259,9 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
         }
     };
 
-    // CAL-06 (#365): descarga puntual — reusa la misma URL de feed que
-    // "Suscribirme" (la cachea en feedUrl si todavía no se pidió, para no
-    // duplicar la llamada si el alumno después abre esa sección).
+    // CAL-06 (#365): one-off download — reuses the same feed URL as
+    // "Subscribe" (caches it in feedUrl if it was not requested yet, so the
+    // call is not repeated if the student opens that section afterwards).
     const exportIcs = async () => {
         setExporting(true);
         setExportError(null);
@@ -279,7 +301,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                 list.forEach((a) => { map[a.event_id] = a.days_before; });
                 setAlerts(map);
             })
-            .catch(() => { /* silencioso — las alertas son opcionales */ });
+            .catch(() => { /* silent — alerts are optional */ });
         return () => { cancelled = true; };
     }, [courseId, userId]);
 

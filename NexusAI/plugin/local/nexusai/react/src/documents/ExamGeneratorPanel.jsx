@@ -1,13 +1,35 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * ExamGeneratorPanel — generador de exámenes para el docente (EVAL-02, issue #235 / DOC-D04).
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * El docente elige archivos del curso + tipo de pregunta + dificultad + cantidad,
- * genera un banco de preguntas con el mismo motor que el quiz de práctica del
- * alumno (services/api/app/quiz/router.py::generate-exam), lo previsualiza con
- * edición inline, y lo exporta como .txt en formato GIFT para importar al
- * banco de preguntas de Moodle.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * ExamGeneratorPanel — exam generator for the teacher (EVAL-02, issue #235 / DOC-D04).
  *
- * Estados: "setup" (elegir archivos + config) → "loading" → "preview" (editable) → "error".
+ * The teacher picks course files + question type + difficulty + count,
+ * generates a question bank with the same engine as the student's practice
+ * quiz (services/api/app/quiz/router.py::generate-exam), previews it with
+ * inline editing, and exports it as a .txt in GIFT format to import into
+ * Moodle's question bank.
+ *
+ * States: "setup" (pick files + config) → "loading" → "preview" (editable) → "error".
  */
 
 import { useEffect, useState } from "react";
@@ -17,15 +39,15 @@ import { downloadGiftFile } from "./gift.js";
 import { IconClipboardList, IconDownload, IconFileText } from "../components/icons.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
 
-// DOC-D09 (#390): cuántos temas con dificultad detectada se ofrecen como
-// máximo (combinados entre Gaps y FAQ) — coincide con el tope que acepta
-// el backend (ExamGenerateRequest.focus_topics, max_length=15).
+// DOC-D09 (#390): maximum number of topics with detected difficulty offered
+// (combined between Gaps and FAQ) — matches the cap the backend accepts
+// (ExamGenerateRequest.focus_topics, max_length=15).
 const MAX_FOCUS_TOPICS = 15;
 
 /**
- * Trae temas con dificultad detectada desde Gaps (preguntas sin responder,
- * DOC-D06) y FAQ agrupada (analytics), los combina y ordena por frecuencia.
- * Gaps archivados quedan excluidos por default en listGaps (DOC-D08).
+ * Fetches topics with detected difficulty from Gaps (unanswered questions,
+ * DOC-D06) and grouped FAQ (analytics), combines them and sorts them by frequency.
+ * Archived gaps are excluded by default in listGaps (DOC-D08).
  */
 async function fetchFocusTopicCandidates(courseId) {
     const [gapsRes, faqRes] = await Promise.all([
@@ -84,7 +106,7 @@ function difficulties(lang) {
 
 export default function ExamGeneratorPanel({ courseId, lang = "es" }) {
     const [stage, setStage] = useState("setup"); // setup | loading | preview | error
-    const [wizardStep, setWizardStep] = useState("files"); // files | configure (solo dentro de stage "setup")
+    const [wizardStep, setWizardStep] = useState("files"); // files | configure (only inside the "setup" stage)
     const [documents, setDocuments] = useState([]);
     const [docsLoading, setDocsLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -95,7 +117,7 @@ export default function ExamGeneratorPanel({ courseId, lang = "es" }) {
     const [questions, setQuestions] = useState([]);
     const [error, setError] = useState(null);
 
-    // DOC-D09 (#390): "incluir temas con dificultad detectada" (Gaps/FAQ).
+    // DOC-D09 (#390): "include topics with detected difficulty" (Gaps/FAQ).
     const [includeFocusTopics, setIncludeFocusTopics] = useState(false);
     const [focusTopics, setFocusTopics] = useState([]); // candidatos {label, source, count}
     const [focusTopicsLoading, setFocusTopicsLoading] = useState(false);
@@ -169,9 +191,9 @@ export default function ExamGeneratorPanel({ courseId, lang = "es" }) {
         listDocuments(courseId)
             .then((data) => {
                 if (!cancelled) {
-                    // UX-17 (#387): sin limit, listDocuments trae todos los
-                    // documentos del curso (hasta el tope interno del backend)
-                    // — necesario acá para poder elegir de cualquiera.
+                    // UX-17 (#387): without limit, listDocuments returns all the
+                    // course documents (up to the backend's internal cap)
+                    // — needed here to be able to pick any of them.
                     setDocuments((data?.items || []).filter((d) => d.status === "indexed"));
                     setDocsLoading(false);
                 }
@@ -197,7 +219,7 @@ export default function ExamGeneratorPanel({ courseId, lang = "es" }) {
             fetchFocusTopicCandidates(courseId)
                 .then((topics) => {
                     setFocusTopics(topics);
-                    // Todos preseleccionados — el docente puede destildar los que no quiera.
+                    // All preselected — the teacher can untick the ones they do not want.
                     setSelectedFocusTopics(
                         Object.fromEntries(topics.map((t) => [focusTopicKey(t), true]))
                     );

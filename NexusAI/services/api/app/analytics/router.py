@@ -19,19 +19,19 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.analytics.service import get_top_questions
+from app.analytics.service import QuestionCount, get_top_questions
 from app.auth.hmac import verify_hmac
 from app.db.models import InteractionLog
 from app.db.session import get_db
 from app.providers.llm import LLMProvider, get_llm_provider
-from app.shared.language import with_language_directive
+from app.shared.language import ui_language, with_language_directive
 
 logger = logging.getLogger("nexusai.analytics")
 
@@ -127,9 +127,19 @@ async def course_stats(
 # ============================================================
 
 
+class FaqQuestionIn(BaseModel):
+    """Una pregunta del período, ya agrupada por Moodle (DATA-04)."""
+
+    question: str = Field(min_length=1, max_length=2000)
+    count: int = Field(default=1, ge=1)
+
+
 class FaqTopicsRequest(BaseModel):
     course_id: int = Field(gt=0)
     days: int = Field(default=30, ge=1, le=365)
+    # DATA-04 (#524): en la opción C las preguntas están en Moodle, que las
+    # manda agrupadas por texto normalizado; con la lista no se lee la base.
+    questions: Optional[List[FaqQuestionIn]] = Field(default=None, max_length=500)
 
 
 class FaqTopic(BaseModel):
@@ -149,6 +159,7 @@ class FaqTopicsResponse(BaseModel):
 async def faq_topics(
     payload: FaqTopicsRequest,
     _body: Annotated[bytes, Depends(verify_hmac)],
+    request: Request,
     db: AsyncSession = Depends(get_db),
     llm: LLMProvider = Depends(get_llm_provider),
 ) -> FaqTopicsResponse:
@@ -158,9 +169,17 @@ async def faq_topics(
     # 1) Agrupar por pregunta normalizada, uniendo interaction_logs con el
     # mensaje de usuario real para recuperar el texto (interaction_logs no
     # guarda el texto de la pregunta, solo métricas — ver InteractionLog).
-    rows = await get_top_questions(
-        db, payload.course_id, since, limit=_FAQ_SAMPLE_LIMIT
-    )
+    if payload.questions is not None:
+        rows = [
+            QuestionCount(question=q.question.strip().lower(), count=q.count)
+            for q in sorted(payload.questions, key=lambda q: q.count, reverse=True)[
+                :_FAQ_SAMPLE_LIMIT
+            ]
+        ]
+    else:
+        rows = await get_top_questions(
+            db, payload.course_id, since, limit=_FAQ_SAMPLE_LIMIT
+        )
 
     if not rows:
         return FaqTopicsResponse(
@@ -203,7 +222,9 @@ async def faq_topics(
         },
     ]
 
-    messages = with_language_directive(messages, *(row.question for row in rows))
+    messages = with_language_directive(
+        messages, *(row.question for row in rows), fallback=ui_language(request)
+    )
 
     try:
         result_llm = await llm.chat_completion(

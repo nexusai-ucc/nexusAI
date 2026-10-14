@@ -1,10 +1,32 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * Cliente API del historial de conversaciones (Feature E).
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Llama a las external functions:
- *   - local_nexusai_chat_sessions_list  → listado del sidebar
- *   - local_nexusai_chat_session_messages → mensajes para retomar conversación
- *   - local_nexusai_chat_session_delete → borrar una sesión puntual (ASIST-02)
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * API client of the conversation history (Feature E).
+ *
+ * Calls the external functions:
+ *   - local_nexusai_chat_sessions_list  → sidebar list
+ *   - local_nexusai_chat_session_messages → messages to resume a conversation
+ *   - local_nexusai_chat_session_delete → deletes one session (ASIST-02)
  */
 
 async function getMoodleAjax() {
@@ -21,11 +43,11 @@ async function getMoodleAjax() {
 }
 
 /**
- * Lista sesiones previas del usuario.
+ * Lists the user's previous sessions.
  *
  * @param {Object}  params
  * @param {number}  params.courseId
- * @param {boolean} [params.scopeCourse]  Default true: solo este curso. false: todas.
+ * @param {boolean} [params.scopeCourse]  Default true: only this course. false: all.
  * @param {number}  [params.limit]        Default 20.
  */
 export async function listSessions({ courseId, scopeCourse = true, limit = 20 }) {
@@ -63,7 +85,7 @@ export async function listSessions({ courseId, scopeCourse = true, limit = 20 })
 }
 
 /**
- * Carga los mensajes de una sesión existente.
+ * Loads the messages of an existing session.
  *
  * @param {Object} params
  * @param {number} params.courseId
@@ -91,7 +113,7 @@ export async function getSessionMessages({ courseId, sessionId }) {
 }
 
 /**
- * Borra una sesión puntual del historial (ASIST-02, #350).
+ * Deletes one session from the history (ASIST-02, #350).
  *
  * @param {Object} params
  * @param {number} params.courseId

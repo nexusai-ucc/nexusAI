@@ -1,9 +1,31 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * Tabla de documentos.
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * El polling de estado se maneja en DocumentsManager (que usa listDocuments).
- * Esta tabla solo muestra el estado actual recibido via props y maneja la
- * confirmación + ejecución del borrado y del reemplazo de archivo (CONT-07).
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * Documents table.
+ *
+ * State polling is handled in DocumentsManager (which uses listDocuments).
+ * This table only shows the current state received via props and handles the
+ * confirmation + execution of deleting and replacing the file (CONT-07).
  */
 
 import { useRef, useState } from "react";
@@ -33,14 +55,15 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
         done:            "Listo",
         selectAllAria:   "Seleccionar todos los documentos",
         colFile:         "Archivo",
+        colActivity:     "En el aula",
         colStatus:       "Estado",
         colDate:         "Fecha",
         emptyTitle:      "Todavía no subiste material a este curso.",
         emptyHint:       "Arrastrá un PDF, DOCX o TXT arriba y NexusAI lo indexa para que el asistente pueda responder sobre su contenido.",
-        deleteTitle:     "Eliminar documento",
-        deleteConfirm:   "Eliminar",
+        deleteTitle:     "Quitar de NexusAI",
+        deleteConfirm:   "Quitar",
         cancel:          "Cancelar",
-        deleteBody:      (name) => <>¿Borrar <strong>{name}</strong>? Esto elimina el documento y todos sus chunks indexados. La acción no se puede deshacer.</>,
+        deleteBody:      (name) => <>¿Quitar <strong>{name}</strong> de NexusAI? El asistente deja de usarlo. La actividad sigue en el aula: para borrarla, hacelo desde el curso.</>,
         replaceTitle:    "Reemplazar documento",
         replaceConfirm:  "Reemplazar",
         replaceBody:     (oldName, newName) => <>¿Reemplazar <strong>{oldName}</strong> por <strong>{newName}</strong>? El documento se re-indexa desde cero; las citas viejas del chat siguen apuntando a este mismo material.</>,
@@ -71,14 +94,15 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
         done:            "Done",
         selectAllAria:   "Select all documents",
         colFile:         "File",
+        colActivity:     "In the classroom",
         colStatus:       "Status",
         colDate:         "Date",
         emptyTitle:      "You haven't uploaded any material to this course yet.",
         emptyHint:       "Drag a PDF, DOCX or TXT above and NexusAI indexes it so the assistant can answer about its content.",
-        deleteTitle:     "Delete document",
-        deleteConfirm:   "Delete",
+        deleteTitle:     "Remove from NexusAI",
+        deleteConfirm:   "Remove",
         cancel:          "Cancel",
-        deleteBody:      (name) => <>Delete <strong>{name}</strong>? This removes the document and all its indexed chunks. This action can't be undone.</>,
+        deleteBody:      (name) => <>Remove <strong>{name}</strong> from NexusAI? The assistant stops using it. The activity stays in the classroom: delete it from the course if you want it gone.</>,
         replaceTitle:    "Replace document",
         replaceConfirm:  "Replace",
         replaceBody:     (oldName, newName) => <>Replace <strong>{oldName}</strong> with <strong>{newName}</strong>? The document is re-indexed from scratch; old chat citations keep pointing to this same material.</>,
@@ -100,10 +124,10 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
         close:               "Close",
     };
 
-    // CONT-09 (#358): acciones en lote — selección múltiple + reindexar/borrar
-    // varios documentos de una. Ejecución SECUENCIAL (no Promise.all), mismo
-    // criterio que uploadQueue (SP-13): da feedback de progreso por ítem y no
-    // satura el backend/LLM de golpe si se seleccionan muchos.
+    // CONT-09 (#358): bulk actions — multiple selection + re-index/delete
+    // several documents at once. SEQUENTIAL execution (not Promise.all), same
+    // approach as uploadQueue (SP-13): gives per-item progress feedback and
+    // does not flood the backend/LLM at once if many are selected.
     const [selectedIds, setSelectedIds] = useState(() => new Set());
     const [bulkConfirm, setBulkConfirm] = useState(null); // { type: "delete"|"reindex", docs }
     const [bulkRunning, setBulkRunning] = useState(false);
@@ -173,16 +197,16 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
                     ? L.bulkPartialDelete(ok, docs.length, failed)
                     : L.bulkPartialReindex(ok, docs.length, failed)
             );
-            // La cola queda visible con el detalle de qué falló (se limpia
-            // sola en la próxima corrida, o el docente la descarta a mano).
+            // The queue stays visible with the details of what failed (it clears
+            // itself on the next run, or the teacher dismisses it by hand).
         }
     };
 
     const dismissBulkQueue = () => setBulkQueue([]);
 
-    // CONT-07 (#356): reemplazar el archivo de un documento sin cambiar su id.
-    // Flujo: click "Reemplazar" → abre el file picker (input oculto) → al
-    // elegir un archivo, se pide confirmación antes de llamar al backend.
+    // CONT-07 (#356): replace a document's file without changing its id.
+    // Flow: click "Replace" → opens the file picker (hidden input) → after
+    // choosing a file, confirmation is asked before calling the backend.
     const [replacingId, setReplacingId] = useState(null);
     const [pendingReplaceDoc, setPendingReplaceDoc] = useState(null);
     const [replaceTarget, setReplaceTarget] = useState(null); // { doc, file }
@@ -196,7 +220,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
 
     const handleReplaceFileChosen = (e) => {
         const file = e.target.files?.[0];
-        e.target.value = ""; // permite re-elegir el mismo archivo y disparar onChange igual
+        e.target.value = ""; // allows picking the same file again and still firing onChange
         if (file && pendingReplaceDoc) {
             setReplaceTarget({ doc: pendingReplaceDoc, file });
         }
@@ -218,7 +242,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
         }
     };
 
-    // CONT-08 (#357): preview del texto extraído, por documento y bajo demanda.
+    // CONT-08 (#357): preview of the extracted text, per document and on demand.
     // { [docId]: { loading, error, data } }
     const [previews, setPreviews] = useState({});
     const [openPreviewId, setOpenPreviewId] = useState(null);
@@ -353,6 +377,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
                                 />
                             </th>
                             <th>{L.colFile}</th>
+                            <th>{L.colActivity}</th>
                             <th>{L.colStatus}</th>
                             <th>{L.colDate}</th>
                             <th></th>
@@ -445,7 +470,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
 }
 
 // ============================================================
-// Modal de error — exportado para que DocumentsManager lo use
+// Error modal — exported so DocumentsManager can use it
 // ============================================================
 
 export function ErrorModal({ message, onClose, lang = "es" }) {
@@ -496,7 +521,13 @@ function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, 
         replacing:   "Reemplazando...",
         replace:     "Reemplazar",
         deleting:    "Borrando...",
-        delete:      "Eliminar",
+        delete:      "Quitar de NexusAI",
+        viewInClass: "Ver en el aula",
+        visible:     "Visible",
+        hidden:      "Oculta a alumnos",
+        missing:     "Actividad borrada",
+        none:        "Sin actividad",
+        unit:        (n) => `Unidad ${n}`,
     } : {
         selectAria:  (name) => `Select ${name}`,
         hideText:    "Hide text",
@@ -504,7 +535,13 @@ function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, 
         replacing:   "Replacing...",
         replace:     "Replace",
         deleting:    "Deleting...",
-        delete:      "Delete",
+        delete:      "Remove from NexusAI",
+        viewInClass: "View in the classroom",
+        visible:     "Visible",
+        hidden:      "Hidden from students",
+        missing:     "Activity deleted",
+        none:        "No activity",
+        unit:        (n) => `Unit ${n}`,
     };
 
     return (
@@ -528,6 +565,9 @@ function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, 
                             <div className="nexusai-table__progress-fill"></div>
                         </div>
                     )}
+                </td>
+                <td className="nexusai-table__activity">
+                    <ActivityCell doc={doc} L={L} />
                 </td>
                 <td>
                     <StatusBadge status={doc.status} errorMessage={doc.error_message} lang={lang} />
@@ -566,7 +606,7 @@ function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, 
             </tr>
             {previewOpen && (
                 <tr className="nexusai-table__preview-row">
-                    <td colSpan={5}>
+                    <td colSpan={6}>
                         <DocumentPreview preview={preview} lang={lang} />
                     </td>
                 </tr>
@@ -576,7 +616,32 @@ function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, 
 }
 
 // ============================================================
-// Preview del texto extraído (CONT-08 / #357)
+// Where the document lives in the course (VIS-03 / #538)
+// ============================================================
+
+/**
+ * Section, link to the activity and whether it is visible. The state comes from
+ * Moodle (document_list); after uploading, the new document carries cmid and visible.
+ */
+function ActivityCell({ doc, L }) {
+    const status = doc.activity_status || (doc.cmid ? (doc.visible === false ? "hidden" : "visible") : "none");
+    const wwwroot = typeof window !== "undefined" ? window.M?.cfg?.wwwroot : "";
+    const url = doc.activity_url || (doc.cmid && wwwroot ? `${wwwroot}/mod/resource/view.php?id=${doc.cmid}` : "");
+    const unit = doc.section_name || (doc.section !== null && doc.section !== undefined ? L.unit(doc.section) : "");
+
+    return (
+        <div className="nexusai-activity">
+            {unit && <span className="nexusai-activity__unit">{unit}</span>}
+            <span className={`nexusai-activity__state nexusai-activity__state--${status}`}>{L[status]}</span>
+            {url && status !== "missing" && (
+                <a className="nexusai-link-btn" href={url} target="_blank" rel="noreferrer">{L.viewInClass}</a>
+            )}
+        </div>
+    );
+}
+
+// ============================================================
+// Preview of the extracted text (CONT-08 / #357)
 // ============================================================
 
 function DocumentPreview({ preview, lang = "es" }) {

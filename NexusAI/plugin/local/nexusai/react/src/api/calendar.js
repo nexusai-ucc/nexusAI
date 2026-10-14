@@ -1,23 +1,45 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * Cliente del calendario del curso (CAL-01, CAL-04).
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * A diferencia del resto de los api/*.js de este plugin, NO llama a una
- * external function local_nexusai_* — llama DIRECTO a webservices nativas
- * de Moodle vía core/ajax. No hay backend Python ni HMAC involucrados:
- * Moodle ya las expone con ajax=true globalmente y su implementación real
- * (calendar/externallib.php) solo valida que el usuario esté logueado y
- * matriculado en el curso — no exige ninguna capability adicional para leer.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * Course calendar client (CAL-01, CAL-04).
  *
- * CAL-04 (#319): `core_calendar_get_action_events_by_course` (ya se usaba)
- * SOLO trae "action events" — eventos ligados a un módulo con proveedor de
- * acción (fecha de entrega de una Tarea, cierre de un Quiz). Un evento
- * genérico creado directamente desde el calendario nativo de Moodle (ej.
- * "Feriado", un aviso puntual sin actividad asociada) nunca aparece ahí.
- * Se combina con `core_calendar_get_calendar_events` (trae eventos crudos,
- * confirmado contra el código fuente real de Moodle —
- * calendar/externallib.php), descartando de esa segunda respuesta las
- * filas que YA vienen de la primera (tienen `modulename` seteado) para no
- * duplicar entregas/exámenes reales.
+ * Unlike the rest of this plugin's api/*.js, it does NOT call a
+ * local_nexusai_* external function — it calls Moodle's native web services
+ * DIRECTLY through core/ajax. No Python backend or HMAC involved:
+ * Moodle already exposes them with ajax=true globally and their real
+ * implementation (calendar/externallib.php) only checks that the user is
+ * logged in and enrolled in the course — it requires no extra capability to read.
+ *
+ * CAL-04 (#319): `core_calendar_get_action_events_by_course` (already used)
+ * ONLY returns "action events" — events tied to a module with an action
+ * provider (an Assignment due date, a Quiz closing). A generic event
+ * created directly from Moodle's native calendar (e.g. "Holiday", a one-off
+ * notice with no activity attached) never shows up there.
+ * It is combined with `core_calendar_get_calendar_events` (returns raw events,
+ * checked against Moodle's real source code —
+ * calendar/externallib.php), dropping from that second response the rows
+ * that ALREADY come from the first one (they have `modulename` set) so real
+ * due dates/exams are not duplicated.
  */
 
 const MOCK_EVENTS = [
@@ -64,11 +86,11 @@ async function getMoodleAjax() {
 }
 
 /**
- * Trae los eventos genéricos de curso (CAL-04) — los que
- * `get_action_events_by_course` no devuelve porque no están ligados a un
- * módulo con proveedor de acción de calendario. Descarta las filas con
- * `modulename` seteado (esas ya las trae la otra llamada) y normaliza el
- * resto al mismo shape que ya consume CalendarPanel.jsx.
+ * Fetches the generic course events (CAL-04) — the ones
+ * `get_action_events_by_course` does not return because they are not tied to
+ * a module with a calendar action provider. Drops the rows with
+ * `modulename` set (the other call already returns those) and normalizes the
+ * rest to the same shape CalendarPanel.jsx already consumes.
  */
 async function fetchGenericCourseEvents(ajax, courseId, timestart, timeend) {
     const [responsePromise] = ajax.call([{
@@ -95,12 +117,12 @@ async function fetchGenericCourseEvents(ajax, courseId, timestart, timeend) {
 }
 
 /**
- * Próximos eventos del curso: entregas/exámenes reales (action events) +
- * avisos genéricos creados a mano en el calendario nativo (CAL-04, #319).
+ * Upcoming course events: real due dates/exams (action events) +
+ * generic notices created by hand in the native calendar (CAL-04, #319).
  *
  * @param {number} courseId
- * @param {number} [days] Ventana hacia adelante en días (default 30).
- * @returns {Promise<Array>} Eventos combinados, ordenados por timesort.
+ * @param {number} [days] Window ahead in days (default 30).
+ * @returns {Promise<Array>} Combined events, sorted by timesort.
  */
 export async function getUpcomingEvents(courseId, days = 30) {
     const ajax = await getMoodleAjax();
@@ -114,11 +136,11 @@ export async function getUpcomingEvents(courseId, days = 30) {
         return MOCK_EVENTS.filter((e) => e.timesort <= timesortto);
     }
 
-    // Importante: hay que awaitear el elemento devuelto por ajax.call() antes
-    // de leer sus propiedades. `ajax.call([...])` devuelve un array de
-    // promesas (jQuery Deferred) — awaitear el ARRAY (en vez del elemento)
-    // no lo resuelve, así que `response` seguiría siendo la promesa sin
-    // resolver si se accede a `.events` en el mismo paso.
+    // Important: the element returned by ajax.call() has to be awaited before
+    // reading its properties. `ajax.call([...])` returns an array of
+    // promises (jQuery Deferred) — awaiting the ARRAY (instead of the element)
+    // does not resolve it, so `response` would still be the unresolved promise
+    // if `.events` is read in the same step.
     const [actionEventsPromise] = ajax.call([{
         methodname: "core_calendar_get_action_events_by_course",
         args: { courseid: courseId, timesortfrom, timesortto, limitnum: 20 },

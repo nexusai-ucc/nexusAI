@@ -1,7 +1,29 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * Cliente API del buscador semántico (Feature A).
- * Llama a `local_nexusai_search_query` vía core/ajax. Fuera de Moodle
- * cae a un mock para que la UI sea visible en dev standalone.
+ * Part of the NexusAI plugin (local_nexusai).
+ *
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * API client of the semantic search (Feature A).
+ * Calls `local_nexusai_search_query` through core/ajax. Outside Moodle
+ * it falls back to a mock so the UI can be seen in standalone dev.
  */
 
 const MOCK_RESULTS = [
@@ -54,16 +76,16 @@ async function getMoodleAjax() {
 }
 
 /**
- * Busca fragmentos del material del curso.
+ * Searches fragments of the course material.
  *
  * @param {Object}  params
- * @param {string}  params.query        Consulta de búsqueda.
- * @param {number}  params.courseId     ID del curso de Moodle.
- * @param {number}  [params.topK]       Cantidad de resultados (default 5).
- * @param {boolean} [params.global]     true para buscar en todos los cursos del usuario.
- * @param {string}  [params.materialType] Filtrar por mime type del documento (BUS-02).
- * @param {number}  [params.section]    Filtrar por sección/unidad del curso (BUS-05).
- * @param {boolean} [params.sectionUnassigned] Filtrar solo material sin sección asignada (BUS-05).
+ * @param {string}  params.query        Search query.
+ * @param {number}  params.courseId     Moodle course ID.
+ * @param {number}  [params.topK]       Number of results (default 5).
+ * @param {boolean} [params.global]     true to search all the user's courses.
+ * @param {string}  [params.materialType] Filter by the document's mime type (BUS-02).
+ * @param {number}  [params.section]    Filter by course section (BUS-05).
+ * @param {boolean} [params.sectionUnassigned] Filter only material with no section assigned (BUS-05).
  * @returns {Promise<{query:string, total:number, results:Array}>}
  */
 export async function searchMaterial({

@@ -1,17 +1,39 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * ForumDigestPanel — resumen semanal del foro para el docente (FOR-06,
- * #367) + badge de urgencia por hilo (FOR-05, #366) — panel teacherOnly,
- * accesible desde NavMenu igual que ReviewPanel/OnboardingPanel.
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Un solo fetch combinado (`local_nexusai_forum_weekly_digest`): el mismo
- * backend que arma el resumen de la semana ya calcula, por hilo, si algún
- * post parece urgente/frustrado (heurística sin LLM) — ver docstring del
- * router Python para el porqué de combinarlos en un solo endpoint.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * ForumDigestPanel — weekly forum digest for the teacher (FOR-06,
+ * #367) + urgency badge per thread (FOR-05, #366) — teacherOnly panel,
+ * reachable from NavMenu like ReviewPanel/OnboardingPanel.
  *
- * FOR-07 (#378): campo para configurar una URL de webhook
- * (Slack/Discord/Teams) — cuando hay una guardada, el backend reenvía el
- * resumen ahí además de mostrarlo acá (silencioso si el webhook falla, no
- * afecta este panel).
+ * A single combined fetch (`local_nexusai_forum_weekly_digest`): the same
+ * backend call that builds the week's digest already works out, per thread,
+ * whether a post looks urgent/frustrated (heuristic, no LLM) — see the
+ * Python router's docstring for why they are combined in one endpoint.
+ *
+ * FOR-07 (#378): field to set a webhook URL
+ * (Slack/Discord/Teams) — when one is stored, the backend also forwards the
+ * digest there besides showing it here (silent if the webhook fails, it does
+ * not affect this panel).
  */
 
 import { useEffect, useState } from "react";
@@ -81,7 +103,7 @@ export default function ForumDigestPanel({ courseId, wwwroot, lang = "es" }) {
                 setWebhookUrl(url || "");
                 setWebhookSavedUrl(url || "");
             }
-        }).catch(() => { /* precarga best-effort, sin bloquear el resto del panel */ });
+        }).catch(() => { /* best-effort preload, without blocking the rest of the panel */ });
         return () => { cancelled = true; };
     }, [courseId]);
 

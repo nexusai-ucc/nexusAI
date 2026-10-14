@@ -1,0 +1,106 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_nexusai/admin_status
+
+    Backend status and active configuration shown on the NexusAI admin page (admin.php).
+
+    Context variables required for this template:
+    * refreshurl - URL of the page itself, to check the backend again.
+    * settingsurl - URL of the plugin settings.
+    * statusclass - Bootstrap alert class for the status (alert-success, alert-warning, alert-danger).
+    * statusicon - Icon shown before the status label.
+    * statuslabel - Status label.
+    * statusdetail - HTML after the label: latency and version, the error, or a link to configure.
+    * hashealthrows - Whether the backend /health response has fields to list.
+    * healthrows - Fields of the /health response (key, value).
+    * configrows - Active configuration, without credentials (label, value, missing).
+
+    Example context (json):
+    {
+        "refreshurl": "https://moodle.example.com/local/nexusai/admin.php",
+        "settingsurl": "https://moodle.example.com/admin/settings.php?section=local_nexusai",
+        "statusclass": "alert-success",
+        "statusicon": "✅",
+        "statuslabel": "Connected",
+        "statusdetail": "— latency <strong>42 ms</strong>",
+        "hashealthrows": true,
+        "healthrows": [
+            {"key": "status", "value": "ok"},
+            {"key": "version", "value": "0.19.0"}
+        ],
+        "configrows": [
+            {"label": "Plugin enabled", "value": "✅ Yes", "missing": false},
+            {"label": "Backend API URL", "value": "https://backend.example.com", "missing": false},
+            {"label": "API key", "value": "", "missing": true}
+        ]
+    }
+}}
+<div class="container-fluid nexusai-admin">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <strong>{{#str}}admin_backend_status, local_nexusai{{/str}}</strong>
+                    <a href="{{refreshurl}}" class="btn btn-sm btn-outline-secondary">{{#str}}admin_check_again, local_nexusai{{/str}}</a>
+                </div>
+                <div class="card-body">
+                    <div class="alert {{statusclass}} mb-0" role="alert">
+                        <span style="font-size: 1.2em">{{statusicon}}</span>
+                        <strong>{{statuslabel}}</strong>
+                        {{{statusdetail}}}
+                    </div>
+                    {{#hashealthrows}}
+                    <table class="table table-sm mt-3 mb-0">
+                        <tbody>
+                            {{#healthrows}}
+                            <tr>
+                                <td class="text-muted" style="width: 180px"><code>{{key}}</code></td>
+                                <td>{{value}}</td>
+                            </tr>
+                            {{/healthrows}}
+                        </tbody>
+                    </table>
+                    {{/hashealthrows}}
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>{{#str}}admin_active_config, local_nexusai{{/str}}</strong>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            {{#configrows}}
+                            <tr>
+                                <td class="text-muted" style="width: 180px">{{label}}</td>
+                                <td>
+                                    {{#missing}}<em class="text-muted">{{#str}}admin_status_unconfigured, local_nexusai{{/str}}</em>{{/missing}}
+                                    {{^missing}}{{value}}{{/missing}}
+                                </td>
+                            </tr>
+                            {{/configrows}}
+                        </tbody>
+                    </table>
+                    <div class="mt-2">
+                        <a href="{{settingsurl}}" class="btn btn-sm btn-primary">{{#str}}admin_edit_config, local_nexusai{{/str}}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

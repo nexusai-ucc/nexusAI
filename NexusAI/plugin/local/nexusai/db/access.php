@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,18 +48,6 @@ $capabilities = [
     // Default: only teachers and admins.
     'local/nexusai:manage' => [
         'captype'      => 'write',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes'   => [
-            'editingteacher' => CAP_ALLOW,
-            'manager'        => CAP_ALLOW,
-        ],
-    ],
-
-    // Allows viewing a course's aggregated analytics dashboard (learning
-    // gaps, frequent questions, etc.).
-    // Post-MVP, but we define it now to avoid migrating it later.
-    'local/nexusai:viewanalytics' => [
-        'captype'      => 'read',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes'   => [
             'editingteacher' => CAP_ALLOW,

@@ -1,35 +1,57 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * ConfirmModal — diálogo de confirmación reutilizable (UX-06, #346).
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Antes cada acción destructiva resolvía la confirmación por su cuenta
- * (o directamente no la tenía). Este componente es el único lugar donde
- * vive el markup + comportamiento del modal, para que todas las acciones
- * irreversibles del widget se vean y se comporten igual.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * ConfirmModal — reusable confirmation dialog (UX-06, #346).
  *
- * Se usa en los dos bundles (chat y vista docente): el CSS vive en
- * styles.css, que ambos entrypoints importan.
+ * Before, each destructive action handled its confirmation on its own
+ * (or had none at all). This component is the only place where the
+ * markup + behavior of the modal live, so every irreversible action of
+ * the widget looks and behaves the same.
  *
- * Comportamiento:
- *   - Esc o click en el fondo → cancela (nunca ejecuta la acción).
- *   - El foco entra en "Cancelar" (opción segura por default).
- *   - `busy` deshabilita los botones mientras la acción está corriendo.
+ * Used in both bundles (chat and teacher view): the CSS lives in
+ * styles.css, which both entry points import.
+ *
+ * Behavior:
+ *   - Esc or click on the backdrop → cancels (never runs the action).
+ *   - Focus goes to "Cancel" (the safe option by default).
+ *   - `busy` disables the buttons while the action is running.
  *
  * Props:
- *   title        string           — título del modal
- *   children     node             — cuerpo: texto específico de la acción
- *   confirmLabel string           — texto del botón que ejecuta (default "Confirmar")
- *   cancelLabel  string           — texto del botón que cancela (default "Cancelar")
+ *   title        string           — modal title
+ *   children     node             — body: text specific to the action
+ *   confirmLabel string           — text of the button that runs it (default "Confirm")
+ *   cancelLabel  string           — text of the button that cancels (default "Cancel")
  *   onConfirm    () => void
  *   onCancel     () => void
- *   danger       boolean          — botón de confirmar en rojo (default true)
- *   busy         boolean          — acción en curso: botones deshabilitados
+ *   danger       boolean          — confirm button in red (default true)
+ *   busy         boolean          — action in progress: buttons disabled
  */
 
 import { useEffect, useRef } from "react";
 
-// Cierra un overlay con Escape (UX-06/#346, extraído del propio ConfirmModal
-// para reusarlo en otros modales sin Esc/click-afuera propio, p.ej. ErrorModal
-// en documents/DocumentsTable.jsx).
+// Closes an overlay with Escape (UX-06/#346, taken out of ConfirmModal itself
+// to reuse it in other modals without their own Esc/click-outside, e.g. ErrorModal
+// in documents/DocumentsTable.jsx).
 export function useDismissable(onDismiss) {
     useEffect(() => {
         const onKeyDown = (e) => {

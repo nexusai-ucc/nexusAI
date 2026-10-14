@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,34 +28,36 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * SP-16 (#354): the student's consecutive-day activity streak in the course (quiz attempts or
  * chat questions), derived from data already persisted in the backend — no new table or migration.
  */
-class quiz_streak extends \external_api {
+class quiz_streak extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'currentstreak'  => new \external_value(PARAM_INT, 'Consecutive days of activity'),
-            'practicedtoday' => new \external_value(PARAM_BOOL, 'true if there was already activity today'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'currentstreak'  => new external_value(PARAM_INT, 'Consecutive days of activity'),
+            'practicedtoday' => new external_value(PARAM_BOOL, 'true if there was already activity today'),
         ]);
     }
 
@@ -77,9 +79,9 @@ class quiz_streak extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        $client   = new backend_client();
-        $response = $client->get_streak((int) $params['courseid'], (int) $USER->id);
+        $response = \local_nexusai\local\quiz_store::streak((int) $params['courseid'], (int) $USER->id);
 
         return [
             'currentstreak'  => (int) ($response['current_streak'] ?? 0),

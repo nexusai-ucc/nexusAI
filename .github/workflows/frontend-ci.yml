@@ -73,13 +73,24 @@ jobs:
       - name: Tests (Vitest) — QA-01 / issue #311
         if: steps.check.outputs.skip == 'false'
         working-directory: NexusAI/plugin/local/nexusai/react
-        run: npm test
+        # TPC-01 (#573): misma suite, con cobertura de sentencia y de decisión.
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: NexusAI/plugin/local/nexusai/react/coverage/
+          retention-days: 7
 
       - name: Webpack build (production)
         if: steps.check.outputs.skip == 'false'
         working-directory: NexusAI/plugin/local/nexusai/react
         run: npm run build
 
+      # amd/build/ lo arma `grunt amd` de Moodle desde amd/src/ (lo verifica el
+      # CI de Moodle); acá se mide el .min.js commiteado.
       - name: Verificar tamaño del bundle (warn si > 512 KB)
         if: steps.check.outputs.skip == 'false'
         working-directory: NexusAI/plugin/local/nexusai
@@ -102,8 +113,8 @@ jobs:
         run: |
           # Si el bundle generado difiere del commiteado, fallar
           # (forzamos a que el dev regenere y commitee antes de pedir review)
-          if ! git diff --exit-code amd/build/chatwidget-lazy.min.js; then
-            echo "::error::El bundle commiteado no coincide con el generado por 'npm run build'."
-            echo "::error::Corré 'npm run build' localmente y commiteá el resultado."
+          if ! git diff --exit-code --stat amd/src/chatwidget-lazy.js amd/src/documents-manager-lazy.js; then
+            echo "::error::Los bundles commiteados en amd/src/ no coinciden con los que genera 'npm run build'."
+            echo "::error::Corré 'npm run build' y después 'npx grunt amd' desde Moodle, y commiteá amd/src/ y amd/build/."
             exit 1
           fi

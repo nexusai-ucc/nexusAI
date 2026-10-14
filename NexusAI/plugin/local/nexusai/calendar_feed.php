@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -71,6 +71,12 @@ if (!$pref) {
 }
 
 $userid = (int) $pref->userid;
+// A suspended or deleted account keeps no feed, even with a token that still matches.
+$owner = \core_user::get_user($userid);
+if (!$owner || $owner->deleted || $owner->suspended) {
+    http_response_code(403);
+    die(get_string('erroraccessdenied', 'local_nexusai'));
+}
 
 $course = $DB->get_record('course', ['id' => $courseid], '*', IGNORE_MISSING);
 if (!$course) {
@@ -82,6 +88,15 @@ $context = context_course::instance($course->id);
 if (!is_enrolled($context, $userid, '', true)) {
     http_response_code(403);
     die(get_string('errorusernotenrolled', 'local_nexusai'));
+}
+// Same rule as the rest of NexusAI: the feed is only for who may use it in the course.
+if (!has_capability('local/nexusai:use', $context, $userid)) {
+    http_response_code(403);
+    die(get_string('erroraccessdenied', 'local_nexusai'));
+}
+if (!\local_nexusai\local\course_guard::is_enabled((int) $course->id)) {
+    http_response_code(403);
+    die(get_string('coursedisabled', 'local_nexusai'));
 }
 
 // Event window: from a week ago (so a recently-past event doesn't suddenly
@@ -109,6 +124,18 @@ $events = calendar_get_legacy_events(
 // course's feed is ONLY that course's events.
 $events = array_filter($events, static function ($e) use ($course) {
     return (int) $e->courseid === (int) $course->id;
+});
+
+// Drop events tied to an activity the student cannot see: group membership was
+// already filtered above, but not the activity's own visibility/access
+// restrictions (hidden, stealth, "available from") — MMR-301 item 13.
+$modinfo = get_fast_modinfo($course, $userid);
+$events  = array_filter($events, static function ($e) use ($modinfo) {
+    if (empty($e->modulename) || empty($e->instance)) {
+        return true;
+    }
+    $cm = $modinfo->get_instances_of($e->modulename)[(int) $e->instance] ?? null;
+    return $cm ? $cm->uservisible : true;
 });
 
 // Defensive cap: the feed is a login-less endpoint, we don't want to serve

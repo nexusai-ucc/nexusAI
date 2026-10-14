@@ -1,16 +1,38 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * Cliente de la API de documentos NexusAI.
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Llama a las 4 External Functions de Moodle vía core/ajax. Cada llamada
- * sale firmada con sesskey de Moodle (CSRF) y, del lado server, el plugin
- * PHP la firma con HMAC y hace el POST/GET/DELETE al backend Python.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * Client of the NexusAI documents API.
  *
- * Mock fallback: cuando se corre fuera de Moodle (dev standalone, Storybook),
- * devuelve datos de ejemplo en lugar de fallar — útil para iterar la UI.
+ * Calls Moodle's External Functions through core/ajax. Each call goes out
+ * signed with Moodle's sesskey (CSRF) and, on the server, the PHP plugin
+ * signs it with HMAC and does the POST/GET/DELETE to the Python backend.
+ *
+ * Mock fallback: when run outside Moodle (standalone dev, Storybook),
+ * returns sample data instead of failing — handy for iterating on the UI.
  */
 
 // ============================================================
-// Mock state (para dev fuera de Moodle)
+// Mock state (for dev outside Moodle)
 // ============================================================
 const MOCK_DOCS = [
     {
@@ -43,7 +65,7 @@ const MOCK_DOCS = [
 ];
 
 // ============================================================
-// Helper para obtener core/ajax de Moodle
+// Helper to get Moodle's core/ajax
 // ============================================================
 let cachedFetchMany = null;
 async function getMoodleAjax() {
@@ -75,19 +97,19 @@ async function callMoodle(methodname, args) {
 }
 
 // ============================================================
-// Operaciones públicas
+// Public operations
 // ============================================================
 
 /**
- * Lista documentos del curso.
+ * Lists the course documents.
  *
- * UX-17 (#387): `limit`/`offset` son opcionales — sin `limit`, el backend
- * devuelve todo hasta su tope interno (lo usa ExamGeneratorPanel.jsx, que
- * necesita elegir entre todos los documentos indexados, no una página).
+ * UX-17 (#387): `limit`/`offset` are optional — without `limit`, the backend
+ * returns everything up to its internal cap (used by ExamGeneratorPanel.jsx,
+ * which needs to choose among all the indexed documents, not one page).
  *
  * @param {number} courseId
- * @param {number} [limit]  Máximo de items por página. Sin valor: sin paginar.
- * @param {number} [offset] Desde qué posición paginar (default 0).
+ * @param {number} [limit]  Max items per page. No value: no paging.
+ * @param {number} [offset] Position to page from (default 0).
  * @returns {Promise<{total:number, items:Array}>}
  */
 export async function listDocuments(courseId, limit = null, offset = 0) {
@@ -101,7 +123,7 @@ export async function listDocuments(courseId, limit = null, offset = 0) {
 }
 
 /**
- * Estado actual de un documento (para polling).
+ * Current state of a document (for polling).
  *
  * @param {number} courseId
  * @param {string} documentId
@@ -119,7 +141,7 @@ export async function getDocumentStatus(courseId, documentId) {
 }
 
 /**
- * Preview del texto extraído de un documento (CONT-08 / #357).
+ * Preview of the text extracted from a document (CONT-08 / #357).
  *
  * @param {number} courseId
  * @param {string} documentId
@@ -147,11 +169,11 @@ export async function getDocumentPreview(courseId, documentId) {
 }
 
 /**
- * Sube un archivo PDF — convierte a base64 y llama al External Function.
+ * Uploads a file — converts it to base64 and calls the External Function.
  *
  * @param {number} courseId
- * @param {File} file  Archivo del input HTML5 (drag-and-drop o input file)
- * @returns {Promise<object>}  Document state inicial (status='pending' o 'indexing')
+ * @param {File} file  File from the HTML5 input (drag-and-drop or file input)
+ * @returns {Promise<object>}  Initial document state (status='pending' or 'indexing')
  */
 const ACCEPTED_MIME_TYPES = new Set([
     "application/pdf",
@@ -164,9 +186,9 @@ const ACCEPTED_MIME_TYPES = new Set([
     "text/html",
 ]);
 
-// El navegador suele mandar file.type vacío (o genérico, ej. "application/octet-stream")
-// para CSV, Markdown y a veces HTML. Si pasa eso, derivamos el MIME por extensión
-// en lugar de rechazar el archivo.
+// The browser often sends an empty file.type (or a generic one, e.g. "application/octet-stream")
+// for CSV, Markdown and sometimes HTML. When that happens we derive the MIME type from
+// the extension instead of rejecting the file.
 const EXTENSION_MIME_TYPES = {
     pdf: "application/pdf",
     docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -188,8 +210,12 @@ function resolveMimeType(file) {
     return byExtension || file.type;
 }
 
-export async function uploadDocument(courseId, file, section = null) {
+// `section`: course section where the activity is created (0 = General); it is
+// required, because all material becomes a Moodle activity (VIS-03).
+// `visible`: whether students see the activity (Moodle's eye icon).
+export async function uploadDocument(courseId, file, section, visible = true) {
     if (!file) throw new Error("No file provided");
+    if (section === null || section === undefined) throw new Error("Choose a unit");
 
     const mimeType = resolveMimeType(file);
     if (!ACCEPTED_MIME_TYPES.has(mimeType)) {
@@ -205,7 +231,7 @@ export async function uploadDocument(courseId, file, section = null) {
         throw new Error("The file is empty");
     }
 
-    // Convertir File → base64. FileReader es async pero lo envolvemos en Promise.
+    // Convert File → base64. FileReader is async but we wrap it in a Promise.
     const contentB64 = await fileToBase64(file);
 
     // Mock fallback.
@@ -217,12 +243,14 @@ export async function uploadDocument(courseId, file, section = null) {
             uploader_id: 2,
             filename: file.name,
             mime_type: mimeType,
-            section: section === null || section === undefined ? null : section,
+            section,
+            cmid: 1000 + MOCK_DOCS.length,
+            visible,
             status: "pending",
             error_message: null,
         };
         MOCK_DOCS.unshift(mock);
-        // Simular transición de estado para demo.
+        // Simulate a state transition for the demo.
         setTimeout(() => { mock.status = "indexing"; }, 1500);
         setTimeout(() => { mock.status = "indexed"; }, 4000);
         return mock;
@@ -233,20 +261,21 @@ export async function uploadDocument(courseId, file, section = null) {
         filename:    file.name,
         mimetype:    mimeType,
         content_b64: contentB64,
-        section:     section === null || section === undefined ? -1 : section,
+        section,
+        visible,
     });
 }
 
 /**
- * Reemplaza el archivo de un documento existente sin cambiar su document_id
- * (CONT-07 / #356) — las citas viejas del chat siguen apuntando al mismo id.
+ * Replaces the file of an existing document without changing its document_id
+ * (CONT-07 / #356) — old chat citations keep pointing at the same id.
  *
- * Mismas validaciones de tipo/tamaño que `uploadDocument`.
+ * Same type/size validations as `uploadDocument`.
  *
  * @param {number} courseId
  * @param {string} documentId
  * @param {File} file
- * @returns {Promise<object>} Document state después del reemplazo.
+ * @returns {Promise<object>} Document state after the replacement.
  */
 export async function replaceDocument(courseId, documentId, file) {
     if (!file) throw new Error("No file provided");
@@ -291,7 +320,7 @@ export async function replaceDocument(courseId, documentId, file) {
 }
 
 /**
- * Borra un documento.
+ * Deletes a document.
  *
  * @param {number} courseId
  * @param {string} documentId
@@ -310,8 +339,8 @@ export async function deleteDocument(courseId, documentId) {
 }
 
 /**
- * Reindexa un documento ya subido, sin pedir un archivo nuevo (CONT-09,
- * #358) — reusa el archivo que ya está guardado en el servidor.
+ * Re-indexes an already uploaded document, without asking for a new file (CONT-09,
+ * #358) — reuses the file already stored on the server.
  *
  * @param {number} courseId
  * @param {string} documentId
@@ -339,7 +368,7 @@ export async function reindexDocument(courseId, documentId) {
 // ============================================================
 
 /**
- * Convierte un File a string base64 (sin el prefijo `data:...;base64,`).
+ * Converts a File to a base64 string (without the `data:...;base64,` prefix).
  *
  * @param {File} file
  * @returns {Promise<string>}
@@ -348,8 +377,8 @@ function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
-            // reader.result viene como "data:application/pdf;base64,XXXXX"
-            // Pelamos el prefijo data URL para mandar solo el base64 puro.
+            // reader.result comes as "data:application/pdf;base64,XXXXX"
+            // We strip the data URL prefix to send only the plain base64.
             const result = reader.result;
             const commaIdx = result.indexOf(",");
             resolve(commaIdx >= 0 ? result.substring(commaIdx + 1) : result);
@@ -367,7 +396,7 @@ export function formatBytes(bytes) {
 
 
 // ============================================================
-// Feature G — Gaps del docente
+// Feature G — Teacher gaps
 // ============================================================
 
 const MOCK_GAPS = {
@@ -403,13 +432,13 @@ const MOCK_GAPS = {
 };
 
 /**
- * Lista los gaps del docente — preguntas sin respuesta agrupadas.
+ * Lists the teacher's gaps — unanswered questions, grouped.
  *
  * @param {number} courseId
- * @param {number} [days]   Ventana temporal (default 30).
- * @param {number} [limit]  Máximo items por página (default 30).
- * @param {boolean} [includeArchived] Incluir gaps ya archivados (DOC-D08).
- * @param {number} [offset] Desde qué posición paginar (UX-15, default 0).
+ * @param {number} [days]   Time window (default 30).
+ * @param {number} [limit]  Max items per page (default 30).
+ * @param {boolean} [includeArchived] Include already archived gaps (DOC-D08).
+ * @param {number} [offset] Position to page from (UX-15, default 0).
  * @returns {Promise<{course_id:number, days:number, total:number, items:Array}>}
  */
 export async function listGaps(courseId, days = 30, limit = 30, includeArchived = false, offset = 0) {
@@ -428,11 +457,11 @@ export async function listGaps(courseId, days = 30, limit = 30, includeArchived 
 }
 
 /**
- * Archiva o desarchiva un gap detectado (DOC-D08, issue #383).
+ * Archives or unarchives a detected gap (DOC-D08, issue #383).
  *
  * @param {number} courseId
- * @param {string[]} questionIds IDs de fila devueltos por listGaps (no el texto).
- * @param {boolean} archived true para archivar, false para desarchivar.
+ * @param {string[]} questionIds Row IDs returned by listGaps (not the text).
+ * @param {boolean} archived true to archive, false to unarchive.
  * @returns {Promise<{course_id:number, archived:boolean, affected:number}>}
  */
 export async function archiveGap(courseId, questionIds, archived) {
@@ -481,10 +510,10 @@ const MOCK_FAQ_TOPICS = {
 };
 
 /**
- * Preguntas más frecuentes de los alumnos, agrupadas por tema (DOC-D02).
+ * Students' most frequent questions, grouped by topic (DOC-D02).
  *
  * @param {number} courseId
- * @param {number} [days] Ventana temporal (default 30).
+ * @param {number} [days] Time window (default 30).
  * @returns {Promise<{course_id:number, days:number, total_questions:number, topics:Array}>}
  */
 export async function getFaqTopics(courseId, days = 30) {
@@ -544,11 +573,11 @@ const MOCK_ANALYTICS_DASHBOARD = {
 };
 
 /**
- * Dashboard agregado de métricas de un curso para el docente (ANALYTICS-01/02):
- * top queries, uso diario, distribución de puntajes de quiz y ratio de gaps.
+ * Aggregated metrics dashboard of a course for the teacher (ANALYTICS-01/02):
+ * top queries, daily usage, quiz score distribution and gaps ratio.
  *
  * @param {number} courseId
- * @param {number} [days] Ventana temporal (default 30).
+ * @param {number} [days] Time window (default 30).
  * @returns {Promise<{course_id:number, period_days:number, top_queries:Array,
  *   daily_message_counts:Array, quiz_score_distribution:Object, gaps_ratio:Object,
  *   topics_consulted:number}>}

@@ -140,7 +140,7 @@ async def test_quiz_generation_leaves_spanish_material_alone(mock_llm):
     assert "IMPORTANT: write your entire answer" not in messages[-1]["content"]
 
 
-def test_summary_cache_key_changes_with_the_prompt_version():
+def test_summary_key_changes_with_the_prompt_version(monkeypatch):
     """Old Spanish summaries of English documents must not be served after the fix."""
     from datetime import datetime, timezone
     from types import SimpleNamespace
@@ -151,6 +151,31 @@ def test_summary_cache_key_changes_with_the_prompt_version():
         id="doc-1", file_hash="abc", updated_at=datetime.now(timezone.utc)
     )
 
-    key = summarizer._cache_key(document, "model-x")
+    key = summarizer._summary_key(document, "model-x")
+    monkeypatch.setattr(summarizer, "_PROMPT_VERSION", "p-next")
 
-    assert summarizer._PROMPT_VERSION in key
+    assert summarizer._summary_key(document, "model-x") != key
+
+
+async def test_thread_summary_uses_the_interface_language_for_very_short_posts(
+    forums_client, mock_llm
+):
+    """Short technical posts cannot be detected; the interface language decides."""
+    mock_llm.chat_completion.return_value = MagicMock(
+        text='{"summary": "s", "key_points": [], "resolved": true}'
+    )
+    payload = _summary_payload("foreign key?", "primary key")
+
+    await forums_client.post(
+        "/api/v1/forums/summarize-thread",
+        json=payload,
+        headers={"Accept-Language": "en"},
+    )
+    with_header = mock_llm.chat_completion.await_args.args[0]
+
+    mock_llm.chat_completion.reset_mock()
+    await forums_client.post("/api/v1/forums/summarize-thread", json=payload)
+    without_header = mock_llm.chat_completion.await_args.args[0]
+
+    assert with_header[-1]["content"].endswith(EN_DIRECTIVE)
+    assert "IMPORTANT: write your entire answer" not in without_header[-1]["content"]

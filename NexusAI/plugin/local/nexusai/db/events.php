@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -37,6 +37,38 @@ $observers = [
     [
         'eventname'    => '\core\event\course_module_created',
         'callback'     => '\local_nexusai\observer::course_module_created',
+        'includefile'  => null,
+        'internal'     => false,
+        'priority'     => 0,
+    ],
+
+    // VIS-04: keep the index in step with the activity a document comes from.
+    [
+        'eventname'    => '\core\event\course_module_deleted',
+        'callback'     => '\local_nexusai\observer::course_module_deleted',
+        'includefile'  => null,
+        'internal'     => false,
+        'priority'     => 0,
+    ],
+    [
+        'eventname'    => '\core\event\course_module_updated',
+        'callback'     => '\local_nexusai\observer::course_module_updated',
+        'includefile'  => null,
+        'internal'     => false,
+        'priority'     => 0,
+    ],
+
+    // DATA-05: the plugin tables have no foreign keys; clean up after Moodle deletes a course or a user.
+    [
+        'eventname'    => '\core\event\course_deleted',
+        'callback'     => '\local_nexusai\observer::course_deleted',
+        'includefile'  => null,
+        'internal'     => false,
+        'priority'     => 0,
+    ],
+    [
+        'eventname'    => '\core\event\user_deleted',
+        'callback'     => '\local_nexusai\observer::user_deleted',
         'includefile'  => null,
         'internal'     => false,
         'priority'     => 0,

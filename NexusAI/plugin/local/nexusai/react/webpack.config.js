@@ -1,80 +1,99 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * Webpack config para el bundle React de local_nexusai.
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Lo crítico de esta config:
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * Webpack config for the local_nexusai React bundle.
  *
- *   1. libraryTarget: 'amd' →  el output es un módulo AMD que Moodle puede cargar
- *      vía `$PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init')`.
+ * What matters in this config:
  *
- *   2. Output a ../amd/build/  →  Moodle SOLO carga JS desde amd/build/ (los archivos
- *      en amd/src/ son la fuente "no minificada", pero como Webpack ya minifica nosotros
- *      escribimos directo a build/).
+ *   1. libraryTarget: 'amd' →  the output is an AMD module Moodle can load
+ *      via `$PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init')`.
  *
- *   3. externals: jquery, core/* →  estas libs YA están cargadas por Moodle a nivel
- *      global. Si las bundleamos en nuestro JS, duplicamos código y rompemos cosas
- *      (especialmente jQuery, que Moodle usa internamente).
+ *   2. Output to ../amd/src/, not minified  →  the bundles are AMD sources like
+ *      any other module of the plugin, and Moodle's `grunt amd` builds them into
+ *      amd/build/ (*.min.js + *.min.js.map). Same approach as Moodle core with
+ *      lib/amd/src/chartjs-lazy.js: moodle-plugin-ci deletes amd/build/ and runs
+ *      grunt to check the build, so everything in amd/build/ must come from
+ *      amd/src/. thirdpartylibs.xml points at these files, which also keeps them
+ *      out of ESLint.
  *
- *   4. Sin source maps en producción para que el bundle sea más chico. En `npm run dev`
- *      Webpack los genera automáticamente.
+ *   3. externals: jquery, core/* →  these libs are ALREADY loaded by Moodle
+ *      globally. Bundling them into our JS would duplicate code and break things
+ *      (especially jQuery, which Moodle uses internally).
+ *
+ *   4. No source maps and no minification here: grunt does both.
+ *
+ * After `npm run build`, run grunt from the Moodle root to update amd/build/:
+ *   npx grunt amd --root=public/local/nexusai   (Moodle 5.x; without public/ on 4.5)
  */
 
 const path = require('path');
-const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => {
     const isProd = argv.mode === 'production';
 
     return {
-        // Dos bundles AMD separados: uno para el chat flotante (cargado en TODAS
-        // las páginas de curso), otro para la vista docente (solo en /documents.php).
-        // Cada uno se compila como `<entry>.min.js` en amd/build/.
+        // Two separate AMD bundles: one for the floating chat (loaded on ALL
+        // course pages), another one for the teacher view (only on /documents.php).
+        // Each one is written as `<entry>.js` in amd/src/.
         entry: {
             'chatwidget-lazy':       './src/index.jsx',
             'documents-manager-lazy': './src/documents/index.jsx',
         },
 
         output: {
-            // Va directo al directorio que Moodle sirve.
-            path: path.resolve(__dirname, '../amd/build'),
-            // [name] viene de la key del entry, así obtenemos los 2 bundles
-            // con sus nombres correctos.
-            filename: '[name].min.js',
-            // 'amd' = AMDjs / RequireJS. Moodle lo carga con `js_call_amd()`.
+            // AMD sources of the plugin; grunt builds them into amd/build/.
+            path: path.resolve(__dirname, '../amd/src'),
+            // [name] comes from the entry key, that is how we get the 2 bundles
+            // with their right names.
+            filename: '[name].js',
+            // 'amd' = AMDjs / RequireJS. Moodle loads it with `js_call_amd()`.
             libraryTarget: 'amd',
-            // Limpiar SOLO los bundles que arma este webpack, no todo amd/build/:
-            // ese directorio también contiene módulos AMD planos compilados aparte
-            // con `grunt amd` (nav-trigger.js, upload-prompt.js, forum-*.js) — con
-            // `clean: true` a secas, cada `npm run build` los borraba sin avisar
-            // (bug real, encontrado en UX-02: el ícono de la navbar dejaba de
-            // andar después de cualquier rebuild del bundle de React).
+            // Clean ONLY the bundles this webpack builds, not all of amd/src/:
+            // that directory also holds the plain AMD modules (nav-trigger.js,
+            // upload-prompt.js, forum-*.js) — with a plain `clean: true`, every
+            // `npm run build` would delete them (a real bug, found in UX-02 when
+            // the bundles still went to amd/build/).
             clean: {
-                keep: /^(?!chatwidget-lazy\.min\.js|documents-manager-lazy\.min\.js).*$/,
+                keep: /^(?!chatwidget-lazy\.js|documents-manager-lazy\.js).*$/,
             },
-            // publicPath para chunks lazy. Sin esto, Webpack los carga relativo
-            // a la URL del último script ejecutado — que en Moodle puede ser MathJax
-            // u otro CDN, rompiendo todo. Forzamos que cualquier chunk se busque
-            // en el path donde Moodle sirve los AMD modules del plugin.
+            // publicPath for lazy chunks. Without it, Webpack loads them relative
+            // to the URL of the last executed script — which in Moodle can be MathJax
+            // or another CDN, breaking everything. We force any chunk to be looked
+            // up in the path where Moodle serves the plugin's AMD modules.
             publicPath: '/local/nexusai/amd/build/',
         },
 
         optimization: {
-            minimize: isProd,
-            minimizer: [
-                new TerserPlugin({
-                    extractComments: false,
-                    terserOptions: {
-                        format: { comments: false },
-                    },
-                }),
-            ],
-            // Forzar UN SOLO bundle, sin chunks separados. Más simple para Moodle/AMD.
-            // Si alguien escribe `import('foo')` por error, esto lo bundlea inline
-            // en lugar de generar un chunk lazy que rompería en runtime.
+            // Grunt minifies (and writes the source map) when it builds amd/build/.
+            minimize: false,
+            // Force ONE SINGLE bundle, without separate chunks. Simpler for Moodle/AMD.
+            // If someone writes `import('foo')` by mistake, this bundles it inline
+            // instead of generating a lazy chunk that would break at runtime.
             splitChunks: false,
             runtimeChunk: false,
         },
 
-        // Estas dependencias NO se bundlean — Moodle las provee globalmente.
+        // These dependencies are NOT bundled — Moodle provides them globally.
         externals: {
             'jquery':        'jquery',
             'core/ajax':     'core/ajax',
@@ -92,8 +111,8 @@ module.exports = (env, argv) => {
                 },
                 {
                     test: /\.css$/,
-                    // Inyecta el CSS como <style> al cargar el bundle.
-                    // Evita pelearnos con el sistema de stylesheets de Moodle.
+                    // Injects the CSS as a <style> when the bundle loads.
+                    // Avoids fighting Moodle's stylesheet system.
                     use: ['style-loader', 'css-loader'],
                 },
             ],
@@ -103,21 +122,21 @@ module.exports = (env, argv) => {
             extensions: ['.js', '.jsx'],
         },
 
-        // Source maps solo en dev, hacen el bundle 4x más grande.
-        devtool: isProd ? false : 'eval-source-map',
+        // No source maps here: grunt writes amd/build/*.min.js.map from amd/src/.
+        devtool: false,
 
-        // Performance hints: Moodle no tolera bundles gigantes en cada page load.
-        // Límite subido a 600KB en ASIST-04 (#360): el chat suma Temml (~200KB)
-        // para renderizar fórmulas LaTeX en MathML. El equipo aceptó el costo
-        // (ver la evaluación en el PR de #360). Si se vuelve a superar, ahí sí
-        // toca code-splitting / lazy loading — no seguir subiendo el número.
+        // Performance hints: Moodle does not tolerate huge bundles on every page load.
+        // Limit raised to 600KB in ASIST-04 (#360): the chat adds Temml (~200KB)
+        // to render LaTeX formulas as MathML. The team accepted the cost
+        // (see the evaluation in the PR of #360). If it is exceeded again, that is
+        // when code splitting / lazy loading is due — do not keep raising the number.
+        // The limit applies to the minified file grunt writes in amd/build/, so it
+        // is checked there (frontend CI); webpack's output here is not minified.
         performance: {
-            maxAssetSize: 600 * 1024,
-            maxEntrypointSize: 600 * 1024,
-            hints: isProd ? 'warning' : false,
+            hints: false,
         },
 
-        // Suprime el banner de webpack en producción.
+        // Suppresses webpack's banner in production.
         stats: isProd ? 'minimal' : 'normal',
     };
 };

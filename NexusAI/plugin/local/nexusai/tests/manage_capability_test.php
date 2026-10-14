@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -110,8 +110,11 @@ final class manage_capability_test extends \advanced_testcase {
     public function test_exam_generate_rejects_empty_document_ids_before_reaching_backend(): void {
         $this->resetAfterTest();
         [$course] = $this->create_teacher_in_course();
+        // Courses start with NexusAI off; this one has to be on for the call to get that far.
+        \local_nexusai\local\course_guard::set_enabled((int) $course->id, true);
 
-        $this->expectException(\invalid_parameter_exception::class);
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('errornodocuments', 'local_nexusai'));
         \local_nexusai\external\exam_generate::execute($course->id, []);
     }
 

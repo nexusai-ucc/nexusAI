@@ -1,14 +1,36 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * NavMenu — menú de navegación del widget (UX-01).
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Reemplaza la tira de pestañas persistente (Chat/Quiz/Repaso/Calendario/
- * Buscar) por un dropdown que se abre desde un ícono del header — mismo
- * patrón estructural que HistoryDropdown.jsx (open/onClose, panel absoluto
- * bajo el header). Al elegir un destino, cambia `activeTab` en ChatApp y se
- * cierra solo.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * NavMenu — the widget's navigation menu (UX-01).
  *
- * ONB-06: "Revisión del curso" (teacherOnly) — acceso permanente al checklist
- * de armado en modo review, sin depender de estar en `course/edit.php`.
+ * Replaces the persistent tab strip (Chat/Quiz/Review/Calendar/
+ * Search) with a dropdown that opens from an icon in the header — same
+ * structural pattern as HistoryDropdown.jsx (open/onClose, absolute panel
+ * under the header). When a destination is chosen, it changes `activeTab` in
+ * ChatApp and closes on its own.
+ *
+ * ONB-06: "Course review" (teacherOnly) — permanent access to the setup
+ * checklist in review mode, without having to be on `course/edit.php`.
  */
 
 import { IconBookOpen, IconCalendar, IconClipboardList, IconMessageSquare, IconSearch, IconSparkles } from "./icons.jsx";

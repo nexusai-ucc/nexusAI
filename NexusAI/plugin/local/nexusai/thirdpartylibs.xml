@@ -1,64 +1,65 @@
 <?xml version="1.0"?>
 <!--
 PUB-01 (issue #309): declares the third-party libraries packaged inside the
-compiled React/webpack bundle in amd/build/ — required by moodle.org for any
-plugin that distributes third-party code. The (uncompiled) source is in
-react/package.json; this documents what actually ends up minified inside the
-two committed AMD bundles.
+React/webpack bundles — required by moodle.org for any plugin that distributes
+third-party code. Webpack writes the bundles to amd/src/ and Moodle's grunt
+builds amd/build/ from them (like lib/amd/src/chartjs-lazy.js in core); listing
+them here also keeps them out of ESLint. The (uncompiled) source is in react/,
+with its versions in react/package.json.
 -->
 <libraries>
     <library>
         <name>react</name>
-        <location>amd/build/chatwidget-lazy.min.js</location>
+        <location>amd/src/chatwidget-lazy.js</location>
         <version>18.3.1</version>
         <license>MIT</license>
     </library>
     <library>
         <name>react</name>
-        <location>amd/build/documents-manager-lazy.min.js</location>
+        <location>amd/src/documents-manager-lazy.js</location>
         <version>18.3.1</version>
         <license>MIT</license>
     </library>
     <library>
         <name>react-dom</name>
-        <location>amd/build/chatwidget-lazy.min.js</location>
+        <location>amd/src/chatwidget-lazy.js</location>
         <version>18.3.1</version>
         <license>MIT</license>
     </library>
     <library>
         <name>react-dom</name>
-        <location>amd/build/documents-manager-lazy.min.js</location>
+        <location>amd/src/documents-manager-lazy.js</location>
         <version>18.3.1</version>
         <license>MIT</license>
     </library>
     <library>
         <name>react-markdown</name>
-        <location>amd/build/chatwidget-lazy.min.js</location>
+        <location>amd/src/chatwidget-lazy.js</location>
         <version>9.1.0</version>
         <license>MIT</license>
     </library>
     <library>
         <name>remark-gfm</name>
-        <location>amd/build/chatwidget-lazy.min.js</location>
+        <location>amd/src/chatwidget-lazy.js</location>
         <version>4.0.1</version>
         <license>MIT</license>
     </library>
     <library>
         <name>marked</name>
-        <location>amd/build/chatwidget-lazy.min.js</location>
+        <location>amd/src/chatwidget-lazy.js</location>
         <version>12.0.2</version>
         <license>MIT</license>
     </library>
     <library>
         <name>dompurify</name>
-        <location>amd/build/chatwidget-lazy.min.js</location>
-        <version>3.4.13</version>
+        <location>amd/src/chatwidget-lazy.js</location>
+        <version>3.4.16</version>
         <license>Apache-2.0</license>
         <licenseversion>2.0</licenseversion>
     </library>
     <library>
         <name>temml</name>
-        <location>amd/build/chatwidget-lazy.min.js</location>
+        <location>amd/src/chatwidget-lazy.js</location>
         <version>0.11.0</version>
         <license>MIT</license>
     </library>

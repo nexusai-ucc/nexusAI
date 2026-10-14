@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -59,14 +59,35 @@ $healthdata    = [];
 $healtherror   = '';
 $healthlatency = null;
 
+// The page shows what the URL answers, so it only checks a plain http(s) endpoint: a
+// '?' or '#' in it would turn the '/health' added above into a query or a fragment.
+$endpointparts = parse_url($endpoint);
+$endpointvalid = is_array($endpointparts)
+    && in_array(strtolower($endpointparts['scheme'] ?? ''), ['http', 'https'], true)
+    && !empty($endpointparts['host'])
+    && !isset($endpointparts['query']) && !isset($endpointparts['fragment']) && !isset($endpointparts['user'])
+    && strpbrk($endpoint, '?#') === false;
+
 if (empty($endpoint)) {
     $healthstatus = 'unconfigured';
+} else if (!$endpointvalid) {
+    $healthstatus = 'error';
+    $healtherror  = get_string('admin_health_invalid_endpoint', 'local_nexusai');
 } else {
-    $curl = new \curl();
+    // Uses ignoresecurity, like backend_client and chat_stream.php: the endpoint is set by
+    // the administrator, and Moodle's default blocked hosts list covers localhost,
+    // private networks and ports other than 80/443, where the backend usually runs.
+    // Without it this page reported "The URL is blocked" while the plugin worked.
+    $curl = new \curl(['ignoresecurity' => true]);
+    // No redirects (they would lead anywhere, unchecked) and the certificate is verified,
+    // which \curl does not do by default.
     $curl->setopt([
         'CURLOPT_TIMEOUT'        => 10,
         'CURLOPT_CONNECTTIMEOUT' => 5,
         'CURLOPT_RETURNTRANSFER' => true,
+        'CURLOPT_FOLLOWLOCATION' => 0,
+        'CURLOPT_SSL_VERIFYPEER' => 1,
+        'CURLOPT_SSL_VERIFYHOST' => 2,
     ]);
 
     $tstart   = microtime(true);
@@ -85,9 +106,15 @@ if (empty($endpoint)) {
         $healtherror  = 'HTTP ' . $httpinfo['http_code'];
     } else {
         $decoded = json_decode($response, true);
-        if (is_array($decoded)) {
+        if (is_array($decoded) && isset($decoded['status'])) {
             $healthstatus = 'ok';
-            $healthdata   = $decoded;
+            // Only the fields the NexusAI backend's /health returns, never whatever else
+            // the URL answered.
+            foreach (['status', 'version', 'env', 'llm_model'] as $key) {
+                if (isset($decoded[$key]) && is_scalar($decoded[$key])) {
+                    $healthdata[$key] = $decoded[$key];
+                }
+            }
         } else {
             $healthstatus = 'error';
             $healtherror  = get_string('admin_health_invalid_response', 'local_nexusai');
@@ -100,16 +127,8 @@ if (empty($endpoint)) {
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('admin_page_title', 'local_nexusai'));
 
-// Backend status card.
-// The HTML is built as a string and echoed once, instead of closing and
-// reopening the <?php tag repeatedly: in files that mix HTML+PHP that way,
-// moodle-cs treats each reopening as if it needed its own file docblock
-// (moodle.Commenting.MissingDocblock.File), which generated ~26 false
-// positives here.
-$statusicon  = '';
-$statusclass = '';
-$statuslabel = '';
-
+// Backend status card and active configuration, rendered by
+// templates/admin_status.mustache.
 if ($healthstatus === 'ok') {
     $statusicon  = '✅';
     $statusclass = 'alert-success';
@@ -137,98 +156,49 @@ if ($healthstatus === 'ok') {
     $statusdetail = '— ' . get_string('admin_health_configure_prompt', 'local_nexusai', $settingsurl->out());
 }
 
-$healthtablerows = '';
-if ($healthstatus === 'ok' && !empty($healthdata)) {
+$healthrows = [];
+if ($healthstatus === 'ok') {
     foreach ($healthdata as $key => $val) {
-        $displayval = is_array($val) ? json_encode($val) : (string) $val;
-        $healthtablerows .= '<tr>'
-            . '<td class="text-muted" style="width:180px"><code>' . s($key) . '</code></td>'
-            . '<td>' . s($displayval) . '</td>'
-            . '</tr>';
+        $healthrows[] = ['key' => (string) $key, 'value' => is_array($val) ? json_encode($val) : (string) $val];
     }
 }
-$healthtable = '';
-if ($healthtablerows !== '') {
-    $healthtable = '<table class="table table-sm mt-3 mb-0"><tbody>' . $healthtablerows . '</tbody></table>';
-}
 
-$enabledlabel = get_config('local_nexusai', 'enabled')
-    ? '✅ ' . get_string('yes')
-    : '❌ ' . get_string('no');
-
-$notconfigured = '<em class="text-muted">' . get_string('admin_status_unconfigured', 'local_nexusai') . '</em>';
+$enabled = (bool) get_config('local_nexusai', 'enabled');
+$endpointvalue = (string) get_config('local_nexusai', 'api_endpoint');
 $valuemasked = get_string('admin_value_masked', 'local_nexusai');
+$configrows = [
+    [
+        'label'   => get_string('admin_plugin_enabled', 'local_nexusai'),
+        'value'   => $enabled ? '✅ ' . get_string('yes') : '❌ ' . get_string('no'),
+        'missing' => false,
+    ],
+    [
+        'label'   => get_string('apiendpoint', 'local_nexusai'),
+        'value'   => $endpointvalue,
+        'missing' => $endpointvalue === '',
+    ],
+    [
+        'label'   => get_string('apikey', 'local_nexusai'),
+        'value'   => $valuemasked,
+        'missing' => empty(get_config('local_nexusai', 'api_key')),
+    ],
+    [
+        'label'   => get_string('sharedsecret', 'local_nexusai'),
+        'value'   => $valuemasked,
+        'missing' => empty(get_config('local_nexusai', 'shared_secret')),
+    ],
+];
 
-$endpointvalue = get_config('local_nexusai', 'api_endpoint');
-$endpointlabel = empty($endpointvalue) ? $notconfigured : s($endpointvalue);
-
-$apikeyvalue = get_config('local_nexusai', 'api_key');
-$apikeylabel = empty($apikeyvalue) ? $notconfigured : $valuemasked;
-
-$sharedsecretvalue = get_config('local_nexusai', 'shared_secret');
-$sharedsecretlabel = empty($sharedsecretvalue) ? $notconfigured : $valuemasked;
-
-echo '
-<div class="container-fluid nexusai-admin">
-    <div class="row mb-4">
-        <div class="col-md-8">
-
-            <!-- Backend status -->
-            <div class="card mb-3">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <strong>' . get_string('admin_backend_status', 'local_nexusai') . '</strong>
-                    <a href="' . $PAGE->url->out() . '" class="btn btn-sm btn-outline-secondary">
-                        ' . get_string('admin_check_again', 'local_nexusai') . '
-                    </a>
-                </div>
-                <div class="card-body">
-                    <div class="alert ' . $statusclass . ' mb-0" role="alert">
-                        <span style="font-size:1.2em">' . $statusicon . '</span>
-                        <strong>' . $statuslabel . '</strong>
-                        ' . $statusdetail . '
-                    </div>
-                    ' . $healthtable . '
-                </div>
-            </div>
-
-            <!-- Active configuration (without credentials) -->
-            <div class="card mb-3">
-                <div class="card-header">
-                    <strong>' . get_string('admin_active_config', 'local_nexusai') . '</strong>
-                </div>
-                <div class="card-body">
-                    <table class="table table-sm mb-0">
-                        <tbody>
-                            <tr>
-                                <td class="text-muted" style="width:180px">'
-                                    . get_string('admin_plugin_enabled', 'local_nexusai') . '</td>
-                                <td>' . $enabledlabel . '</td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">API endpoint</td>
-                                <td>' . $endpointlabel . '</td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">API key</td>
-                                <td>' . $apikeylabel . '</td>
-                            </tr>
-                            <tr>
-                                <td class="text-muted">Shared secret</td>
-                                <td>' . $sharedsecretlabel . '</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div class="mt-2">
-                        <a href="' . $settingsurl->out() . '" class="btn btn-sm btn-primary">
-                            ' . get_string('admin_edit_config', 'local_nexusai') . '
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</div>
-';
+echo $OUTPUT->render_from_template('local_nexusai/admin_status', [
+    'refreshurl'    => $PAGE->url->out(false),
+    'settingsurl'   => $settingsurl->out(false),
+    'statusclass'   => $statusclass,
+    'statusicon'    => $statusicon,
+    'statuslabel'   => $statuslabel,
+    'statusdetail'  => $statusdetail,
+    'hashealthrows' => !empty($healthrows),
+    'healthrows'    => $healthrows,
+    'configrows'    => $configrows,
+]);
 
 echo $OUTPUT->footer();

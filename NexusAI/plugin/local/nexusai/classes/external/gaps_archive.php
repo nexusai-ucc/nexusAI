@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -32,39 +32,42 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Archives or unarchives a detected gap (DOC-D08, issue #383).
  */
-class gaps_archive extends \external_api {
+class gaps_archive extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'    => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'questionids' => new \external_multiple_structure(
-                new \external_value(PARAM_ALPHANUMEXT, 'UUID of an unanswered_questions row'),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'    => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'questionids' => new external_multiple_structure(
+                new external_value(PARAM_ALPHANUMEXT, 'UUID of an unanswered_questions row'),
                 'IDs of the rows to archive/unarchive (at least 1)'
             ),
-            'archived'    => new \external_value(PARAM_BOOL, 'true to archive, false to unarchive', VALUE_REQUIRED),
+            'archived'    => new external_value(PARAM_BOOL, 'true to archive, false to unarchive', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
-            'archived'  => new \external_value(PARAM_BOOL, 'Applied state'),
-            'affected'  => new \external_value(PARAM_INT, 'Number of rows updated'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'course_id' => new external_value(PARAM_INT, 'Course ID'),
+            'archived'  => new external_value(PARAM_BOOL, 'Applied state'),
+            'affected'  => new external_value(PARAM_INT, 'Number of rows updated'),
         ]);
     }
 
@@ -86,17 +89,21 @@ class gaps_archive extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:manage', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         if (empty($params['questionids'])) {
-            throw new \invalid_parameter_exception('At least one question id must be provided');
+            throw new \moodle_exception('errorinvalidparams', 'local_nexusai');
         }
 
-        $client   = new backend_client();
-        $response = $client->archive_gap(
-            (int) $params['courseid'],
-            array_map('strval', $params['questionids']),
-            (bool) $params['archived']
-        );
+        $response = [
+            'course_id' => (int) $params['courseid'],
+            'archived' => (bool) $params['archived'],
+            'affected' => \local_nexusai\local\gap_store::archive(
+                (int) $params['courseid'],
+                array_map('strval', $params['questionids']),
+                (bool) $params['archived']
+            ),
+        ];
 
         return [
             'course_id' => (int) ($response['course_id'] ?? $params['courseid']),
