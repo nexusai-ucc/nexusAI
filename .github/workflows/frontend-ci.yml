@@ -73,7 +73,16 @@ jobs:
       - name: Tests (Vitest) — QA-01 / issue #311
         if: steps.check.outputs.skip == 'false'
         working-directory: NexusAI/plugin/local/nexusai/react
-        run: npm test
+        # TPC-01 (#573): misma suite, con cobertura de sentencia y de decisión.
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: NexusAI/plugin/local/nexusai/react/coverage/
+          retention-days: 7
 
       - name: Webpack build (production)
         if: steps.check.outputs.skip == 'false'

@@ -223,14 +223,18 @@ jobs:
       - name: PyTest con coverage
         if: steps.check.outputs.skip == 'false'
         working-directory: NexusAI/services/api
-        run: pytest --cov=app --cov-report=term-missing --cov-report=xml
+        # TPC-01 (#573): --cov-branch suma cobertura de decisión a la de
+        # sentencia, y junit.xml deja el conteo de tests para la línea base.
+        run: pytest --cov=app --cov-branch --cov-report=term-missing --cov-report=xml --junitxml=junit.xml
 
       - name: Upload coverage report
         if: steps.check.outputs.skip == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
-          path: NexusAI/services/api/coverage.xml
+          path: |
+            NexusAI/services/api/coverage.xml
+            NexusAI/services/api/junit.xml
           retention-days: 7
 
   # ----------------------------------------------------------------

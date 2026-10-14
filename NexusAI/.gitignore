@@ -106,6 +106,7 @@ docker-compose.override.yml
 coverage/
 test-results/
 junit.xml
+coverage.xml
 
 # ---- Builds y artefactos ----
 *.tar
