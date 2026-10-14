@@ -5,6 +5,12 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.19.0] — 2026-10-14
 
+- Fixed: asking the chat by voice never worked. Browsers report the recording
+  with its codec (`audio/webm;codecs=opus` in Chrome and Edge,
+  `audio/ogg;codecs=opus` in Firefox) and the MIME type was compared whole, so
+  every recording was refused; the type is now reduced to its base type before
+  the check. The error never reached the student either: the chat now shows
+  it, and says so when no question was heard in the recording.
 - Fixed: the forum features checked access to the discussion but not to each
   post, so a private reply reached students it was not for (sent to the model
   in thread summaries and reply suggestions, shown in similar posts) and Q&A

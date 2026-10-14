@@ -30,7 +30,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026101403;
+$plugin->version   = 2026101404;
+// Fix: voice questions in the chat were always refused — MediaRecorder reports the
+// codec as a MIME parameter ("audio/webm;codecs=opus") and the type was compared whole.
 // Fix: deleting a course purges its forum posts from the backend through the
 // before_course_deleted hook (new in db/hooks.php) — course_deleted fires after
 // remove_course_contents() has already removed the posts.

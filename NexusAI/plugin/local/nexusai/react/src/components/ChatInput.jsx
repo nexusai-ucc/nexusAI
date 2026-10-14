@@ -98,6 +98,7 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId, lan
         sendTitle:        "Enviar (Enter)",
         yourQuestion:     "Tu pregunta",
         transcribeError:  "No se pudo transcribir el audio. Probá de nuevo o escribí tu pregunta.",
+        noSpeech:         "No se escuchó ninguna pregunta en el audio. Probá de nuevo, más cerca del micrófono.",
         micError:         "No se pudo acceder al micrófono. Revisá los permisos del navegador.",
         atLimit:          (max) => `Llegaste al límite de ${max} caracteres`,
         counter:          (len, max) => `${len} / ${max} caracteres`,
@@ -113,6 +114,7 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId, lan
         sendTitle:        "Send (Enter)",
         yourQuestion:     "Your question",
         transcribeError:  "Couldn't transcribe the audio. Try again or type your question.",
+        noSpeech:         "No question was heard in the audio. Try again, closer to the microphone.",
         micError:         "Couldn't access the microphone. Check your browser permissions.",
         atLimit:          (max) => `You've reached the limit of ${max} characters`,
         counter:          (len, max) => `${len} / ${max} characters`,
@@ -185,8 +187,12 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId, lan
                     const text = await transcribeAudio(courseId, blob);
                     if (text && text.trim()) {
                         setValue((prev) => (prev.trim() ? `${prev.trim()} ${text.trim()}` : text.trim()));
+                        setVoiceState("idle");
+                    } else {
+                        // Silence or noise only: say so instead of doing nothing visible.
+                        setVoiceError(L.noSpeech);
+                        setVoiceState("error");
                     }
-                    setVoiceState("idle");
                 } catch {
                     setVoiceError(L.transcribeError);
                     setVoiceState("error");
