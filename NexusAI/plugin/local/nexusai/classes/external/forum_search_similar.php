@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,50 +29,56 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Receives the text the student is writing in the forum editor and returns existing posts in the
  * same course that are semantically similar.
  */
-class forum_search_similar extends \external_api {
+class forum_search_similar extends external_api {
     /**
      * @var float Similarity threshold hardcoded in PHP to avoid float conversion issues
      *     in Moodle 5.x (PARAM_FLOAT converts 0.75 to 1 via clean_param).
      */
     const SIMILARITY_THRESHOLD = 0.65;
 
+    /** @var int Characters of each post shown in the similar posts list. */
+    const PREVIEW_CHARS = 200;
+
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'text'          => new \external_value(PARAM_RAW, 'Text of the post being drafted (min 10 chars)', VALUE_REQUIRED),
-            'courseid'      => new \external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
-            'excludepostid' => new \external_value(PARAM_INT, 'Post to exclude (when editing)', VALUE_DEFAULT, 0),
-            'topk'          => new \external_value(PARAM_INT, 'Max results (1-10)', VALUE_DEFAULT, 3),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'text'          => new external_value(PARAM_RAW, 'Text of the post being drafted (min 10 chars)', VALUE_REQUIRED),
+            'courseid'      => new external_value(PARAM_INT, 'Moodle course ID', VALUE_REQUIRED),
+            'excludepostid' => new external_value(PARAM_INT, 'Post to exclude (when editing)', VALUE_DEFAULT, 0),
+            'topk'          => new external_value(PARAM_INT, 'Max results (1-10)', VALUE_DEFAULT, 3),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'similar_posts' => new \external_multiple_structure(
-                new \external_single_structure([
-                    'forum_post_id' => new \external_value(PARAM_INT, 'mdl_forum_posts ID'),
-                    'discussion_id' => new \external_value(PARAM_INT, 'mdl_forum_discussions ID'),
-                    'similarity'    => new \external_value(PARAM_FLOAT, 'Similarity score 0.0-1.0'),
-                    'preview'       => new \external_value(PARAM_RAW, 'First 200 chars of the post'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'similar_posts' => new external_multiple_structure(
+                new external_single_structure([
+                    'forum_post_id' => new external_value(PARAM_INT, 'mdl_forum_posts ID'),
+                    'discussion_id' => new external_value(PARAM_INT, 'mdl_forum_discussions ID'),
+                    'similarity'    => new external_value(PARAM_FLOAT, 'Similarity score 0.0-1.0'),
+                    'preview'       => new external_value(PARAM_RAW, 'First 200 chars of the post'),
                 ])
             ),
-            'threshold_used' => new \external_value(PARAM_FLOAT, 'Threshold used in the search'),
+            'threshold_used' => new external_value(PARAM_FLOAT, 'Threshold used in the search'),
         ]);
     }
 
@@ -97,6 +103,7 @@ class forum_search_similar extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $cleantext = trim($params['text']);
         if (mb_strlen($cleantext) < 10) {
@@ -118,13 +125,26 @@ class forum_search_similar extends \external_api {
             $topk
         );
 
+        // Discard, before returning them, results the current user cannot actually see
+        // (another separated group, hidden/timed discussion, someone else's private reply,
+        // a Q&A forum before posting) — the backend's similarity search only knows about
+        // the course, not about forum access (MMR-301 item 2).
         $posts = [];
         foreach (($response['similar_posts'] ?? []) as $p) {
+            $post = \local_nexusai\local\forum_access_guard::visible_post(
+                (int) ($p['forum_post_id'] ?? 0),
+                (int) $params['courseid']
+            );
+            if (!$post) {
+                continue;
+            }
             $posts[] = [
-                'forum_post_id' => (int)   ($p['forum_post_id'] ?? 0),
-                'discussion_id' => (int)   ($p['discussion_id'] ?? 0),
+                'forum_post_id' => (int) $post->id,
+                'discussion_id' => (int) $post->discussion,
                 'similarity'    => (float) ($p['similarity'] ?? 0.0),
-                'preview'       => (string)($p['preview'] ?? ''),
+                // The preview comes from the post as it is now in Moodle, not from the backend's
+                // index, which may still hold an older version of an edited post.
+                'preview'       => self::preview((string) $post->message),
             ];
         }
 
@@ -132,5 +152,18 @@ class forum_search_similar extends \external_api {
             'similar_posts'  => $posts,
             'threshold_used' => (float) ($response['threshold_used'] ?? self::SIMILARITY_THRESHOLD),
         ];
+    }
+
+    /**
+     * Plain-text start of a post, for the similar posts list.
+     *
+     * @param string $message Post message (HTML).
+     * @return string
+     */
+    private static function preview(string $message): string {
+        $text = trim(html_entity_decode(strip_tags($message), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        return \core_text::strlen($text) > self::PREVIEW_CHARS
+            ? \core_text::substr($text, 0, self::PREVIEW_CHARS) . '…'
+            : $text;
     }
 }

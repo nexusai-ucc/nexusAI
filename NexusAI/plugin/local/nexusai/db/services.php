@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -211,6 +211,17 @@ $functions = [
         'classname'     => '\local_nexusai\external\quiz_streak',
         'methodname'    => 'execute',
         'description'   => 'Get the student\'s current study streak (consecutive days with quiz or chat activity) in a course.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
+    // Token limit bar in the widget (DATA-05).
+    'local_nexusai_budget_status' => [
+        'classname'     => '\local_nexusai\external\budget_status',
+        'methodname'    => 'execute',
+        'description'   => 'Get how much of their token limit the logged-in user has left, per hour and per day.',
         'type'          => 'read',
         'ajax'          => true,
         'capabilities'  => 'local/nexusai:use',

@@ -1,28 +1,49 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * OnboardingPanel — checklist de armado de curso para el docente.
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Componente reusable (ADR-010). Dos modos:
- *   - `create`  tutorial lineal al crear un curso nuevo. No hay curso todavía
- *               sobre el cual medir estado: todos los pasos aparecen como
- *               pendientes, en orden.
- *   - `review`  (ONB-04) al editar un curso existente: usa `state`
- *               (`course_setup_state`) para marcar ✓ lo que ya está y resaltar
- *               lo que falta.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * OnboardingPanel — course setup checklist for the teacher.
  *
- * NexusAI nunca ejecuta los pasos: cada uno abre la pantalla nativa de Moodle
- * en una pestaña nueva.
+ * Reusable component (ADR-010). Two modes:
+ *   - `create`  linear tutorial when creating a new course. There is no course
+ *               yet to measure state on: all steps show as pending, in order.
+ *   - `review`  (ONB-04) when editing an existing course: uses `state`
+ *               (`course_setup_state`) to mark ✓ what is already there and
+ *               highlight what is missing.
  *
- * ONB-05: pasos opcionales pendientes pueden marcarse "no aplica" (`onSkip`)
- * — quedan en estado `skipped`, deshacible (`onUnskip`), y no cuentan como
- * pendientes para el mensaje de "curso listo". ONB-06: el botón "Cerrar"
- * (`onDismiss`, solo en modo `review`) persiste el cierre además de
- * colapsar el panel — así no vuelve a aparecer solo en `course/edit.php`.
+ * NexusAI never runs the steps: each one opens Moodle's native screen
+ * in a new tab.
  *
- * ONB-07 (#430): en modo `review` agrega un link a la pestaña "Ayuda" de
- * NexusAI Materiales (`documents.php?tab=help`) — punto de acceso a la
- * explicación de las 5 herramientas del panel docente, alcanzable tanto
- * desde `course/edit.php` como desde el tab "Revisión del curso" del chat
- * normal (ONB-06).
+ * ONB-05: pending optional steps can be marked "not applicable" (`onSkip`)
+ * — they stay in the `skipped` state, can be undone (`onUnskip`), and do not
+ * count as pending for the "course ready" message. ONB-06: the "Close" button
+ * (`onDismiss`, only in `review` mode) stores the closing besides collapsing
+ * the panel — so it does not show up on its own again in `course/edit.php`.
+ *
+ * ONB-07 (#430): in `review` mode it adds a link to the "Help" tab of
+ * NexusAI Materials (`documents.php?tab=help`) — access point to the
+ * explanation of the 5 tools of the teacher panel, reachable both from
+ * `course/edit.php` and from the "Course review" tab of the normal chat
+ * (ONB-06).
  */
 
 import { COURSE_SETUP_STEPS, stepStatus } from "../onboarding/steps.js";

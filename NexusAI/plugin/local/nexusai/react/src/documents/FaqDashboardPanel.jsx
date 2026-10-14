@@ -1,10 +1,32 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * FaqDashboardPanel — vista del docente con las preguntas más repetidas de
- * sus alumnos, agrupadas por tema (DOC-D02).
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * No hay clustering semántico en el schema: el backend agrupa primero por
- * texto normalizado y le pide a un LLM que sintetice esos grupos en temas.
- * Datos vienen de la external function `local_nexusai_analytics_faq_topics`.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * FaqDashboardPanel — teacher view with the questions their students repeat
+ * the most, grouped by topic (DOC-D02).
+ *
+ * There is no semantic clustering in the schema: the questions are first
+ * grouped by normalized text and an LLM synthesizes those groups into topics.
+ * The data comes from the external function `local_nexusai_analytics_faq_topics`.
  */
 
 import { useEffect, useState } from "react";
@@ -14,8 +36,8 @@ import { IconHelpCircle, IconDownload } from "../components/icons.jsx";
 import { getFriendlyErrorMessage } from "../components/errors.js";
 import Skeleton, { SkeletonScreen } from "../components/Skeleton.jsx";
 
-// UX-12 (#370): silueta de carga — grilla de cards de tema, cada una con
-// título + un par de líneas de preguntas de ejemplo.
+// UX-12 (#370): loading skeleton — grid of topic cards, each one with a
+// title + a couple of lines of example questions.
 function FaqSkeleton({ lang = "es" }) {
     return (
         <SkeletonScreen label={lang === "es" ? "Cargando preguntas frecuentes..." : "Loading frequently asked questions..."}>

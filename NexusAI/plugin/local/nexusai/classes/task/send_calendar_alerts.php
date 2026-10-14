@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 /**
  * Scheduled task — sends NexusAI calendar notifications (CAL-02).
  *
- * Runs every hour. Queries the FastAPI backend for alerts whose notification
+ * Runs every hour. Reads local_nexusai_cal_alerts for alerts whose notification
  * time has already arrived (now >= event_timestamp - days_before * 1 day), sends
  * Moodle's native notification to each student, and then marks the alert as
  * notified to avoid duplicates.
@@ -43,13 +43,20 @@ class send_calendar_alerts extends \core\task\scheduled_task {
     }
 
     /**
-     * Queries the backend for due alerts, notifies each student and marks them as sent.
+     * Finds the due alerts in Moodle's own table (DATA-05), notifies each student and marks them as sent.
      */
     public function execute(): void {
-        $client = new \local_nexusai\external\backend_client();
+        // Off site-wide: nothing to send (CURSO-01).
+        if (!\local_nexusai\local\course_guard::plugin_enabled()) {
+            return;
+        }
 
-        $due = $client->get_due_calendar_alerts();
-        $alerts = $due['alerts'] ?? [];
+        $alerts = array_map(static fn($a) => [
+            'id' => (int) $a->id,
+            'user_id' => (int) $a->userid,
+            'course_id' => (int) $a->courseid,
+            'event_name' => (string) $a->eventname,
+        ], \local_nexusai\local\calendar_store::due(time()));
 
         if (empty($alerts)) {
             return;
@@ -58,6 +65,13 @@ class send_calendar_alerts extends \core\task\scheduled_task {
         foreach ($alerts as $alert) {
             $userid = (int) ($alert['user_id'] ?? 0);
             if ($userid <= 0) {
+                continue;
+            }
+
+            // The course turned NexusAI off: the alert stays pending and goes
+            // out if it is turned on again.
+            $alertcourseid = (int) ($alert['course_id'] ?? 0);
+            if ($alertcourseid > 0 && !\local_nexusai\local\course_guard::is_enabled($alertcourseid)) {
                 continue;
             }
 
@@ -91,10 +105,7 @@ class send_calendar_alerts extends \core\task\scheduled_task {
 
             message_send($message);
 
-            $alertid = (string) ($alert['id'] ?? '');
-            if ($alertid !== '') {
-                $client->mark_calendar_alert_notified($alertid);
-            }
+            \local_nexusai\local\calendar_store::mark_notified($alert['id']);
         }
     }
 }

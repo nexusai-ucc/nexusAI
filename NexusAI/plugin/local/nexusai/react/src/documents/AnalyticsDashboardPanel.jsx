@@ -1,25 +1,46 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * AnalyticsDashboardPanel — vista del docente con métricas agregadas del
- * curso (ANALYTICS-01/02): preguntas más frecuentes, uso diario, distribución
- * de puntajes de quiz y ratio de vacíos de contenido.
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Datos vienen de la external function `local_nexusai_analytics_dashboard`,
- * que a su vez llama a GET /api/v1/admin/analytics del backend. No hay
- * clustering ni síntesis por LLM acá (a diferencia de FaqDashboardPanel) —
- * son agregaciones directas ya calculadas por el backend.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * AnalyticsDashboardPanel — teacher view with aggregated metrics of the
+ * course (ANALYTICS-01/02): most frequent questions, daily usage, quiz score
+ * distribution and content gaps ratio.
  *
- * Las "barras" son CSS puro (alto/ancho en %), mismo criterio liviano que el
- * resto del plugin — no se agrega ninguna librería de gráficos, solo un
- * componente propio (`BarChart`, ANALYTICS-04 #371) con tooltip real al
- * hover/foco y scroll horizontal para que no se aplasten con muchos puntos
- * de datos (365 días).
+ * The data comes from the external function `local_nexusai_analytics_dashboard`,
+ * which computes it from the plugin's tables. There is no clustering or LLM
+ * synthesis here (unlike FaqDashboardPanel) — they are direct aggregations.
  *
- * ANALYTICS-03 (#316): "Exportar a PDF" reusa el mismo criterio sin
- * dependencias que SP-17 (`printQuizAsPdf` en QuizPanel.jsx) — abre una
- * ventana en blanco con HTML/CSS autocontenido y dispara window.print(),
- * en vez de agregar una librería de generación de PDF. El HTML impreso
- * arma sus propias barras estáticas (no reusa <BarChart>, cuyo tooltip
- * depende de estado de hover/foco — no tiene sentido en un documento).
+ * The "bars" are pure CSS (height/width in %), the same lightweight approach as
+ * the rest of the plugin — no charting library is added, only an own
+ * component (`BarChart`, ANALYTICS-04 #371) with a real tooltip on
+ * hover/focus and horizontal scroll so they are not squashed with many data
+ * points (365 days).
+ *
+ * ANALYTICS-03 (#316): "Export to PDF" reuses the same dependency-free
+ * approach as SP-17 (`printQuizAsPdf` in QuizPanel.jsx) — it opens a blank
+ * window with self-contained HTML/CSS and fires window.print(), instead of
+ * adding a PDF generation library. The printed HTML builds its own static
+ * bars (it does not reuse <BarChart>, whose tooltip depends on hover/focus
+ * state — it makes no sense in a document).
  */
 
 import { useEffect, useState } from "react";
@@ -60,7 +81,7 @@ function staticBarsHtml(items, maxValue) {
 
 export function printAnalyticsAsPdf(report, lang = "es") {
     const win = window.open("", "_blank");
-    if (!win) return; // popup bloqueado por el navegador
+    if (!win) return; // popup blocked by the browser
 
     const { courseName, days, topQueries, dailyCounts, maxDaily, quizDist, maxBucket, ratioPct, gapsRatio, feedbackRatio } = report;
     const DAYS_LABELS = daysLabels(lang);
@@ -167,8 +188,8 @@ export function printAnalyticsAsPdf(report, lang = "es") {
     win.print();
 }
 
-// UX-12 (#370): silueta de carga — fila de cards de métricas + dos
-// secciones con barras, aproximando el layout real de abajo.
+// UX-12 (#370): loading skeleton — row of metric cards + two sections
+// with bars, approximating the real layout below.
 function AnalyticsSkeleton({ lang = "es" }) {
     return (
         <SkeletonScreen label={lang === "es" ? "Cargando analytics..." : "Loading analytics..."}>
@@ -291,9 +312,9 @@ export default function AnalyticsDashboardPanel({ courseId, courseName, lang = "
     const dailyCounts = data?.daily_message_counts || [];
     const quizDist = data?.quiz_score_distribution || { total_attempts: 0, average_score: 0, buckets: [] };
     const gapsRatio = data?.gaps_ratio || { gaps_detected: 0, questions_answered: 0, ratio: 0 };
-    // ASIST-01 (#321): % de respuestas del chat marcadas como útiles por los
-    // alumnos — señal complementaria al ratio de gaps (cubre respuestas que sí
-    // encontraron material relevante pero fueron malas igual).
+    // ASIST-01 (#321): % of chat answers students marked as helpful —
+    // a signal complementary to the gaps ratio (it covers answers that did
+    // find relevant material but were bad anyway).
     const feedbackRatio = data?.feedback_ratio || { helpful_count: 0, total_rated: 0, useful_pct: 0 };
     const topicsConsulted = data?.topics_consulted || 0;
 
@@ -448,7 +469,7 @@ export default function AnalyticsDashboardPanel({ courseId, courseName, lang = "
                             )}
                         </section>
 
-                        {/* Distribución de puntajes de quiz */}
+                        {/* Quiz score distribution */}
                         <section className="nexusai-analytics__section">
                             <h3 className="nexusai-documents__heading">{L.quizDist}</h3>
                             {quizDist.total_attempts === 0 ? (

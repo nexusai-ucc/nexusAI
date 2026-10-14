@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,78 +28,81 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_multiple_structure;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Returns the history of questions the student answered wrong in quizzes of a course (SP-10 —
  * error-based review).
  */
-class quiz_errors_list extends \external_api {
+class quiz_errors_list extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
-            'days'     => new \external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 90),
-            'limit'    => new \external_value(PARAM_INT, 'Max items (1..200)', VALUE_DEFAULT, 100),
-            'offset'   => new \external_value(PARAM_INT, 'Items to skip (pagination)', VALUE_DEFAULT, 0),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID', VALUE_REQUIRED),
+            'days'     => new external_value(PARAM_INT, 'Days back (1..365)', VALUE_DEFAULT, 90),
+            'limit'    => new external_value(PARAM_INT, 'Max items (1..200)', VALUE_DEFAULT, 100),
+            'offset'   => new external_value(PARAM_INT, 'Items to skip (pagination)', VALUE_DEFAULT, 0),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'course_id' => new \external_value(PARAM_INT, 'Course ID'),
-            'total'     => new \external_value(PARAM_INT, 'Number of items'),
-            'items'     => new \external_multiple_structure(
-                new \external_single_structure([
-                    'id'                   => new \external_value(PARAM_RAW, 'Record ID'),
-                    'created_at'           => new \external_value(PARAM_RAW, 'ISO timestamp'),
-                    'question_type'        => new \external_value(PARAM_ALPHANUMEXT, 'Question type'),
-                    'question'             => new \external_value(PARAM_RAW, 'Question text'),
-                    'explanation'          => new \external_value(PARAM_RAW, 'Explanation / model answer'),
-                    'source_filename'      => new \external_value(PARAM_TEXT, 'Source file', VALUE_OPTIONAL, null, NULL_ALLOWED),
-                    'source_document_id'   => new \external_value(
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'course_id' => new external_value(PARAM_INT, 'Course ID'),
+            'total'     => new external_value(PARAM_INT, 'Number of items'),
+            'items'     => new external_multiple_structure(
+                new external_single_structure([
+                    'id'                   => new external_value(PARAM_RAW, 'Record ID'),
+                    'created_at'           => new external_value(PARAM_RAW, 'ISO timestamp'),
+                    'question_type'        => new external_value(PARAM_ALPHANUMEXT, 'Question type'),
+                    'question'             => new external_value(PARAM_RAW, 'Question text'),
+                    'explanation'          => new external_value(PARAM_RAW, 'Explanation / model answer'),
+                    'source_filename'      => new external_value(PARAM_TEXT, 'Source file', VALUE_OPTIONAL, null, NULL_ALLOWED),
+                    'source_document_id'   => new external_value(
                         PARAM_RAW,
                         'Source document ID (best-effort)',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'options'              => new \external_multiple_structure(
-                        new \external_value(PARAM_RAW, 'Option')
+                    'options'              => new external_multiple_structure(
+                        new external_value(PARAM_RAW, 'Option')
                     ),
-                    'correct_index'        => new \external_value(PARAM_INT, 'Index of the correct option'),
-                    'user_selected_index'  => new \external_value(
+                    'correct_index'        => new external_value(PARAM_INT, 'Index of the correct option'),
+                    'user_selected_index'  => new external_value(
                         PARAM_INT,
                         'Index chosen by the student',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'user_answer'          => new \external_value(
+                    'user_answer'          => new external_value(
                         PARAM_RAW,
                         'Student\'s free-text answer',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'ai_feedback'          => new \external_value(
+                    'ai_feedback'          => new external_value(
                         PARAM_RAW,
                         'AI evaluator feedback',
                         VALUE_OPTIONAL,
                         null,
                         NULL_ALLOWED
                     ),
-                    'ai_score'             => new \external_value(
+                    'ai_score'             => new external_value(
                         PARAM_FLOAT,
                         'AI evaluator score',
                         VALUE_OPTIONAL,
@@ -134,13 +137,19 @@ class quiz_errors_list extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         $days   = max(1, min(365, (int) $params['days']));
         $limit  = max(1, min(200, (int) $params['limit']));
         $offset = max(0, (int) $params['offset']);
 
-        $client   = new backend_client();
-        $response = $client->list_quiz_errors((int) $params['courseid'], (int) $USER->id, $days, $limit, $offset);
+        $response = \local_nexusai\local\quiz_store::list_errors(
+            (int) $params['courseid'],
+            (int) $USER->id,
+            $days,
+            $limit,
+            $offset
+        );
 
         return [
             'course_id' => (int) ($response['course_id'] ?? $params['courseid']),

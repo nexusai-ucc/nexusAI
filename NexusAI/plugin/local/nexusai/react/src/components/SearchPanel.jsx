@@ -1,16 +1,38 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * SearchPanel — búsqueda híbrida en material del curso (Feature A / BUS-02).
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Cuando isTeacher=true (documentos page) el toggle de modo global no aparece:
- * el docente siempre busca en su propio curso.
- * Cuando isTeacher=false (uso futuro desde vista alumno) el toggle permite
- * cambiar entre "este curso" y "todos mis cursos".
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * SearchPanel — hybrid search in the course material (Feature A / BUS-02).
  *
- * Filtro por tipo de material (BUS-02): mime type capturado al subir el
- * archivo, threadeado hasta el backend.
- * Filtro por unidad/sección (BUS-05): sección de Moodle asignada (opcional)
- * al subir el archivo. Se oculta en modo búsqueda global — los números de
- * sección no tienen sentido cruzando cursos.
+ * When isTeacher=true (documents page) the global mode toggle does not show:
+ * the teacher always searches their own course.
+ * When isTeacher=false (future use from the student view) the toggle switches
+ * between "this course" and "all my courses".
+ *
+ * Material type filter (BUS-02): mime type captured when uploading the
+ * file, threaded through to the backend.
+ * Section filter (BUS-05): Moodle section assigned (optional) when
+ * uploading the file. Hidden in global search mode — section numbers make
+ * no sense across courses.
  */
 
 import { useEffect, useState } from "react";
@@ -19,11 +41,11 @@ import { summarizeDocument } from "../api/summary.js";
 import { listCourseSections } from "../api/courseSections.js";
 import { IconBookOpen, IconClock, IconFile, IconFileText, IconGlobe, IconSearch } from "./icons.jsx";
 
-// BUS-06 (#361): últimas búsquedas del alumno, guardadas en localStorage
-// (no hace falta backend) — primer consumidor de localStorage en este
-// plugin. Clave scopeada por curso + try/catch en cada acceso, mismo
-// criterio que TAB_STORAGE_KEY/sessionStorage en ChatApp.jsx (storage
-// bloqueado en modo privado no debe romper el resto del panel).
+// BUS-06 (#361): the student's latest searches, stored in localStorage
+// (no backend needed) — the first localStorage consumer in this plugin.
+// Key scoped by course + try/catch on every access, same approach as
+// TAB_STORAGE_KEY/sessionStorage in ChatApp.jsx (storage blocked in
+// private mode must not break the rest of the panel).
 const MAX_RECENT_SEARCHES = 8;
 
 function recentSearchesKey(courseId) {
@@ -77,9 +99,9 @@ function escapeRegExp(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Resalta los términos de `query` dentro de `text` envolviéndolos en <mark>.
- * Puramente client-side (nodos React, no dangerouslySetInnerHTML) — sin
- * riesgo de inyectar HTML crudo proveniente del contenido del documento. */
+/** Highlights the terms of `query` inside `text` by wrapping them in <mark>.
+ * Purely client-side (React nodes, not dangerouslySetInnerHTML) — no risk
+ * of injecting raw HTML coming from the document content. */
 function highlightContent(text, query) {
     const terms = (query || "").split(/\s+/).map((t) => t.trim()).filter((t) => t.length > 1);
     if (!text || !terms.length) return text;
@@ -107,9 +129,9 @@ export default function SearchPanel({
     const [globalMode, setGlobalMode] = useState(false);
     const [materialType, setMaterialType] = useState("");
     const [summaries, setSummaries] = useState({});
-    const [section, setSection] = useState(""); // "" = todas | "-1" = sin asignar | número = sección real
+    const [section, setSection] = useState(""); // "" = all | "-1" = unassigned | number = real section
     const [sections, setSections] = useState([]);
-    // BUS-06 (#361): historial de búsquedas recientes (localStorage, por curso).
+    // BUS-06 (#361): history of recent searches (localStorage, per course).
     const [recentSearches, setRecentSearches] = useState(() => loadRecentSearches(courseId));
     const [inputFocused, setInputFocused] = useState(false);
 
@@ -237,11 +259,13 @@ export default function SearchPanel({
         setError(null);
     };
 
-    const openDownload = (filename, resultCourseId) => {
-        if (!filename || !sesskey) return;
+    // VIS-05: the document opens through its Moodle activity, which applies
+    // its own permissions (visibility, restrictions, role).
+    const openDownload = (documentId, resultCourseId) => {
+        if (!documentId || !sesskey) return;
         const params = new URLSearchParams({
             courseid: String(resultCourseId || courseId || ""),
-            filename,
+            document_id: String(documentId),
             sesskey,
         });
         window.open(
@@ -401,7 +425,7 @@ export default function SearchPanel({
                                     <button
                                         type="button"
                                         className="nexusai-search__open-btn"
-                                        onClick={() => openDownload(r.document_filename, r.course_id)}
+                                        onClick={() => openDownload(r.document_id, r.course_id)}
                                     >
                                         {L.openFile}
                                     </button>

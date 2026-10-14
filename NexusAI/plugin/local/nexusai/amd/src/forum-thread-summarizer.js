@@ -1,25 +1,44 @@
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
-// AI summary of a forum thread (Epic 06 — F-10).
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// How it works:
-//   1. It is loaded only on mod-forum-discuss pages (discussion view).
-//   2. It adds a "Summarize thread" button next to the discussion title.
-//   3. On click it calls local_nexusai_forum_summarize_thread through core/ajax.
-//   4. It shows a collapsible panel with the summary, the key points and a
-//      resolution badge (resolved / no definitive answer).
-//   5. The panel can be closed and reopened without calling the backend again
-//      (the result is cached in memory for the lifetime of the page).
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-// Every fixed text comes from the language pack (lang/*/local_nexusai.php) so it
-// follows the language of the Moodle user.
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * AI summary of a forum thread (Epic 06 — F-10).
+ *
+ * How it works:
+ *   1. It is loaded only on mod-forum-discuss pages (discussion view).
+ *   2. It adds a "Summarize thread" button next to the discussion title.
+ *   3. On click it calls local_nexusai_forum_summarize_thread through core/ajax.
+ *   4. It shows a collapsible panel with the summary, the key points and a
+ *      resolution badge (resolved / no definitive answer).
+ *   5. The panel can be closed and reopened without calling the backend again
+ *      (the result is cached in memory for the lifetime of the page).
+ *
+ * Every fixed text comes from the language pack (lang/en/local_nexusai.php and its translations) so it
+ * follows the language of the Moodle user.
+ *
+ * @module     local_nexusai/forum-thread-summarizer
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notification, Str) {
 
     var COMPONENT = 'local_nexusai';
-    var PANEL_ID  = 'nexusai-summary-panel';
-    var BTN_ID    = 'nexusai-summarize-btn';
-    var ANCHOR    = '.discussionposts, #page-mod-forum-discuss .forumpost, .forum-post-container';
+    var PANEL_ID = 'nexusai-summary-panel';
+    var BTN_ID = 'nexusai-summarize-btn';
+    var ANCHOR = '.discussionposts, #page-mod-forum-discuss .forumpost, .forum-post-container';
     var cachedResult = null;
     var strings = null;
 
@@ -113,7 +132,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             : Promise.resolve('');
 
         return truncated.then(function(truncatedText) {
-            var resolvedIcon  = data.resolved ? '✅' : '⏳';
+            var resolvedIcon = data.resolved ? '✅' : '⏳';
             var resolvedLabel = data.resolved ? strings.forum_summary_resolved : strings.forum_summary_unresolved;
             var truncatedNote = truncatedText
                 ? '<p style="font-size:11px;color:#6b7280;margin:6px 0 0">⚠️ ' + escapeHtml(truncatedText) + '</p>'
@@ -162,6 +181,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             document.getElementById('nexusai-panel-close').addEventListener('click', function() {
                 panel.style.display = 'none';
             });
+            return panel;
         });
     }
 
@@ -264,8 +284,8 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         }
 
         var btn = document.createElement('button');
-        btn.id        = BTN_ID;
-        btn.type      = 'button';
+        btn.id = BTN_ID;
+        btn.type = 'button';
         btn.textContent = '✨ ' + strings.forum_summary_button;
         btn.style.cssText = [
             'background:#f0fdf4',
@@ -307,7 +327,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
          */
         init: function(params) {
             var discussionid = params.discussionid || getDiscussionId();
-            var courseid     = params.courseid;
+            var courseid = params.courseid;
 
             if (!discussionid || !courseid) {
                 return;

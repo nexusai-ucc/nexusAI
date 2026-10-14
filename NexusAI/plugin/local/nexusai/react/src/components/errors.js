@@ -1,20 +1,42 @@
-// UX-08 (#348): mensajes de error amigables, centralizados.
+// This file is part of Moodle - https://moodle.org/
 //
-// El backend arma los mensajes de error así (ver classes/external/backend_client.php
-// + lang/es/local_nexusai.php):
-//   "Error del backend NexusAI: HTTP 503: {\"detail\":\"<texto crudo del proveedor LLM>\"}"
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// Antes de esto, dos componentes (QuizPanel.jsx y DocumentsManager.jsx) habían escrito
-// cada uno por separado una función casi idéntica para pelar ese formato — quedaba
-// el `detail` del backend, que igual puede ser texto técnico del proveedor LLM
-// (cuota agotada, rate limit, etc.), no un mensaje pensado para el usuario final.
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-// getFriendlyErrorMessage() reemplaza esas dos funciones:
-//   - 5xx / 429 (infraestructura, cuota, rate limit): siempre un mensaje curado,
-//     nunca el detail crudo del proveedor.
-//   - 4xx conocidos (ej. 422 "tema no encontrado en el material" de QuizPanel):
-//     el detail es información pensada para el usuario, se sigue mostrando.
-//   - Sin código HTTP reconocible (red, timeout): el fallback que pase el caller.
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Part of the NexusAI plugin (local_nexusai).
+ *
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+// UX-08 (#348): friendly error messages, in one place.
+//
+// The backend builds error messages like this (see classes/external/backend_client.php
+// + the plugin's language strings):
+//   "NexusAI backend error: HTTP 503: {\"detail\":\"<raw text from the LLM provider>\"}"
+//
+// Before this, two components (QuizPanel.jsx and DocumentsManager.jsx) had each
+// written an almost identical function to strip that format — what was left was
+// the backend's `detail`, which can still be technical text from the LLM provider
+// (quota exhausted, rate limit, etc.), not a message meant for the end user.
+//
+// getFriendlyErrorMessage() replaces those two functions:
+//   - 5xx / 429 (infrastructure, quota, rate limit): always a curated message,
+//     never the provider's raw detail.
+//   - Known 4xx (e.g. QuizPanel's 422 "topic not found in the material"):
+//     the detail is information meant for the user, it is still shown.
+//   - No recognizable HTTP code (network, timeout): the fallback the caller passes.
 
 function extractDetail(raw) {
     const detailMatch = raw.match(/"detail"\s*:\s*"((?:[^"\\]|\\.)*)"/);
@@ -24,16 +46,16 @@ function extractDetail(raw) {
     return null;
 }
 
-// FEAT-06 (#481, límite diario): a diferencia del rate limit de un proveedor
-// LLM (429 con texto técnico, no apto para mostrar), el `detail` de NUESTRO
-// propio rate limiter (services/api/app/shared/rate_limit.py::check_rate_limit)
-// es un objeto estructurado — {"error":"rate_limit_exceeded","scope":"minute"
-// |"daily","message":"<texto en español para el alumno>",...} — no un string,
-// así que `extractDetail()` de arriba (que solo matchea `"detail":"<string>"`)
-// nunca lo capturaba, y `getFriendlyErrorMessage()` mandaba CUALQUIER 429 al
-// mensaje curado genérico sin mirar el detail. Eso rompía la razón de ser del
-// límite diario: el alumno nunca veía la diferencia entre "esperá un minuto"
-// y "volvé mañana", solo el mismo texto genérico para los dos casos.
+// FEAT-06 (#481, daily limit): unlike an LLM provider's rate limit (429 with
+// technical text, not fit to show), the `detail` of OUR own rate limiter
+// (services/api/app/shared/rate_limit.py::check_rate_limit) is a structured
+// object — {"error":"rate_limit_exceeded","scope":"minute"
+// |"daily","message":"<text for the student>",...} — not a string,
+// so `extractDetail()` above (which only matches `"detail":"<string>"`)
+// never caught it, and `getFriendlyErrorMessage()` sent ANY 429 to the
+// generic curated message without looking at the detail. That defeated the
+// purpose of the daily limit: the student never saw the difference between
+// "wait a minute" and "come back tomorrow", only the same generic text for both.
 function extractOwnRateLimitMessage(raw) {
     const match = raw.match(/"detail"\s*:\s*(\{[^}]*\})/);
     if (!match) return null;
@@ -43,8 +65,8 @@ function extractOwnRateLimitMessage(raw) {
             return parsed.message;
         }
     } catch {
-        // No era el JSON que esperábamos (p. ej. un 429 de otro origen) —
-        // seguimos con el mensaje curado genérico.
+        // It was not the JSON we expected (e.g. a 429 from somewhere else) —
+        // we go on with the generic curated message.
     }
     return null;
 }

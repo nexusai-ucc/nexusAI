@@ -1,11 +1,33 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * Drop zone con drag-and-drop HTML5 + click para abrir el file picker.
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * CONT-06 (#320): acepta varios archivos a la vez (drag-and-drop o picker).
- * El componente padre (DocumentsManager) le pasa `onUpload(files)` — un
- * array, aunque sea de un solo archivo — y `disabled` (true mientras hay
- * una cola de uploads en curso, para evitar soltar una segunda tanda antes
- * de que termine la primera).
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * Drop zone with HTML5 drag-and-drop + click to open the file picker.
+ *
+ * CONT-06 (#320): accepts several files at once (drag-and-drop or picker).
+ * The parent component (DocumentsManager) passes it `onUpload(files)` — an
+ * array, even for a single file — and `disabled` (true while an upload queue
+ * is in progress, to avoid dropping a second batch before the first one
+ * finishes).
  */
 
 import { useRef, useState } from "react";
@@ -20,8 +42,8 @@ const ACCEPT_TYPES = [
     "text/csv",
     "text/markdown",
     "text/html",
-    // Algunos navegadores no resuelven bien estos MIME types por extensión;
-    // se agregan explícitamente para que el file picker los muestre siempre.
+    // Some browsers do not resolve these MIME types well by extension;
+    // they are added explicitly so the file picker always shows them.
     ".csv",
     ".md",
     ".html",
@@ -71,7 +93,7 @@ export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES, 
     };
     const onInputChange = (e) => {
         handleFiles(e.target.files);
-        // Reset para permitir subir el mismo archivo dos veces seguidas (cambio de versión).
+        // Reset to allow uploading the same file twice in a row (new version).
         e.target.value = "";
     };
 

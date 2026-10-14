@@ -3,7 +3,7 @@
 **AI-powered academic assistant for Moodle.**
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Moodle: 4.1–4.5](https://img.shields.io/badge/Moodle-4.1--4.5-orange)]()
+[![Moodle: 4.5–5.3](https://img.shields.io/badge/Moodle-4.5--5.3-orange)]()
 
 NexusAI integrates a conversational AI assistant with RAG (Retrieval-Augmented
 Generation) directly into the Moodle course. Unlike a generic chatbot, it
@@ -82,12 +82,11 @@ After saving: **Site administration → Development → Purge all caches**.
 |---|---|---|
 | `local/nexusai:use` | student, teacher, manager | Use the chat, search, quizzes, study plan, calendar and AI-powered forums |
 | `local/nexusai:manage` | editingteacher, manager | Manage material, view Analytics, generate exams, configure the forum digest |
-| `local/nexusai:viewanalytics` | editingteacher, manager | View the course Analytics dashboard |
 
 ## Compatibility
 
-- **Moodle:** 4.1 LTS (build 2022112800) through 4.5.
-- **PHP:** 8.0+.
+- **Moodle:** 4.5 LTS (build 2024100700) through 5.3.
+- **PHP:** 8.1+ (the minimum of each Moodle version applies: 8.2 for 5.0 and 5.1, 8.3 for 5.2 and 5.3).
 - **Backend database:** PostgreSQL with the `pgvector` extension.
 
 ## Support

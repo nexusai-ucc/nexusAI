@@ -1,10 +1,32 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * HistoryDropdown — sidebar/dropdown con la lista de sesiones previas del alumno.
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Click en un item → carga los mensajes y le pide a ChatApp que retome esa sesión.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * HistoryDropdown — sidebar/dropdown with the list of the student's previous sessions.
  *
- * Lazy loading: la lista se pide solo cuando el usuario abre el dropdown,
- * no en cada render.
+ * Click on an item → loads the messages and asks ChatApp to resume that session.
+ *
+ * Lazy loading: the list is only requested when the user opens the dropdown,
+ * not on every render.
  */
 
 import { useEffect, useState } from "react";
@@ -15,7 +37,7 @@ import { getFriendlyErrorMessage } from "./errors.js";
 
 const INITIAL_LIMIT = 20;
 const LOAD_MORE_STEP = 20;
-const MAX_LIMIT = 100; // mismo tope que ya clampea el backend (UX-18, #388)
+const MAX_LIMIT = 100; // same cap the backend already clamps to (UX-18, #388)
 
 function relativeTime(iso, lang = "es") {
     if (!iso) return "";
@@ -65,10 +87,10 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
 
     if (!open) return null;
 
-    // Sin `offset`/`total` en el backend (a diferencia de Gaps/Documentos):
-    // "cargar más" pide un límite mayor y reemplaza la lista entera, en vez
-    // de appendear una página nueva. Si la última respuesta trajo menos de
-    // lo pedido, ya no hay más sesiones.
+    // No `offset`/`total` in the backend (unlike Gaps/Documents):
+    // "load more" asks for a bigger limit and replaces the whole list, instead
+    // of appending a new page. If the last response brought fewer than
+    // requested, there are no more sessions.
     const hasMore = sessions && sessions.length >= limit && limit < MAX_LIMIT;
 
     const handleLoadMore = async () => {
@@ -125,8 +147,8 @@ export default function HistoryDropdown({ open, onClose, courseId, currentSessio
             setSessions((prev) => (prev || []).filter((s) => s.id !== session.id));
             onSessionDeleted?.(session.id);
         } catch {
-            // Best-effort: si falla, la sesión sigue en la lista y el
-            // alumno puede reintentar sin perder nada.
+            // Best effort: if it fails, the session stays in the list and the
+            // student can retry without losing anything.
         } finally {
             setDeletingId(null);
         }

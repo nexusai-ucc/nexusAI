@@ -3,6 +3,229 @@
 All notable changes to the NexusAI Moodle plugin are documented in this
 file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.19.0] — 2026-10-14
+
+- Fixed: asking the chat by voice never worked. Browsers report the recording
+  with its codec (`audio/webm;codecs=opus` in Chrome and Edge,
+  `audio/ogg;codecs=opus` in Firefox) and the MIME type was compared whole, so
+  every recording was refused; the type is now reduced to its base type before
+  the check. A failed transcription was not reported to the student either
+  (the request was read before it finished): the chat now shows an error, and
+  says so when the transcription comes back empty. Each transcription now
+  sends its course and user, so its audio seconds are recorded in the usage
+  log like every other call.
+- Fixed: the forum features checked access to the discussion but not to each
+  post, so a private reply reached students it was not for (sent to the model
+  in thread summaries and reply suggestions, shown in similar posts) and Q&A
+  forum replies were visible before posting. Every post now goes through
+  mod_forum's own `forum_user_can_see_post()`. Reply suggestions never use
+  private replies, since they are drafts for a public reply.
+- Fixed: the weekly forum digest, which can be posted to the course's
+  webhook, only carries discussions every participant can see (visible forum
+  without restrictions, no group discussion, within its display period, not
+  Q&A) and never private replies.
+- Fixed: indexed forum posts stayed in the backend after deleting the data of
+  a user who never used NexusAI, after deleting a course, and after deleting
+  posts in a course where NexusAI was turned off. Removals now only need
+  NexusAI on site-wide and a configured backend; failed removals are retried
+  by the task API. The course documents purge goes through every page of the
+  backend's list. When Moodle deletes a course, the course's forum posts are
+  listed through the `core_course\hook\before_course_deleted` hook, before
+  Moodle removes them (by the `course_deleted` event they are already gone).
+- Changed: the chat stream goes through Moodle's `\curl` class instead of
+  calling `curl_init()` directly. Requests to the backend verify its TLS
+  certificate and never follow redirects. When the backend cannot be reached,
+  the chat shows a translated message instead of the raw cURL error.
+- Fixed: the admin status page reported "The URL is blocked" for a backend on
+  localhost, a private network or port 8000 while the plugin worked; it now
+  only checks a plain http(s) endpoint and shows only the backend's health
+  fields. The calendar feed refuses users without `local/nexusai:use` in the
+  course and suspended or deleted accounts.
+- Changed: every source file starts with Moodle's standard GPL boilerplate,
+  including the AMD modules and the React sources shipped in the ZIP. The
+  chat widget's fixed messages follow the interface language.
+
+- New: `cli/migrate_from_backend.php` brings the student data the backend
+  kept into the plugin's tables (DATA-06). It keeps the backend ids, rebuilds
+  the relations, skips and counts rows of users or courses that no longer
+  exist, resumes where it stopped if interrupted, does not duplicate when run
+  again, and compares row counts and token sums per course and month with the
+  backend at the end. Flashcards get the activity of their document, so
+  material visibility applies to them. See `docs/CORTE_DATOS_MOODLE.md`.
+- Changed: the student data now lives in Moodle (DATA-05). Chat history,
+  votes, interaction metrics, unanswered questions, quiz attempts and errors,
+  flashcards and their spaced repetition, calendar reminders and the forum
+  webhook are read and written in the plugin's tables; 24 web services no
+  longer call the backend and keep their parameters and returns. The chat
+  stores the question before asking, sends the last messages as history and
+  stores the answer, metrics and usage when the backend finishes, even if the
+  student closes the tab. A multi-course conversation stays in the course
+  where it was opened. The backend keeps no student data: study plan, review
+  suggestions, frequent topics and the forum digest get what they need in the
+  request.
+- New: every AI call made for a user is stored with the user, role and cost
+  (`local_nexusai_usage`), and the widget shows how much of the token limit is
+  left today, with a warning at 80% and the renewal time when it runs out.
+  The limits per role are site settings.
+- New: deleting a course or a user removes their NexusAI data.
+- Fixed: the calendar reminder web services trusted the user id sent by the
+  browser; they now always use the logged-in user.
+- Fixed: `local_nexusai_quiz_errors_record` declared its options parameter
+  wrongly, which raised a debugging notice.
+- Fixed: the forum web services (thread summary, reply suggestion, similar
+  posts) only checked the course-level capability before reading or sending
+  posts, ignoring `mod/forum:viewdiscussion`, separated groups and hidden or
+  timed discussions. They now reuse Moodle's own discussion-visibility check.
+- Fixed: deleting a user's data through the Privacy API removed the plugin's
+  own tables but left that user's forum posts indexed in the backend's
+  similarity search; it is now purged as part of the same deletion.
+- Changed: forum posts go to the backend with each author replaced by a
+  pseudonym ("Participant 1"…), numbered per thread, in thread summaries,
+  reply suggestions and the weekly digest; author names no longer leave Moodle.
+- Changed: the Privacy API declares everything that leaves Moodle: forum
+  posts, voice recordings and the user's role are added to what the backend
+  receives, and two new external locations cover the AI provider the backend
+  uses and the forum digest webhook.
+- Fixed: a multi-course chat question searched every enrolled course with
+  NexusAI on, without checking the user still has `local/nexusai:use` in each
+  one individually.
+- Fixed: the calendar feed (`.ics`) only filtered events by course and group,
+  so a hidden activity or one with an unmet access restriction still showed up
+  with its name and due date. It now also checks the activity's own
+  visibility for that student.
+- Fixed: the widget and its navigation icon showed up even when the backend
+  connection was not filled in (so the chat could not answer anything), and on
+  page layouts where a floating widget cannot work (embedded iframes, popups,
+  print view, redirects, install/upgrade screens, the quiz secure window).
+- Removed: the `local/nexusai:viewanalytics` capability, which nothing used;
+  the analytics dashboard keeps requiring `local/nexusai:manage`.
+- Fixed: validation errors of the chat, search, quiz and exam (empty or too
+  long question, search or topic, no document selected, bad session) were
+  fixed English text; they now come from the language pack. The streaming chat
+  also sends them in the format the widget shows, instead of raw JSON.
+- Fixed: the remaining validation errors (document upload and replace,
+  voice recording, forum webhook, chat sessions, gaps and study plan) were
+  fixed English text that only reached the debug info; they now come from
+  the language pack, like the chat and search ones. `local_nexusai_dismiss_pending_upload`
+  now validates its context like every other web service.
+- Changed: the admin status page (`admin.php`) is rendered with the
+  `local_nexusai/admin_status` Mustache template instead of HTML built in PHP;
+  the configuration labels now come from the language pack too.
+- Changed: creating, editing or deleting a forum post no longer waits for the
+  backend. The forum observers queue the new `sync_forum_post` ad hoc task,
+  which indexes the post as it is when cron runs (or removes it); an identical
+  pending task is not queued twice.
+- Changed: no event observer calls the backend any more. Editing or deleting a
+  "File" activity queues the new `sync_material` ad hoc task (which may
+  re-upload the file), and deleting a course or a user's data queues
+  `purge_backend_data` for the backend's copies (the course's documents, the
+  user's indexed forum posts in batches of 200). The plugin's own rows are
+  still removed right away.
+- Changed: the release ZIP now includes the React source of the chat widget
+  and of the teacher view (`react/src`, `package.json`, `package-lock.json`,
+  `webpack.config.js`, `.babelrc` and a build `README.md`), so the minified
+  bundles in `amd/build` ship with what they are built from. Its comments and
+  README are now in English; only the comments changed, the compiled code is
+  the same.
+- Changed: `amd/build` is built entirely by Moodle's `grunt amd`. Webpack now
+  writes the two React bundles, not minified, to `amd/src/chatwidget-lazy.js`
+  and `amd/src/documents-manager-lazy.js` (declared in `thirdpartylibs.xml`,
+  like `lib/amd/src/chartjs-lazy.js` in core), and every module ships with its
+  `.min.js.map`. Before, the bundles went straight to `amd/build`, so the build
+  could not be checked with grunt. The JavaScript of the forum tools and of the
+  upload prompt passes ESLint with no warnings.
+- Note: the data already in the backend is not visible until it is migrated
+  (DATA-06).
+- New: the plugin's own tables for the student data (DATA-03). Fifteen
+  `local_nexusai_*` tables are created on install and upgrade: the eleven that
+  will receive the data the NexusAI backend keeps today (chat, interaction
+  metrics, votes, unanswered questions, quiz attempts and errors, flashcards and
+  their reviews, calendar reminders, forum webhooks) and four new ones (usage
+  per user, question bank, bank use and teacher exams); `local_nexusai_course`
+  gains an unused `features` column. They stay empty for now: nothing changes
+  for users until the plugin starts using them and the data is migrated.
+- Changed: the Privacy API provider covers the new tables (contexts and users
+  found with SQL, export and deletion; usage and interaction metrics are
+  anonymised instead of deleted, including rows that only carry the backend's
+  hash of the user id) and the three user preferences, and keeps exporting and
+  deleting what is still in the backend. The calendar feed token is never
+  exported.
+- Changed: Moodle 5.3 is supported too (`$plugin->supported = [405, 503]`),
+  and CI tests every supported version: 4.5 (PostgreSQL and MySQL), 5.0,
+  5.1, 5.2 and 5.3 (PostgreSQL, and MySQL with PHP 8.4). The public plugin
+  repository runs the same matrix; it was still testing 4.1, which the
+  plugin no longer installs on.
+- Changed: the minimum is now **Moodle 4.5 LTS** (build 2024100700), and 4.5
+  to 5.2 are supported (the UCC runs 5.0). The external functions use the
+  `core_external` classes instead of the legacy aliases from `externallib.php`,
+  and the old `local_nexusai_before_footer()` callback for Moodle 4.1-4.3 is
+  gone (the widget uses the hooks API). CI runs on 4.5 (PostgreSQL and MySQL),
+  5.0 and 5.2. No visible change for users.
+- New: teachers turn NexusAI on or off for their course from "NexusAI in this
+  course" (course navigation, needs `local/nexusai:manage`). When it is off,
+  students see no widget or icon, every NexusAI web service and script refuses
+  the course, observers and scheduled tasks skip it, and no request is made to
+  the backend. Nothing is deleted: history, questions and documents come back
+  when it is turned on again. The change is logged as a
+  `course_settings_updated` event.
+- Changed: NexusAI now ships **off in every course**, including existing ones
+  after the upgrade, so it can be turned on one course at a time. Admins can
+  change that with "On by default in courses", or turn courses on from the
+  command line: `php local/nexusai/cli/enable_course.php --courseid=N`
+  (`--list` shows the state of every course).
+- Changed: the widget, the navigation icon and the course-creation tutorial no
+  longer show outside a course unless the admin turns on "Show outside of a
+  course".
+- Fixed: the site-wide "enabled" switch only stopped observers and
+  notifications. It now also hides the widget and blocks the web services and
+  scripts.
+- New table `local_nexusai_course` and the plugin's first `db/upgrade.php`;
+  the empty placeholder table is removed. The Privacy API declares who last
+  changed a course setting and detaches a deleted user from it.
+- Calendar alerts of a course that is off stay pending and go out when it is
+  turned on again.
+- New: every request that reads course material (chat, stream, search, quiz,
+  summaries, forum reply suggestions) now carries `visible_cmids`, the list of
+  activities the logged-in user can see, worked out on the server from Moodle
+  visibility (eye icon, hidden section, availability restrictions, role). The
+  backend answers only from material of those activities. Teachers see hidden
+  ones; a teacher who switches role to student sees what a student sees.
+  Needs the backend from the same release: it rejects requests without the
+  list.
+- Changed: everything uploaded from NexusAI now becomes a real "File"
+  activity in the unit the teacher chooses (there is no "unassigned" any more),
+  so Moodle decides who sees it. The upload dialog has a "Visible to students"
+  switch, on by default, that maps to the activity's eye icon; hidden material
+  is not announced to students. It checks `moodle/course:manageactivities`,
+  `mod/resource:addinstance` and Moodle's maximum file size first, and if the
+  backend refuses the file the activity is removed. The Materials table shows
+  each document's unit, a link to its activity and whether it is visible,
+  hidden or deleted. "Delete" became "Remove from NexusAI": it takes the
+  document out of the index and leaves the activity in the course. Files added
+  the native way still ask for confirmation, now indexed with their activity.
+- New: the index follows the activity. Deleting a "File" activity in Moodle
+  takes its document out of NexusAI (with its chunks and stored summaries), and
+  replacing its file indexes it again. Renaming the activity or changing its
+  visibility does not touch the index. Both respect the per-course switch and
+  never interrupt Moodle if the backend fails. New observers for
+  `course_module_deleted` and `course_module_updated`; the plugin version was
+  bumped so they are picked up on upgrade.
+- Changed: a source cited by NexusAI (chat, search, error review) now opens
+  through the "File" activity it comes from (`document_download.php` takes the
+  document id and redirects to `mod/resource/view.php`), so Moodle applies its
+  own rules: a student who opens a hidden source gets Moodle's error, not the
+  file. The plugin no longer keeps its own copy of uploaded files, and
+  `pluginfile.php` serves nothing from the plugin (copies left by older versions
+  were reachable by any student of the course). Replacing a document from
+  NexusAI also replaces the file of its activity, so the classroom and the index
+  show the same one.
+- New: forum posts respect visibility too. Each indexed post stores its forum
+  and, in separate-groups forums, the group of its discussion, and "similar
+  posts" shows only posts from forums the user can see and from discussions
+  without a group or of one of the user's groups (whoever can access all groups
+  sees all). Posts indexed before this release are not shown until they are
+  indexed again.
+
 ## [0.18.1] — 2026-09-20
 
 Initial submission to the Moodle Plugins directory. Maturity: beta.

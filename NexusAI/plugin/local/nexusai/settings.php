@@ -1,7 +1,7 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
-// NexusAI is free software: you can redistribute it and/or modify
+// Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
@@ -46,6 +46,47 @@ if ($hassiteconfig) {
         get_string('apienabled_desc', 'local_nexusai'),
         1
     ));
+
+    // Courses section (CURSO-01): NexusAI ships off everywhere so it can be
+    // turned on one course at a time, and stays out of non-course pages.
+    $settings->add(new admin_setting_heading(
+        'local_nexusai/section_courses',
+        get_string('section_courses', 'local_nexusai'),
+        get_string('section_courses_desc', 'local_nexusai')
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_nexusai/default_course_enabled',
+        get_string('default_course_enabled', 'local_nexusai'),
+        get_string('default_course_enabled_desc', 'local_nexusai'),
+        0
+    ));
+
+    $settings->add(new admin_setting_configcheckbox(
+        'local_nexusai/show_outside_course',
+        get_string('show_outside_course', 'local_nexusai'),
+        get_string('show_outside_course_desc', 'local_nexusai'),
+        0
+    ));
+
+    // Token limits per role (DATA-05): sent to the backend with each chat
+    // question and shown to the user as the limit bar in the widget.
+    $settings->add(new admin_setting_heading(
+        'local_nexusai/section_limits',
+        get_string('section_limits', 'local_nexusai'),
+        get_string('section_limits_desc', 'local_nexusai')
+    ));
+    foreach (\local_nexusai\local\usage_store::DEFAULT_LIMITS as $role => $windows) {
+        foreach ($windows as $window => $default) {
+            $settings->add(new admin_setting_configtext(
+                "local_nexusai/token_limit_{$role}_{$window}",
+                get_string("token_limit_{$role}_{$window}", 'local_nexusai'),
+                get_string('token_limit_desc', 'local_nexusai'),
+                $default,
+                PARAM_INT
+            ));
+        }
+    }
 
     // Backend section.
     $settings->add(new admin_setting_heading(

@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -35,14 +35,15 @@
 
 namespace local_nexusai\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
 
 /**
  * Receives a short audio clip recorded in the browser and forwards it to the Python backend to transcribe (VOICE-01, #314).
  */
-class chat_voice_transcribe extends \external_api {
+class chat_voice_transcribe extends external_api {
     /** Maximum accepted base64 size — short audio, 14 MB is plenty
      *  (~10 MB decoded, base64 inflates by ~33%). */
     private const MAX_B64_BYTES = 14 * 1024 * 1024;
@@ -60,24 +61,24 @@ class chat_voice_transcribe extends \external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid'    => new \external_value(PARAM_INT, 'Course ID (to validate the capability)', VALUE_REQUIRED),
-            'mimetype'    => new \external_value(PARAM_RAW, 'MIME type detected by the browser', VALUE_REQUIRED),
-            'content_b64' => new \external_value(PARAM_RAW, 'Audio in base64', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid'    => new external_value(PARAM_INT, 'Course ID (to validate the capability)', VALUE_REQUIRED),
+            'mimetype'    => new external_value(PARAM_RAW, 'MIME type detected by the browser', VALUE_REQUIRED),
+            'content_b64' => new external_value(PARAM_RAW, 'Audio in base64', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'text' => new \external_value(PARAM_RAW, 'Transcribed text'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'text' => new external_value(PARAM_RAW, 'Transcribed text'),
         ]);
     }
 
@@ -90,6 +91,8 @@ class chat_voice_transcribe extends \external_api {
      * @return array
      */
     public static function execute(int $courseid, string $mimetype, string $contentb64): array {
+        global $USER;
+
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'    => $courseid,
             'mimetype'    => $mimetype,
@@ -99,28 +102,41 @@ class chat_voice_transcribe extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        if (!in_array($params['mimetype'], self::ALLOWED_MIME_TYPES, true)) {
-            throw new \invalid_parameter_exception(
-                'Unsupported audio type. Allowed: ' . implode(', ', self::ALLOWED_MIME_TYPES)
-                . '. Got: ' . $params['mimetype']
-            );
+        $mimetype = self::normalise_mimetype($params['mimetype']);
+        if (!in_array($mimetype, self::ALLOWED_MIME_TYPES, true)) {
+            throw new \moodle_exception('erroraudiotype', 'local_nexusai', '', s($params['mimetype']));
         }
 
         if (strlen($params['content_b64']) > self::MAX_B64_BYTES) {
-            throw new \invalid_parameter_exception('Audio too large (max 10MB)');
+            throw new \moodle_exception('erroraudiotoolarge', 'local_nexusai', '', '10 MB');
         }
 
         $audiobytes = base64_decode($params['content_b64'], true);
         if ($audiobytes === false || $audiobytes === '') {
-            throw new \invalid_parameter_exception('Invalid base64 content');
+            throw new \moodle_exception('errorinvalidparams', 'local_nexusai');
         }
 
         $client = new backend_client();
-        $response = $client->transcribe_audio($params['mimetype'], $audiobytes);
+        $response = $client->transcribe_audio((int) $params['courseid'], (int) $USER->id, $mimetype, $audiobytes);
 
         return [
             'text' => (string) ($response['text'] ?? ''),
         ];
+    }
+
+    /**
+     * Reduces a MIME type to its base type, without parameters.
+     *
+     * MediaRecorder reports the codec as a parameter ("audio/webm;codecs=opus" in
+     * Chrome and Edge, "audio/ogg;codecs=opus" in Firefox), so an exact match
+     * against ALLOWED_MIME_TYPES rejected every real recording.
+     *
+     * @param string $mimetype MIME type as reported by the browser
+     * @return string Lowercase base type, e.g. "audio/webm"
+     */
+    private static function normalise_mimetype(string $mimetype): string {
+        return strtolower(trim(explode(';', $mimetype, 2)[0]));
     }
 }

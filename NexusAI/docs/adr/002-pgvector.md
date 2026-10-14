@@ -3,6 +3,7 @@
 | | |
 |---|---|
 | **Estado** | ✅ Aceptada |
+| **Acotada por** | [ADR-014](014-datos-alumno-en-moodle.md): pgvector queda solo para el índice del material del curso |
 | **Fecha** | 2026-05-02 |
 | **Autor/es** | Marcos Bugliotti |
 | **Decididores** | Equipo NexusAI |

@@ -1,13 +1,35 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * Cliente API del onboarding al docente (ONB-02 / #425, ONB-05 / #428).
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Llama a las external functions:
- *   - local_nexusai_course_setup_state    → estado de setup del curso
- *   - local_nexusai_onboarding_state_get  → dismissal + pasos "no aplica"
- *   - local_nexusai_onboarding_state_set  → guarda dismissal + "no aplica"
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * API client of the teacher onboarding (ONB-02 / #425, ONB-05 / #428).
  *
- * Fuera de Moodle (Storybook / dev server) devuelve mocks para poder
- * desarrollar el tutorial (ONB-03/04/05/06) aislado.
+ * Calls the external functions:
+ *   - local_nexusai_course_setup_state    → course setup state
+ *   - local_nexusai_onboarding_state_get  → dismissal + "not applicable" steps
+ *   - local_nexusai_onboarding_state_set  → stores dismissal + "not applicable"
+ *
+ * Outside Moodle (Storybook / dev server) it returns mocks so the tutorial
+ * (ONB-03/04/05/06) can be developed in isolation.
  */
 
 async function getMoodleAjax() {
@@ -34,15 +56,15 @@ const MOCK_STATE = {
 };
 
 /**
- * Estado de setup de un curso: qué señales ya están y cuáles faltan.
+ * Setup state of a course: which signals are already there and which are missing.
  *
- * `material.present` puede ser `null` si el backend de NexusAI no respondió
- * — la UI debe tratar ese caso como "no sé" (ni ✓ ni pendiente), no como
- * "falta".
+ * `material.present` can be `null` if the NexusAI backend did not answer
+ * — the UI must treat that case as "unknown" (neither ✓ nor pending), not as
+ * "missing".
  *
  * @param {number} courseId
  * @returns {Promise<{courseid:number, sections:Signal, groups:Signal, students:Signal, forums:Signal, calendar:Signal, material:Signal}>}
- *   donde Signal = { present: boolean|null, count: number }
+ *   where Signal = { present: boolean|null, count: number }
  */
 export async function getCourseSetupState(courseId) {
     const ajax = await getMoodleAjax();
@@ -62,7 +84,7 @@ export async function getCourseSetupState(courseId) {
 const MOCK_ONBOARDING_STATE = { courseid: 0, dismissed: false, skipped: [] };
 
 /**
- * Estado de dismissal/progreso del tutorial para el usuario actual y un curso.
+ * Dismissal/progress state of the tutorial for the current user and a course.
  *
  * @param {number} courseId
  * @returns {Promise<{courseid:number, dismissed:boolean, skipped:string[]}>}
@@ -83,9 +105,9 @@ export async function getOnboardingState(courseId) {
 }
 
 /**
- * Guarda el estado de dismissal/progreso del tutorial. Reemplazo completo:
- * el caller manda el estado final ya mergeado (read-modify-write del lado
- * del componente), no un delta.
+ * Stores the dismissal/progress state of the tutorial. Full replacement:
+ * the caller sends the final, already merged state (read-modify-write on the
+ * component side), not a delta.
  *
  * @param {number} courseId
  * @param {{dismissed: boolean, skipped: string[]}} state

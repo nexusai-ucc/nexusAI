@@ -1,20 +1,42 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * Entrypoint del bundle React de NexusAI.
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Esta función `init` es lo que Moodle invoca desde db/hooks.php (o lib.php
- * en versiones < 4.4):
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * Entry point of the NexusAI React bundle.
+ *
+ * This `init` function is what Moodle calls from the footer hook
+ * (classes/hook/output/before_footer_listener.php):
  *
  *   $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [params]);
  *
- * IMPORTANTE — sobre code-splitting:
- * Originalmente este archivo usaba dynamic imports (`import('react')`) para code
- * splitting, pero Moodle no tolera bien los chunks lazy de Webpack porque la URL
- * base de Moodle's RequireJS no coincide con la que Webpack intenta usar para
- * resolver los chunks (terminan apuntando a otros CDNs como MathJax y fallan).
+ * IMPORTANT — about code splitting:
+ * Originally this file used dynamic imports (`import('react')`) for code
+ * splitting, but Moodle does not handle Webpack's lazy chunks well because the
+ * base URL of Moodle's RequireJS does not match the one Webpack tries to use to
+ * resolve the chunks (they end up pointing at other CDNs like MathJax and fail).
  *
- * Solución: imports estáticos. Bundle único de ~150KB. Es lo que recomienda
- * la guía oficial de Moodle para plugins con React. Si en el futuro necesitamos
- * code splitting, hay que setear __webpack_public_path__ dinámicamente.
+ * Solution: static imports. A single bundle. That is what Moodle's official
+ * guide recommends for plugins with React. If we need code splitting in the
+ * future, __webpack_public_path__ has to be set dynamically.
  */
 
 import React from 'react';
@@ -23,8 +45,8 @@ import ChatApp from './ChatApp.jsx';
 import OnboardingApp from './OnboardingApp.jsx';
 import './styles.css';
 
-// ONB-03: qué modo de onboarding pidió el plugin (o null para el widget normal).
-// 'create-course' → tutorial de armado al crear un curso nuevo.
+// ONB-03: which onboarding mode the plugin asked for (or null for the normal widget).
+// 'create-course' → setup tutorial when creating a new course.
 const ONBOARDING_MODES = {
     'create-course': 'create',
     'review-course': 'review',
@@ -63,5 +85,5 @@ export const init = (params = {}) => {
     }
 };
 
-// Default export para compatibilidad con AMD (algunos consumers usan `.default`).
+// Default export for AMD compatibility (some consumers use `.default`).
 export default { init };

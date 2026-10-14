@@ -1,12 +1,34 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 /**
- * useOnboardingState — hook compartido de modo revisión (ONB-04/05/06).
+ * Part of the NexusAI plugin (local_nexusai).
  *
- * Junta el estado de setup del curso (`course_setup_state`, ONB-02) con el
- * de dismissal/"no aplica" (`onboarding_state`, ONB-05) en un solo fetch,
- * y expone las acciones que lo persisten. Usado tanto por `OnboardingApp`
- * (tutorial en `course/edit.php`) como por el tab "Revisión del curso" de
- * `ChatApp` (ONB-06) — evita duplicar la lógica de fetch en los dos lugares
- * donde vive `OnboardingPanel`.
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+/**
+ * useOnboardingState — shared review mode hook (ONB-04/05/06).
+ *
+ * Joins the course setup state (`course_setup_state`, ONB-02) with the
+ * dismissal/"not applicable" state (`onboarding_state`, ONB-05) in a single fetch,
+ * and exposes the actions that store it. Used both by `OnboardingApp`
+ * (tutorial in `course/edit.php`) and by the "Course review" tab of
+ * `ChatApp` (ONB-06) — avoids duplicating the fetch logic in the two places
+ * where `OnboardingPanel` lives.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -15,8 +37,8 @@ import { getCourseSetupState, getOnboardingState, setOnboardingState } from "../
 
 /**
  * @param {number} courseId
- * @param {{enabled?: boolean}} [opts]  `enabled: false` no dispara el fetch
- *   (p.ej. mientras el tab de revisión no está activo en ChatApp).
+ * @param {{enabled?: boolean}} [opts]  `enabled: false` does not fire the fetch
+ *   (e.g. while the review tab is not active in ChatApp).
  */
 export function useOnboardingState(courseId, { enabled = true } = {}) {
     const [setupState, setSetupState] = useState(null);
@@ -43,7 +65,7 @@ export function useOnboardingState(courseId, { enabled = true } = {}) {
                 setSkipped(Array.isArray(onb?.skipped) ? onb.skipped : []);
             })
             .catch(() => {
-                // Deja los pasos en "unknown" — mismo criterio que ONB-04.
+                // Leaves the steps as "unknown" — same rule as ONB-04.
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -60,8 +82,8 @@ export function useOnboardingState(courseId, { enabled = true } = {}) {
             dismissed: nextDismissed,
             skipped: nextSkipped,
         }).catch(() => {
-            // Falla silenciosa: la próxima apertura vuelve a fetchear el
-            // estado real, así que no queda inconsistente para siempre.
+            // Silent failure: the next opening fetches the real state again,
+            // so it does not stay inconsistent forever.
         });
     }, [numericCourseId]);
 

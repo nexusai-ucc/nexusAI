@@ -1,26 +1,45 @@
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
-// Similar-post detector for the forum form (Epic 06 — F-08/F-09).
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// How it works:
-//   1. It is loaded only on mod-forum-post pages (new discussion or reply).
-//   2. It watches the "Subject" field with an 800 ms debounce.
-//   3. When the subject has >= 10 characters it calls local_nexusai_forum_search_similar.
-//   4. If it finds similar posts (similarity >= 0.75) it shows a yellow banner
-//      above the submit buttons with a preview of the similar post.
-//   5. It never blocks posting — the user can publish anyway.
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-// Every fixed text comes from the language pack (lang/*/local_nexusai.php) so it
-// follows the language of the Moodle user.
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Similar-post detector for the forum form (Epic 06 — F-08/F-09).
+ *
+ * How it works:
+ *   1. It is loaded only on mod-forum-post pages (new discussion or reply).
+ *   2. It watches the "Subject" field with an 800 ms debounce.
+ *   3. When the subject has >= 10 characters it calls local_nexusai_forum_search_similar.
+ *   4. If it finds similar posts (similarity >= 0.75) it shows a yellow banner
+ *      above the submit buttons with a preview of the similar post.
+ *   5. It never blocks posting — the user can publish anyway.
+ *
+ * Every fixed text comes from the language pack (lang/en/local_nexusai.php and its translations) so it
+ * follows the language of the Moodle user.
+ *
+ * @module     local_nexusai/forum-duplicate-checker
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 define(['core/ajax', 'core/str'], function(Ajax, Str) {
 
-    var COMPONENT     = 'local_nexusai';
-    var DEBOUNCE_MS   = 800;
-    var MIN_CHARS     = 10;
-    var BANNER_ID     = 'nexusai-similar-banner';
+    var COMPONENT = 'local_nexusai';
+    var DEBOUNCE_MS = 800;
+    var MIN_CHARS = 10;
+    var BANNER_ID = 'nexusai-similar-banner';
     var debounceTimer = null;
-    var lastQuery     = '';
+    var lastQuery = '';
 
     /**
      * Escapes HTML so previews and language strings are safe to inject in the DOM.
@@ -66,8 +85,8 @@ define(['core/ajax', 'core/str'], function(Ajax, Str) {
 
         Str.get_strings([
             {key: 'forum_similar_found', component: COMPONENT, param: pct},
-            {key: 'forum_similar_view',  component: COMPONENT},
-            {key: 'forum_similar_more',  component: COMPONENT, param: posts.length - 1},
+            {key: 'forum_similar_view', component: COMPONENT},
+            {key: 'forum_similar_more', component: COMPONENT, param: posts.length - 1},
             {key: 'forum_similar_close', component: COMPONENT},
         ]).then(function(strings) {
             // The user may have kept typing while the strings were loading.
@@ -193,7 +212,7 @@ define(['core/ajax', 'core/str'], function(Ajax, Str) {
          */
         init: function(params) {
             var courseid = params.courseid;
-            var wwwroot  = params.wwwroot || '/';
+            var wwwroot = params.wwwroot || '/';
 
             // Try to attach right away (DOMContentLoaded may already have happened).
             if (document.readyState !== 'loading') {

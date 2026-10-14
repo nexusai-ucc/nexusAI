@@ -1,9 +1,26 @@
 /*
- * Estilos para la vista docente de gestión de documentos — rediseño shadcn/ui.
+ * This file is part of Moodle - https://moodle.org/
  *
- * Usa los mismos tokens de diseño definidos en styles.css (--nexusai-*).
- * Si este CSS se carga sin styles.css como scope padre, los tokens hacen fallback
- * a los valores hardcodeados de los comentarios.
+ * Moodle is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Moodle is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Styles of the teacher document management view — shadcn/ui redesign.
+ *
+ * Uses the same design tokens defined in styles.css (--nexusai-*).
+ * If this CSS is loaded without styles.css as the parent scope, the tokens fall
+ * back to the hardcoded values in the comments.
  */
 
 .nexusai-documents {
@@ -150,9 +167,9 @@
     min-width: 0;
 }
 
-/* Contenedor tipo tarjeta SaaS (RDS-07) — envuelve secciones funcionales
-   (ej. dropzone + tabla de Material) para que se lean como un bloque
-   propio, consistente con .nexusai-gap-item/.nexusai-analytics__section. */
+/* SaaS-style card container (RDS-07) — wraps functional sections
+   (e.g. dropzone + Material table) so they read as a block of their own,
+   consistent with .nexusai-gap-item/.nexusai-analytics__section. */
 .nexusai-doc-card {
     background: var(--nexusai-bg, #fff);
     border: 1px solid var(--nexusai-border, #e2e8f0);
@@ -183,7 +200,7 @@
     letter-spacing: -0.01em;
 }
 
-/* ONB-07 (#430): pestaña Ayuda — una tarjeta por herramienta. */
+/* ONB-07 (#430): Help tab — one card per tool. */
 .nexusai-help__card {
     padding-bottom: 20px;
     margin-bottom: 20px;
@@ -204,7 +221,7 @@
     color: var(--nexusai-fg-muted, #475569);
 }
 
-/* UX-17 (#387): mismo estilo que .nexusai-gaps__load-more más abajo. */
+/* UX-17 (#387): same style as .nexusai-gaps__load-more further below. */
 .nexusai-documents__load-more {
     display: block;
     width: 100%;
@@ -228,8 +245,8 @@
 }
 
 /* ============================================================
-   Cola de uploads (CONT-06, #320) — progreso individual por archivo
-   cuando se sueltan/eligen varios a la vez.
+   Upload queue (CONT-06, #320) — individual progress per file
+   when several are dropped/chosen at once.
 ============================================================ */
 .nexusai-upload-queue {
     list-style: none;
@@ -350,7 +367,7 @@
 }
 
 /* ============================================================
-   Acciones en lote sobre documentos (CONT-09, #358)
+   Bulk actions on documents (CONT-09, #358)
 ============================================================ */
 .nexusai-bulkbar {
     display: flex;
@@ -428,7 +445,7 @@
     background: var(--nexusai-bg-subtle, #f1f5f9);
 }
 
-/* Indicador de estado por fila — reemplaza border-left por background sutil */
+/* Per-row state indicator — replaces border-left with a subtle background */
 .nexusai-table__row--error td { background: rgba(239, 68, 68, 0.03); }
 .nexusai-table__row--error:hover td { background: rgba(239, 68, 68, 0.06) !important; }
 .nexusai-table__row--indexing td { background: rgba(99, 102, 241, 0.03); }
@@ -473,7 +490,7 @@
 }
 
 /* ============================================================
-   Preview del texto extraído (CONT-08 / #357)
+   Preview of the extracted text (CONT-08 / #357)
 ============================================================ */
 .nexusai-table__preview-row td {
     padding: 0 12px 12px !important;
@@ -552,7 +569,7 @@
     cursor: help;
 }
 
-/* Dot animado para estado indexing */
+/* Animated dot for the indexing state */
 .nexusai-badge--indexing::before {
     content: "";
     display: inline-block;
@@ -566,7 +583,7 @@
     0%, 100% { opacity: 0.4; transform: scale(0.85); }
     50%       { opacity: 1;   transform: scale(1); }
 }
-/* Specificity bumped a nivel de tabla para ganarle a los resets del tema Boost. */
+/* Specificity bumped to table level to beat the Boost theme resets. */
 .nexusai-table .nexusai-badge--pending  { background: var(--nexusai-bg-subtle) !important; color: #64748b !important; }
 .nexusai-table .nexusai-badge--indexing { background: #dbeafe !important; color: #1e40af !important; }
 .nexusai-table .nexusai-badge--indexed  { background: #d1fae5 !important; color: #065f46 !important; }
@@ -638,7 +655,7 @@
 }
 
 /* ============================================================
-   Modales (confirmación y error)
+   Modals (confirmation and error)
 ============================================================ */
 .nexusai-modal-overlay {
     position: fixed;
@@ -762,7 +779,7 @@
     cursor: not-allowed;
 }
 
-/* ── Panel de Gaps ── */
+/* ── Gaps panel ── */
 .nexusai-gaps__filter {
     display: flex;
     flex-wrap: wrap;
@@ -776,7 +793,7 @@
     margin-right: 4px;
 }
 
-/* ── Selector de sección al subir material (BUS-05) ── */
+/* ── Section selector when uploading material (BUS-05) ── */
 .nexusai-documents__section-picker {
     display: flex;
     flex-direction: column;
@@ -1034,10 +1051,10 @@
     line-height: 1.5;
 }
 
-/* RDS-07: tarjetas de tema del tab FAQ del docente — clase propia
-   (nexusai-faq-card, NO nexusai-faq-topic) para no afectar el listado de
-   "Preguntas más frecuentes" de Analytics (RDS-06), que sigue usando
-   nexusai-faq-topic sin cambios. */
+/* RDS-07: topic cards of the teacher's FAQ tab — own class
+   (nexusai-faq-card, NOT nexusai-faq-topic) so it does not affect the
+   "Most frequent questions" list of Analytics (RDS-06), which keeps using
+   nexusai-faq-topic unchanged. */
 .nexusai-faq__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -1089,7 +1106,7 @@
    Search tab — scope toggle + new result elements
 ============================================================ */
 
-/* "Este curso / Todos mis cursos" toggle */
+/* "This course / All my courses" toggle */
 .nexusai-search__scope {
     display: flex;
     gap: 6px;
@@ -1214,10 +1231,10 @@
     border: 1px solid var(--nexusai-border);
     border-radius: 8px;
     padding: 14px 16px;
-    /* UX-16: sin esto, el tamaño mínimo automático del grid item se calcula
-       a partir del contenido (el ancho mínimo de las barras diarias con
-       muchos días) y "revienta" la columna 1fr entera en vez de quedarse
-       adentro con scroll. */
+    /* UX-16: without this, the grid item's automatic minimum size is computed
+       from the content (the minimum width of the daily bars with many
+       days) and "blows up" the whole 1fr column instead of staying
+       inside with a scrollbar. */
     min-width: 0;
 }
 .nexusai-analytics__section-empty {
@@ -1232,14 +1249,14 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    /* UX-16: tope defensivo — ya viene acotada a 10 desde el backend, pero
-       con preguntas largas que wrappean, 10 ítems pueden ocupar mucho alto
-       en pantallas chicas. */
+    /* UX-16: defensive cap — it already comes limited to 10 from the backend,
+       but with long questions that wrap, 10 items can take a lot of height
+       on small screens. */
     max-height: 280px;
     overflow-y: auto;
 }
 
-/* Barras genéricas (uso diario / distribución de puntajes) */
+/* Generic bars (daily usage / score distribution) */
 .nexusai-analytics__bars {
     display: flex;
     align-items: flex-end;
@@ -1250,8 +1267,8 @@
 .nexusai-analytics__bars--buckets {
     gap: 10px;
 }
-/* UX-16: con days=365 las barras diarias no deben achicarse a líneas
-   ilegibles — scrollean horizontalmente en vez de aplastarse. */
+/* UX-16: with days=365 the daily bars must not shrink to unreadable
+   lines — they scroll horizontally instead of getting squashed. */
 .nexusai-analytics__bars--daily {
     overflow-x: auto;
     overflow-y: hidden;
@@ -1288,9 +1305,9 @@
 .nexusai-analytics__bar--bucket {
     opacity: 1;
 }
-/* ANALYTICS-04 (#371): tooltip real (accesible por teclado vía foco), en
-   vez del `title` nativo del navegador — aparece al instante y se puede
-   estilar consistente con el resto del plugin. */
+/* ANALYTICS-04 (#371): a real tooltip (keyboard accessible via focus),
+   instead of the browser's native `title` — it shows instantly and can be
+   styled consistently with the rest of the plugin. */
 .nexusai-analytics__bar-tooltip {
     position: absolute;
     bottom: 100%;
@@ -1392,7 +1409,7 @@
     border-radius: var(--nexusai-radius, 8px);
     padding: 12px 14px;
     color: var(--nexusai-primary, #6366f1);
-    /* UX-16: evita que el valor fuerce el ancho mínimo de la columna del grid */
+    /* UX-16: keeps the value from forcing the minimum width of the grid column */
     min-width: 0;
 }
 .nexusai-analytics__stat-value {
@@ -1405,7 +1422,7 @@
     color: var(--nexusai-fg-muted, #64748b);
 }
 
-/* Salud del contenido (RDS-06) */
+/* Content health (RDS-06) */
 .nexusai-analytics__health {
     margin-top: 12px;
     padding: 14px 16px;
@@ -1465,9 +1482,9 @@
 }
 
 /* ============================================================
-   Generador de exámenes docente (EVAL-02, issue #235)
-   Movido acá desde styles.css en RDS-07 (#406) — uso exclusivo del
-   panel docente, nunca compartido con el chat del alumno.
+   Teacher exam generator (EVAL-02, issue #235)
+   Moved here from styles.css in RDS-07 (#406) — used only by the
+   teacher panel, never shared with the student chat.
 ============================================================ */
 .nexusai-exam__doclist {
     list-style: none;
@@ -1494,7 +1511,7 @@
 }
 .nexusai-exam__docitem label:hover { background: var(--nexusai-bg-subtle); }
 
-/* Indicador de paso del wizard (RDS-07) */
+/* Wizard step indicator (RDS-07) */
 .nexusai-exam__steps {
     display: flex;
     align-items: center;
@@ -1562,7 +1579,7 @@
     background: var(--nexusai-bg);
 }
 
-/* "Incluir temas con dificultad detectada" (Gaps/FAQ) — DOC-D09 (#390) */
+/* "Include topics with detected difficulty" (Gaps/FAQ) — DOC-D09 (#390) */
 .nexusai-exam__focus {
     margin-bottom: 16px;
 }
@@ -1689,9 +1706,9 @@
     font-style: italic;
 }
 
-/* Fix: .nexusai-btn--primary en styles.css está pensado para el chat
-   (rojo, error/retry) — acá lo repintamos al indigo del panel docente,
-   scopeado a .nexusai-documents para no afectar el chat. */
+/* Fix: .nexusai-btn--primary in styles.css is meant for the chat
+   (red, error/retry) — here we repaint it to the teacher panel's indigo,
+   scoped to .nexusai-documents so the chat is not affected. */
 .nexusai-documents .nexusai-btn--primary {
     background: var(--nexusai-primary, #6366f1);
     border-color: var(--nexusai-primary, #6366f1);
@@ -1702,7 +1719,7 @@
 }
 
 /* ============================================================
-   Preguntas de alumnos: selector Frecuentes/Sin responder (RDS-08)
+   Student questions: Frequent/Unanswered selector (RDS-08)
 ============================================================ */
 .nexusai-questions__modebtns {
     display: flex;
@@ -1729,11 +1746,11 @@
 }
 
 /* ============================================================
-   Modo oscuro (UX-11, #369) — panel docente
-   Espejo del bloque de styles.css: redefine los tokens --nexusai-* y
-   ajusta los colores semánticos aún no tokenizados de las 5 tabs
-   (Material, Preguntas, Analytics, Examen, Buscar). Contraste de texto
-   sobre fondo de color verificado, no invertido mecánicamente.
+   Dark mode (UX-11, #369) — teacher panel
+   Mirror of the styles.css block: redefines the --nexusai-* tokens and
+   adjusts the not yet tokenized semantic colors of the 5 tabs
+   (Material, Questions, Analytics, Exam, Search). Text contrast on a
+   colored background checked, not inverted mechanically.
 ============================================================ */
 @media (prefers-color-scheme: dark) {
     .nexusai-documents {
@@ -1794,13 +1811,13 @@
     .nexusai-documents .nexusai-alert--error,
     .nexusai-documents .nexusai-modal__title--error { color: var(--nexusai-danger-fg); }
 
-    /* ---- Filas de tabla con estado ---- */
+    /* ---- Table rows with state ---- */
     .nexusai-documents .nexusai-table__row--error td { background: rgba(239, 68, 68, 0.08); }
     .nexusai-documents .nexusai-table__row--error:hover td { background: rgba(239, 68, 68, 0.14) !important; }
     .nexusai-documents .nexusai-table__row--indexing td { background: rgba(129, 140, 248, 0.08); }
     .nexusai-documents .nexusai-table__row--indexing:hover td { background: rgba(129, 140, 248, 0.14) !important; }
 
-    /* ---- Badges de estado (incluye los overrides !important a nivel tabla) ---- */
+    /* ---- State badges (includes the !important overrides at table level) ---- */
     .nexusai-documents .nexusai-badge--indexing {
         background: var(--nexusai-info-bg);
         color: var(--nexusai-info-fg);
@@ -1860,7 +1877,7 @@
     }
     .nexusai-documents .nexusai-gap-item__sep { color: var(--nexusai-border-strong); }
 
-    /* ---- Analytics: ratio de gaps y salud del contenido ---- */
+    /* ---- Analytics: gaps ratio and content health ---- */
     .nexusai-documents .nexusai-analytics__gaps-ratio--low  { background: var(--nexusai-success-bg); }
     .nexusai-documents .nexusai-analytics__gaps-ratio--low .nexusai-analytics__gaps-ratio-pct  { color: var(--nexusai-success-fg); }
     .nexusai-documents .nexusai-analytics__gaps-ratio--mid  { background: var(--nexusai-warning-bg); }
@@ -1883,16 +1900,16 @@
     }
     .nexusai-documents .nexusai-exam__remove:hover { color: var(--nexusai-danger-fg); }
 
-    /* ---- Botón secundario de modal ---- */
+    /* ---- Modal secondary button ---- */
     .nexusai-documents .nexusai-btn--danger { background: var(--nexusai-danger-solid); }
 }
 
 /* ============================================================
-   Accesibilidad — foco visible por teclado (UX-10, #368)
+   Accessibility — visible keyboard focus (UX-10, #368)
 
-   Mismo estado de foco que el widget del chat (styles.css),
-   reutilizando los tokens --nexusai-primary / -ring del root
-   .nexusai-documents. :focus-visible para no molestar al click.
+   Same focus state as the chat widget (styles.css), reusing
+   the --nexusai-primary / -ring tokens of the
+   .nexusai-documents root. :focus-visible so clicks are not bothered.
 ============================================================ */
 .nexusai-documents a:focus-visible,
 .nexusai-documents button:focus-visible,
@@ -1906,7 +1923,7 @@
     box-shadow: 0 0 0 4px var(--nexusai-primary-ring, rgba(99,102,241,0.2));
 }
 
-/* Botones sobre fondo índigo: halo claro hacia adentro + outline oscuro. */
+/* Buttons on an indigo background: light inner halo + dark outline. */
 .nexusai-documents .nexusai-btn--primary:focus-visible {
     outline: 2px solid var(--nexusai-primary-hover, #4f46e5);
     outline-offset: 2px;
@@ -1926,9 +1943,9 @@
 }
 
 /* ============================================================
-   Skeletons de carga — UX-12 (#370)
-   Silueta aproximada del contenido mientras carga, en vez del
-   spinner centrado genérico (.nexusai-loading). Componente en
+   Loading skeletons — UX-12 (#370)
+   Approximate outline of the content while it loads, instead of the
+   generic centered spinner (.nexusai-loading). Component in
    components/Skeleton.jsx.
 ============================================================ */
 @keyframes nexusai-skeleton-shimmer {
@@ -1972,7 +1989,7 @@
     border: 0;
 }
 
-/* Material — filas de la tabla de documentos */
+/* Material — rows of the documents table */
 .nexusai-skeleton-doc__intro { margin-bottom: 20px; }
 .nexusai-skeleton-doc__zone {
     height: 96px;
@@ -1996,7 +2013,7 @@
 }
 .nexusai-skeleton-doc__row:last-child { border-bottom: 0; }
 
-/* Analytics — cards de métricas + secciones de barras */
+/* Analytics — metric cards + bar sections */
 .nexusai-skeleton-analytics__stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -2049,4 +2066,41 @@
 
 @media (prefers-reduced-motion: reduce) {
     .nexusai-skeleton { animation-duration: 2.4s; }
+}
+
+/* VIS-03 (#538): where each document lives in the course */
+.nexusai-activity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    font-size: 0.85em;
+}
+.nexusai-activity__unit {
+    color: var(--nexusai-fg, #1e293b);
+}
+.nexusai-activity__state {
+    font-weight: 600;
+}
+.nexusai-activity__state--visible {
+    color: var(--nexusai-success, #15803d);
+}
+.nexusai-activity__state--hidden {
+    color: var(--nexusai-warning, #b45309);
+}
+.nexusai-activity__state--missing,
+.nexusai-activity__state--none {
+    color: var(--nexusai-danger, #b91c1c);
+}
+.nexusai-visibility-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0;
+    cursor: pointer;
+}
+.nexusai-documents__hint {
+    margin: 0 0 12px;
+    font-size: 0.85em;
+    color: var(--nexusai-fg-muted, #64748b);
 }

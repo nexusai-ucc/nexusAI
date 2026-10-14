@@ -1,3 +1,25 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Part of the NexusAI plugin (local_nexusai).
+ *
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -126,5 +148,26 @@ describe("SearchPanel — estado vacío accionable (BUS-07, #362)", () => {
 
         await screen.findByText(/No se encontraron resultados/);
         expect(screen.queryByRole("button", { name: "Preguntarle al asistente" })).not.toBeInTheDocument();
+    });
+});
+
+describe("SearchPanel — abrir un resultado (VIS-05)", () => {
+    it("opens the document through its id, not through a file name", async () => {
+        searchMaterial.mockResolvedValue(RESULT);
+        const open = vi.spyOn(window, "open").mockImplementation(() => null);
+        const user = userEvent.setup();
+        render(<SearchPanel courseId={5} sesskey="abc" />);
+
+        await user.type(screen.getByPlaceholderText("Buscá en el material del curso..."), "derivadas");
+        await user.click(screen.getByRole("button", { name: "Buscar" }));
+        await user.click(await screen.findByRole("button", { name: "Abrir ↗" }));
+
+        expect(open).toHaveBeenCalledTimes(1);
+        const url = new URL(open.mock.calls[0][0], "http://aula.test");
+        expect(url.pathname).toBe("/local/nexusai/document_download.php");
+        expect(url.searchParams.get("document_id")).toBe("doc-1");
+        expect(url.searchParams.get("courseid")).toBe("5");
+        expect(url.searchParams.has("filename")).toBe(false);
+        open.mockRestore();
     });
 });

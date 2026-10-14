@@ -1,7 +1,7 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
-// NexusAI is free software: you can redistribute it and/or modify
+// Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
@@ -17,14 +17,10 @@
 /**
  * Library functions for local_nexusai.
  *
- * Hook system:
- *   - Moodle 4.4+ → uses db/hooks.php + classes/hook/output/before_footer_listener.php
- *   - Moodle 4.1-4.3 → uses this file's `local_nexusai_before_footer()` function
- *
- * In Moodle 4.4+, the old function is still invoked for backward compat but its
- * return value is ignored (it only emits a deprecation warning). That's why we
- * detect the Moodle version here and skip on 4.4+ to avoid duplicating logic
- * or generating useless warnings.
+ * The widget is injected through the hooks API (db/hooks.php and
+ * classes/hook/output/before_footer_listener.php). The old
+ * `local_nexusai_before_footer()` callback for Moodle 4.1-4.3 was removed when
+ * the minimum became Moodle 4.5 (DATA-02).
  *
  * @package    local_nexusai
  * @copyright  2026 NexusAI Team — UCC
@@ -51,105 +47,25 @@ function local_nexusai_frontend_lang(): string {
 }
 
 /**
- * Hook run by Moodle 4.1-4.3 before closing </body>.
+ * Serves nothing from the plugin's file areas (VIS-05).
  *
- * In Moodle 4.4+ hook handling happens in
- * classes/hook/output/before_footer_listener.php, so this function returns
- * empty to avoid duplication.
+ * Until VIS-05 the plugin kept its own copy of each uploaded document and
+ * served it here to any student of the course, hidden or not. Every document
+ * is now a "File" activity of the course and is opened through it
+ * (document_download.php), so Moodle's visibility rules always apply. Copies
+ * left by older versions are not served.
  *
- * @return string HTML that Moodle inserts before the footer (Moodle ≤ 4.3).
- */
-function local_nexusai_before_footer(): string {
-    global $CFG, $PAGE, $USER, $COURSE;
-
-    // In Moodle 4.4+ the new hook system takes care of it.
-    // Build 2024042200 = 4.4 LTS / 4.5. Anything from 2024 onward → use the new system.
-    if ((int)$CFG->version >= 2024041600) {
-        return '';
-    }
-
-    // Logic for Moodle 4.1-4.3 (legacy hook system).
-
-    if (!isloggedin() || isguestuser()) {
-        return '';
-    }
-
-    // ONB-03: on the course-creation screen the widget shows the setup
-    // tutorial. It's evaluated before the real-course guard because that's
-    // precisely where there's no course yet ($COURSE->id === 1).
-    $onboarding = \local_nexusai\visibility_helper::onboarding_hint();
-
-    if (empty($COURSE->id) || $COURSE->id <= 1) {
-        if ($onboarding === null) {
-            // Other course-less pages: the full out-of-course experience is
-            // 4.4+ only (new hook). On 4.1-4.3 it stays as before.
-            return '';
-        }
-
-        $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
-            [
-                'courseid'   => 0,
-                'userid'     => (int) $USER->id,
-                'sesskey'    => sesskey(),
-                'wwwroot'    => (string) (new moodle_url('/'))->out(false),
-                'lang'       => local_nexusai_frontend_lang(),
-                'isteacher'  => 0,
-                'onboarding' => $onboarding,
-            ],
-        ]);
-
-        return '<div id="local-nexusai-container" data-plugin="nexusai"></div>';
-    }
-
-    $context = context_course::instance($COURSE->id);
-    if (!has_capability('local/nexusai:use', $context)) {
-        return '';
-    }
-
-    $PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy', 'init', [
-        [
-            'courseid'   => (int) $COURSE->id,
-            'userid'     => (int) $USER->id,
-            'sesskey'    => sesskey(),
-            'wwwroot'    => (string) (new moodle_url('/'))->out(false),
-            'lang'       => local_nexusai_frontend_lang(),
-            'isteacher'  => (int) has_capability('local/nexusai:manage', $context),
-            'onboarding' => $onboarding,
-        ],
-    ]);
-
-    return '<div id="local-nexusai-container" data-plugin="nexusai"></div>';
-}
-
-/**
- * Allows Moodle to serve files from the plugin's 'documents' area.
- *
- * URL: /pluginfile.php/{contextid}/local_nexusai/documents/{courseid}/{filename}
- * Access: requires local/nexusai:use (course students and teachers).
+ * @param stdClass $course Course.
+ * @param stdClass|null $cm Course module.
+ * @param context $context Context.
+ * @param string $filearea File area.
+ * @param array $args Remaining path.
+ * @param bool $forcedownload Whether to force the download.
+ * @param array $options Options.
+ * @return bool Always false: nothing is served.
  */
 function local_nexusai_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = []) {
-    if ($filearea !== 'documents') {
-        return false;
-    }
-
-    require_login($course);
-    if (!has_capability('local/nexusai:use', $context)) {
-        return false;
-    }
-
-    $itemid  = (int) array_shift($args);
-    $filename = array_shift($args);
-    if (empty($filename)) {
-        return false;
-    }
-
-    $fs   = get_file_storage();
-    $file = $fs->get_file($context->id, 'local_nexusai', 'documents', $itemid, '/', $filename);
-    if (!$file || $file->is_directory()) {
-        return false;
-    }
-
-    send_stored_file($file, 86400, 0, $forcedownload, $options);
+    return false;
 }
 
 /**
@@ -209,15 +125,30 @@ function local_nexusai_calfeed_url(int $userid, int $courseid): string {
  * to users with the local/nexusai:manage capability (teachers and admins).
  * Students don't see this link — they interact with the floating chat only.
  *
- * This hook works on ALL supported versions (Moodle 4.1 LTS through 4.5) —
- * it was not migrated to the new Hook API.
+ * This callback works on every supported version (Moodle 4.5 LTS through 5.3);
+ * Moodle has not moved it to the hooks API.
  *
  * @param navigation_node $navigation Course node we add the item to.
  * @param stdClass        $course     Current course object.
  * @param context_course  $context    Course context.
  */
 function local_nexusai_extend_navigation_course($navigation, $course, $context): void {
-    if (!has_capability('local/nexusai:manage', $context)) {
+    if (!has_capability('local/nexusai:manage', $context) || !\local_nexusai\local\course_guard::plugin_enabled()) {
+        return;
+    }
+
+    // Always reachable for teachers, even with NexusAI off in the course:
+    // it is where they turn it on (CURSO-01).
+    $navigation->add_node(navigation_node::create(
+        get_string('course_settings_title', 'local_nexusai'),
+        new moodle_url('/local/nexusai/course_settings.php', ['courseid' => $course->id]),
+        navigation_node::TYPE_SETTING,
+        null,
+        'local_nexusai_course_settings',
+        new pix_icon('i/settings', '')
+    ));
+
+    if (!\local_nexusai\local\course_guard::is_enabled((int) $course->id)) {
         return;
     }
 
@@ -232,4 +163,42 @@ function local_nexusai_extend_navigation_course($navigation, $course, $context):
     );
 
     $navigation->add_node($node);
+}
+
+/**
+ * Removes a deleted forum's posts from the backend's similarity index.
+ *
+ * Moodle calls every `{frankenstyle}_pre_course_module_delete($cm)` function it finds
+ * (course_delete_module(), course/lib.php) *before* calling the module's own
+ * `{modname}_delete_instance()` — here, before forum_delete_instance() removes the
+ * forum's discussions and posts. The course_module_deleted event observer
+ * (classes/observer.php) fires only after that, when the posts are already gone from
+ * {forum_posts}/{forum_discussions}, so it cannot be used to find them.
+ *
+ * Deleting the whole course is covered separately, directly by
+ * local\data_cleanup::delete_course() (it does not go through this per-module path).
+ *
+ * @param \stdClass $cm The course_modules record about to be deleted.
+ */
+function local_nexusai_pre_course_module_delete(\stdClass $cm): void {
+    global $DB;
+
+    if (!\local_nexusai\local\course_guard::can_purge_backend()) {
+        return;
+    }
+
+    $modname = $DB->get_field('modules', 'name', ['id' => $cm->module]);
+    if ($modname !== 'forum') {
+        return;
+    }
+
+    $postids = $DB->get_fieldset_select(
+        'forum_posts',
+        'id',
+        'discussion IN (SELECT id FROM {forum_discussions} WHERE forum = :forumid)',
+        ['forumid' => $cm->instance]
+    );
+    if ($postids) {
+        \local_nexusai\task\purge_backend_data::queue_forum_posts($postids);
+    }
 }

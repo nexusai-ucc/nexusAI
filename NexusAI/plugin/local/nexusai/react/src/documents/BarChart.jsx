@@ -1,18 +1,40 @@
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Part of the NexusAI plugin (local_nexusai).
+ *
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 import { useState } from "react";
 
 /**
- * BarChart — barras genéricas con tooltip real al hover/foco (ANALYTICS-04,
- * #371). Reemplaza el `title` nativo que usaban antes las secciones de
- * "Uso diario" y "Distribución de puntajes": el `title` del navegador tarda
- * en aparecer, no es alcanzable por teclado y no se puede estilar. Acá el
- * tooltip es un `<span>` posicionado que se muestra por estado, con el mismo
- * evento en mouse (hover) y en foco (teclado), y las columnas son barras
- * scrolleables horizontalmente para no aplastarse con muchos puntos de datos
- * (ventana de 365 días, por ejemplo) — ya existía ese scroll para la sección
- * diaria (UX-16); acá se generaliza a cualquier `BarChart`.
+ * BarChart — generic bars with a real tooltip on hover/focus (ANALYTICS-04,
+ * #371). Replaces the native `title` the "Daily usage" and "Score
+ * distribution" sections used before: the browser's `title` takes a while to
+ * show, cannot be reached with the keyboard and cannot be styled. Here the
+ * tooltip is a positioned `<span>` shown by state, with the same event on
+ * mouse (hover) and on focus (keyboard), and the columns are horizontally
+ * scrollable bars so they are not squashed with many data points
+ * (a 365-day window, for example) — that scroll already existed for the
+ * daily section (UX-16); here it is generalized to any `BarChart`.
  *
- * No es una librería de gráficos — sigue siendo CSS puro (alto en %), solo
- * que ahora con estado de React para el tooltip en vez de `title`.
+ * It is not a charting library — it is still pure CSS (height in %), only
+ * now with React state for the tooltip instead of `title`.
  */
 export default function BarChart({ items, maxValue, variant, formatTooltip, formatLabel }) {
     const [activeKey, setActiveKey] = useState(null);

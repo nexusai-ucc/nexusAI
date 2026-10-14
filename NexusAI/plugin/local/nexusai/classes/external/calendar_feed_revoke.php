@@ -1,5 +1,5 @@
 <?php
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,35 +28,39 @@
 
 namespace local_nexusai\external;
 
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
+
 defined('MOODLE_INTERNAL') || die();
 
-require_once($GLOBALS['CFG']->libdir . '/externallib.php');
 require_once($GLOBALS['CFG']->dirroot . '/local/nexusai/lib.php');
 
 /**
  * Rotates the student's calendar feed token (CAL-07 / #377): the old URL stops working and a new one
  * is returned.
  */
-class calendar_feed_revoke extends \external_api {
+class calendar_feed_revoke extends external_api {
     /**
      * Parameters for execute().
      *
-     * @return \external_function_parameters
+     * @return external_function_parameters
      */
-    public static function execute_parameters(): \external_function_parameters {
-        return new \external_function_parameters([
-            'courseid' => new \external_value(PARAM_INT, 'Course ID (for context and capability check)', VALUE_REQUIRED),
+    public static function execute_parameters(): external_function_parameters {
+        return new external_function_parameters([
+            'courseid' => new external_value(PARAM_INT, 'Course ID (for context and capability check)', VALUE_REQUIRED),
         ]);
     }
 
     /**
      * Return value for execute().
      *
-     * @return \external_single_structure
+     * @return external_single_structure
      */
-    public static function execute_returns(): \external_single_structure {
-        return new \external_single_structure([
-            'url' => new \external_value(PARAM_RAW, 'New absolute URL of the .ics feed'),
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure([
+            'url' => new external_value(PARAM_RAW, 'New absolute URL of the .ics feed'),
         ]);
     }
 
@@ -75,6 +79,7 @@ class calendar_feed_revoke extends \external_api {
         $context = \context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
         local_nexusai_calfeed_rotate_token((int) $USER->id);
 
