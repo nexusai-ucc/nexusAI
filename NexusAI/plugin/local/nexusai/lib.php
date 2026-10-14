@@ -164,3 +164,41 @@ function local_nexusai_extend_navigation_course($navigation, $course, $context):
 
     $navigation->add_node($node);
 }
+
+/**
+ * Removes a deleted forum's posts from the backend's similarity index.
+ *
+ * Moodle calls every `{frankenstyle}_pre_course_module_delete($cm)` function it finds
+ * (course_delete_module(), course/lib.php) *before* calling the module's own
+ * `{modname}_delete_instance()` — here, before forum_delete_instance() removes the
+ * forum's discussions and posts. The course_module_deleted event observer
+ * (classes/observer.php) fires only after that, when the posts are already gone from
+ * {forum_posts}/{forum_discussions}, so it cannot be used to find them.
+ *
+ * Deleting the whole course is covered separately, directly by
+ * local\data_cleanup::delete_course() (it does not go through this per-module path).
+ *
+ * @param \stdClass $cm The course_modules record about to be deleted.
+ */
+function local_nexusai_pre_course_module_delete(\stdClass $cm): void {
+    global $DB;
+
+    if (!\local_nexusai\local\course_guard::can_purge_backend()) {
+        return;
+    }
+
+    $modname = $DB->get_field('modules', 'name', ['id' => $cm->module]);
+    if ($modname !== 'forum') {
+        return;
+    }
+
+    $postids = $DB->get_fieldset_select(
+        'forum_posts',
+        'id',
+        'discussion IN (SELECT id FROM {forum_discussions} WHERE forum = :forumid)',
+        ['forumid' => $cm->instance]
+    );
+    if ($postids) {
+        \local_nexusai\task\purge_backend_data::queue_forum_posts($postids);
+    }
+}

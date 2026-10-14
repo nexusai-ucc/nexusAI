@@ -30,9 +30,10 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026101401;
-// Fix: deleting a course also purges its forum posts from the backend (MMR-301 item 4,
-// the real-course-deletion case, which does not go through the Privacy API).
+$plugin->version   = 2026101402;
+// Fix: deleting a single forum (course left intact) also purges its posts from the
+// backend, via pre_course_module_delete() — course_module_deleted fires too late,
+// after mod_forum has already removed the posts it would need to find.
 $plugin->release   = '0.19.0';
 $plugin->maturity  = MATURITY_BETA;
 
