@@ -186,6 +186,7 @@ final class backend_tasks_test extends \advanced_testcase {
     public function test_deleting_a_non_forum_module_queues_nothing(): void {
         global $DB;
         $this->resetAfterTest();
+        $this->setAdminUser();
         $this->configure_backend();
         $course = $this->getDataGenerator()->create_course();
         $resource = $this->getDataGenerator()->create_module('resource', ['course' => $course->id]);
