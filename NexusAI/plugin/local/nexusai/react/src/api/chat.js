@@ -43,9 +43,6 @@
  * delayed answers and shows the UI without a backend.
  */
 
-// ============================================================
-// MOCK SERVER (only for dev outside Moodle)
-// ============================================================
 // Messages the widget shows when it refuses a question or the stream breaks,
 // in the language of the Moodle interface (the `lang` the widget receives).
 const CHAT_ERRORS = {
@@ -61,6 +58,9 @@ const CHAT_ERRORS = {
     },
 };
 
+// ============================================================
+// MOCK SERVER (only for dev outside Moodle)
+// ============================================================
 const MOCK_RESPONSES = [
     "Esta es una respuesta de prueba del asistente. Cuando el cliente PHP esté implementado, vas a ver respuestas reales del LLM con contexto del material del curso.",
     "Perfecto, podés seguir preguntando. El historial de la conversación se está guardando en la base de datos.",

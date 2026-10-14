@@ -24,7 +24,7 @@
  *      above the submit buttons with a preview of the similar post.
  *   5. It never blocks posting — the user can publish anyway.
  *
- * Every fixed text comes from the language pack (lang/*/local_nexusai.php) so it
+ * Every fixed text comes from the language pack (lang/en/local_nexusai.php and its translations) so it
  * follows the language of the Moodle user.
  *
  * @module     local_nexusai/forum-duplicate-checker

@@ -25,7 +25,7 @@
  *   5. The panel can be closed and reopened without calling the backend again
  *      (the result is cached in memory for the lifetime of the page).
  *
- * Every fixed text comes from the language pack (lang/*/local_nexusai.php) so it
+ * Every fixed text comes from the language pack (lang/en/local_nexusai.php and its translations) so it
  * follows the language of the Moodle user.
  *
  * @module     local_nexusai/forum-thread-summarizer

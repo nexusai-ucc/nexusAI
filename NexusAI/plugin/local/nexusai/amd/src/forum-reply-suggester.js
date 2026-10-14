@@ -24,7 +24,7 @@
  *      replied to.
  *   5. It shows the suggestion in a panel with a "Use this reply" button.
  *
- * Every fixed text comes from the language pack (lang/*/local_nexusai.php) so it
+ * Every fixed text comes from the language pack (lang/en/local_nexusai.php and its translations) so it
  * follows the language of the Moodle user.
  *
  * @module     local_nexusai/forum-reply-suggester
