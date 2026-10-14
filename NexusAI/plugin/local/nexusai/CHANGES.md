@@ -127,6 +127,13 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   bundles in `amd/build` ship with what they are built from. Its comments and
   README are now in English; only the comments changed, the compiled code is
   the same.
+- Changed: `amd/build` is built entirely by Moodle's `grunt amd`. Webpack now
+  writes the two React bundles, not minified, to `amd/src/chatwidget-lazy.js`
+  and `amd/src/documents-manager-lazy.js` (declared in `thirdpartylibs.xml`,
+  like `lib/amd/src/chartjs-lazy.js` in core), and every module ships with its
+  `.min.js.map`. Before, the bundles went straight to `amd/build`, so the build
+  could not be checked with grunt. The JavaScript of the forum tools and of the
+  upload prompt passes ESLint with no warnings.
 - Note: the data already in the backend is not visible until it is migrated
   (DATA-06).
 - New: the plugin's own tables for the student data (DATA-03). Fifteen

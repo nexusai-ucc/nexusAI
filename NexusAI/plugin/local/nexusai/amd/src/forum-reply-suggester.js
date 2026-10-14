@@ -35,7 +35,7 @@
 define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notification, Str) {
 
     var COMPONENT = 'local_nexusai';
-    var BTN_ID   = 'nexusai-suggest-reply-btn';
+    var BTN_ID = 'nexusai-suggest-reply-btn';
     var PANEL_ID = 'nexusai-reply-suggestion-panel';
 
     var discussionid, courseid;
@@ -216,7 +216,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
     function requestSuggestion(replyToPostId, formEl) {
         var btn = document.getElementById(BTN_ID);
         if (btn) {
-            btn.disabled   = true;
+            btn.disabled = true;
             btn.textContent = '⟳ ' + strings.forum_suggest_working;
         }
 
@@ -229,20 +229,21 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             },
         }])[0].then(function(response) {
             if (btn) {
-                btn.disabled   = false;
+                btn.disabled = false;
                 btn.textContent = '✨ ' + strings.forum_suggest_button;
             }
-            if (!response.suggested_reply) {
+            if (response.suggested_reply) {
+                showSuggestionPanel(response.suggested_reply, response.has_course_material, formEl);
+            } else {
                 Notification.addNotification({
                     message: strings.forum_suggest_empty,
-                    type:    'warning',
+                    type: 'warning',
                 });
-                return;
             }
-            showSuggestionPanel(response.suggested_reply, response.has_course_material, formEl);
+            return response;
         }).catch(function() {
             if (btn) {
-                btn.disabled   = false;
+                btn.disabled = false;
                 btn.textContent = '✨ ' + strings.forum_suggest_button;
             }
             Notification.addNotification({
@@ -268,8 +269,8 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         }
 
         var btn = document.createElement('button');
-        btn.id        = BTN_ID;
-        btn.type      = 'button';
+        btn.id = BTN_ID;
+        btn.type = 'button';
         btn.textContent = '✨ ' + strings.forum_suggest_button;
         btn.style.cssText = [
             'background:#f0fdf4',
@@ -342,7 +343,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
          */
         init: function(params) {
             discussionid = params.discussionid;
-            courseid     = params.courseid;
+            courseid = params.courseid;
 
             if (!discussionid || !courseid) {
                 return;

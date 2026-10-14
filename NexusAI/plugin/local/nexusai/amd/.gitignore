@@ -1,3 +1,0 @@
-# Everything in build/ is committed: the React bundles built by webpack
-# (chatwidget-lazy, documents-manager-lazy) and the AMD modules built by
-# Moodle's grunt from amd/src, with their source maps.

@@ -1,13 +1,21 @@
 # React widget — local_nexusai
 
 React source of the chat widget and of the teacher view (document manager).
-Webpack compiles it to two AMD bundles that Moodle loads with `js_call_amd()`:
+Webpack compiles it to two AMD modules, written (not minified) next to the
+plugin's other AMD sources:
 
-- `../amd/build/chatwidget-lazy.min.js` — the chat widget (`src/index.jsx`).
-- `../amd/build/documents-manager-lazy.min.js` — the teacher view (`src/documents/index.jsx`).
+- `../amd/src/chatwidget-lazy.js` — the chat widget (`src/index.jsx`).
+- `../amd/src/documents-manager-lazy.js` — the teacher view (`src/documents/index.jsx`).
 
-Both bundles are committed, so the plugin works without Node. This directory is
-what you need to rebuild them.
+Moodle's `grunt amd` then builds them like any other module into
+`../amd/build/*.min.js` (plus `.min.js.map`), which is what Moodle loads with
+`js_call_amd()`. Same approach as Moodle core with `lib/amd/src/chartjs-lazy.js`:
+moodle-plugin-ci deletes `amd/build/`, runs grunt and fails if the result is not
+what is committed. `thirdpartylibs.xml` points at the two files, which also keeps
+them out of ESLint.
+
+Both `amd/src/` and `amd/build/` are committed, so the plugin works without Node.
+This directory is what you need to rebuild them.
 
 ## Setup
 
@@ -20,17 +28,21 @@ exact versions). Takes ~2-3 minutes the first time.
 
 ## Build
 
-**Production** (minified, no source maps):
-
 ```bash
-npm run build
+npm run build          # writes ../amd/src/chatwidget-lazy.js and documents-manager-lazy.js
 ```
 
-**Development** (with source maps + watch mode, rebuilds on every change):
+Then, with the plugin inside a Moodle checkout (`npm ci` done in the Moodle root),
+build `amd/build/` from the plugin's `amd/` directory:
 
 ```bash
-npm run dev
+cd <moodle>/public/local/nexusai/amd   # <moodle>/local/nexusai/amd on Moodle 4.5
+npx grunt amd
 ```
+
+Commit `amd/src/` and `amd/build/` together. **Development:** `npm run dev`
+rebuilds `amd/src/` on every change (watch mode); `npx grunt watch` in Moodle
+rebuilds `amd/build/` from it.
 
 ## Structure
 
@@ -116,15 +128,16 @@ Vitest directly (`npx vitest ...`) without `npm test`, add that flag by hand.
 
 ## Performance budget
 
-Webpack warns when a bundle goes over **600KB** (`performance` in
-`webpack.config.js`). The chat bundle is above it today because of Temml (LaTeX
-formulas, ASIST-04): the next step there is code splitting / lazy loading, not
-raising the limit again.
+The frontend CI warns when `amd/build/chatwidget-lazy.min.js` goes over 512KB.
+It is above it today: Temml (LaTeX formulas, ASIST-04) and, since the bundles are
+built by Moodle's grunt, readable variable names (Moodle's minifier does not mangle
+them: ~800KB, ~200KB gzipped). The next step there is code splitting / lazy
+loading, not raising the limit.
 
 ## Recommended workflow
 
-1. `npm run dev` in a terminal (watch mode).
+1. `npm run dev` in a terminal (watch mode), and `npx grunt watch` in Moodle.
 2. Edit `src/*.jsx`.
-3. Webpack rebuilds automatically into `../amd/build/`.
+3. Webpack rebuilds `../amd/src/`, and grunt rebuilds `../amd/build/` from it.
 4. In Moodle: `Site administration → Development → Purge all caches`.
 5. `Ctrl+Shift+R` in the browser to force reloading the JS.
