@@ -20,7 +20,9 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   posts in a course where NexusAI was turned off. Removals now only need
   NexusAI on site-wide and a configured backend; failed removals are retried
   by the task API. The course documents purge goes through every page of the
-  backend's list.
+  backend's list. When Moodle deletes a course, the course's forum posts are
+  listed through the `core_course\hook\before_course_deleted` hook, before
+  Moodle removes them (by the `course_deleted` event they are already gone).
 - Changed: the chat stream goes through Moodle's `\curl` class instead of
   calling `curl_init()` directly. Requests to the backend verify its TLS
   certificate and never follow redirects. When the backend cannot be reached,
