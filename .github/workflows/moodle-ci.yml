@@ -73,6 +73,9 @@ jobs:
           - php: '8.3'
             moodle-branch: 'MOODLE_503_STABLE'
             database: 'pgsql'
+            # TPC-01 (#573): cobertura de PHPUnit solo en esta combinación,
+            # para no hacer más lenta toda la matriz.
+            coverage: true
           - php: '8.4'
             moodle-branch: 'MOODLE_503_STABLE'
             database: 'mysqli'
@@ -117,7 +120,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: pgsql, mysqli, mbstring, xml, intl, zip, gd, soap
-          coverage: none
+          coverage: ${{ matrix.coverage && 'pcov' || 'none' }}
           ini-values: max_input_vars=5000
 
       - name: Setup Node 20
@@ -173,7 +176,21 @@ jobs:
       # Tests
       # ----------------------------------------------------------------
       - name: PHPUnit tests
+        if: ${{ !matrix.coverage }}
         run: moodle-plugin-ci phpunit --fail-on-warning
+
+      - name: PHPUnit tests con cobertura
+        if: ${{ matrix.coverage }}
+        run: moodle-plugin-ci phpunit --fail-on-warning --coverage-pcov --coverage-text --coverage-clover
+
+      - name: Upload coverage report
+        if: ${{ matrix.coverage }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-coverage
+          path: moodle/**/local/nexusai/coverage.xml
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Behat features
         continue-on-error: true   # Behat puede ser flaky en CI; no bloquear merge por esto en MVP

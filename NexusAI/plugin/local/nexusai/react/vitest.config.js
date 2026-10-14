@@ -37,5 +37,14 @@ export default defineConfig({
         environment: "jsdom",
         setupFiles: ["./vitest.setup.js"],
         globals: false,
+        // TPC-01 (#573): cobertura de sentencia y de decisión del widget.
+        // Sin thresholds todavía: los umbrales los pone el quality gate (TPC-02).
+        coverage: {
+            provider: "v8",
+            include: ["src/**/*.{js,jsx}"],
+            exclude: ["src/**/*.test.{js,jsx}"],
+            reporter: ["text", "json-summary", "lcov"],
+            reportsDirectory: "./coverage",
+        },
     },
 });
