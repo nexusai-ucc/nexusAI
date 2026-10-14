@@ -967,6 +967,25 @@ class backend_client {
     }
 
     /**
+     * Options every request to the backend sets on top of Moodle's \curl defaults.
+     *
+     * \curl verifies neither the TLS certificate (CURLOPT_SSL_VERIFYPEER = 0) nor
+     * where a redirect leads (with ignoresecurity), and follows redirects re-sending
+     * the body: the API key, the HMAC headers and the student's question would go
+     * wherever a redirect points. The backend never redirects, so a redirect is an
+     * error, and its certificate is checked.
+     *
+     * @return array \curl options.
+     */
+    public static function curl_hardening(): array {
+        return [
+            'CURLOPT_SSL_VERIFYPEER' => 1,
+            'CURLOPT_SSL_VERIFYHOST' => 2,
+            'CURLOPT_FOLLOWLOCATION' => 0,
+        ];
+    }
+
+    /**
      * HMAC + Bearer authenticated HTTP request. Supports GET/POST/DELETE.
      *
      * Accepts any 2xx code as success (not just 200): 202 Accepted for
@@ -1009,7 +1028,7 @@ class backend_client {
             $headers[] = 'X-NexusAI-Role: ' . $role;
         }
         $curl->setHeader($headers);
-        $curl->setopt([
+        $curl->setopt(self::curl_hardening() + [
             // 120 seconds for chat (the LLM can take a while). For PDF
             // upload, the backend returns 202 immediately and indexing runs
             // in the background, so 120s is plenty for uploads up to ~20MB
