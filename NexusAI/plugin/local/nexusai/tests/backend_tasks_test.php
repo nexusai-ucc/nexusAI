@@ -147,10 +147,15 @@ final class backend_tasks_test extends \advanced_testcase {
         delete_course($course->id, false);
 
         $this->assertFalse($DB->record_exists('forum_posts', ['id' => $postid]), 'Moodle removed the post.');
-        $queued = $this->queued(purge_backend_data::class);
-        $this->assertEqualsCanonicalizing(['course_documents', 'forum_posts'], array_column($queued, 'action'));
-        $forumtask = $queued[0]->action === 'forum_posts' ? $queued[0] : $queued[1];
-        $this->assertEquals([$postid], $forumtask->postids);
+        // Only the hook's task is checked: the documents purge is queued by the course_deleted
+        // observer, which some databases only run when the deletion's transaction commits, so it
+        // may not have run yet inside the test (it is covered by the documents purge test).
+        $forumtasks = array_values(array_filter(
+            $this->queued(purge_backend_data::class),
+            static fn($data) => $data->action === 'forum_posts'
+        ));
+        $this->assertCount(1, $forumtasks);
+        $this->assertEquals([$postid], $forumtasks[0]->postids);
     }
 
     /**
