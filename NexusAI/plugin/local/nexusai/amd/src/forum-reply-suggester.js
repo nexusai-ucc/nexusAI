@@ -1,17 +1,36 @@
-// This file is part of the NexusAI plugin for Moodle.
+// This file is part of Moodle - https://moodle.org/
 //
-// AI reply suggestion in forum reply forms (Epic 06 — F-11).
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// How it works:
-//   1. It is loaded on mod-forum-discuss pages (discussion view).
-//   2. It uses a MutationObserver to detect when the reply form appears.
-//   3. It adds a "Suggest reply" button next to the text area.
-//   4. On click it calls local_nexusai_forum_suggest_reply with the post being
-//      replied to.
-//   5. It shows the suggestion in a panel with a "Use this reply" button.
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-// Every fixed text comes from the language pack (lang/*/local_nexusai.php) so it
-// follows the language of the Moodle user.
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * AI reply suggestion in forum reply forms (Epic 06 — F-11).
+ *
+ * How it works:
+ *   1. It is loaded on mod-forum-discuss pages (discussion view).
+ *   2. It uses a MutationObserver to detect when the reply form appears.
+ *   3. It adds a "Suggest reply" button next to the text area.
+ *   4. On click it calls local_nexusai_forum_suggest_reply with the post being
+ *      replied to.
+ *   5. It shows the suggestion in a panel with a "Use this reply" button.
+ *
+ * Every fixed text comes from the language pack (lang/en/local_nexusai.php and its translations) so it
+ * follows the language of the Moodle user.
+ *
+ * @module     local_nexusai/forum-reply-suggester
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notification, Str) {
 
