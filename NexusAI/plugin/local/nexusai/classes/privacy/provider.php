@@ -497,8 +497,9 @@ class provider implements
      * The backend indexes forum posts for the similarity search (MMR-301 item 4); that
      * copy used to be purged only reactively through the `forum_post_deleted` event. Called
      * from the three Privacy API deletion methods above for an actual data-deletion request,
-     * and from local\data_cleanup::delete_course() when Moodle deletes a course for real —
-     * Moodle does not run the Privacy API in that case, so that caller passes $userids = null.
+     * and from hook\course\before_course_deleted_listener when Moodle deletes a course for
+     * real — Moodle does not run the Privacy API in that case, and by the course_deleted
+     * event the posts are already gone, so the hook calls this first with $userids = null.
      * The post ids are worked out here and the calls go in an ad hoc task
      * (task\purge_backend_data), so the deletion never waits for the backend.
      *

@@ -128,24 +128,50 @@ final class backend_tasks_test extends \advanced_testcase {
     }
 
     /**
-     * Deleting a course also queues the removal of its forum posts from the backend
-     * (MMR-301 item 4 — real course deletion never runs through the Privacy API, so this
-     * has to be queued directly by data_cleanup, not only reachable from a deletion request).
+     * Deleting a course for real queues the removal of its forum posts and documents.
+     *
+     * It goes through Moodle's delete_course(): remove_course_contents() deletes the forum
+     * posts before the course_deleted event fires, so only the before_course_deleted hook
+     * can still find them (MMR-301 item 4). Calling data_cleanup::delete_course() directly,
+     * with the posts still there, would hide that.
      */
-    public function test_deleting_a_course_queues_its_forum_posts_purge(): void {
+    public function test_deleting_a_course_for_real_queues_its_forum_posts_purge(): void {
+        global $DB;
         $this->resetAfterTest();
+        $this->setAdminUser();
         $this->configure_backend();
         $generator = $this->getDataGenerator();
         $course = $generator->create_course();
         $postid = $this->create_forum_post($course, $generator->create_and_enrol($course, 'student'));
 
+        delete_course($course->id, false);
+
+        $this->assertFalse($DB->record_exists('forum_posts', ['id' => $postid]), 'Moodle removed the post.');
+        // Only the hook's task is checked: the documents purge is queued by the course_deleted
+        // observer, which some databases only run when the deletion's transaction commits, so it
+        // may not have run yet inside the test (it is covered by the documents purge test).
+        $forumtasks = array_values(array_filter(
+            $this->queued(purge_backend_data::class),
+            static fn($data) => $data->action === 'forum_posts'
+        ));
+        $this->assertCount(1, $forumtasks);
+        $this->assertEquals([$postid], $forumtasks[0]->postids);
+    }
+
+    /**
+     * The course_deleted clean-up only queues the documents: by then the posts are gone.
+     */
+    public function test_course_deleted_cleanup_queues_only_the_documents(): void {
+        $this->resetAfterTest();
+        $this->configure_backend();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $this->create_forum_post($course, $generator->create_and_enrol($course, 'student'));
+
         local\data_cleanup::delete_course((int) $course->id);
 
         $queued = $this->queued(purge_backend_data::class);
-        $this->assertCount(2, $queued);
-        $this->assertEqualsCanonicalizing(['course_documents', 'forum_posts'], array_column($queued, 'action'));
-        $forumtask = $queued[0]->action === 'forum_posts' ? $queued[0] : $queued[1];
-        $this->assertEquals([$postid], $forumtask->postids);
+        $this->assertSame(['course_documents'], array_column($queued, 'action'));
     }
 
     /**

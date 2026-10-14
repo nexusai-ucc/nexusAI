@@ -44,4 +44,9 @@ $callbacks = [
         'callback' => [\local_nexusai\hook\navigation\primary_extend_listener::class, 'callback'],
         'priority' => 0,
     ],
+    [
+        'hook'     => \core_course\hook\before_course_deleted::class,
+        'callback' => [\local_nexusai\hook\course\before_course_deleted_listener::class, 'callback'],
+        'priority' => 0,
+    ],
 ];
