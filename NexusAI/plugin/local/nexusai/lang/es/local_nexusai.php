@@ -33,6 +33,7 @@ $string['admin_backend_status'] = 'Estado del backend';
 $string['admin_check_again'] = 'Verificar de nuevo';
 $string['admin_edit_config'] = 'Editar configuración';
 $string['admin_health_configure_prompt'] = 'Configurá el endpoint en <a href="{$a}">Configuración del plugin</a>';
+$string['admin_health_invalid_endpoint'] = 'La URL del backend tiene que empezar con http:// o https:// y no llevar \'?\', \'#\' ni credenciales.';
 $string['admin_health_invalid_response'] = 'Respuesta inválida (no JSON)';
 $string['admin_health_latency'] = 'latencia <strong>{$a} ms</strong>';
 $string['admin_health_version'] = 'versión backend <code>{$a}</code>';

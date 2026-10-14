@@ -71,6 +71,12 @@ if (!$pref) {
 }
 
 $userid = (int) $pref->userid;
+// A suspended or deleted account keeps no feed, even with a token that still matches.
+$owner = \core_user::get_user($userid);
+if (!$owner || $owner->deleted || $owner->suspended) {
+    http_response_code(403);
+    die(get_string('erroraccessdenied', 'local_nexusai'));
+}
 
 $course = $DB->get_record('course', ['id' => $courseid], '*', IGNORE_MISSING);
 if (!$course) {
@@ -82,6 +88,11 @@ $context = context_course::instance($course->id);
 if (!is_enrolled($context, $userid, '', true)) {
     http_response_code(403);
     die(get_string('errorusernotenrolled', 'local_nexusai'));
+}
+// Same rule as the rest of NexusAI: the feed is only for who may use it in the course.
+if (!has_capability('local/nexusai:use', $context, $userid)) {
+    http_response_code(403);
+    die(get_string('erroraccessdenied', 'local_nexusai'));
 }
 if (!\local_nexusai\local\course_guard::is_enabled((int) $course->id)) {
     http_response_code(403);
