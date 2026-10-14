@@ -59,18 +59,35 @@ $healthdata    = [];
 $healtherror   = '';
 $healthlatency = null;
 
+// The page shows what the URL answers, so it only checks a plain http(s) endpoint: a
+// '?' or '#' in it would turn the '/health' added above into a query or a fragment.
+$endpointparts = parse_url($endpoint);
+$endpointvalid = is_array($endpointparts)
+    && in_array(strtolower($endpointparts['scheme'] ?? ''), ['http', 'https'], true)
+    && !empty($endpointparts['host'])
+    && !isset($endpointparts['query']) && !isset($endpointparts['fragment']) && !isset($endpointparts['user'])
+    && strpbrk($endpoint, '?#') === false;
+
 if (empty($endpoint)) {
     $healthstatus = 'unconfigured';
+} else if (!$endpointvalid) {
+    $healthstatus = 'error';
+    $healtherror  = get_string('admin_health_invalid_endpoint', 'local_nexusai');
 } else {
     // Uses ignoresecurity, like backend_client and chat_stream.php: the endpoint is set by
     // the administrator, and Moodle's default blocked hosts list covers localhost,
     // private networks and ports other than 80/443, where the backend usually runs.
     // Without it this page reported "The URL is blocked" while the plugin worked.
     $curl = new \curl(['ignoresecurity' => true]);
+    // No redirects (they would lead anywhere, unchecked) and the certificate is verified,
+    // which \curl does not do by default.
     $curl->setopt([
         'CURLOPT_TIMEOUT'        => 10,
         'CURLOPT_CONNECTTIMEOUT' => 5,
         'CURLOPT_RETURNTRANSFER' => true,
+        'CURLOPT_FOLLOWLOCATION' => 0,
+        'CURLOPT_SSL_VERIFYPEER' => 1,
+        'CURLOPT_SSL_VERIFYHOST' => 2,
     ]);
 
     $tstart   = microtime(true);
@@ -89,9 +106,15 @@ if (empty($endpoint)) {
         $healtherror  = 'HTTP ' . $httpinfo['http_code'];
     } else {
         $decoded = json_decode($response, true);
-        if (is_array($decoded)) {
+        if (is_array($decoded) && isset($decoded['status'])) {
             $healthstatus = 'ok';
-            $healthdata   = $decoded;
+            // Only the fields the NexusAI backend's /health returns, never whatever else
+            // the URL answered.
+            foreach (['status', 'version', 'env', 'llm_model'] as $key) {
+                if (isset($decoded[$key]) && is_scalar($decoded[$key])) {
+                    $healthdata[$key] = $decoded[$key];
+                }
+            }
         } else {
             $healthstatus = 'error';
             $healtherror  = get_string('admin_health_invalid_response', 'local_nexusai');

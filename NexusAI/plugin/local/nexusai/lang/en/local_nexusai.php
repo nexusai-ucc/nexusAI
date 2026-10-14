@@ -33,6 +33,7 @@ $string['admin_backend_status'] = 'Backend status';
 $string['admin_check_again'] = 'Check again';
 $string['admin_edit_config'] = 'Edit configuration';
 $string['admin_health_configure_prompt'] = 'Configure the endpoint in <a href="{$a}">Plugin configuration</a>';
+$string['admin_health_invalid_endpoint'] = 'The API endpoint must be an http:// or https:// URL without \'?\', \'#\' or credentials.';
 $string['admin_health_invalid_response'] = 'Invalid response (not JSON)';
 $string['admin_health_latency'] = 'latency <strong>{$a} ms</strong>';
 $string['admin_health_version'] = 'backend version <code>{$a}</code>';

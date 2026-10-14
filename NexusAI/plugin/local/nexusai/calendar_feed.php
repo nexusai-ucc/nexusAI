@@ -71,6 +71,12 @@ if (!$pref) {
 }
 
 $userid = (int) $pref->userid;
+// A suspended or deleted account keeps no feed, even with a token that still matches.
+$owner = \core_user::get_user($userid);
+if (!$owner || $owner->deleted || $owner->suspended) {
+    http_response_code(403);
+    die(get_string('erroraccessdenied', 'local_nexusai'));
+}
 
 $course = $DB->get_record('course', ['id' => $courseid], '*', IGNORE_MISSING);
 if (!$course) {
