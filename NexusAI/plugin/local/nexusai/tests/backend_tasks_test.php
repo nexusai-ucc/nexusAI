@@ -149,6 +149,54 @@ final class backend_tasks_test extends \advanced_testcase {
     }
 
     /**
+     * Deleting a single forum, with its course left intact, also queues its posts' purge.
+     *
+     * The course_module_deleted event fires after mod_forum has already removed the
+     * discussions and posts, so local_nexusai_pre_course_module_delete() (lib.php) is
+     * what finds them, before Moodle calls forum_delete_instance().
+     */
+    public function test_deleting_a_forum_module_queues_its_posts_purge(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->configure_backend();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $forum = $generator->create_module('forum', ['course' => $course->id]);
+        $postid = (int) $DB->get_field('forum_discussions', 'firstpost', [
+            'id' => $generator->get_plugin_generator('mod_forum')->create_discussion([
+                'course' => $course->id,
+                'forum'  => $forum->id,
+                'userid' => $generator->create_and_enrol($course, 'student')->id,
+            ])->id,
+        ]);
+        $cm = $DB->get_record('course_modules', ['id' => $forum->cmid], '*', MUST_EXIST);
+
+        local_nexusai_pre_course_module_delete($cm);
+
+        $queued = $this->queued(purge_backend_data::class);
+        $this->assertCount(1, $queued);
+        $this->assertSame('forum_posts', $queued[0]->action);
+        $this->assertEquals([$postid], $queued[0]->postids);
+    }
+
+    /**
+     * Deleting a non-forum module (a "File" activity, which already has its own sync
+     * through sync_resource()) queues nothing through this callback.
+     */
+    public function test_deleting_a_non_forum_module_queues_nothing(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->configure_backend();
+        $course = $this->getDataGenerator()->create_course();
+        $resource = $this->getDataGenerator()->create_module('resource', ['course' => $course->id]);
+        $cm = $DB->get_record('course_modules', ['id' => $resource->cmid], '*', MUST_EXIST);
+
+        local_nexusai_pre_course_module_delete($cm);
+
+        $this->assertCount(0, $this->queued(purge_backend_data::class));
+    }
+
+    /**
      * Without a backend there is nothing to remove from it.
      */
     public function test_nothing_is_queued_without_a_backend(): void {
