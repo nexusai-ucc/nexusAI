@@ -179,7 +179,7 @@ class provider implements
 
         // Courses where the user wrote forum posts: the backend may keep an indexed copy
         // of them even if the user never used NexusAI (MMR-301 item 4).
-        if (\local_nexusai\local\course_guard::backend_configured()) {
+        if (\local_nexusai\local\course_guard::can_purge_backend()) {
             $contextlist->add_from_sql(
                 "SELECT ctx.id FROM {context} ctx
                   WHERE ctx.contextlevel = :contextlevel
@@ -215,7 +215,7 @@ class provider implements
         }
 
         // Authors of forum posts the backend may keep indexed (see get_contexts_for_userid()).
-        if (\local_nexusai\local\course_guard::backend_configured()) {
+        if (\local_nexusai\local\course_guard::can_purge_backend()) {
             $userlist->add_from_sql(
                 'userid',
                 "SELECT p.userid
@@ -509,7 +509,7 @@ class provider implements
     private static function delete_backend_forum_posts(int $courseid, ?array $userids): void {
         global $DB;
 
-        if ($userids === [] || !\local_nexusai\local\course_guard::backend_configured()) {
+        if ($userids === [] || !\local_nexusai\local\course_guard::can_purge_backend()) {
             return;
         }
 

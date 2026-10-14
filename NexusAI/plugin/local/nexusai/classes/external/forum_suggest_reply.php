@@ -98,9 +98,10 @@ class forum_suggest_reply extends external_api {
         );
 
         // The thread's posts this user can see (private replies to others, Q&A forums),
-        // in chronological order.
+        // in chronological order. Private replies are left out even when the user can read
+        // them: the suggestion is a draft for a public reply.
         // Authors go out as pseudonyms (forum_author_alias): no name leaves Moodle.
-        $rows = \local_nexusai\local\forum_access_guard::visible_posts($discussion);
+        $rows = \local_nexusai\local\forum_access_guard::visible_posts($discussion, 0, false, self::MAX_POSTS);
 
         if (empty($rows)) {
             return [

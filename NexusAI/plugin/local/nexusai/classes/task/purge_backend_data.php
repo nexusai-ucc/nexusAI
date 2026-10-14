@@ -77,7 +77,7 @@ class purge_backend_data extends \core\task\adhoc_task {
      * the task again later, and removing something twice is harmless.
      */
     public function execute(): void {
-        if (!\local_nexusai\local\course_guard::backend_configured()) {
+        if (!\local_nexusai\local\course_guard::can_purge_backend()) {
             return;
         }
         $data = $this->get_custom_data();

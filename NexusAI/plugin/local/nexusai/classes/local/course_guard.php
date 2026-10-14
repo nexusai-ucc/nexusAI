@@ -131,6 +131,22 @@ class course_guard {
     }
 
     /**
+     * Whether NexusAI may remove its copies from the backend (MMR-301 item 4).
+     *
+     * Only needs the site-wide switch and a configured backend, not NexusAI on in the
+     * course: what was indexed while a course had it on must leave the backend when the
+     * course or the user's data is deleted, even after the course turned it off. The
+     * site-wide switch still counts because the backend does not separate sites: a
+     * staging copy with NexusAI off and production's credentials must not delete
+     * production's data.
+     *
+     * @return bool
+     */
+    public static function can_purge_backend(): bool {
+        return self::plugin_enabled() && self::backend_configured();
+    }
+
+    /**
      * Whether the connection to the backend is filled in (endpoint, API key and
      * shared secret). Without it the chat cannot answer anything.
      *

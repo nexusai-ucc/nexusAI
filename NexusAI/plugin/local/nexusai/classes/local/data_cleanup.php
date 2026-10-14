@@ -65,8 +65,8 @@ class data_cleanup {
             $DB->delete_records($table, ['courseid' => $courseid]);
         }
 
-        // Also with NexusAI off: documents indexed while it was on are still in the backend.
-        if (course_guard::backend_configured()) {
+        // Also with NexusAI off in the course: documents indexed while it was on are still in the backend.
+        if (course_guard::can_purge_backend()) {
             \local_nexusai\task\purge_backend_data::queue_course_documents($courseid);
         }
     }

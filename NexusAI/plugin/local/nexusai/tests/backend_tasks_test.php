@@ -140,9 +140,10 @@ final class backend_tasks_test extends \advanced_testcase {
     }
 
     /**
-     * With NexusAI turned off the removal is still queued: what was indexed while it was on stays in the backend.
+     * With NexusAI off site-wide nothing is removed: the backend does not separate sites,
+     * and a staging copy with production's credentials must not delete production's data.
      */
-    public function test_purge_is_queued_with_the_plugin_off(): void {
+    public function test_nothing_is_queued_with_the_plugin_off_site_wide(): void {
         $this->resetAfterTest();
         $this->configure_backend();
         set_config('enabled', 0, 'local_nexusai');
@@ -150,7 +151,7 @@ final class backend_tasks_test extends \advanced_testcase {
 
         local\data_cleanup::delete_course((int) $course->id);
 
-        $this->assertCount(1, $this->queued(purge_backend_data::class));
+        $this->assertCount(0, $this->queued(purge_backend_data::class));
     }
 
     /**

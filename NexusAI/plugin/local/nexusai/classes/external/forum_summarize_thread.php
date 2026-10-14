@@ -105,7 +105,7 @@ class forum_summarize_thread extends external_api {
         // The discussion's posts this user can see (private replies to others, Q&A forums),
         // in chronological order, so the LLM reads them in order.
         // Authors go out as pseudonyms (forum_author_alias): no name leaves Moodle.
-        $rows = \local_nexusai\local\forum_access_guard::visible_posts($discussion);
+        $rows = \local_nexusai\local\forum_access_guard::visible_posts($discussion, 0, true, self::MAX_POSTS + 1);
 
         if (empty($rows)) {
             return [

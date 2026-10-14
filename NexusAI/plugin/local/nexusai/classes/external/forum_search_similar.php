@@ -46,6 +46,9 @@ class forum_search_similar extends external_api {
      */
     const SIMILARITY_THRESHOLD = 0.65;
 
+    /** @var int Characters of each post shown in the similar posts list. */
+    const PREVIEW_CHARS = 200;
+
     /**
      * Parameters for execute().
      *
@@ -139,7 +142,9 @@ class forum_search_similar extends external_api {
                 'forum_post_id' => (int) $post->id,
                 'discussion_id' => (int) $post->discussion,
                 'similarity'    => (float) ($p['similarity'] ?? 0.0),
-                'preview'       => (string)($p['preview'] ?? ''),
+                // The preview comes from the post as it is now in Moodle, not from the backend's
+                // index, which may still hold an older version of an edited post.
+                'preview'       => self::preview((string) $post->message),
             ];
         }
 
@@ -147,5 +152,18 @@ class forum_search_similar extends external_api {
             'similar_posts'  => $posts,
             'threshold_used' => (float) ($response['threshold_used'] ?? self::SIMILARITY_THRESHOLD),
         ];
+    }
+
+    /**
+     * Plain-text start of a post, for the similar posts list.
+     *
+     * @param string $message Post message (HTML).
+     * @return string
+     */
+    private static function preview(string $message): string {
+        $text = trim(html_entity_decode(strip_tags($message), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        return \core_text::strlen($text) > self::PREVIEW_CHARS
+            ? \core_text::substr($text, 0, self::PREVIEW_CHARS) . '…'
+            : $text;
     }
 }

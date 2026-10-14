@@ -249,7 +249,7 @@ class observer {
      */
     private static function queue_forum_post(string $action, \core\event\base $event): void {
         $wanted = $action === 'delete'
-            ? \local_nexusai\local\course_guard::backend_configured()
+            ? \local_nexusai\local\course_guard::can_purge_backend()
             : \local_nexusai\local\course_guard::is_enabled((int) $event->courseid);
         if (!$wanted) {
             return;
