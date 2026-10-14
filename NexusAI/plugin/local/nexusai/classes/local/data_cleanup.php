@@ -40,8 +40,8 @@ class data_cleanup {
      * Deletes everything NexusAI keeps for a course that no longer exists.
      *
      * When the backend is configured, it also queues the removal of the course's indexed
-     * documents from the backend (task\purge_backend_data), so deleting a course
-     * never waits for the backend.
+     * documents and forum posts from the backend (task\purge_backend_data), so deleting a
+     * course never waits for the backend.
      *
      * @param int $courseid Deleted course.
      */
@@ -65,9 +65,13 @@ class data_cleanup {
             $DB->delete_records($table, ['courseid' => $courseid]);
         }
 
-        // Also with NexusAI off in the course: documents indexed while it was on are still in the backend.
+        // Also with NexusAI off in the course: documents and forum posts indexed while it
+        // was on are still in the backend (MMR-301 item 4 — real course deletion, which
+        // Moodle never runs through the Privacy API, so provider::delete_backend_forum_posts()
+        // has to be called directly here too, not only from the Privacy API methods).
         if (course_guard::can_purge_backend()) {
             \local_nexusai\task\purge_backend_data::queue_course_documents($courseid);
+            provider::delete_backend_forum_posts($courseid, null);
         }
     }
 

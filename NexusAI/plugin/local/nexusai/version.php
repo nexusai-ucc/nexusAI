@@ -30,9 +30,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026101400;
-// Beta: feature complete, CI on PostgreSQL and MySQL, English-only strings and
-// comments, input handling hardened for the Marketplace submission.
+$plugin->version   = 2026101401;
+// Fix: deleting a course also purges its forum posts from the backend (MMR-301 item 4,
+// the real-course-deletion case, which does not go through the Privacy API).
 $plugin->release   = '0.19.0';
 $plugin->maturity  = MATURITY_BETA;
 
