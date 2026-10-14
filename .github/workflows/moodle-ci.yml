@@ -188,8 +188,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: plugin-coverage
-          path: moodle/**/local/nexusai/coverage.xml
-          if-no-files-found: warn
+          # moodle-plugin-ci escribe el clover en getcwd(), la raíz del workspace.
+          path: coverage.xml
+          if-no-files-found: error
           retention-days: 7
 
       - name: Behat features

@@ -59,6 +59,8 @@ El nivel se declara en TPC-01, después de medir la cobertura real.
 
 ## Subtareas
 
+Línea base medida en TPC-01: [`LINEA_BASE.md`](LINEA_BASE.md).
+
 | Issue | Código | Tarea | Fechas | Depende de |
 |---|---|---|---|---|
 | [#573](https://github.com/nexusai-ucc/nexusAI/issues/573) | TPC-01 | Medición base de calidad y declaración de nivel | 13/10 – 14/10 | — |
