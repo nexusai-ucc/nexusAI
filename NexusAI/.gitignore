@@ -70,6 +70,8 @@ yarn-error.log*
 
 # Source maps (excepto en bundle de prod si los queremos)
 *.map
+# The AMD modules' source maps ship with the plugin (Moodle's grunt output).
+!plugin/local/nexusai/amd/build/*.min.js.map
 
 # ---- Moodle ----
 # Caché y datos de Moodle
