@@ -3,7 +3,36 @@
 All notable changes to the NexusAI Moodle plugin are documented in this
 file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.19.0] — Unreleased
+## [0.19.0] — 2026-10-14
+
+- Fixed: the forum features checked access to the discussion but not to each
+  post, so a private reply reached students it was not for (sent to the model
+  in thread summaries and reply suggestions, shown in similar posts) and Q&A
+  forum replies were visible before posting. Every post now goes through
+  mod_forum's own `forum_user_can_see_post()`. Reply suggestions never use
+  private replies, since they are drafts for a public reply.
+- Fixed: the weekly forum digest, which can be posted to the course's
+  webhook, only carries discussions every participant can see (visible forum
+  without restrictions, no group discussion, within its display period, not
+  Q&A) and never private replies.
+- Fixed: indexed forum posts stayed in the backend after deleting the data of
+  a user who never used NexusAI, after deleting a course, and after deleting
+  posts in a course where NexusAI was turned off. Removals now only need
+  NexusAI on site-wide and a configured backend; failed removals are retried
+  by the task API. The course documents purge goes through every page of the
+  backend's list.
+- Changed: the chat stream goes through Moodle's `\curl` class instead of
+  calling `curl_init()` directly. Requests to the backend verify its TLS
+  certificate and never follow redirects. When the backend cannot be reached,
+  the chat shows a translated message instead of the raw cURL error.
+- Fixed: the admin status page reported "The URL is blocked" for a backend on
+  localhost, a private network or port 8000 while the plugin worked; it now
+  only checks a plain http(s) endpoint and shows only the backend's health
+  fields. The calendar feed refuses users without `local/nexusai:use` in the
+  course and suspended or deleted accounts.
+- Changed: every source file starts with Moodle's standard GPL boilerplate,
+  including the AMD modules and the React sources shipped in the ZIP. The
+  chat widget's fixed messages follow the interface language.
 
 - New: `cli/migrate_from_backend.php` brings the student data the backend
   kept into the plugin's tables (DATA-06). It keeps the backend ids, rebuilds
