@@ -65,16 +65,22 @@ class sync_forum_post extends \core\task\adhoc_task {
         $postid = (int) $data->postid;
         $courseid = (int) $data->courseid;
 
+        if ($data->action === 'delete') {
+            // A removal does not depend on the course: by the time the task runs, a deleted
+            // course has no NexusAI settings left, and a course turned off still has its
+            // posts in the backend (MMR-301 item 4). A failure is not swallowed: the task
+            // API retries it later, and removing a post twice is harmless.
+            if (\local_nexusai\local\course_guard::backend_configured()) {
+                self::client()->delete_forum_post($postid);
+            }
+            return;
+        }
+
         if (!\local_nexusai\local\course_guard::is_enabled($courseid)) {
             return;
         }
 
         try {
-            if ($data->action === 'delete') {
-                self::client()->delete_forum_post($postid);
-                return;
-            }
-
             // Read the post when the task runs: an edit made meanwhile is sent as it is now,
             // and a post deleted meanwhile is skipped.
             $post = $DB->get_record('forum_posts', ['id' => $postid]);

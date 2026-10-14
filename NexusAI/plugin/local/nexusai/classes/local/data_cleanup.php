@@ -39,7 +39,7 @@ class data_cleanup {
     /**
      * Deletes everything NexusAI keeps for a course that no longer exists.
      *
-     * When the plugin is on, it also queues the removal of the course's indexed
+     * When the backend is configured, it also queues the removal of the course's indexed
      * documents from the backend (task\purge_backend_data), so deleting a course
      * never waits for the backend.
      *
@@ -65,7 +65,8 @@ class data_cleanup {
             $DB->delete_records($table, ['courseid' => $courseid]);
         }
 
-        if (course_guard::plugin_enabled()) {
+        // Also with NexusAI off: documents indexed while it was on are still in the backend.
+        if (course_guard::backend_configured()) {
             \local_nexusai\task\purge_backend_data::queue_course_documents($courseid);
         }
     }

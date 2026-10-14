@@ -237,13 +237,21 @@ class observer {
     }
 
     /**
-     * Queues the sync of the post an event is about, if NexusAI is on for its course.
+     * Queues the sync of the post an event is about.
+     *
+     * Indexing only happens while NexusAI is on for the course. A removal is queued
+     * whenever the backend is configured: the post may have been indexed while the
+     * course had NexusAI on, and it has to leave the backend even if the course was
+     * turned off or is being deleted (MMR-301 item 4).
      *
      * @param string $action 'index' or 'delete'.
      * @param \core\event\base $event A forum post event.
      */
     private static function queue_forum_post(string $action, \core\event\base $event): void {
-        if (!\local_nexusai\local\course_guard::is_enabled((int) $event->courseid)) {
+        $wanted = $action === 'delete'
+            ? \local_nexusai\local\course_guard::backend_configured()
+            : \local_nexusai\local\course_guard::is_enabled((int) $event->courseid);
+        if (!$wanted) {
             return;
         }
         \local_nexusai\task\sync_forum_post::queue(

@@ -62,29 +62,44 @@ class purge_backend_data extends \core\task\adhoc_task {
         }
     }
 
+    /** @var int Documents asked for per listing; the backend never returns more than 500. */
+    const DOCUMENTS_PER_PAGE = 500;
+
+    /** @var int Listings per run at most, so a backend that does not delete cannot loop forever. */
+    const MAX_DOCUMENT_PAGES = 100;
+
     /**
-     * Deletes the copies. A backend failure is logged and the rest goes on.
+     * Deletes the copies.
+     *
+     * Removals do not depend on NexusAI being on: what was indexed while it was on has to
+     * leave the backend when the course or the user's data is deleted (MMR-301 item 4), so
+     * only a configured backend is needed. A failure is not swallowed: the task API runs
+     * the task again later, and removing something twice is harmless.
      */
     public function execute(): void {
-        if (!\local_nexusai\local\course_guard::plugin_enabled()) {
+        if (!\local_nexusai\local\course_guard::backend_configured()) {
             return;
         }
         $data = $this->get_custom_data();
 
-        try {
-            $client = new \local_nexusai\external\backend_client();
-            $client->set_role('system');
-            if ($data->action === 'course_documents') {
-                foreach ($client->list_documents((int) $data->courseid)['items'] ?? [] as $doc) {
+        $client = new \local_nexusai\external\backend_client();
+        $client->set_role('system');
+        if ($data->action === 'course_documents') {
+            // Each listing returns one page; the deleted ones drop out, so list again
+            // until nothing is left.
+            for ($page = 0; $page < self::MAX_DOCUMENT_PAGES; $page++) {
+                $items = $client->list_documents((int) $data->courseid, self::DOCUMENTS_PER_PAGE)['items'] ?? [];
+                if (!$items) {
+                    return;
+                }
+                foreach ($items as $doc) {
                     $client->delete_document((string) $doc['id']);
                 }
-                return;
             }
-            foreach ($data->postids as $postid) {
-                $client->delete_forum_post((int) $postid);
-            }
-        } catch (\Throwable $e) {
-            mtrace('[NexusAI] Purging backend data (' . $data->action . ') failed: ' . $e->getMessage());
+            return;
+        }
+        foreach ($data->postids as $postid) {
+            $client->delete_forum_post((int) $postid);
         }
     }
 }
