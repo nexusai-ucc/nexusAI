@@ -125,7 +125,7 @@ function local_nexusai_calfeed_url(int $userid, int $courseid): string {
  * to users with the local/nexusai:manage capability (teachers and admins).
  * Students don't see this link — they interact with the floating chat only.
  *
- * This callback works on every supported version (Moodle 4.5 LTS through 5.2);
+ * This callback works on every supported version (Moodle 4.5 LTS through 5.3);
  * Moodle has not moved it to the hooks API.
  *
  * @param navigation_node $navigation Course node we add the item to.

@@ -36,7 +36,7 @@ $plugin->version   = 2026100200;
 $plugin->release   = '0.19.0';
 $plugin->maturity  = MATURITY_BETA;
 
-// We support Moodle 4.5 LTS (build 2024100700) up to 5.2. The UCC runs 5.0.
+// We support Moodle 4.5 LTS (build 2024100700) up to 5.3. The UCC runs 5.0.
 // If someone tries to install on an older version, Moodle blocks it on its own.
 $plugin->requires  = 2024100700;        // Moodle 4.5 LTS.
-$plugin->supported = [405, 502];        // 4.5 to 5.2
+$plugin->supported = [405, 503];        // 4.5 to 5.3
