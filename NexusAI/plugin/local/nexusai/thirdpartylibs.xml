@@ -52,7 +52,7 @@ two committed AMD bundles.
     <library>
         <name>dompurify</name>
         <location>amd/build/chatwidget-lazy.min.js</location>
-        <version>3.4.13</version>
+        <version>3.4.16</version>
         <license>Apache-2.0</license>
         <licenseversion>2.0</licenseversion>
     </library>
