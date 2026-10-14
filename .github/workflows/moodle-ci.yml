@@ -21,13 +21,11 @@ on:
     paths:
       - 'NexusAI/plugin/local/nexusai/**'
       - '!NexusAI/plugin/local/nexusai/react/**'
-      - '!NexusAI/plugin/local/nexusai/amd/build/**'
       - '.github/workflows/moodle-ci.yml'
   pull_request:
     paths:
       - 'NexusAI/plugin/local/nexusai/**'
       - '!NexusAI/plugin/local/nexusai/react/**'
-      - '!NexusAI/plugin/local/nexusai/amd/build/**'
       - '.github/workflows/moodle-ci.yml'
 
 concurrency:
@@ -168,9 +166,25 @@ jobs:
       - name: Mustache Lint
         run: moodle-plugin-ci mustache
 
+      # Grunt borra amd/build/, lo vuelve a armar desde amd/src/ y falla si no
+      # coincide con lo commiteado. Los dos bundles de React están en amd/src/
+      # (webpack los escribe ahí sin minificar, como lib/amd/src/chartjs-lazy.js
+      # en el core) y thirdpartylibs.xml los saca de ESLint. Sin
+      # --max-lint-warnings: ESLint cuenta como warning cada archivo ignorado que
+      # Grunt le pasa explícitamente (los dos bundles), así que con 0 siempre
+      # fallaría. Los warnings de nuestro código se controlan en el paso siguiente.
       - name: Grunt
-        continue-on-error: true
-        run: moodle-plugin-ci grunt --max-lint-warnings 0
+        run: moodle-plugin-ci grunt
+
+      # ESLint sin ningún warning sobre los módulos propios. Se le pasa el
+      # directorio (no archivo por archivo) para que respete el .eslintignore que
+      # Grunt generó a partir de thirdpartylibs.xml y no cuente los bundles.
+      - name: ESLint (sin warnings) en amd/src
+        working-directory: moodle
+        run: |
+          dir=public/local/nexusai
+          [ -d "$dir" ] || dir=local/nexusai
+          npx eslint --max-warnings 0 "$dir/amd/src"
 
       # ----------------------------------------------------------------
       # Tests

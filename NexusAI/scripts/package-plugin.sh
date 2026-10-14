@@ -65,7 +65,10 @@ if [ "$CLEAN_BUILD" -eq 1 ]; then
     npm install
     npm run build
     popd > /dev/null
-    ok "Bundle rebuildeado"
+    # webpack escribe amd/src/*-lazy.js; amd/build/ lo arma `grunt amd` de Moodle.
+    warn "Bundles actualizados en amd/src/. Corré 'npx grunt amd' desde la raíz de Moodle"
+    warn "(con el plugin instalado ahí) para actualizar amd/build/ antes de empaquetar."
+    exit 1
 else
     if [ ! -f "$PLUGIN_DIR/amd/build/chatwidget-lazy.min.js" ]; then
         warn "No se encuentra el bundle compilado. Corré: ./scripts/package-plugin.sh --clean"
@@ -74,14 +77,7 @@ else
     log "Usando bundle ya compilado (correr con --clean para rebuildear)"
 fi
 
-# ----- 3. Verificar que no hay bundle de dev -----
-# El bundle de dev tiene .map files y comentarios — Moodle lo aceptaría igual
-# pero queda feo en producción.
-if find "$PLUGIN_DIR/amd/build" -name "*.map" | grep -q .; then
-    warn "El build contiene .map files (modo dev). Considerá rebuildear con --clean para producción."
-fi
-
-# ----- 4. Limpiar dist y crear el ZIP -----
+# ----- 3. Limpiar dist y crear el ZIP -----
 log "Limpiando $DIST_DIR/"
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"

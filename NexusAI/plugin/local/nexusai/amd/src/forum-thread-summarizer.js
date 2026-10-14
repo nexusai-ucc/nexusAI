@@ -36,9 +36,9 @@
 define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notification, Str) {
 
     var COMPONENT = 'local_nexusai';
-    var PANEL_ID  = 'nexusai-summary-panel';
-    var BTN_ID    = 'nexusai-summarize-btn';
-    var ANCHOR    = '.discussionposts, #page-mod-forum-discuss .forumpost, .forum-post-container';
+    var PANEL_ID = 'nexusai-summary-panel';
+    var BTN_ID = 'nexusai-summarize-btn';
+    var ANCHOR = '.discussionposts, #page-mod-forum-discuss .forumpost, .forum-post-container';
     var cachedResult = null;
     var strings = null;
 
@@ -132,7 +132,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             : Promise.resolve('');
 
         return truncated.then(function(truncatedText) {
-            var resolvedIcon  = data.resolved ? '✅' : '⏳';
+            var resolvedIcon = data.resolved ? '✅' : '⏳';
             var resolvedLabel = data.resolved ? strings.forum_summary_resolved : strings.forum_summary_unresolved;
             var truncatedNote = truncatedText
                 ? '<p style="font-size:11px;color:#6b7280;margin:6px 0 0">⚠️ ' + escapeHtml(truncatedText) + '</p>'
@@ -181,6 +181,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             document.getElementById('nexusai-panel-close').addEventListener('click', function() {
                 panel.style.display = 'none';
             });
+            return panel;
         });
     }
 
@@ -283,8 +284,8 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         }
 
         var btn = document.createElement('button');
-        btn.id        = BTN_ID;
-        btn.type      = 'button';
+        btn.id = BTN_ID;
+        btn.type = 'button';
         btn.textContent = '✨ ' + strings.forum_summary_button;
         btn.style.cssText = [
             'background:#f0fdf4',
@@ -326,7 +327,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
          */
         init: function(params) {
             var discussionid = params.discussionid || getDiscussionId();
-            var courseid     = params.courseid;
+            var courseid = params.courseid;
 
             if (!discussionid || !courseid) {
                 return;

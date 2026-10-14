@@ -34,12 +34,12 @@
 
 define(['core/ajax', 'core/str'], function(Ajax, Str) {
 
-    var COMPONENT     = 'local_nexusai';
-    var DEBOUNCE_MS   = 800;
-    var MIN_CHARS     = 10;
-    var BANNER_ID     = 'nexusai-similar-banner';
+    var COMPONENT = 'local_nexusai';
+    var DEBOUNCE_MS = 800;
+    var MIN_CHARS = 10;
+    var BANNER_ID = 'nexusai-similar-banner';
     var debounceTimer = null;
-    var lastQuery     = '';
+    var lastQuery = '';
 
     /**
      * Escapes HTML so previews and language strings are safe to inject in the DOM.
@@ -85,8 +85,8 @@ define(['core/ajax', 'core/str'], function(Ajax, Str) {
 
         Str.get_strings([
             {key: 'forum_similar_found', component: COMPONENT, param: pct},
-            {key: 'forum_similar_view',  component: COMPONENT},
-            {key: 'forum_similar_more',  component: COMPONENT, param: posts.length - 1},
+            {key: 'forum_similar_view', component: COMPONENT},
+            {key: 'forum_similar_more', component: COMPONENT, param: posts.length - 1},
             {key: 'forum_similar_close', component: COMPONENT},
         ]).then(function(strings) {
             // The user may have kept typing while the strings were loading.
@@ -212,7 +212,7 @@ define(['core/ajax', 'core/str'], function(Ajax, Str) {
          */
         init: function(params) {
             var courseid = params.courseid;
-            var wwwroot  = params.wwwroot || '/';
+            var wwwroot = params.wwwroot || '/';
 
             // Try to attach right away (DOMContentLoaded may already have happened).
             if (document.readyState !== 'loading') {

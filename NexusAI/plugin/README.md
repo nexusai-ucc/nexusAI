@@ -98,8 +98,8 @@ npm run build    # producción minified (commitear los .min.js)
 
 - **PHP:** Moodle Coding Style estricto. Validar con `local_codechecker`.
 - **JS:** ESLint con `eslint:recommended` + `react/recommended`.
-- **Bundle commiteado:** `amd/build/*.min.js` se commitea al repo (convención Moodle).
-- **Producción:** **siempre `npm run build`** antes de commitear. El bundle de `dev` tiene source maps y pesa 4x más.
+- **Bundle commiteado:** `amd/src/` y `amd/build/` (`*.min.js` + `*.min.js.map`) se commitean al repo (convención Moodle).
+- **Build:** `npm run build` en `react/` escribe `amd/src/*-lazy.js`; después `npx grunt amd` desde Moodle arma `amd/build/` (ver `react/README.md`). El CI falla si `amd/build/` no coincide con lo que genera grunt.
 - **Compatibilidad:** Moodle 4.1 LTS – 4.5 LTS.
 
 Detalle completo en [`investigacion/01-moodle/`](../investigacion/01-moodle/) y [`investigacion/06-frontend-react/`](../investigacion/06-frontend-react/).
