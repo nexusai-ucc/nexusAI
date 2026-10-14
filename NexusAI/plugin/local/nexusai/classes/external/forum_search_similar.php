@@ -122,20 +122,22 @@ class forum_search_similar extends external_api {
             $topk
         );
 
-        // Discard, before returning them, results from discussions the current user cannot
-        // actually see (another separated group, hidden/timed) — the backend's similarity
-        // search only knows about the course, not about per-discussion access (MMR-301 item 2).
+        // Discard, before returning them, results the current user cannot actually see
+        // (another separated group, hidden/timed discussion, someone else's private reply,
+        // a Q&A forum before posting) — the backend's similarity search only knows about
+        // the course, not about forum access (MMR-301 item 2).
         $posts = [];
         foreach (($response['similar_posts'] ?? []) as $p) {
-            $discussionid = (int) ($p['discussion_id'] ?? 0);
-            $canview = $discussionid > 0 &&
-                \local_nexusai\local\forum_access_guard::can_view_discussion($discussionid, (int) $params['courseid']);
-            if (!$canview) {
+            $post = \local_nexusai\local\forum_access_guard::visible_post(
+                (int) ($p['forum_post_id'] ?? 0),
+                (int) $params['courseid']
+            );
+            if (!$post) {
                 continue;
             }
             $posts[] = [
-                'forum_post_id' => (int)   ($p['forum_post_id'] ?? 0),
-                'discussion_id' => $discussionid,
+                'forum_post_id' => (int) $post->id,
+                'discussion_id' => (int) $post->discussion,
                 'similarity'    => (float) ($p['similarity'] ?? 0.0),
                 'preview'       => (string)($p['preview'] ?? ''),
             ];

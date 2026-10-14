@@ -85,8 +85,6 @@ class forum_summarize_thread extends external_api {
      * @return array
      */
     public static function execute(int $discussionid, int $courseid): array {
-        global $DB;
-
         $params = self::validate_parameters(self::execute_parameters(), [
             'discussionid' => $discussionid,
             'courseid'     => $courseid,
@@ -104,14 +102,10 @@ class forum_summarize_thread extends external_api {
             (int) $params['courseid']
         );
 
-        // Read the discussion's posts in chronological order, so the LLM reads them in order.
+        // The discussion's posts this user can see (private replies to others, Q&A forums),
+        // in chronological order, so the LLM reads them in order.
         // Authors go out as pseudonyms (forum_author_alias): no name leaves Moodle.
-        $sql = "SELECT fp.id, fp.message, fp.created, fp.userid
-                  FROM {forum_posts} fp
-                 WHERE fp.discussion = :discussionid
-              ORDER BY fp.created ASC";
-
-        $rows = $DB->get_records_sql($sql, ['discussionid' => (int) $params['discussionid']]);
+        $rows = \local_nexusai\local\forum_access_guard::visible_posts($discussion);
 
         if (empty($rows)) {
             return [
