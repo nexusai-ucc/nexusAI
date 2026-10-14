@@ -91,6 +91,8 @@ class chat_voice_transcribe extends external_api {
      * @return array
      */
     public static function execute(int $courseid, string $mimetype, string $contentb64): array {
+        global $USER;
+
         $params = self::validate_parameters(self::execute_parameters(), [
             'courseid'    => $courseid,
             'mimetype'    => $mimetype,
@@ -102,7 +104,8 @@ class chat_voice_transcribe extends external_api {
         require_capability('local/nexusai:use', $context);
         \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
 
-        if (!in_array($params['mimetype'], self::ALLOWED_MIME_TYPES, true)) {
+        $mimetype = self::normalise_mimetype($params['mimetype']);
+        if (!in_array($mimetype, self::ALLOWED_MIME_TYPES, true)) {
             throw new \moodle_exception('erroraudiotype', 'local_nexusai', '', s($params['mimetype']));
         }
 
@@ -116,10 +119,24 @@ class chat_voice_transcribe extends external_api {
         }
 
         $client = new backend_client();
-        $response = $client->transcribe_audio($params['mimetype'], $audiobytes);
+        $response = $client->transcribe_audio((int) $params['courseid'], (int) $USER->id, $mimetype, $audiobytes);
 
         return [
             'text' => (string) ($response['text'] ?? ''),
         ];
+    }
+
+    /**
+     * Reduces a MIME type to its base type, without parameters.
+     *
+     * MediaRecorder reports the codec as a parameter ("audio/webm;codecs=opus" in
+     * Chrome and Edge, "audio/ogg;codecs=opus" in Firefox), so an exact match
+     * against ALLOWED_MIME_TYPES rejected every real recording.
+     *
+     * @param string $mimetype MIME type as reported by the browser
+     * @return string Lowercase base type, e.g. "audio/webm"
+     */
+    private static function normalise_mimetype(string $mimetype): string {
+        return strtolower(trim(explode(';', $mimetype, 2)[0]));
     }
 }

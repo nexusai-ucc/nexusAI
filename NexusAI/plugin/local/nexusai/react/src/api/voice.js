@@ -79,10 +79,14 @@ export async function transcribeAudio(courseId, blob) {
         return "Esto es una transcripción de prueba (modo mock, sin Moodle).";
     }
 
-    const [response] = await ajax.call([{
+    // ajax.call() returns an ARRAY of promises: the element has to be awaited
+    // before reading `.text` (awaiting the array itself resolves nothing — the
+    // text came back undefined and a backend error never reached the UI).
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_chat_voice_transcribe",
         args: { courseid: courseId, mimetype: mimeType, content_b64: contentB64 },
     }]);
+    const response = await responsePromise;
 
     return response.text;
 }

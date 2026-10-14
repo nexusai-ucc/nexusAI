@@ -163,6 +163,21 @@ describe("ChatInput — micrófono (VOICE-01, #314)", () => {
         await user.click(screen.getByLabelText("Enviar mensaje"));
         expect(onSend).toHaveBeenCalledWith("pregunta escrita a mano");
     });
+
+    it("avisa si la transcripción vuelve vacía en vez de no hacer nada", async () => {
+        stubMicSupport();
+        transcribeAudio.mockResolvedValue("   ");
+        const user = userEvent.setup();
+
+        render(<ChatInput onSend={vi.fn()} courseId={5} />);
+        await user.click(screen.getByLabelText("Grabar pregunta por voz"));
+        await user.click(await screen.findByLabelText("Detener grabación"));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(/no se escuchó ninguna pregunta/i);
+        expect(screen.getByLabelText("Tu pregunta")).toHaveValue("");
+        // Se puede volver a grabar.
+        expect(screen.getByLabelText("Grabar pregunta por voz")).toBeEnabled();
+    });
 });
 
 describe("ChatInput — marcador de texto pegado según el idioma", () => {

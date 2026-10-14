@@ -528,10 +528,20 @@ class backend_client {
     /**
      * Transcribes a short audio clip (spoken question) to text (VOICE-01, #314).
      *
+     * The course and user go in the body like in every other call: the usage of
+     * the transcription is recorded against them (store_usage() drops a call
+     * without a course).
+     *
+     * @param int $courseid Course the question is asked in
+     * @param int $userid User who recorded it
+     * @param string $mimetype Base MIME type of the audio
+     * @param string $audiobytes Raw audio
      * @return array {text}
      */
-    public function transcribe_audio(string $mimetype, string $audiobytes): array {
+    public function transcribe_audio(int $courseid, int $userid, string $mimetype, string $audiobytes): array {
         $payload = [
+            'course_id'   => $courseid,
+            'user_id'     => $userid,
             'mime_type'   => $mimetype,
             'content_b64' => base64_encode($audiobytes),
         ];
