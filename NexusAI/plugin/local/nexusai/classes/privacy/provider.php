@@ -495,10 +495,12 @@ class provider implements
      * Removes the backend's copy (embeddings) of the users' forum posts in a course.
      *
      * The backend indexes forum posts for the similarity search (MMR-301 item 4); that
-     * copy was only purged reactively through the `forum_post_deleted` event, never as
-     * part of an actual data-deletion request. The post ids are worked out here and the
-     * calls go in an ad hoc task (task\purge_backend_data), so the deletion never waits
-     * for the backend.
+     * copy used to be purged only reactively through the `forum_post_deleted` event. Called
+     * from the three Privacy API deletion methods above for an actual data-deletion request,
+     * and from local\data_cleanup::delete_course() when Moodle deletes a course for real —
+     * Moodle does not run the Privacy API in that case, so that caller passes $userids = null.
+     * The post ids are worked out here and the calls go in an ad hoc task
+     * (task\purge_backend_data), so the deletion never waits for the backend.
      *
      * It runs whenever the backend is configured, even with NexusAI off: posts indexed
      * while it was on are still there.
@@ -506,7 +508,7 @@ class provider implements
      * @param int $courseid Course ID.
      * @param int[]|null $userids Users whose forum posts' embeddings should be removed (null = everyone's).
      */
-    private static function delete_backend_forum_posts(int $courseid, ?array $userids): void {
+    public static function delete_backend_forum_posts(int $courseid, ?array $userids): void {
         global $DB;
 
         if ($userids === [] || !\local_nexusai\local\course_guard::can_purge_backend()) {

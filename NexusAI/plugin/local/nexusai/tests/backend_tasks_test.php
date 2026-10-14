@@ -128,6 +128,27 @@ final class backend_tasks_test extends \advanced_testcase {
     }
 
     /**
+     * Deleting a course also queues the removal of its forum posts from the backend
+     * (MMR-301 item 4 — real course deletion never runs through the Privacy API, so this
+     * has to be queued directly by data_cleanup, not only reachable from a deletion request).
+     */
+    public function test_deleting_a_course_queues_its_forum_posts_purge(): void {
+        $this->resetAfterTest();
+        $this->configure_backend();
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $postid = $this->create_forum_post($course, $generator->create_and_enrol($course, 'student'));
+
+        local\data_cleanup::delete_course((int) $course->id);
+
+        $queued = $this->queued(purge_backend_data::class);
+        $this->assertCount(2, $queued);
+        $this->assertEqualsCanonicalizing(['course_documents', 'forum_posts'], array_column($queued, 'action'));
+        $forumtask = $queued[0]->action === 'forum_posts' ? $queued[0] : $queued[1];
+        $this->assertEquals([$postid], $forumtask->postids);
+    }
+
+    /**
      * Without a backend there is nothing to remove from it.
      */
     public function test_nothing_is_queued_without_a_backend(): void {
