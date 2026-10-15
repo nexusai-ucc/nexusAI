@@ -2,7 +2,7 @@
 name: ✨ Feature / mejora
 about: Proponer una funcionalidad nueva o mejora a una existente
 title: 'feat(<scope>): <descripción corta>'
-labels: ['feat', 'p2']
+labels: ['tipo:desarrollo', 'prio:media']
 assignees: ''
 ---
 
