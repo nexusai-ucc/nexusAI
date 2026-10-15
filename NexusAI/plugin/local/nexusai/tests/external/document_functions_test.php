@@ -91,6 +91,7 @@ final class document_functions_test extends external_testcase {
             'apunte.pdf',
             'application/pdf',
             base64_encode('%PDF-1.4 x'),
+            1,
         ]);
 
         // Assert.

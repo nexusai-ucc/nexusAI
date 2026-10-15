@@ -40,6 +40,22 @@ use core_external\external_api;
  */
 abstract class external_testcase extends \advanced_testcase {
     /**
+     * Drops the mocked answers a test did not use.
+     *
+     * \curl keeps them in a static list that resetAfterTest() does not touch: a
+     * leftover would answer the first request of a later test, even of another
+     * class, which expects the network to fail.
+     */
+    protected function tearDown(): void {
+        global $CFG;
+        require_once($CFG->libdir . '/filelib.php');
+        $mocks = new \ReflectionProperty(\curl::class, 'mockresponses');
+        $mocks->setAccessible(true);
+        $mocks->setValue(null, []);
+        parent::tearDown();
+    }
+
+    /**
      * Arrange: a course with NexusAI on, the backend configured and a user of
      * the given role enrolled and logged in.
      *
