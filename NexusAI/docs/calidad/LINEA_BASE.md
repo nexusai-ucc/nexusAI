@@ -55,16 +55,27 @@
 
 `NexusAI/scripts/test-all.sh` corre las suites con cobertura: `backend`, `frontend` y `plugin` (esta última solo si `MOODLE_DOCKER_DIR` está seteada). Sale con ≠ 0 si alguna falla. Probado localmente: el backend pasa 527 tests (7 saltados sin Postgres), el frontend pasa 150 y, si una suite falla, el script sale con 1.
 
-## Nivel a declarar — **decisión pendiente del equipo**
+## Nivel declarado: **3 (prototipo avanzado)**
 
-| Meta de cobertura sobre código existente | Total actual | Líneas a cubrir para llegar |
-|---|---|---|
-| Nivel 2: 60 % | 56,6 % | **+436 líneas** (7747/12912) |
-| Nivel 3: 80 % | 56,6 % | **+3019 líneas** (10330/12912) |
+Al principio la idea era elegir entre el nivel 2 y el 3. El 15/10/2026 la cátedra aclaró por mail que **el nivel no se elige: lo define la etapa en que está la tesis**.
 
-- El backend ya supera el 80 %. Lo que baja el total son el frontend (40 %) y el plugin (42 %).
-- **Opción A, declarar nivel 3.** Es lo que corresponde al estado real de la tesis (prototipo avanzado, roadmap al 96 %). La meta del 80 % no llega en 12 días y se reporta como **meta no cumplida** con su análisis, algo que el informe pide explícitamente. Igual hay que cumplir el resto del nivel 3: smoke y E2E de la integración externa en cada deploy.
-- **Opción B, declarar nivel 2.** La meta del 60 % se alcanza con unas 436 líneas (por ejemplo, tests de `DocumentsManager`, `UploadZone` y `api.js` del frontend). El riesgo es que no refleja el estado real del proyecto.
-- Conviene consultar al profe si se declara por etapa de la tesis o si se puede elegir el nivel.
+| Nivel | Etapa de la tesis |
+|---|---|
+| 1, inicial | Problema, requisitos y arquitectura definidos. Poco código funcionando; la integración con el sistema externo está en proceso. |
+| 2, prototipo parcial | Algunas funcionalidades centrales implementadas y al menos una integración externa operativa (MVP). |
+| 3, prototipo avanzado | La mayoría de las funcionalidades implementadas, el flujo principal funciona con las integraciones externas y el sistema se puede desplegar. |
 
-Decisión: _pendiente_ (completar con fecha y quién decidió).
+NexusAI está en el **nivel 3**:
+- el roadmap está casi completo;
+- el flujo principal (chat con RAG sobre el material del curso) funciona contra Moodle y el proveedor de LLM;
+- el sistema se despliega en Oracle (producción) y en Fly.
+
+Para este nivel, las metas que dependen de la línea base son:
+
+| Meta del nivel 3 | Hoy | Brecha | Subtarea |
+|---|---|---|---|
+| 80 % de cobertura sobre el código existente | 56,6 % | +3019 líneas (10330/12912) | TPC-05 |
+| Smoke test automático después de cada despliegue | no existe | — | TPC-08 |
+| Flujo E2E de la integración externa en cada despliegue | no existe | — | TPC-07, TPC-08 |
+
+El backend ya supera el 80 %; la brecha está en el frontend (40 %) y en el plugin (42 %). Si para el 26/10 no se llega al 80 %, se reporta como **meta no cumplida, con su análisis**, como pide el informe.
