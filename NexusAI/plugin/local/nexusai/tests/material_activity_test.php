@@ -132,8 +132,6 @@ final class material_activity_test extends \advanced_testcase {
 
         // A native upload is queued for the teacher to confirm.
         observer::course_module_created($event((int) $native->cmid));
-        // The observer logs the queued upload with debugging(); it is expected here.
-        $this->resetDebugging();
         $this->assertArrayHasKey((string) $native->cmid, $pending());
     }
 

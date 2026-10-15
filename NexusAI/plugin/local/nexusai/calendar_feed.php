@@ -45,6 +45,7 @@ define('NO_DEBUG_DISPLAY', true);
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->dirroot . '/calendar/lib.php');
+require_once(__DIR__ . '/lib.php');
 
 global $DB, $CFG;
 
@@ -60,17 +61,13 @@ if (strlen($token) < 32 || $courseid <= 0) {
 // Resolve the student by their token (user preference). There's no index on
 // value, but the user_preferences table is small and the token has 256 bits
 // of entropy.
-$pref = $DB->get_record('user_preferences', [
-    'name'  => 'local_nexusai_calfeedtoken',
-    'value' => $token,
-], '*', IGNORE_MULTIPLE);
+$userid = local_nexusai_calfeed_user_by_token($token);
 
-if (!$pref) {
+if ($userid === null) {
     http_response_code(404);
     die(get_string('errorfeednotfound', 'local_nexusai'));
 }
 
-$userid = (int) $pref->userid;
 // A suspended or deleted account keeps no feed, even with a token that still matches.
 $owner = \core_user::get_user($userid);
 if (!$owner || $owner->deleted || $owner->suspended) {

@@ -310,10 +310,5 @@ class observer {
         ];
 
         set_user_preference(self::PENDING_PREF, json_encode($pending), $userid);
-
-        debugging(
-            '[NexusAI] Pending upload queued for "' . $filename . '" (cmid=' . $cmid . ', course=' . $courseid . ')',
-            DEBUG_DEVELOPER
-        );
     }
 }

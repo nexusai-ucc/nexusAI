@@ -5,6 +5,17 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.19.0] — 2026-10-14
 
+- Fixed: the calendar feed (`calendar_feed.php`) failed on Moodle 5.0 and later
+  with "Comparisons of text column conditions are not allowed": since 5.0
+  `user_preferences.value` is a text column, and the token was looked up with a
+  plain `value = ?` condition. The lookup now goes through `sql_compare_text()`
+  (`local_nexusai_calfeed_user_by_token()`, with tests).
+- Fixed: creating a "File" activity printed a developer debugging message
+  ("Pending upload queued…") on the normal path. It is gone; the plugin only
+  calls `debugging()` when something fails.
+- Fixed: on NexusAI · Materials, the upload box said "Uploading files... Please
+  wait until it finishes" while nothing was uploading, only because no course
+  unit was chosen yet. It now asks to choose a course unit first.
 - Fixed: asking the chat by voice never worked. Browsers report the recording
   with its codec (`audio/webm;codecs=opus` in Chrome and Edge,
   `audio/ogg;codecs=opus` in Firefox) and the MIME type was compared whole, so
