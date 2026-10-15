@@ -5,6 +5,11 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.19.0] — 2026-10-14
 
+- Fixed: the calendar feed (`calendar_feed.php`) failed on Moodle 5.0 and later
+  with "Comparisons of text column conditions are not allowed": since 5.0
+  `user_preferences.value` is a text column, and the token was looked up with a
+  plain `value = ?` condition. The lookup now goes through `sql_compare_text()`
+  (`local_nexusai_calfeed_user_by_token()`, with tests).
 - Fixed: creating a "File" activity printed a developer debugging message
   ("Pending upload queued…") on the normal path. It is gone; the plugin only
   calls `debugging()` when something fails.
