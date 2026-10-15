@@ -222,9 +222,9 @@ jobs:
     name: SonarQube Cloud
     runs-on: ubuntu-22.04
     needs: [backend-coverage, frontend-coverage, plugin-coverage]
-    # Paso 5 del proceso de incorporación (despliegue incremental): primero
-    # solo reporta; cuando el análisis llega completo, se vuelve bloqueante.
-    continue-on-error: true
+    # Paso 5 del proceso de incorporación (despliegue incremental): la primera
+    # versión tenía continue-on-error (solo reporte, run 38745439275). Validado
+    # el análisis, el job es bloqueante: si el gate falla, falla el check.
     steps:
       - uses: actions/checkout@v4
         with:
