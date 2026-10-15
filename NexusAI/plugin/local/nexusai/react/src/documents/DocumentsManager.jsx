@@ -422,7 +422,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                             </label>
                             <p className="nexusai-documents__hint">{L.visibleHint}</p>
 
-                            <UploadZone onUpload={handleUpload} disabled={uploading || (sections.length > 0 && selectedSection === "")} lang={lang} />
+                            <UploadZone onUpload={handleUpload} busy={uploading} disabled={uploading || (sections.length > 0 && selectedSection === "")} lang={lang} />
 
                             {uploadQueue.length > 0 && (
                                 <ul className="nexusai-upload-queue">

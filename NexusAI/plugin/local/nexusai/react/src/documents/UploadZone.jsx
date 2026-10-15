@@ -25,9 +25,11 @@
  *
  * CONT-06 (#320): accepts several files at once (drag-and-drop or picker).
  * The parent component (DocumentsManager) passes it `onUpload(files)` — an
- * array, even for a single file — and `disabled` (true while an upload queue
- * is in progress, to avoid dropping a second batch before the first one
- * finishes).
+ * array, even for a single file —, `busy` (true while an upload queue is in
+ * progress) and `disabled` (true while busy, to avoid dropping a second batch
+ * before the first one finishes, and while no course unit is chosen). Only
+ * `busy` shows "Uploading files..."; disabled without being busy asks for the
+ * unit instead.
  */
 
 import { useRef, useState } from "react";
@@ -50,7 +52,7 @@ const ACCEPT_TYPES = [
     ".htm",
 ].join(",");
 
-export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES, lang = "es" }) {
+export default function UploadZone({ onUpload, disabled, busy = false, accept = ACCEPT_TYPES, lang = "es" }) {
     const inputRef = useRef(null);
     const [dragOver, setDragOver] = useState(false);
 
@@ -59,12 +61,16 @@ export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES, 
         drop:       "Arrastrá uno o varios archivos acá",
         wait:       "Por favor esperá a que termine",
         clickHint:  "o hacé click para seleccionar",
+        chooseUnit: "Primero elegí una unidad del curso",
+        unitHint:   "Cada archivo se crea como actividad en esa unidad",
         formats:    "Formatos: PDF · DOCX · PPTX · XLSX · CSV · MD · HTML · TXT · Tamaño máximo: 20 MB",
     } : {
         uploading:  "Uploading files...",
         drop:       "Drag one or more files here",
         wait:       "Please wait until it finishes",
         clickHint:  "or click to select",
+        chooseUnit: "Choose a course unit first",
+        unitHint:   "Each file is created as an activity in that unit",
         formats:    "Formats: PDF · DOCX · PPTX · XLSX · CSV · MD · HTML · TXT · Max size: 20 MB",
     };
 
@@ -125,17 +131,17 @@ export default function UploadZone({ onUpload, disabled, accept = ACCEPT_TYPES, 
                 disabled={disabled}
             />
             <div className="nexusai-dropzone__icon">
-                {disabled ? (
+                {busy ? (
                     <span className="nexusai-dropzone__spinner" />
                 ) : (
                     <IconUpload size={26} />
                 )}
             </div>
             <div className="nexusai-dropzone__title">
-                {disabled ? L.uploading : L.drop}
+                {busy ? L.uploading : (disabled ? L.chooseUnit : L.drop)}
             </div>
             <div className="nexusai-dropzone__hint">
-                {disabled ? L.wait : L.clickHint}
+                {busy ? L.wait : (disabled ? L.unitHint : L.clickHint)}
             </div>
             <div className="nexusai-dropzone__formats">
                 {L.formats}
