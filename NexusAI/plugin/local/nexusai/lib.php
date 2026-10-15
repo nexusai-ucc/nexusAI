@@ -127,7 +127,7 @@ function local_nexusai_calfeed_user_by_token(string $token): ?int {
         'id, userid, value'
     );
     foreach ($prefs as $pref) {
-        // sql_compare_text() may cut the value: the whole token has to match.
+        // The comparison may cut the value (sql_compare_text): the whole token has to match.
         if ($pref->value === $token) {
             return (int) $pref->userid;
         }
