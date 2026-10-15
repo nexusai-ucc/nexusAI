@@ -104,6 +104,38 @@ function local_nexusai_calfeed_rotate_token(int $userid): string {
 }
 
 /**
+ * Finds the user a calendar feed token belongs to.
+ *
+ * Since Moodle 5.0 user_preferences.value is a text column, and Moodle refuses a
+ * plain `value = ?` condition on text columns (textconditionsnotallowed), so the
+ * comparison goes through sql_compare_text(). The tokens are 44 characters.
+ *
+ * @param string $token Token from the feed URL.
+ * @return int|null The user id, or null when no user has that token.
+ */
+function local_nexusai_calfeed_user_by_token(string $token): ?int {
+    global $DB;
+    if ($token === '') {
+        return null;
+    }
+    $select = 'name = :name AND ' . $DB->sql_compare_text('value', 64) . ' = ' . $DB->sql_compare_text(':token', 64);
+    $prefs = $DB->get_records_select(
+        'user_preferences',
+        $select,
+        ['name' => LOCAL_NEXUSAI_CALFEED_PREF, 'token' => $token],
+        'id',
+        'id, userid, value'
+    );
+    foreach ($prefs as $pref) {
+        // The comparison may cut the value (sql_compare_text): the whole token has to match.
+        if ($pref->value === $token) {
+            return (int) $pref->userid;
+        }
+    }
+    return null;
+}
+
+/**
  * Absolute URL of a course's .ics feed for a student.
  *
  * @param int $userid
