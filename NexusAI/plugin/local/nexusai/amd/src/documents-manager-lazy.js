@@ -3415,9 +3415,11 @@ function StatusBadge({
  *
  * CONT-06 (#320): accepts several files at once (drag-and-drop or picker).
  * The parent component (DocumentsManager) passes it `onUpload(files)` — an
- * array, even for a single file — and `disabled` (true while an upload queue
- * is in progress, to avoid dropping a second batch before the first one
- * finishes).
+ * array, even for a single file —, `busy` (true while an upload queue is in
+ * progress) and `disabled` (true while busy, to avoid dropping a second batch
+ * before the first one finishes, and while no course unit is chosen). Only
+ * `busy` shows "Uploading files..."; disabled without being busy asks for the
+ * unit instead.
  */
 
 
@@ -3430,6 +3432,7 @@ const ACCEPT_TYPES = ["application/pdf", "application/vnd.openxmlformats-officed
 function UploadZone({
   onUpload,
   disabled,
+  busy = false,
   accept = ACCEPT_TYPES,
   lang = "es"
 }) {
@@ -3440,12 +3443,16 @@ function UploadZone({
     drop: "Arrastrá uno o varios archivos acá",
     wait: "Por favor esperá a que termine",
     clickHint: "o hacé click para seleccionar",
+    chooseUnit: "Primero elegí una unidad del curso",
+    unitHint: "Cada archivo se crea como actividad en esa unidad",
     formats: "Formatos: PDF · DOCX · PPTX · XLSX · CSV · MD · HTML · TXT · Tamaño máximo: 20 MB"
   } : {
     uploading: "Uploading files...",
     drop: "Drag one or more files here",
     wait: "Please wait until it finishes",
     clickHint: "or click to select",
+    chooseUnit: "Choose a course unit first",
+    unitHint: "Each file is created as an activity in that unit",
     formats: "Formats: PDF · DOCX · PPTX · XLSX · CSV · MD · HTML · TXT · Max size: 20 MB"
   };
   const handleFiles = files => {
@@ -3500,17 +3507,17 @@ function UploadZone({
       disabled: disabled
     }), /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
       className: "nexusai-dropzone__icon",
-      children: disabled ? /*#__PURE__*/(0,jsx_runtime.jsx)("span", {
+      children: busy ? /*#__PURE__*/(0,jsx_runtime.jsx)("span", {
         className: "nexusai-dropzone__spinner"
       }) : /*#__PURE__*/(0,jsx_runtime.jsx)(IconUpload, {
         size: 26
       })
     }), /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
       className: "nexusai-dropzone__title",
-      children: disabled ? L.uploading : L.drop
+      children: busy ? L.uploading : disabled ? L.chooseUnit : L.drop
     }), /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
       className: "nexusai-dropzone__hint",
-      children: disabled ? L.wait : L.clickHint
+      children: busy ? L.wait : disabled ? L.unitHint : L.clickHint
     }), /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
       className: "nexusai-dropzone__formats",
       children: L.formats
@@ -7693,6 +7700,7 @@ function DocumentsManagerInner({
             children: L.visibleHint
           }), /*#__PURE__*/(0,jsx_runtime.jsx)(UploadZone, {
             onUpload: handleUpload,
+            busy: uploading,
             disabled: uploading || sections.length > 0 && selectedSection === "",
             lang: lang
           }), uploadQueue.length > 0 && /*#__PURE__*/(0,jsx_runtime.jsx)("ul", {
