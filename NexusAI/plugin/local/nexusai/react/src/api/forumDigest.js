@@ -78,10 +78,11 @@ export async function getWeeklyDigest(courseId, days = 7) {
         return { ...MOCK_DIGEST, course_id: courseId, period_days: days };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_forum_weekly_digest",
         args: { courseid: courseId, days },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -102,10 +103,11 @@ export async function getForumWebhook(courseId) {
         return _mockWebhookUrl;
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_forum_webhook_get",
         args: { courseid: courseId },
     }]);
+    const response = await responsePromise;
 
     return response.webhook_url ?? null;
 }
@@ -123,10 +125,11 @@ export async function saveForumWebhook(courseId, url) {
         return _mockWebhookUrl;
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_forum_webhook_save",
         args: { courseid: courseId, webhookurl: url },
     }]);
+    const response = await responsePromise;
 
     return response.webhook_url ?? null;
 }

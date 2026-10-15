@@ -47,10 +47,11 @@ export async function getBudgetStatus(courseId) {
     const ajax = await getMoodleAjax();
     if (!ajax) return null;
     try {
-        const [response] = await ajax.call([{
+        const [responsePromise] = ajax.call([{
             methodname: "local_nexusai_budget_status",
             args: { courseid: courseId },
         }]);
+        const response = await responsePromise;
         return response;
     } catch {
         return null;
