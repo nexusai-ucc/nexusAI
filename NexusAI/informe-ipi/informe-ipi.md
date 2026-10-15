@@ -704,6 +704,160 @@ La estrategia de pruebas combina:
 
 \newpage
 
+# Publicación en Moodle Marketplace
+
+Más allá de las pruebas internas descritas en la sección anterior, el
+proyecto fue sometido a una validación externa concreta: la revisión de
+código y funcionalidad que exige el Moodle Plugins Directory
+(*Moodle Marketplace*) para publicar un plugin de terceros. Esta sección
+documenta ese proceso, los hallazgos de la revisión y cómo se resolvieron,
+por tratarse de la evaluación independiente más rigurosa que atravesó el
+plugin hasta el momento de este informe.
+
+## Por qué separar el repositorio
+
+El formulario de registro de un plugin en moodle.org no admite indicar una
+subcarpeta: recibe una URL de repositorio y asume que su raíz es la raíz
+del plugin (Moodle HQ, s.f.). El código de NexusAI, sin embargo, vive
+dentro de un monorepo (`nexusAI`) junto al backend, la documentación y el
+material de investigación del proyecto, cuatro niveles por debajo de la
+raíz real del repositorio git. Un validador automático que clona el repo y
+busca `version.php` en el nivel superior no lo encuentra, y el envío se
+rechaza antes de llegar a un revisor humano.
+
+De las alternativas evaluadas para resolverlo —pasar la URL del monorepo
+tal cual, usar un *submodule* de git o copiar la carpeta a mano a un
+repositorio nuevo— ninguna resultó viable sin perder el historial de
+commits del plugin o sin dejar de resolver el problema de fondo. La
+solución adoptada fue `git subtree split`: extrae únicamente los commits
+que modificaron la carpeta del plugin, con su historial intacto, hacia un
+repositorio nuevo y vacío (`nexusai-ucc/moodle-local_nexusai`), cuyo nombre
+sigue además la convención `moodle-{tipo}_{nombre}` que exige Moodle. Desde
+entonces, el monorepo sigue siendo el lugar donde se desarrolla, y un
+workflow de GitHub Actions (`sync-derived-repos.yml`) repite el *subtree
+split* de forma automática en cada *push* a `development`, manteniendo al
+repositorio público sincronizado sin intervención manual.
+
+## Proceso de envío y primera revisión
+
+El plugin se envió al Moodle Plugins Directory el 20 de septiembre de 2026
+en su versión `0.18.1` (*beta*), tras validar un checklist de requisitos de
+envío: metadatos completos en `version.php`, cabecera de licencia GPL v3+,
+cadenas de idioma en inglés y español, instalación desde ZIP sin pasos de
+compilación adicionales, CI real corriendo sobre Moodle 4.5 a 5.2 con
+PostgreSQL y MySQL, `LICENSE` dual (MIT en el repositorio raíz, GPL v3 en
+el plugin), ícono de 256×256 px y capturas de pantalla en inglés.
+
+El flujo de revisión de Moodle es público (`moodle.org/plugins/queue.php`)
+y sigue un circuito estándar: *Upload initial version → Waiting for
+approval → Needs more work → Upload fixed version → …* hasta la
+aprobación. Recibir *"Needs more work"* en la primera ronda es la norma, no
+una señal de rechazo. NexusAI no fue la excepción: el ticket de revisión
+(identificado internamente como **MMR-301**, a cargo del revisor
+Volodymyr Dovhan, de Moodle HQ) devolvió el plugin con **"Changes
+needed"**, señalando 16 puntos a corregir sobre el código de la versión
+enviada.
+
+## Correcciones de la primera ronda
+
+El equipo corrigió los 16 puntos del ticket en dos rondas de *pull
+requests*, agrupables en estas categorías:
+
+- **Privacidad en foros con IA:** las funciones de resumen de hilo,
+  sugerencia de respuesta y detección de posts similares verificaban el
+  acceso a la discusión pero no a cada post individual, por lo que una
+  respuesta privada podía llegar a un modelo de lenguaje o a estudiantes a
+  los que no estaba dirigida, y una respuesta de un foro de preguntas y
+  respuestas podía verse antes de que el estudiante publicara la propia.
+  Se corrigió reutilizando la verificación de visibilidad nativa de
+  `mod_forum` en cada post.
+- **Endurecimiento de la conexión con el backend:** el *stream* del chat
+  llamaba a `curl_init()` directamente; se reemplazó por la clase `\curl`
+  de Moodle, que valida el certificado TLS del backend y no sigue
+  redirecciones.
+- **Falsos positivos de seguridad:** la página de estado de administración
+  marcaba como "bloqueada" cualquier URL en `localhost`, en una red privada
+  o en el puerto 8000, aun cuando el plugin funcionaba correctamente contra
+  un backend de desarrollo legítimo; se ajustó para que solo valide que el
+  endpoint responda `http(s)` y muestre los campos de salud del backend.
+- **Calendario:** el feed `.ics` no excluía a usuarios suspendidos o
+  eliminados ni verificaba que el usuario conservara el permiso
+  `local/nexusai:use` en el curso.
+- **Internacionalización y cabeceras de licencia:** textos fijos del
+  widget de chat y de los paneles de foro que no pasaban por el paquete de
+  idioma, y archivos PHP sin la cabecera estándar GPL que exige Moodle en
+  todo el código fuente, incluidos los módulos AMD y las fuentes React que
+  viajan en el ZIP.
+- **Matriz de integración continua:** la versión enviada corría CI solo
+  sobre un subconjunto de versiones soportadas; se amplió para cubrir
+  Moodle 4.5 a 5.3 contra PostgreSQL y MySQL.
+
+Estas correcciones, junto con la purga de posts de foro indexados en el
+backend tras borrar los datos de un usuario —otro de los 16 puntos—, se
+integraron en la versión `0.19.0`.
+
+## Auditoría propia y cierre de los últimos gaps
+
+Antes de responder al ticket, el equipo hizo una auditoría interna cruzando
+cada punto marcado como resuelto contra el código real de `development`, y
+encontró una discrepancia: borrar un **curso completo** seguía sin purgar
+los posts de foro que el backend tenía indexados de ese curso.
+`data_cleanup::delete_course()` —la función que corre cuando Moodle borra
+un curso de verdad— solo encolaba la purga de documentos; la purga de
+posts de foro solo era alcanzable desde los tres métodos de la API de
+Privacidad de Moodle, que **no se ejecuta** en un borrado de curso real
+(a diferencia de un pedido de eliminación de datos de un usuario). El
+método que faltaba conectar (`provider::delete_backend_forum_posts()`) ya
+existía y ya soportaba el caso de "todos los usuarios del curso"; solo
+hacía falta exponerlo como público y llamarlo desde el lugar correcto.
+
+Una revisión posterior, más allá de los 16 puntos originales, encontró un
+segundo caso del mismo tipo de bug: borrar un **foro puntual**, dejando el
+resto del curso intacto, tampoco purgaba nada —siempre, no solo en el caso
+excepcional que el equipo tenía anotado. La causa resultó ser distinta a
+la del curso: el observador del evento `course_module_deleted` de Moodle
+filtra a propósito cualquier actividad que no sea de tipo "Archivo", y
+aunque se hubiera manejado ahí, no habría funcionado: `forum_delete_instance()`
+—la función que borra las discusiones y los posts de un foro— se ejecuta
+**antes** de que Moodle dispare ese evento. Para cuando un observador
+llega a correr, los posts ya no existen en las tablas del foro y no hay
+nada que consultar. La solución usa en cambio
+`pre_course_module_delete($cm)`, un *callback* que Moodle descubre por
+convención de nombre de archivo y ejecuta **antes** de borrar el módulo,
+pensado exactamente para este tipo de caso —el mismo patrón que usan
+`tool_recyclebin` y otros complementos del núcleo de Moodle.
+
+Ambos hallazgos se corrigieron, con pruebas automatizadas nuevas que
+reproducen cada caso, y la corrección quedó incluida en la versión
+`0.19.0` enviada de vuelta al revisor.
+
+## Sincronización automática y una lección operativa
+
+Como el repositorio que revisa Moodle es un derivado del monorepo, cada
+corrección depende de que el workflow de sincronización
+(`sync-derived-repos.yml`) efectivamente la traslade. Al mergear las
+correcciones del último hallazgo, el workflow falló silenciosamente en las
+dos corridas siguientes: el token de GitHub (`SYNC_REPOS_TOKEN`) con el que
+el workflow empuja los cambios al repositorio público había vencido, así
+que el repositorio que vería el revisor seguía mostrando una versión vieja
+del plugin a pesar de que el monorepo ya tenía el fix. El incidente se
+detectó revisando el estado real de las corridas de CI —no asumiéndolo por
+el estado de los *pull requests* en el monorepo—, se resolvió generando un
+nuevo token de acceso de alcance limitado (permisos de escritura
+únicamente sobre los dos repositorios derivados) y quedó documentado como
+recordatorio de verificar la fecha de vencimiento del token la próxima vez
+que se renueve.
+
+## Estado actual
+
+Al cierre de este informe, el plugin está en versión `0.19.0`
+(`MATURITY_BETA`), con las correcciones de los 16 puntos de MMR-301 y de
+los dos hallazgos adicionales ya sincronizadas al repositorio público
+(`nexusai-ucc/moodle-local_nexusai`), a la espera de la próxima devolución
+del revisor de Moodle HQ.
+
+\newpage
+
 # Beneficios post-implementación
 
 Tras la implementación del proyecto se esperan los siguientes beneficios, tanto
@@ -873,6 +1027,8 @@ sección, y toda referencia listada fue utilizada en el informe.
   https://www.microsoft.com/en-us/education/products/copilot
 - Moodle HQ. (2024). *Moodle Developer Documentation — Plugin types: local*.
   https://moodledev.io/docs/apis/plugintypes/local
+- Moodle HQ. (s.f.). *Plugin contribution checklist*. Recuperado 2026, de
+  https://moodledev.io/general/community/plugincontribution/checklist
 - OpenAI. (s.f.-a). *ChatGPT Edu*. Recuperado 2026, de https://openai.com/chatgpt/education/
 - OpenAI. (s.f.-b). *GPT-4o pricing*. Recuperado 2026, de https://openai.com/api/pricing/
 - pdfplumber. (s.f.). *pdfplumber* [Software]. GitHub.
