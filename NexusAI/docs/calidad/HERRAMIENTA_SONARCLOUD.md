@@ -70,6 +70,14 @@ Con eso se apagó Automatic Analysis y se pasó a un análisis desde GitHub Acti
 
 **Resultado: `ERROR`.** El job `SonarQube Cloud` falla y Sonar también marca el check "SonarCloud Code Analysis" en rojo en el PR.
 
+Capturas:
+- [gate verde en #601](evidencias/tpc-02/01-pr601-gate-verde.png)
+- [comentario de Sonar en #602](evidencias/tpc-02/02-pr602-gate-rojo-comentario.png)
+- [checks fallidos en #602](evidencias/tpc-02/03-pr602-checks-fallidos.png)
+- [detalle en SonarQube Cloud](evidencias/tpc-02/04-pr602-sonar-detalle.png)
+
+En la captura de Sonar se ve además la estimación **después del merge**: la cobertura total bajaría de 54,1 % a 53,9 %. Así, cada PR muestra cuánto mueve las métricas generales.
+
 ### Gate usado: "Sonar way" contra las condiciones del TP
 
 | Condición del TP | Sonar way | ¿Lo cubre? |
