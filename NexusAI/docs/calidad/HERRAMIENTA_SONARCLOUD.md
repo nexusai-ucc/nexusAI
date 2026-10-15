@@ -110,7 +110,7 @@ La prueba de concepto confirmó los puntajes de SonarQube Cloud en R1–R4: tres
 |---|---|---|
 | 1. Solo reporte | Analiza y publica en SonarQube Cloud; `continue-on-error: true`, no bloquea | [run 38745439275](https://github.com/nexusai-ucc/nexusAI/actions/runs/38745439275) (commit `8a843cb`) |
 | 2. Bloqueante | Si el gate falla, el job falla | verde: [run 38746575568](https://github.com/nexusai-ucc/nexusAI/actions/runs/38746575568) · rojo: [run 38746618928](https://github.com/nexusai-ucc/nexusAI/actions/runs/38746618928) |
-| 3. Protección de rama | `development` exige el check para mergear | _pendiente_ |
+| 3. Protección de rama | `development` exige el check `SonarQube Cloud` (app GitHub Actions) para mergear; sin force push ni borrado de la rama | activa desde el 15/10/2026; el #601 quedó `BLOCKED` mientras el check estaba pendiente |
 
 ## Mapa de herramientas del ecosistema
 
