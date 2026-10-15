@@ -3,7 +3,7 @@
 > Issue [#577](https://github.com/nexusai-ucc/nexusAI/issues/577) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584)
 > PRs de tests: [#603](https://github.com/nexusai-ucc/nexusAI/pull/603) (plugin) y [#604](https://github.com/nexusai-ucc/nexusAI/pull/604) (frontend)
 
-NexusAI está en el **nivel 3**, que exige **80 % de cobertura sobre el código existente** ([LINEA_BASE.md](LINEA_BASE.md)). La línea base era **56,6 %**. Este documento cubre tres cosas:
+NexusAI está en el **nivel 3**, que exige **80 % de cobertura sobre el código existente** ([LINEA_BASE.md](LINEA_BASE.md)). La línea base era **56,6 %**. El resultado medido es **83,6 %**. Este documento cubre tres cosas:
 - cómo se escribieron las pruebas nuevas: formato AAA y criterio de aceptación fijado antes de ejecutar;
 - cuánto subió la cobertura;
 - cómo se aplicaron los 7 principios del testing al proyecto, con ejemplos concretos.
@@ -64,14 +64,22 @@ it("archivar saca la pregunta de la lista y descuenta el total", async () => {
 
 ## 2. Cobertura: antes y después
 
-| Componente | Antes (LINEA_BASE, 14/10) | Después (TPC-05) | Fuente del "después" |
-|---|---|---|---|
-| Backend: líneas / decisiones | 84,1 % / 72,8 % | 84,2 % / 72,8 % (sin cambios) | Quality Gate de `development` |
-| Frontend: líneas / sentencias / decisiones | 41,9 % / 40,0 % / 34,9 % | **78,9 % / 77,0 % / 67,4 %** | `npm run test:coverage` sobre el PR #604 (257 tests) |
-| Plugin: sentencias | 41,8 % | **85,5 %** | artifact `qg-plugin-coverage` del PR #603 ([run 38796605471](https://github.com/nexusai-ucc/nexusAI/actions/runs/38796605471)) |
-| **Total ponderado por líneas** | **56,6 %** | **≈ 83,6 %** (estimado) | backend 3804 + frontend ≈2155 + plugin 4854 sobre 12.931 |
+Medido con el mismo método que la línea base: los reportes de cobertura del Quality Gate de `development`, ponderados por líneas. "Después" es el commit `ad7bba2`, con #603, #604 y #605 mergeados ([run 38819389914](https://github.com/nexusai-ucc/nexusAI/actions/runs/38819389914)).
 
-**El número que vale es el del pipeline.** El total final se mide con el Quality Gate de `development` después de mergear #603 y #604, con el mismo método que la línea base, y se completa en la versión 1.1 de este documento. La estimación ya supera el **80 % del nivel 3**.
+| Componente | Antes (LINEA_BASE, 14/10) | Después (TPC-05, 16/10) |
+|---|---|---|
+| Backend: líneas / decisiones | 84,1 % / 72,8 % | 84,2 % (3804/4520) / 72,8 % (sin cambios) |
+| Frontend: líneas / decisiones | 41,9 % / 34,9 % | **78,9 %** (2154/2731) / **67,4 %** (1829/2715) |
+| Plugin: sentencias | 41,8 % | **85,5 %** (4854/5680) |
+| **Total ponderado** | **56,6 %** (7311/12.912) | **83,6 %** (10.812/12.931) |
+
+**Meta del nivel 3 (80 % sobre el código existente): cumplida.**
+
+Control con SonarQube Cloud sobre la misma rama:
+- **79,4 % de líneas cubiertas, 68,7 % de condiciones y 77,3 % de cobertura combinada.**
+- Da menos porque Sonar calcula sus propias "líneas a cubrir" para cada lenguaje: por ejemplo, en el plugin cuenta líneas y no las sentencias que reporta PHPUnit.
+
+Por eso la meta se mide con los reportes de las propias herramientas de test, igual que la línea base, y Sonar se usa para el gate sobre código nuevo y como segundo control.
 
 ## 3. Los 7 principios aplicados a NexusAI
 
@@ -133,3 +141,4 @@ Cada componente se prueba con lo que corresponde a su entorno:
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 15/10/2026 | Convención AAA, dobles de prueba, cobertura antes/después (estimada), 7 principios |
+| 1.1 | 16/10/2026 | Cobertura medida en `development` después del merge: 83,6 %; control con Sonar |
