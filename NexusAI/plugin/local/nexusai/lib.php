@@ -119,8 +119,13 @@ function local_nexusai_calfeed_user_by_token(string $token): ?int {
         return null;
     }
     $select = 'name = :name AND ' . $DB->sql_compare_text('value', 64) . ' = ' . $DB->sql_compare_text(':token', 64);
-    $prefs = $DB->get_records_select('user_preferences', $select,
-        ['name' => LOCAL_NEXUSAI_CALFEED_PREF, 'token' => $token], 'id', 'id, userid, value');
+    $prefs = $DB->get_records_select(
+        'user_preferences',
+        $select,
+        ['name' => LOCAL_NEXUSAI_CALFEED_PREF, 'token' => $token],
+        'id',
+        'id, userid, value'
+    );
     foreach ($prefs as $pref) {
         // sql_compare_text() may cut the value: the whole token has to match.
         if ($pref->value === $token) {
