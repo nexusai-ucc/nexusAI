@@ -257,8 +257,162 @@ proyecto busca aprovechar:
 > Los datos citados en esta sección provienen del relevamiento propio del equipo:
 > encuesta a 166 estudiantes y encuesta a 17 docentes de la UCC, realizadas entre
 > marzo y junio de 2026. El detalle de preguntas, metodología y resultados completos
-> se encuentra en `investigacion/09-relevamiento/encuesta-estudiantes.md` y
-> `investigacion/09-relevamiento/encuesta-docentes.md`.
+> se desarrolla en la sección *Relevamiento y metodología de investigación*,
+> a continuación.
+
+\newpage
+
+# Relevamiento y metodología de investigación
+
+Esta sección documenta en detalle el relevamiento mencionado en el
+Diagnóstico: diseño, proceso de recolección, preguntas completas y
+resultados de las dos encuestas propias del equipo, junto con el contexto
+institucional relevado en paralelo.
+
+## Metodología
+
+Ambas encuestas se diseñaron como formularios de Google, difundidas entre
+marzo y junio de 2026, y comparten una particularidad metodológica que se
+documenta explícitamente para no inflar artificialmente la muestra: el
+formulario se amplió mientras ya se estaban recolectando respuestas, de
+modo que las primeras respuestas solo vieron el bloque inicial de
+preguntas y las posteriores vieron el formulario completo. Por esta razón,
+cada resultado reportado a continuación indica el **N real** de quienes
+vieron esa pregunta en particular, en lugar de asumir el total de
+respondentes para toda pregunta — algunos resultados tienen como
+denominador el total de la encuesta y otros un subconjunto, según
+corresponda.
+
+## Encuesta a estudiantes (N = 166)
+
+Relevamiento cerrado entre el 31 de marzo y junio de 2026, con 166
+respuestas mayoritariamente de la Facultad de Ingeniería, con representación
+también de Ciencias Económicas y de Administración, Ciencias de la Salud,
+Derecho y Ciencias Sociales, Ciencias Políticas y RRII, y Ciencias
+Agropecuarias. El cuestionario cubrió cinco bloques: perfil y uso del
+campus, experiencia y organización de materias, dispersión de información
+y comunicación, validación de funcionalidades de NexusAI, y una pregunta
+abierta de cierre.
+
+**Frecuencia de uso del campus virtual (n=166):** el 72,3% (120/166) lo usa
+todos los días o varias veces por semana. El campus es, en la práctica,
+parte de la rutina de la mayoría — la problemática que motiva el proyecto
+no es la falta de uso, sino qué tan bien ese uso frecuente se traduce en
+organización real del estudio.
+
+**Dispersión de la información (n=166):** para poder combinar las dos
+versiones del formulario (que ofrecían escalas de respuesta distintas para
+esta pregunta), los resultados se agruparon en tres categorías
+equivalentes. El 43,4% (72/166) reporta dispersión alta o frecuente, el
+37,3% (62/166) reporta dispersión intermedia y el 19,3% (32/166) reporta
+dispersión baja o nula. En conjunto, **el 80,7% de los estudiantes percibe
+dispersión de información al menos "a veces"**, confirmando con datos
+formales la problemática que el equipo había identificado inicialmente de
+forma informal.
+
+**Experiencia y organización de materias (n=88):** el 80,7% califica su
+experiencia con el campus como buena o mejor, pero la razón dominante
+("funciona bien aunque le faltan cosas") describe un uso intensivo y a la
+vez insatisfecho, no un rechazo a la plataforma. Sobre la organización de
+sus materias, solo el 34% ve "la mayoría" o "todas" bien organizadas; el
+54,5% las describe como "mitad y mitad" — la organización depende
+fuertemente de cada docente, no de la plataforma en sí.
+
+**Uso de herramientas de IA para estudiar (n=88):** el 100% de quienes
+vieron esta pregunta ya usa alguna herramienta de IA generalista para
+estudiar, hacer trabajos, o ambas cosas. Es un dato a interpretar con
+cautela porque el formulario no ofrecía ninguna opción negativa, pero es
+consistente con el resto del relevamiento: la IA generalista ya es una
+práctica de estudio extendida, mientras el campus virtual no ofrece nada
+equivalente integrado.
+
+**Corrección automática de ejercicios (n=88):** el 95,5% (84/88) ve valor
+en que una IA corrija ejercicios con explicación — 43,2% la usaría
+frecuentemente, 37,5% como complemento a la corrección del docente. Solo
+el 4,5% prefiere que la corrección quede exclusivamente en manos del
+docente.
+
+Dos respuestas abiertas ilustran el patrón encontrado:
+
+> "Mejoraría el hecho de que no esté tan dispersa la información, también
+> que esté más organizado."
+
+> "El valor del aula virtual depende mucho de cómo la preparen los
+> profesores. Bien organizada, mejora mucho la experiencia."
+
+## Encuesta a docentes (N = 17)
+
+Relevamiento cerrado entre el 1 de abril y el 19 de junio de 2026, con 17
+respuestas de docentes mayoritariamente de la Facultad de Ingeniería. La
+encuesta se revisó previamente con Leandro Juarez, director del proyecto y
+docente de la cátedra de Proyecto Integrador, antes de su difusión.
+
+**Uso actual de IA en la práctica docente (n=17):** el 64,7% (11/17) ya usa
+alguna herramienta de IA; ningún docente la rechaza de plano.
+
+**Delegación de tareas a una IA integrada al campus (n=17):** el 88,2%
+(15/17) delegaría al menos parcialmente tareas a una IA integrada —el
+47,1% condicionado a poder revisar el resultado antes de publicarlo, el
+23,5% "según la tarea" y el 17,6% sin condición. Ningún docente respondió
+que no delegaría nada. La condición de supervisión antes de publicar,
+repetida en la mayoría de las respuestas, valida directamente el patrón de
+diseño "asistir, no reemplazar" adoptado en NexusAI.
+
+**Estructura inicial del curso armada por IA (n=15):** el 86,7% (13/15) ve
+valor en que una IA arme la estructura inicial del curso, dividido entre
+hacerlo con revisión posterior (40%) o en paralelo decidiendo cada paso
+junto a la IA (40%). Solo el 13,3% prefiere armarlo íntegramente solo.
+
+**Herramientas de evaluación actuales (n=15):** un tercio no las usa y no
+puede opinar; del resto, las opiniones se dividen entre "básicas pero
+sirven", "me faltan funcionalidades" y "cubren lo que necesito" en
+proporciones similares. Las sugerencias abiertas más repetidas piden
+corrección automática de trabajos y rúbricas inteligentes.
+
+Dos respuestas abiertas:
+
+> "Transformarlo en una herramienta de gestión real y no un reservorio de
+> materiales."
+
+> "Alertas tempranas sobre temas docentes a resolver (contenido, clases,
+> asistencias, notas, condiciones)."
+
+La tabla siguiente resume cómo los resultados confirmaron o descartaron
+decisiones de alcance tomadas antes de tener los datos:
+
+| Condición evaluada | Resultado real |
+|---|---|
+| >50% de interés en generador de evaluaciones / delegar tareas a una IA → adelantar esa épica al Sprint 3 | **Confirmado (88,2%)** — consistente con incluir Herramientas para Docentes en el alcance del MVP. |
+| Bajo interés en analytics → bajar prioridad post-MVP | **Descartado** — alto interés: la mayoría de las respuestas abiertas pide ver temas con más dudas y alumnos en riesgo, lo que mantuvo Analytics dentro del alcance. |
+| >70% prioriza citar fuentes / objeciones fuertes a que los datos salgan a un proveedor externo de IA | No se preguntó explícitamente en la versión final del formulario — el requisito de citación ya estaba definido desde el diseño técnico, y no hay evidencia de objeción en las respuestas abiertas relevadas. |
+
+## Contexto institucional relevado
+
+En paralelo a las encuestas, el equipo relevó los requisitos técnicos y
+políticos que impone la UCC para instalar un plugin de terceros en su
+instancia institucional de Moodle (versión y SO del servidor, proceso
+formal de aprobación, restricciones de red, marco de privacidad
+aplicable). La mayoría de esas preguntas —dirigidas al área técnica de
+Moodle de la universidad— quedó sin respuesta confirmada dentro del plazo
+del proyecto. Por eso, desde una etapa temprana, el equipo priorizó una
+estrategia de despliegue que no dependiera de esa aprobación
+institucional: una demo autohospedada, independiente de la infraestructura
+de la UCC, que es efectivamente la que se usa durante el desarrollo y la
+que se describe en el Anexo D de este informe (backend permanente en
+Oracle Cloud; cada integrante corre Moodle localmente apuntando a ese
+backend). La sumisión del plugin al Moodle Plugins Directory, descripta en
+la sección *Publicación en Moodle Marketplace*, es en los hechos la vía que
+terminó reemplazando a la aprobación institucional directa: un plugin
+publicado y revisado por Moodle HQ es más fácil de autorizar para un área
+de IT que uno sin ningún tipo de validación externa.
+
+## Síntesis
+
+| Problemática del Diagnóstico | Evidencia de la encuesta a estudiantes | Evidencia de la encuesta a docentes |
+|---|---|---|
+| Dispersión de la información | 80,7% percibe dispersión al menos "a veces"; 43,4% la percibe alta o frecuente. | — |
+| Uso pasivo / desorganizado del campus virtual | Solo 34% ve sus materias bien organizadas; depende del docente más que de la plataforma. | 33% no usa las herramientas de evaluación del campus. |
+| Recurso a IA generalista ajena al material del curso | 100% de quienes vieron la pregunta ya usa IA para estudiar y/o trabajos; 95,5% quiere corrección automática con explicación. | 64,7% ya usa IA en su práctica docente; 88,2% delegaría tareas a una IA integrada al campus. |
 
 \newpage
 
