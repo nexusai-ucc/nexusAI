@@ -1,0 +1,109 @@
+name: Integración externa (LLM real)
+#
+# TPC-07 (issue #579): prueba la integración con el proveedor LLM REAL
+# (chat, cadena de fallback ante un modelo retirado y embeddings), no un doble.
+# Usa una key de Gemini free tier dedicada al CI (secret GEMINI_API_KEY_CI),
+# separada de la de producción.
+#
+# No corre en pull_request: los PRs de forks no tienen secrets y cada corrida
+# gasta cuota. Corre a diario, a mano y cuando cambia la capa de proveedores
+# en development. Los tests se saltean solos si NEXUSAI_REAL_LLM != 1, así que
+# el CI normal (backend-ci) nunca los ejecuta contra el proveedor real.
+
+on:
+  workflow_dispatch:
+    inputs:
+      llm_model:
+        description: Modelo de chat a probar
+        default: gemini-2.5-flash
+  schedule:
+    - cron: '0 9 * * *'   # 06:00 hora de Argentina
+  push:
+    branches: [development]
+    paths:
+      - 'NexusAI/services/api/app/providers/**'
+      - 'NexusAI/services/api/tests/integration/**'
+      - '.github/workflows/integration-external.yml'
+
+concurrency:
+  group: integration-external
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  llm-real:
+    name: Proveedor LLM real (Gemini)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      ENV: test
+      NEXUSAI_REAL_LLM: '1'
+      INTEGRATION_REPORT: ${{ github.workspace }}/integration-report.jsonl
+      LLM_API_KEY: ${{ secrets.GEMINI_API_KEY_CI }}
+      LLM_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
+      LLM_MODEL: ${{ inputs.llm_model || 'gemini-2.5-flash' }}
+      # Sin secundario: se mide el proveedor configurado y la cascada interna.
+      LLM_FALLBACK_API_KEY: ''
+      LLM_FALLBACK_BASE_URL: ''
+      LLM_FALLBACK_MODEL: ''
+      EMBEDDING_API_KEY: ${{ secrets.GEMINI_API_KEY_CI }}
+      EMBEDDING_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
+      EMBEDDING_MODEL: gemini-embedding-001
+      EMBEDDING_DIMENSIONS: 768
+      USAGE_LEDGER_ENABLED: 'false'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar que el secret existe
+        run: |
+          if [ -z "$LLM_API_KEY" ]; then
+            echo "::error::Falta el secret GEMINI_API_KEY_CI (ver docs/calidad/INTEGRACION_EXTERNA.md)."
+            exit 1
+          fi
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: NexusAI/services/api/requirements.txt
+
+      - name: Install deps
+        working-directory: NexusAI/services/api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Pytest contra el proveedor real
+        working-directory: NexusAI/services/api
+        run: pytest tests/integration -m integration -v --junitxml=integration-junit.xml
+
+      - name: Resumen de latencias
+        if: always()
+        run: |
+          echo "### Integración con el proveedor LLM real" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Test | Modelo | Latencia (s) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f "$INTEGRATION_REPORT" ]; then
+            python3 - "$INTEGRATION_REPORT" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json, sys
+          for line in open(sys.argv[1], encoding="utf-8"):
+              r = json.loads(line)
+              print(f"| {r['test']} | {r.get('model', '')} | {r.get('latency_s', '')} |")
+          PY
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-external-report
+          path: |
+            integration-report.jsonl
+            NexusAI/services/api/integration-junit.xml
+          if-no-files-found: ignore
+          retention-days: 30
