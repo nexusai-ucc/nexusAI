@@ -1,0 +1,18 @@
+{
+  "_endpoint": "POST /api/v1/quiz/generate",
+  "_model": "app.quiz.router.QuizResponse",
+  "_consumer": "plugin: external\\quiz_generate",
+  "course_id": 42,
+  "topic": "Pilas",
+  "questions": [
+    {
+      "question_type": "multiple_choice",
+      "question": "¿Qué estructura sigue el orden LIFO?",
+      "options": ["Cola", "Pila", "Lista enlazada", "Árbol binario"],
+      "correct_index": 1,
+      "explanation": "En una pila el último elemento que entra es el primero que sale.",
+      "source_filename": "unidad-1-estructuras.pdf",
+      "source_document_id": "8a1d2c3b-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+    }
+  ]
+}

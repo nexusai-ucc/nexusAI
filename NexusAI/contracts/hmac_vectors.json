@@ -1,0 +1,35 @@
+{
+  "_comment": "Contrato de firma HMAC entre el plugin (backend_client::compute_signature) y el backend (app/auth/hmac.py). Lo leen tests de los dos lados: si uno cambia el algoritmo, falla su CI. TPC-07 (#579).",
+  "algorithm": "hex(hmac_sha256(secret, timestamp + nonce + body))",
+  "secret": "contract-test-secret-32-chars-xx",
+  "vectors": [
+    {
+      "name": "cuerpo vacío (GET/DELETE)",
+      "timestamp": "1760572800",
+      "nonce": "0123456789abcdef0123456789abcdef",
+      "body": "",
+      "signature": "798d071eab4b906e74118e5ea8ece7f81cb84dedd5fc9b4327385d91ebec1557"
+    },
+    {
+      "name": "JSON simple",
+      "timestamp": "1760572800",
+      "nonce": "fedcba9876543210fedcba9876543210",
+      "body": "{\"course_id\":42,\"question\":\"hola\"}",
+      "signature": "2d01ca8cd9ec33782412b3526466912b3c782d1961a04e73936ef583a7fec9ea"
+    },
+    {
+      "name": "acentos y ñ en UTF-8",
+      "timestamp": "1760572801",
+      "nonce": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "body": "{\"question\":\"¿Qué es la recursión? Año, señal\"}",
+      "signature": "706ecf0caec3a3ae3437cb09312c4a944b0d9cca93aa9fa5d50fc8d13d472286"
+    },
+    {
+      "name": "barras y comillas escapadas",
+      "timestamp": "1760572802",
+      "nonce": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "body": "{\"url\":\"https://m.test/a/b\",\"q\":\"dijo \\\"hola\\\"\"}",
+      "signature": "37c2b8e0c6f784bb6357ce2cf65dd371ccb61668cbb1d371c25a2484803f7d34"
+    }
+  ]
+}
