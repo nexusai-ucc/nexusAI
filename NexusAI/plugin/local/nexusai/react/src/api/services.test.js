@@ -125,15 +125,20 @@ describe("dentro de Moodle", () => {
         expect(events).toEqual([{ id: 1, timesort: 1 }]);
     });
 
-    it("el webhook del foro llama a su web service", async () => {
+    it("DEF-01 (#623): el webhook del foro devuelve la URL que guardó Moodle", async () => {
         // Arrange.
-        installMoodleAjax({ local_nexusai_forum_webhook_get: {}, local_nexusai_forum_webhook_save: {} });
+        installMoodleAjax({
+            local_nexusai_forum_webhook_get: { webhook_url: "https://hooks.test/actual" },
+            local_nexusai_forum_webhook_save: ({ webhookurl }) => ({ webhook_url: webhookurl }),
+        });
 
         // Act.
-        await forum.getForumWebhook(5);
-        await forum.saveForumWebhook(5, "https://hooks.test/x");
+        const current = await forum.getForumWebhook(5);
+        const saved = await forum.saveForumWebhook(5, "https://hooks.test/x");
 
-        // Assert. El valor devuelto queda para el registro de defectos (TPC-06).
+        // Assert.
+        expect(current).toBe("https://hooks.test/actual");
+        expect(saved).toBe("https://hooks.test/x");
         expect(ajaxCalls).toEqual([
             { methodname: "local_nexusai_forum_webhook_get", args: { courseid: 5 } },
             { methodname: "local_nexusai_forum_webhook_save", args: { courseid: 5, webhookurl: "https://hooks.test/x" } },

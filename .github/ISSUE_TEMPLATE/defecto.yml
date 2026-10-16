@@ -1,0 +1,97 @@
+name: 🐞 Defecto
+description: Algo no funciona como debería. Queda en el registro de defectos (NexusAI/docs/calidad/REGISTRO_DEFECTOS.md).
+title: "[DEF-XX] <qué falla, en una frase>"
+labels: ["bug", "tipo:defecto"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Completá cada campo con hechos verificables. Un defecto se cierra **solo con un test de regresión** que falle con el código anterior y pase con el fix.
+        Sin credenciales ni datos personales en logs o capturas.
+  - type: dropdown
+    id: componente
+    attributes:
+      label: Componente
+      options:
+        - Backend (services/api)
+        - Plugin Moodle (PHP)
+        - Widget React
+        - CI / despliegue
+        - Documentación
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. Como alumno, abrir el chat del curso X…
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: obtenido
+    attributes:
+      label: Resultado obtenido
+      description: Qué pasa en realidad. Pegá el error o el log (sin secretos).
+    validations:
+      required: true
+  - type: dropdown
+    id: severidad
+    attributes:
+      label: Severidad (impacto)
+      description: Aplicá además la label severidad:* que corresponda.
+      options:
+        - Crítica — sistema caído, pérdida o filtración de datos, sin workaround
+        - Alta — funcionalidad central rota o datos incorrectos sin workaround razonable
+        - Media — funcionalidad secundaria incorrecta o con workaround
+        - Baja — cosmético o de bajo impacto
+    validations:
+      required: true
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad (urgencia)
+      options:
+        - Alta
+        - Media
+        - Baja
+    validations:
+      required: true
+  - type: input
+    id: entorno
+    attributes:
+      label: Entorno
+      placeholder: "local / CI / staging / producción · Moodle 5.0 · Chrome 130"
+  - type: dropdown
+    id: deteccion
+    attributes:
+      label: Cómo se detectó
+      options:
+        - Test unitario o de integración
+        - Pipeline de CI
+        - Revisión de código / auditoría
+        - Prueba manual
+        - Uso real (alumno o docente)
+    validations:
+      required: true
+  - type: input
+    id: caso
+    attributes:
+      label: Caso de prueba vinculado
+      description: Test de regresión (ruta y nombre) o ID del caso del plan de pruebas.
+      placeholder: "react/src/api/quiz.test.js › DEF-01 … / CP-XX"
+  - type: textarea
+    id: ci
+    attributes:
+      label: Ejecuciones de CI
+      description: Link a la corrida en rojo (test antes del fix) y en verde (después del fix).
+      placeholder: |
+        Rojo: https://github.com/nexusai-ucc/nexusAI/actions/runs/…
+        Verde: https://github.com/nexusai-ucc/nexusAI/actions/runs/…

@@ -76,10 +76,11 @@ export async function listSessions({ courseId, scopeCourse = true, limit = 20 })
         };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_chat_sessions_list",
         args: { courseid: courseId, scopecourse: scopeCourse, limit },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -104,10 +105,11 @@ export async function getSessionMessages({ courseId, sessionId }) {
         };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_chat_session_messages",
         args: { courseid: courseId, sessionid: sessionId },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -126,10 +128,11 @@ export async function deleteSession({ courseId, sessionId }) {
         return { success: true };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_chat_session_delete",
         args: { courseid: courseId, sessionid: sessionId },
     }]);
+    const response = await responsePromise;
 
     return response;
 }

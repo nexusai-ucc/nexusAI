@@ -111,7 +111,7 @@ export async function searchMaterial({
         return { query, total: filtered.length, results: filtered };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_search_query",
         args: {
             query: query.trim(),
@@ -123,6 +123,7 @@ export async function searchMaterial({
             sectionunassigned: sectionUnassigned,
         },
     }]);
+    const response = await responsePromise;
 
     return response;
 }

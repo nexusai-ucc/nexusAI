@@ -90,29 +90,25 @@ describe("quiz API dentro de Moodle", () => {
         });
     });
 
-    it("dificultad, flashcards y racha llaman a su web service", async () => {
+    it("DEF-01 (#623): traduce los campos que devuelve Moodle de dificultad, flashcards y racha", async () => {
         // Arrange.
         installMoodleAjax({
-            local_nexusai_quiz_suggest_difficulty: {},
-            local_nexusai_quiz_flashcards_summary: {},
-            local_nexusai_quiz_streak: {},
+            local_nexusai_quiz_suggest_difficulty: { difficulty: "hard", basedonattempts: 4, accuracypct: 90 },
+            local_nexusai_quiz_flashcards_summary: { duecount: 2, totalcount: 9 },
+            local_nexusai_quiz_streak: { currentstreak: 3, practicedtoday: true },
             local_nexusai_quiz_flashcards_review_batch: { updated: 1 },
         });
 
         // Act.
-        await quiz.suggestDifficulty(4);
-        await quiz.getFlashcardsSummary(4);
-        await quiz.getStudyStreak(4);
+        const difficulty = await quiz.suggestDifficulty(4);
+        const summary = await quiz.getFlashcardsSummary(4);
+        const streak = await quiz.getStudyStreak(4);
         const reviewed = await quiz.submitFlashcardReviews(4, [{ flashcardId: "f1", knewIt: true }]);
 
-        // Assert. El mapeo de los campos de las tres primeras queda para el
-        // registro de defectos (TPC-06): leen campos de la promesa sin esperarla.
-        expect(ajaxCalls.map((c) => c.methodname)).toEqual([
-            "local_nexusai_quiz_suggest_difficulty",
-            "local_nexusai_quiz_flashcards_summary",
-            "local_nexusai_quiz_streak",
-            "local_nexusai_quiz_flashcards_review_batch",
-        ]);
+        // Assert.
+        expect(difficulty).toEqual({ difficulty: "hard", reason: null, based_on_attempts: 4, accuracy_pct: 90 });
+        expect(summary).toEqual({ due_count: 2, total_count: 9 });
+        expect(streak).toEqual({ current_streak: 3, practiced_today: true });
         expect(reviewed).toEqual({ updated: 1 });
         expect(ajaxCalls.at(-1).args.reviews).toEqual([{ flashcardid: "f1", knewit: true }]);
     });
