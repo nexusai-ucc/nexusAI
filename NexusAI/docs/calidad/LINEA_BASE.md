@@ -79,3 +79,5 @@ Para este nivel, las metas que dependen de la línea base son:
 | Flujo E2E de la integración externa en cada despliegue | no existe | — | TPC-07, TPC-08 |
 
 El backend ya supera el 80 %; la brecha está en el frontend (40 %) y en el plugin (42 %). Si para el 26/10 no se llega al 80 %, se reporta como **meta no cumplida, con su análisis**, como pide el informe.
+
+**Actualización 16/10/2026 (TPC-05):** la cobertura llegó a **83,6 %** (10.812/12.931) en `development` @ `ad7bba2`. Meta del 80 % cumplida. El detalle por componente está en [PRINCIPIOS_TESTING.md](PRINCIPIOS_TESTING.md).
