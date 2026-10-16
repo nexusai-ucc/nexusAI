@@ -562,21 +562,106 @@ contexto cuando un fragmento corta una oración o una idea a la mitad.
 ## Opciones similares en el mercado
 
 Se relevaron asistentes académicos basados en IA existentes, con el fin de comprender
-el panorama actual y las carencias que el proyecto podría atender:
+el panorama actual y las carencias que el proyecto podría atender, distinguiendo dos
+grupos: asistentes académicos generales, ajenos al ecosistema Moodle, y plugins de
+Moodle que ya incorporan IA.
 
-- **Khanmigo (Khan Academy):** tutor de IA pedagógicamente pulido, pero responde sobre
-  el contenido de Khan Academy y no se integra con Moodle (Khan Academy, s.f.).
-- **Coursera Coach:** asistente cerrado, limitado al ecosistema Coursera (Coursera, 2023).
-- **NotebookLM (Google):** ofrece buen RAG con citas, pero requiere que el usuario suba
-  los documentos manualmente y almacena los datos en servidores de un tercero (Google, s.f.-b).
-- **Microsoft Copilot for Education y ChatGPT Edu:** potentes, pero centrados en sus
-  propios ecosistemas, sin integración nativa con Moodle ni *analytics* para el
-  docente (Microsoft, s.f.; OpenAI, s.f.-a).
+### Asistentes académicos generales
 
-Del análisis surge que ninguna de las soluciones relevadas combina simultáneamente:
-integración nativa con Moodle, RAG automático sobre el material del docente,
-despliegue autohospedado y panel de *analytics* docente. Esa intersección constituye
-el espacio de oportunidad que el proyecto aborda.
+- **Khanmigo (Khan Academy):** tutor de IA pedagógicamente pulido, con modo socrático
+  y cuidado explícito de la privacidad de menores, pero responde sobre el contenido de
+  Khan Academy —no sobre el material de cada materia— y no se integra con Moodle
+  (Khan Academy, s.f.).
+- **Coursera Coach:** asistente ya conectado a los videos y transcripciones del curso,
+  pero cerrado al ecosistema Coursera, sin apertura a contenido externo (Coursera, 2023).
+- **NotebookLM (Google):** ofrece buen RAG con citas precisas, pero requiere que el
+  usuario suba los documentos manualmente, uno por uno, y almacena los datos en
+  servidores de un tercero (Google, s.f.-b).
+- **Microsoft Copilot for Education:** fuerte integración con Teams, Word y OneNote,
+  pero centrado en su propio ecosistema, sin integración nativa con Moodle (Microsoft, s.f.).
+- **ChatGPT Edu:** máxima potencia del modelo base, pero sin integración con el LMS —el
+  alumno tiene que pegar el contexto manualmente— y sin *analytics* para el docente
+  (OpenAI, s.f.-a).
+
+| Producto | Integra con Moodle | RAG sobre material del docente | Self-hosted | Open source | Analytics docente |
+|---|---|---|---|---|---|
+| Khanmigo | ❌ | ❌ | ❌ | ❌ | parcial |
+| Coursera Coach | ❌ | sí, en Coursera | ❌ | ❌ | parcial |
+| NotebookLM | ❌ | sí, manual | ❌ | ❌ | ❌ |
+| MS Copilot Edu | ❌ | con plugins | ❌ | ❌ | parcial |
+| ChatGPT Edu | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **NexusAI** | ✅ | sí, automático | ✅ | ✅ | ✅ |
+
+Ningún competidor de este grupo combina integración nativa con Moodle, RAG automático
+sobre el material del docente y despliegue autohospedado. Con la misma honestidad con
+la que se reconocen las fortalezas propias, corresponde señalar dónde NexusAI no gana
+frente a este grupo: Khanmigo acumula años de investigación pedagógica que NexusAI
+recién empieza a construir, y el modelo de lenguaje de producción (GPT-4o-mini) rinde
+por debajo de un GPT-4 completo en razonamiento puro —aunque para preguntas y
+respuestas sobre un contexto ya recuperado por RAG esa diferencia pesa menos—; Khan
+Academy y Coursera además ya cuentan con un ecosistema de cursos armado, mientras que
+NexusAI depende del material que cada docente suba, lo cual es a la vez su limitación
+y su fortaleza central: contexto real de la materia, no contenido enlatado.
+
+### Plugins de Moodle con inteligencia artificial
+
+El panorama relevante para este proyecto no son solo los asistentes académicos
+generales, sino el ecosistema de plugins de Moodle que ya incorporan IA, por ser la
+comparación directa con lo que NexusAI propone:
+
+- **`block_openai_chat`** (Bryce Yoder): el plugin de IA más descargado del directorio
+  de Moodle. Ofrece un chat con OpenAI en la barra lateral y un campo "Source of Truth"
+  donde el docente pega texto manualmente como contexto —sin RAG real: si el docente
+  quiere que el bot conozca 200 páginas de apuntes, tiene que pegarlas a mano.
+- **`block_ai_chat` + `local_ai_manager`** (BYCS): arquitectura modular con subplugins
+  para distintos proveedores (OpenAI, Azure, Anthropic) y soporte multi-tenant, pero
+  sin RAG sobre el material del curso: es un chatbot genérico conectado a un LLM, no
+  distinto en esencia de `block_openai_chat`.
+- **`block_terusrag`:** uno de los pocos plugins de Moodle que implementa RAG real
+  sobre el material del curso, pero con *issues* abiertos reportados sobre la calidad
+  de las respuestas, por deficiencias en su *chunking* y recuperación.
+- **`local_ai_course_assistant`** (Saylor): el más completo de los cuatro y la
+  referencia arquitectónica más cercana a NexusAI —widget flotante con *streaming* SSE,
+  soporte multi-proveedor, modo socrático y cumplimiento GDPR/SOC2—, pero pensado para
+  instituciones globales, sin Study Planner, *analytics* docente ni generación de
+  evaluaciones.
+
+| Característica | `block_openai_chat` | `block_ai_chat` | `block_terusrag` | `local_ai_course_assistant` | NexusAI |
+|---|---|---|---|---|---|
+| RAG auténtico sobre PDFs del curso | ❌ | ❌ | con bugs | parcial | ✅ |
+| RAG self-hosted (datos en la institución) | ❌ | ❌ | ❌ | parcial | ✅ |
+| Chat con historial | ✅ | ✅ | ✅ | ✅ | ✅ |
+| *Streaming* SSE | parcial | parcial | ❌ | ✅ | ✅ |
+| Widget flotante en todas las páginas | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Indexación automática de material | ❌ | ❌ | ✅ | manual | ✅ |
+| *Study Planner* / cuestionarios con IA | ❌ | ❌ | ❌ | ❌ | ✅ |
+| *Analytics* docente | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Fallback honesto ante falta de información | ❌ | ❌ | ❌ | parcial | ✅ |
+| Agnóstico de proveedor de LLM | ❌ | ✅ | ❌ | ✅ | ✅ |
+
+Ninguno de los cuatro combina indexación automática del material del curso, RAG
+self-hosted de calidad y herramientas de analítica para el docente en una misma
+solución — ese es, en el ecosistema Moodle específicamente, el vacío que NexusAI
+ocupa.
+
+**Por qué no se adoptó el subsistema de IA nativo de Moodle 4.5+.** Moodle 4.5
+introdujo un subsistema de IA con arquitectura *Placement → Manager → Provider*: los
+*Placements* definen dónde aparece la IA en la interfaz, los *Providers* conectan con
+APIs externas y el *Manager* media entre ambos, gestionando límites de uso, registro y
+aceptación de políticas. Su limitación central para este proyecto es que solo expone
+tres acciones —`generate_text`, `generate_image` y `summarise_text`— sin ninguna acción
+nativa de conversación con historial persistente, que es el requisito central de
+NexusAI (RF-01, RF-06). A eso se suma que el subsistema no existe antes de Moodle 4.5,
+mientras que el proyecto necesitaba compatibilidad desde 4.1 al momento de diseñarse.
+Por ambos motivos se optó por un plugin `local` autocontenido en lugar de construir
+sobre el subsistema nativo, decisión coherente con la elección de tipo de plugin
+descrita en la sección anterior.
+
+El principal riesgo competitivo identificado es que Moodle HQ madure este subsistema
+nativo y agregue una acción de chat con historial en una versión futura; la mitigación
+considerada es que el diferencial de NexusAI no se limita al chat, sino que incluye
+Study Planner, *analytics* docente y foros con IA —funcionalidades que exceden el
+alcance de lo que el subsistema nativo expone incluso en un escenario de maduración.
 
 \newpage
 
