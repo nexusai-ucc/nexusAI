@@ -1097,6 +1097,119 @@ del revisor de Moodle HQ.
 
 \newpage
 
+# Gestión del proyecto y metodología ágil
+
+Esta sección documenta cómo se gestionó el proyecto puertas adentro: la
+metodología adoptada, el cierre formal de dos de sus instancias —Fase 1 y
+Sprint 2— con sus métricas de valor ganado, y un ejemplo concreto de cómo
+la planificación se ajustó frente a la evidencia durante el desarrollo.
+
+## Metodología adoptada
+
+El equipo trabajó con **Scrum**, en sprints de aproximadamente dos
+semanas, con roles diferenciados: Santiago Tricherri como *Project
+Manager* y responsable del backend de IA, Delfina Salinas como *Scrum
+Master* y responsable del frontend, y Marcos Bugliotti a cargo de la base
+de datos y la integración con Moodle. Cada fase y cada sprint cierran con
+un **acta formal**, firmada por los tres integrantes, que documenta
+entregables planificados contra entregados, desviaciones justificadas,
+métricas y una retrospectiva — el mismo formato que exige la cátedra de
+Administración de Proyectos de Software, de la que estas actas son
+entregable directo.
+
+El seguimiento de avance usa **EVM** (*Earned Value Management*): valor
+planificado (PV), valor ganado (EV) y costo real (AC) por fase, de los
+que se derivan las variaciones de cronograma y costo (SV, CV) y los
+índices de desempeño SPI (`EV/PV`) y CPI (`EV/AC`) — una práctica de
+gestión de proyectos formal, no solo una tabla de velocity informal.
+
+## Cierre de Fase 1 — Setup e Investigación
+
+La Fase 1 (9 al 22 de abril de 2026) cerró con sus entregables técnicos
+100% completados y en plazo, con un **sobre-cumplimiento deliberado** en
+investigación y formalización: 47 documentos en `investigacion/` contra
+los ~20 esperados originalmente, y 6 ADRs aceptados contra los 4
+planificados (se sumaron HMAC PHP↔Python y la estrategia de Privacidad,
+ambos necesarios antes de lo previsto por decisiones técnicas tempranas).
+
+Las métricas de valor ganado al cierre de la fase fueron **SPI = 1,00**
+(en línea con el cronograma) y **CPI = 0,77** (23% de sobrecosto en
+esfuerzo). El equipo interpretó ese sobrecosto como una decisión
+consciente, no como un desvío no controlado: invertir más horas en
+documentación y ADRs amortizó tiempo de desarrollo en los sprints
+siguientes, hipótesis que las mediciones acumuladas del proyecto al 4 de
+mayo (SPI = 1,10, CPI = 0,85) respaldaron.
+
+De las lecciones aprendidas documentadas en el acta de cierre, dos
+resultan especialmente relevantes para entender decisiones posteriores:
+el equipo subestimó el tiempo de coordinación con actores externos a la
+universidad (la reunión con el técnico de Moodle de la UCC quedó
+pendiente al cierre de la fase y nunca se concretó, lo que terminó
+reforzando la estrategia de demo autohospedada descrita en *Relevamiento y
+metodología de investigación*), y reconoció que hubiera convenido empezar
+la primera prueba funcional antes de cerrar toda la documentación, ya que
+varios problemas de integración (migración del Hook API de Moodle,
+*chunks* de Webpack rotos, *symlinks* no funcionando en Docker) solo
+aparecieron al implementar.
+
+El registro de riesgos abierto al cierre de la fase incluía, entre otros:
+el riesgo de que la aprobación institucional de la UCC demorara más de
+4-6 semanas (mitigación: Plan B de demo local, que terminó siendo la
+estrategia efectiva), el riesgo de que la calidad del RAG con material
+real quedara por debajo de lo esperado (mitigación: dataset de evaluación
+propio con preguntas reales del Proyecto Integrador) y el riesgo de
+restricciones de privacidad del proveedor de embeddings sobre datos de
+alumnos (mitigación: términos a confirmar antes del piloto, con un
+proveedor local como plan de contingencia).
+
+## Cierre de Sprint 2 — RAG completo
+
+El Sprint 2 (7 al 20 de mayo de 2026) cerró en plazo con el núcleo
+funcional del MVP: el sistema ya respondía preguntas usando el material
+real del curso, citando la fuente, con una vista docente para gestionar
+ese material. Tres desviaciones de alcance quedaron documentadas con su
+justificación técnica: el modelo de *embeddings* planificado
+(`text-embedding-004`) dejó de responder por la vía compatible con OpenAI
+que expone Google y se reemplazó por `gemini-embedding-001`; el formato de
+subida de archivos pasó de *multipart* con HMAC (frágil de firmar
+correctamente en PHP) a JSON con el archivo en base64; y el *streaming*
+de respuestas, considerado para este sprint, se postergó al Sprint 3 al
+estimarse en 3 días adicionales de trabajo frente a una latencia sin
+*streaming* ya aceptable (3 a 6 segundos) para el MVP.
+
+Las métricas de cierre: 25 *issues* completados, una velocidad acumulada
+de ~12,5 *issues* por sprint, SPI = 1,10 (10% adelantado), CPI = 0,85
+(15% de sobrecosto, ya esperado al tratarse de los primeros sprints),
+cerca de 5.860 líneas de código entre backend, plugin y frontend, y una
+suite de tests que creció de 18 a aproximadamente 35 casos. La
+retrospectiva registró como punto fuerte que el *polling* de estado de
+indexación en la vista docente resultó una solución de UX simple y
+efectiva, y como punto débil la documentación opaca de la API de
+*embeddings* de Google, cuyo modelo aceptado cambió sin aviso previo.
+
+## Un pivote real de infraestructura
+
+La planificación original del Sprint 3 contemplaba desplegar el backend
+en Fly.io, con un procedimiento documentado paso a paso. Ese despliegue
+se ejecutó, pero fue reemplazado más adelante por el esquema actual:
+backend autohospedado en Oracle Cloud (decisión formalizada en el
+ADR-011). El documento de planificación original de Fly.io se conserva en
+el repositorio sin modificar, marcado explícitamente como histórico — un
+registro honesto de que la infraestructura efectivamente usada no fue la
+primera que se planificó, y de por qué cambió.
+
+## Cierre
+
+El Anexo C de este informe conserva la tabla de *velocity* consolidada
+del proyecto completo (SP comprometidos y completados por sprint) como
+referencia numérica rápida; este capítulo documenta, en cambio, el relato
+de gestión detrás de dos de esas instancias de cierre formal —con sus
+métricas de valor ganado, sus desviaciones justificadas y sus lecciones
+aprendidas— tal como quedaron asentadas en las actas firmadas por el
+equipo.
+
+\newpage
+
 # Beneficios post-implementación
 
 Tras la implementación del proyecto se esperan los siguientes beneficios, tanto
