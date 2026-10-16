@@ -1602,3 +1602,121 @@ planificadas para post-MVP.
 > manual; para reducir el riesgo de acumular cambios sin probar, el equipo
 > concentra los merges a `main` al cierre de cada sprint, trabajando el resto
 > del tiempo contra `development` y *staging*.
+
+## Anexo E — Registro de decisiones de arquitectura (ADRs)
+
+El proyecto documenta sus decisiones de arquitectura significativas como
+*Architecture Decision Records* (ADR) en `docs/adr/`: diez decisiones
+aceptadas o propuestas, cada una con su contexto, las alternativas
+evaluadas y sus consecuencias. Las cuatro primeras ya se desarrollaron en
+Marco Teórico; se listan acá solo como registro formal. Las seis restantes
+no están desarrolladas en ningún otro capítulo del informe.
+
+**ADR-001 — Backend Python como monolito modular** (Aceptada, 02/05/2026).
+Un único proceso FastAPI organizado por dominios (`chat/`, `documents/`,
+`analytics/`) en lugar de microservicios, decisión desarrollada en Marco
+Teórico. Revisar si la indexación bloquea el chat por minutos, o si el
+equipo crece a más de 6 desarrolladores.
+
+**ADR-002 — pgvector sobre PostgreSQL como única base de datos** (Aceptada,
+02/05/2026; acotada por ADR-014 a partir de septiembre: pgvector queda
+solo para el índice del material del curso). Revisar si una institución
+supera los 10 millones de vectores.
+
+**ADR-003 — Arquitectura agnóstica de proveedor LLM** (Aceptada,
+02/05/2026). Abstracción propia (`LLMProvider`/`EmbeddingProvider`) sobre
+el SDK de OpenAI, compatible con la mayoría de los proveedores relevantes
+cambiando solo la URL base. Revisar si aparece un proveedor incompatible
+con ese SDK.
+
+**ADR-004 — Gemini en MVP, OpenAI en producción** (Aceptada, 02/05/2026).
+Costo de producción proyectado de ~\$108/mes para 500 alumnos
+(\$0,22/alumno/mes). Revisar si el piloto supera el límite gratuito de
+Gemini (1.500 solicitudes/día) antes de pasar a producción.
+
+**ADR-005 — Autenticación PHP/Python con HMAC SHA-256 en 3 capas**
+(Aceptada, 04/05/2026). El plugin y el backend son dos servicios
+independientes, y la clave del proveedor de IA vive solo en el backend —
+nunca puede llegar al navegador. La autenticación se resuelve en tres
+capas: una clave `Bearer` identifica al cliente, una firma HMAC SHA-256
+sobre `timestamp + nonce + body` garantiza integridad con una ventana de
+5 minutos de tolerancia, y un *nonce* de un solo uso guardado en Redis
+(`SET NX EX 300`) impide repetir una solicitud capturada. Se descartó JWT
+por no aportar nada sobre HMAC+timestamp para autenticación
+servicio-a-servicio sin estado, y mTLS por la complejidad de distribuir y
+rotar certificados para dos servicios bajo el mismo control de despliegue.
+Revisar si el proyecto pasa a ser multi-institucional (cada universidad
+como cliente distinto).
+
+**ADR-006 — Estrategia de Privacy API: `null_provider` primero**
+(Fecha 04/05/2026; **reemplazada por ADR-014**). Mientras los datos del
+alumno vivieran solo en el backend externo y no en tablas de Moodle, el
+plugin declaraba formalmente `null_provider` en lugar de implementar el
+`metadata\provider` completo sin datos reales que exportar o borrar — una
+decisión deliberada (YAGNI), no una omisión, con triggers explícitos para
+disparar la migración (agregar cualquier tabla `local_nexusai_*` con
+`userid`, o decidir publicar el plugin en moodle.org). Esos triggers se
+cumplieron en septiembre y la decisión quedó reemplazada por ADR-014.
+
+**ADR-010 — Alcance del copiloto de onboarding al docente** (**Propuesta,
+30/08/2026 — pendiente de aprobación, no aceptada todavía**). Define que
+NexusAI **no escribe nada en Moodle**: cada paso del tutorial de
+"primeros pasos" de un curso es un link a la pantalla nativa de Moodle
+donde el propio docente hace la acción — se descartó explícitamente la
+alternativa de que NexusAI cree recursos (foros, grupos) en nombre del
+docente, por el riesgo de romper datos reales y por ampliar la superficie
+de la declaración de Privacidad sin necesidad.
+
+**ADR-011 — Retiro de las configuraciones de deploy de Railway y Fly.io**
+(Aceptada, 07/09/2026). El backend pasó por tres destinos de despliegue a
+lo largo del proyecto: Railway durante el MVP y la defensa ante el jurado,
+Fly.io en el post-MVP temprano, y Oracle Cloud (*Always Free*) desde
+agosto de 2026, destino actual. Al llegar a septiembre, ninguno de los dos
+primeros seguía activo, pero el *workflow* de GitHub Actions que
+desplegaba a Fly.io seguía corriendo en cada *push* a `main` y fallando
+sistemáticamente — el repositorio mostraba una CI en rojo permanente por
+infraestructura que ya no existía, señal que competía con las fallas
+reales. El ADR formaliza eliminar esos archivos de configuración muerta
+(`deploy.yml`, `fly.toml`, `railway.json`, incluida una segunda copia
+divergente del *workflow* que nunca llegó a ejecutarse por estar en una
+ruta que GitHub Actions no lee) y deja explícitamente **sin modificar** la
+documentación histórica del proyecto (`entrega-final/`, `investigacion/`,
+el propio `CHANGELOG.md`) que describe Railway o Fly.io como entorno
+vigente, porque era cierto cuando se escribió — reescribirla sería
+falsificar el registro del proyecto, no limpiarlo.
+
+**ADR-012 — Alertas mínimas viables, sin infraestructura nueva de
+monitoreo** (Aceptada, 11/09/2026). Las dos VMs de Oracle Cloud corren con
+1 núcleo y 1 GB de RAM cada una, compartidos entre el backend, PostgreSQL
+y Redis — un stack de observabilidad como Prometheus + Grafana +
+Alertmanager consumiría una porción desproporcionada de esa RAM para el
+tráfico de un piloto. Se implementaron alertas por correo electrónico
+(SMTP, sin dependencias nuevas más allá de la librería estándar de Python)
+para los cuatro eventos con impacto directo en la experiencia del usuario:
+caída del backend, tasa elevada de errores 5xx, fallas o lentitud del
+proveedor de LLM, y cuota de IA agotada — cada uno con un umbral y una
+ventana en Redis para no inundar la casilla de correo mientras el problema
+persiste.
+
+**ADR-014 — Datos del alumno en tablas nativas de Moodle (opción C
+híbrida)** (Aceptada, 26/09/2026; reemplaza a ADR-006 en dónde viven los
+datos personales, y acota a ADR-002). Es la decisión arquitectónica más
+relevante del proyecto en su última etapa. El diseño original —todo el
+dato del alumno en el backend externo— generaba privacidad incompleta
+(el borrado y la exportación no cubrían todas las tablas, y borrar un
+curso en Moodle dejaba datos huérfanos en el backend), quedaba fuera de
+las herramientas de Moodle (sin backup de curso, sin reportes nativos,
+sin backups del propio backend en ningún ambiente) y dependía de 48 de
+las 55 funciones externas del plugin llamando al backend por HTTP.
+Mediciones del equipo mostraron el costo real de esa dependencia: una
+lectura nativa en la base de Moodle toma 0,23 ms de mediana, la misma
+lectura vía el backend en la misma máquina toma 4,7 ms, y una llamada al
+backend de producción toma ~135 ms. La decisión mueve los datos del
+alumno (sesiones de chat, mensajes, interacciones, intentos y errores de
+cuestionarios, flashcards, alertas de calendario) a dieciséis tablas
+nativas `local_nexusai_*`, propiedad del plugin PHP; el backend conserva
+únicamente el índice vectorial del material del curso y las cachés de
+contenido, sin datos personales. El trade-off aceptado es tener la misma
+lógica de negocio duplicada en dos lenguajes (PHP y Python) para lo que
+se portó, mitigado probando la versión portada contra los mismos casos
+que los tests de Python ya cubrían.
