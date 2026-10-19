@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
-      SCENARIO: ${{ inputs.scenario || 'todos' }}  # TEMPORAL
+      SCENARIO: ${{ inputs.scenario || 'stress' }}  # TEMPORAL
       MOCK_LLM_LATENCY_MS: ${{ inputs.mock_latency_ms || '1500' }}
       OUT_DIR: ${{ github.workspace }}/load-report
     steps:
