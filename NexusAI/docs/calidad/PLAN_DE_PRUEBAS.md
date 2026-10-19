@@ -1,6 +1,6 @@
 # Plan de pruebas — NexusAI
 
-> **Versión 1.1** · 19/10/2026 · Issue [#575](https://github.com/nexusai-ucc/nexusAI/issues/575) (TPC-03), épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584).
+> **Versión 1.2** · 19/10/2026 · Issue [#575](https://github.com/nexusai-ucc/nexusAI/issues/575) (TPC-03), épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584).
 > Este plan se versiona en el repo junto al código. Cada cambio entra por PR y se anota en el [historial](#historial-de-versiones).
 >
 > Relacionados: [`LINEA_BASE.md`](LINEA_BASE.md) (métricas iniciales), [`EPICA_TP_CALIDAD.md`](EPICA_TP_CALIDAD.md) (subtareas), [`services/api/TESTING.md`](../../services/api/TESTING.md) (criterios y guiones del MVP), [`entrega-final/21_testing.md`](../../entrega-final/21_testing.md) (estrategia de testing del MVP).
@@ -90,8 +90,8 @@ La dependencia más crítica es el **proveedor LLM**: sin él no hay chat, quiz 
 |---|---|---|---|---|---|
 | Unidad | chunker, retriever, hmac, language, token_budget, moderation… | lógica de clases (`study_logic`, `visibility_helper`, `onboarding_state`) | componentes, `errors.js`, `gift.js` | pytest · PHPUnit · Vitest | backend 84 % · plugin 42 % · front 40 % |
 | Integración | routers con Postgres + Redis reales en CI (`test_*_router.py`) | external functions + DB de Moodle (`document_list_test`, `course_guard_external_test`, `privacy_provider_test`) | `api/chat.test.js` con fetch mockeado | pytest · PHPUnit · Vitest | existe; con dobles para el LLM |
-| Integración externa | proveedor LLM real | — | — | pytest `-m integration` | **falta** (TPC-07) |
-| Sistema | API desplegada en staging | plugin instalado en Moodle de staging | widget dentro de Moodle | smoke en el pipeline + stress (k6/Locust) | **falta** (TPC-08, TPC-09) |
+| Integración externa | proveedor LLM real; contratos con el plugin | contratos (`contract_test.php`) | — | pytest `-m integration` (diario) | ✅ TPC-07 ([INTEGRACION_EXTERNA.md](INTEGRACION_EXTERNA.md)) |
+| Sistema | API desplegada en staging | handshake firmado con HMAC, igual al de `backend_client.php` | widget dentro de Moodle | smoke en el pipeline (`deploy-staging.yml`) + stress (k6/Locust) | smoke ✅ TPC-08 ([CD_STAGING.md](CD_STAGING.md)) · stress: **falta** (TPC-09) |
 | Aceptación | — | escenarios de usuario | — | Behat · guiones manuales de `TESTING.md` §4–5 | **Behat: 0 escenarios** (el step corre vacío); manuales sí |
 
 **Compatibilidad:** el CI del plugin corre sobre 7 combinaciones de Moodle/PHP/DB (4.5 y 5.0–5.3; PHP 8.1–8.4; PostgreSQL y MySQL).
@@ -103,7 +103,7 @@ La dependencia más crítica es el **proveedor LLM**: sin él no hay chat, quiz 
 | Unidad | código compila; lint (ruff/phpcs/grunt) en 0 | todos los tests pasan; cobertura del código nuevo ≥ 80 % |
 | Integración | unidad en verde; Postgres + Redis (o Moodle) levantados por el CI | todos los tests pasan en las 7 combinaciones de Moodle |
 | PR → `development` | descripción con template; issue vinculada | CI en verde + quality gate en verde + 1 aprobación |
-| Sistema (staging) | merge a `development` desplegado | smoke en verde; integración externa en verde |
+| Sistema (staging) | merge a `staging` desplegado por el pipeline, con el commit verificado en la VM | smoke en verde; integración externa en verde |
 | Release (`staging` → `main`) | sistema en verde; sin defectos críticos ni altos abiertos | stress dentro de umbrales; changelog actualizado |
 | **Suspensión** | — | se frena el despliegue si el smoke falla o si aparece un defecto crítico; se reanuda con el fix + su test de regresión |
 
@@ -168,3 +168,4 @@ La eficiencia de desempeño queda cuarta: hay SLAs, pero un chat lento y correct
 |---|---|---|---|
 | 1.0 | 14/10/2026 | Versión inicial: alcance, objetivos, contingencia, niveles, criterios, riesgos, ISO 25010, QA/QC | #575 |
 | 1.1 | 19/10/2026 | Links a la matriz de trazabilidad y a los casos de prueba | #576 |
+| 1.2 | 19/10/2026 | Niveles de integración externa y de sistema con su estado real; criterio de entrada de staging según el CD | #580 |

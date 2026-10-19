@@ -1,0 +1,158 @@
+name: Deploy staging + smoke
+#
+# TPC-08 (issue #580): despliegue continuo a la VM de staging (Oracle Cloud) y
+# smoke test desde el pipeline después de cada deploy.
+#
+#   push a `staging` ─▶ deploy (SSH con clave restringida) ─▶ verifica el commit ─▶ smoke E2E
+#
+# - El deploy entra a la VM con una clave SSH dedicada que solo puede ejecutar
+#   NexusAI/scripts/deploy_vm.sh (forced command en authorized_keys). El
+#   script devuelve DEPLOYED_SHA y el job falla si no es el commit pusheado.
+# - El smoke es scripts/e2e_deployed.py, el E2E de la integración externa
+#   (TPC-07): health, chat firmado con HMAC (como el plugin) y anti-replay.
+#   Si staging no responde, sale con 1 y el pipeline queda en rojo.
+#
+# Secrets y variables viven en el environment `staging` (ver
+# docs/calidad/CD_STAGING.md). La URL es una variable, no se copia de la
+# documentación: así nació la falsa alarma de TPC-07.
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - 'NexusAI/services/api/**'
+      - 'NexusAI/docker-compose.yml'
+      - 'NexusAI/docker-compose.prod.yml'
+      - 'NexusAI/Caddyfile'
+      - 'NexusAI/scripts/deploy_vm.sh'
+      - 'NexusAI/scripts/e2e_deployed.py'
+      - '.github/workflows/deploy-staging.yml'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Desplegar antes del smoke (solo desde la rama staging)
+        type: boolean
+        default: true
+      base_url:
+        description: URL a probar en lugar de STAGING_URL (para demostrar el rojo)
+        required: false
+        default: ''
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy en la VM
+    if: github.ref == 'refs/heads/staging' && (github.event_name == 'push' || inputs.deploy)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    outputs:
+      deployed_sha: ${{ steps.ssh.outputs.deployed_sha }}
+    steps:
+      - name: Verificar configuración
+        env:
+          SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
+          HOST: ${{ vars.STAGING_SSH_HOST }}
+        run: |
+          missing=""
+          [ -n "$SSH_KEY" ] || missing="$missing STAGING_SSH_KEY"
+          [ -n "$KNOWN_HOSTS" ] || missing="$missing STAGING_SSH_KNOWN_HOSTS"
+          [ -n "$HOST" ] || missing="$missing STAGING_SSH_HOST"
+          if [ -n "$missing" ]; then
+            echo "::error::Falta configurar en el environment staging:$missing (ver docs/calidad/CD_STAGING.md)"
+            exit 1
+          fi
+
+      - name: Deploy por SSH
+        id: ssh
+        env:
+          SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
+          HOST: ${{ vars.STAGING_SSH_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          install -m 600 /dev/null ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # El comando que se ejecuta lo fija authorized_keys en la VM; acá no se
+          # manda ninguno. Host key fijado: nada de StrictHostKeyChecking=no.
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=20 -o ServerAliveInterval=30 \
+              "ubuntu@$HOST" | tee deploy.log
+          sha="$(sed -n 's/^DEPLOYED_SHA=//p' deploy.log | tail -1)"
+          echo "deployed_sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Verificar el commit desplegado
+        env:
+          DEPLOYED: ${{ steps.ssh.outputs.deployed_sha }}
+        run: |
+          echo "pusheado:   $GITHUB_SHA"
+          echo "desplegado: $DEPLOYED"
+          if [ "$DEPLOYED" != "$GITHUB_SHA" ]; then
+            echo "::error::La VM quedó en '$DEPLOYED' y se pusheó '$GITHUB_SHA'."
+            exit 1
+          fi
+          {
+            echo "### Deploy en staging"
+            echo ""
+            echo "Commit desplegado y verificado en la VM: \`$DEPLOYED\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Borrar la clave
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+
+  smoke:
+    name: Smoke E2E
+    needs: deploy
+    # Corre después de un deploy exitoso, o solo (workflow_dispatch sin deploy).
+    if: always() && (needs.deploy.result == 'success' || needs.deploy.result == 'skipped')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: NexusAI/scripts
+
+      - name: Health + chat firmado + anti-replay
+        env:
+          BASE_URL: ${{ inputs.base_url || vars.STAGING_URL }}
+          NEXUSAI_E2E_API_KEY: ${{ secrets.NEXUSAI_E2E_API_KEY }}
+          NEXUSAI_E2E_SHARED_SECRET: ${{ secrets.NEXUSAI_E2E_SHARED_SECRET }}
+        run: |
+          if [ -z "$BASE_URL" ]; then
+            echo "::error::Falta la variable STAGING_URL en el environment staging."
+            exit 1
+          fi
+          set -o pipefail
+          python3 NexusAI/scripts/e2e_deployed.py --base-url "$BASE_URL" \
+              --expect-env staging --retries-health 12 | tee smoke.log
+
+      - name: Resumen
+        if: always()
+        env:
+          BASE_URL: ${{ inputs.base_url || vars.STAGING_URL }}
+          DEPLOYED: ${{ needs.deploy.outputs.deployed_sha }}
+        run: |
+          {
+            echo "### Smoke test"
+            echo ""
+            echo "- URL: \`$BASE_URL\`"
+            echo "- Commit desplegado: \`${DEPLOYED:-sin deploy en esta corrida}\`"
+            echo ""
+            echo '```'
+            cat smoke.log 2>/dev/null || echo "(el smoke no llegó a correr)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
