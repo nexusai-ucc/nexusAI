@@ -2327,7 +2327,6 @@ embeddings vectoriales y los datos relacionales viven en la misma instancia.
 ```mermaid
 erDiagram
     DOCUMENTS ||--o{ CHUNKS : "compone"
-    CHAT_SESSIONS ||--o{ MESSAGES : "contiene"
 
     DOCUMENTS {
         uuid id PK
@@ -2347,46 +2346,30 @@ erDiagram
         int token_count
         vector embedding "Vector 768 MVP, 1536 prod"
     }
-
-    CHAT_SESSIONS {
-        uuid id PK
-        int user_id "ID del alumno Moodle"
-        int course_id "0 = multi-curso"
-    }
-
-    MESSAGES {
-        uuid id PK
-        uuid session_id FK
-        string role "user, assistant, system"
-        text content
-        int token_count_prompt
-        int token_count_completion
-    }
-
-    UNANSWERED_QUESTIONS {
-        uuid id PK
-        int course_id
-        int user_id
-        text question
-        float max_similarity
-        int chunks_retrieved
-    }
 ```
 
 > **Figura 5.** Diagrama entidad-relación de NexusAI. *Fuente:* elaboración propia
-> (`entrega-final/15_modelo_datos.md`). *Texto alternativo:* cinco tablas — documents,
-> chunks, chat_sessions, messages y unanswered_questions — con `documents` componiendo
-> `chunks` y `chat_sessions` conteniendo `messages`.
+> (`entrega-final/15_modelo_datos.md`). *Texto alternativo:* dos tablas — documents y
+> chunks — con `documents` componiendo `chunks`, único par que hoy vive en el backend.
+> Las tablas de datos del alumno (sesiones de chat, mensajes, vacíos de contenido,
+> entre otras) se quitaron de este diagrama porque ya no viven en PostgreSQL — ver la
+> nota debajo.
 
 **Notas de implementación:** `chunks.embedding` usa un índice **HNSW** con distancia
 coseno (`m=16`, `ef_construction=200`) para búsqueda aproximada en tiempo casi
 constante. `documents` tiene un índice único parcial sobre
 `(course_id, filename, file_hash)` que evita reindexar el mismo archivo dos veces. El
 esquema evolucionó en 5 migraciones Alembic (001 a 004, con dos migraciones `004_*`
-desarrolladas en paralelo por integrantes distintos y luego encadenadas). Del lado del
-plugin Moodle, hoy solo existe `local_nexusai_placeholder` (vacía); las tablas
-`local_nexusai_usage`, `local_nexusai_cache` y `local_nexusai_course_settings` quedan
-planificadas para post-MVP.
+desarrolladas en paralelo por integrantes distintos y luego encadenadas). Por ADR-014
+(Anexo E), las tablas `CHAT_SESSIONS`, `MESSAGES` y `UNANSWERED_QUESTIONS` que figuraban
+antes en este diagrama ya no viven en PostgreSQL: los datos del alumno se movieron a
+dieciséis tablas nativas `local_nexusai_*` del lado del plugin de Moodle
+(`chat_sessions` → `local_nexusai_chat_sessions`, `messages` → `local_nexusai_messages`,
+`unanswered_questions` → `local_nexusai_gaps` —esta última cambió de nombre, no es la
+misma tabla solo renombrada—, además de intentos y errores de *quiz*, *flashcards* y
+alertas de calendario, entre otras). El backend conserva únicamente el índice vectorial
+del material de curso (`documents`/`chunks`, sin cambios) y las cachés de contenido, sin
+ningún dato personal del alumno.
 
 ## Anexo C — Métricas del proyecto
 
@@ -2433,9 +2416,12 @@ planificadas para post-MVP.
   [github.com/nexusai-ucc/nexusAI/actions](https://github.com/nexusai-ucc/nexusAI/actions)
 - **Release del MVP:** `v0.8.0-mvp`
   ([github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp](https://github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp)).
-  El plugin siguió evolucionando después del MVP (versión actual `0.14.2` según
-  `plugin/local/nexusai/version.php`) sin un *tag* formal más reciente en el
-  repositorio — pendiente etiquetar el próximo *release* (RNF-21).
+  El plugin siguió evolucionando después del MVP (versión actual `0.19.0`,
+  `MATURITY_BETA`, según `plugin/local/nexusai/version.php`) sin un *tag* formal
+  más reciente en el repositorio — pendiente etiquetar el próximo *release*
+  (RNF-21). Esa versión es la que está en curso de revisión en el Moodle
+  Plugins Directory (ver "Publicación en Moodle Marketplace" → "Estado
+  actual").
 
 > **Nota:** el backend está desplegado de forma permanente en dos ambientes sobre
 > Oracle Cloud (*Always Free*): *staging*, para pruebas del día a día
