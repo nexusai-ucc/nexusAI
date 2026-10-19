@@ -1,6 +1,6 @@
 # Matriz de trazabilidad: requisito → caso → test → defecto (TPC-04)
 
-> Issue [#576](https://github.com/nexusai-ucc/nexusAI/issues/576) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.0, 19/10/2026
+> Issue [#576](https://github.com/nexusai-ucc/nexusAI/issues/576) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.1, 19/10/2026
 
 La matriz responde dos preguntas:
 - **hacia adelante:** ¿qué prueba verifica cada requisito?
@@ -21,7 +21,7 @@ Sirve también para encontrar **brechas**: requisitos o criterios de aceptación
 
 | Requisito | Criterios | Casos de caja negra | Tests automatizados | Defectos | Estado |
 |---|---|---|---|---|---|
-| **HU-001** Chat básico del alumno | 1. widget con input · 2. la pregunta se envía · 3. la respuesta aparece diferenciada | CP-CHAT-01…26 (CE, VL) | `api/test_casos_chat.py` · `api/test_chat_stateless.py` · `api/test_rate_limit.py` · `plugin/external/chat_and_replace_test.php::test_chat_send_stores_the_conversation`, `test_chat_send_rejects_invalid_input` · `widget/ChatApp.test.jsx` · `widget/components/ChatInput.test.jsx` | [DEF-02](REGISTRO_DEFECTOS.md#def-02) (preguntas por voz rechazadas) | ✅ Cubierto |
+| **HU-001** Chat básico del alumno | 1. widget con input · 2. la pregunta se envía · 3. la respuesta aparece diferenciada | CP-CHAT-01…26 (CE, VL) | `api/test_casos_chat.py` · `api/test_chat_stateless.py` · `api/test_rate_limit.py` · `plugin/external/chat_and_replace_test.php::test_chat_send_stores_the_conversation`, `test_chat_send_rejects_invalid_input` · `widget/ChatApp.test.jsx` · `widget/components/ChatInput.test.jsx` | [DEF-02](REGISTRO_DEFECTOS.md#def-02) (preguntas por voz rechazadas) · [DEF-09](REGISTRO_DEFECTOS.md#def-09) (colapso bajo carga) | ✅ Cubierto |
 | **HU-002** Citas trazables a la fuente | 1. pills de fuentes · 2. fragmento y similitud al expandir · 3. "no encontré" sin material | — | `api/test_retriever.py::test_format_single_chunk_includes_filename_and_index`, `test_format_multiple_chunks_are_numbered_sequentially`, `test_retrieve_context_returns_empty_when_all_below_threshold` · `api/test_contract_responses.py` (forma de `sources`) · `widget/ChatApp.test.jsx` ("renderiza las fuentes citadas…", "muestra el estado no encontré…") | — | ✅ Cubierto (sin casos formales) |
 | **HU-003** Streaming token por token | tokens a medida que llegan, error a mitad del stream | — | `api/test_providers.py::test_chat_stream_yields_deltas`, `test_chat_stream_falls_back_to_secondary_on_quota_error` · `api/test_chat_stateless.py::test_stateless_stream_puts_everything_in_done` · `widget/api/chat.test.js` ("procesa meta → tokens → done…", "dispara onError…") · `widget/ChatApp.test.jsx` (error a mitad del stream) | — | ✅ Cubierto |
 | **HU-010** Subida de PDFs por el docente | 1. zona de drag-and-drop · 2. `pending` → `indexing` · 3. → `indexed` · 4. `error` con mensaje | CP-DOC-01, 03, 07…14 (TD R1, R6…R11; VL de tamaño) | `api/test_documents_router.py` · `api/test_pipeline.py::test_index_document_indexes_successfully`, `test_index_document_marks_error_on_extraction_failure` · `api/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index` · `widget/documents/UploadZone.test.jsx` · `plugin/external/document_functions_test.php` | [DEF-07](REGISTRO_DEFECTOS.md#def-07) (indexación en lote con Gemini) | ✅ Cubierto |
@@ -48,6 +48,7 @@ Sirve también para encontrar **brechas**: requisitos o criterios de aceptación
 | [DEF-06](REGISTRO_DEFECTOS.md#def-06) | — (proceso: aislamiento de tests) | Pipeline | `plugin/external/external_testcase.php::tearDown` |
 | [DEF-07](REGISTRO_DEFECTOS.md#def-07) | HU-010 (indexación) | Prueba contra el proveedor real (TPC-07) | `api/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index` |
 | [DEF-08](REGISTRO_DEFECTOS.md#def-08) | HU-031 | **Tabla de decisión** de HU-031 (CP-QUIZ-19) | `api/test_quiz_router.py::test_cp_quiz_19_tema_sin_material_responde_en_el_idioma_de_la_interfaz` |
+| [DEF-09](REGISTRO_DEFECTOS.md#def-09) | HU-001 y el objetivo de rendimiento del plan | **Prueba de stress** (TPC-09) | `api/test_db_pool_contention.py` · `api/test_chat_stateless.py::test_messages_releases_the_db_connection_before_calling_the_llm` |
 
 DEF-05 y DEF-06 no salen de un requisito del producto: son defectos del proceso (CI y tests). Se listan para que la vista hacia atrás esté completa.
 
@@ -60,10 +61,11 @@ DEF-05 y DEF-06 no salen de un requisito del producto: son defectos del proceso 
 | 🟡 Parcial | HU-060, criterio 3 | Que la ventana de días filtre | Test de `/gaps/list` con filas de distintas fechas y `days` 7 contra 365 |
 | ⚠️ Discrepancia | HU-031, criterio 1 | El criterio dice "similaridad < 0.4 o menos de 3 matches"; el código usa similitud < 0,5 más verificación con el LLM ([CASOS_DE_PRUEBA.md](CASOS_DE_PRUEBA.md) §4.3) | Actualizar el criterio en `05_historias_usuario.md`. El cambio fue deliberado: 0,4 dejaba pasar coincidencias espurias entre idiomas |
 
-**Resumen:** de 14 requisitos, 11 están cubiertos, 2 parcialmente y 1 tiene una brecha. Hay una discrepancia entre requisito y código, y los 8 defectos registrados quedan trazados.
+**Resumen:** de 14 requisitos, 11 están cubiertos, 2 parcialmente y 1 tiene una brecha. Hay una discrepancia entre requisito y código, y los 9 defectos registrados quedan trazados.
 
 ## Historial de versiones
 
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 19/10/2026 | Matriz de 14 requisitos, vista hacia atrás de DEF-01 a DEF-08, brechas y discrepancias |
+| 1.1 | 19/10/2026 | DEF-09 (encontrado por la prueba de stress) |

@@ -1,6 +1,6 @@
 # Registro de defectos (TPC-06)
 
-> Issue [#578](https://github.com/nexusai-ucc/nexusAI/issues/578) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.2, 19/10/2026
+> Issue [#578](https://github.com/nexusai-ucc/nexusAI/issues/578) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.3, 19/10/2026
 
 El registro de defectos de NexusAI vive en **GitHub Issues**, con el formulario **🐞 Defecto** (`.github/ISSUE_TEMPLATE/defecto.yml`) y las labels `bug`, `tipo:defecto` y `severidad:*`. Este documento es la vista consolidada para el TP: lista cada defecto con su origen, su fix, su test de regresión y las corridas de CI que lo muestran.
 
@@ -37,6 +37,7 @@ Abierto ──► En curso ──► Test de regresión en ROJO ──► Fix �
 | [DEF-06](#def-06) | Tests: un mock de `curl` sobrevivía entre tests y rompía `sync_forum_post_test` | — (proceso) | Tests del plugin | Baja | **Pipeline** (PR #603) | Corregido | `df38ed9` | `tests/external/external_testcase.php::tearDown` |
 | [DEF-07](#def-07) | `embed_many` rompe con `TypeError` cuando el proveedor devuelve los embeddings sin `index` (Gemini) | HU-010 | Backend (proveedor de embeddings) | Media | **Prueba contra el proveedor real** (TPC-07, 19/10) | Corregido | [#628](https://github.com/nexusai-ucc/nexusAI/pull/628) | `tests/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index`, `tests/integration/test_llm_real.py` |
 | [DEF-08](#def-08) | El quiz con un tema sin material responde siempre en español cuando la similitud es baja (no sigue el idioma de la interfaz) | HU-031 | Backend (quiz) | Baja | **Tabla de decisión** de HU-031 (TPC-04, 19/10) | Corregido | [#632](https://github.com/nexusai-ucc/nexusAI/pull/632) | `tests/test_quiz_router.py::test_cp_quiz_19_tema_sin_material_responde_en_el_idioma_de_la_interfaz` |
+| [DEF-09](#def-09) | Con ~40 alumnos simultáneos el chat colapsa (p95 de 60 s, 32 % de chats sin respuesta) y se pierden registros de consumo: el request retiene su conexión durante el LLM y el registro pide otra del mismo pool | HU-001 · objetivo de rendimiento | Backend (base de datos / registro de consumo) | Alta | **Prueba de stress** (TPC-09, 19/10) | Corregido | [#644](https://github.com/nexusai-ucc/nexusAI/pull/644) | `tests/test_db_pool_contention.py` (Postgres real) · `tests/test_chat_stateless.py::test_messages_releases_the_db_connection_before_calling_the_llm`, `test_stream_releases_the_db_connection_before_streaming` |
 
 ### DEF-01
 
@@ -125,6 +126,45 @@ El segundo mensaje y el 404 de "curso sin material" siguen el idioma de la inter
 | Test de regresión, sin fix (local) | `pytest -k cp_quiz_19` | 🔴 el detalle en inglés no contiene "couldn't find material" |
 | Fix | `pytest tests/test_quiz_router.py` | 🟢 87 tests pasan |
 
+### DEF-09
+
+Lo encontró la **prueba de stress** de TPC-09 ([PRUEBAS_DE_CARGA.md](PRUEBAS_DE_CARGA.md)). Con el LLM simulado a 1,5 s, el chat respondía perfecto hasta 40 usuarios virtuales (VUs): 5,1 pedidos/s y p95 de 2,45 s. Al llegar a 40, **colapsó**:
+- el throughput cayó a 0,7 pedidos/s;
+- el p95 llegó a 30–60 s;
+- solo el 68 % de los chats salió OK;
+- los logs mostraron 522 `No se pudo registrar el consumo … QueuePool limit of size 5 overflow 10 reached`;
+- al final quedaron las 15 conexiones de Postgres en *idle in transaction*.
+
+**Aislamiento.** El mismo stress con el registro de consumo apagado llegó a 100 VUs con 99,96 % OK y 12,3 pedidos/s ([corrida 39296300477](https://github.com/nexusai-ucc/nexusAI/actions/runs/39296300477)). Eso confirma que el disparador era el registro.
+
+**Causa: retener y esperar.**
+1. Cada chat abre una transacción en el retrieval y la **retiene durante toda la llamada al LLM**: la conexión queda *idle in transaction* esos segundos.
+2. La capa de proveedores registra el consumo **dentro de ese mismo request**: `await record_usage(...)` en `providers/llm.py` y en `providers/embeddings.py`.
+3. `usage_ledger._persist` abría su sesión con el **mismo pool** (5 + 10 conexiones).
+
+Con unos 15 chats en vuelo, todas las conexiones estaban retenidas y cada request esperaba una más, que nadie soltaba. Cada espera vencía a los 30 s (`pool_timeout`): el registro se perdía (*fail-open*) y el chat sumaba 30 s por cada llamada al proveedor.
+
+**Por qué no lo vio nadie (5 porqués):**
+1. *¿Por qué colapsó?* Porque los requests se quedaron sin conexiones.
+2. *¿Por qué se quedaron sin conexiones?* Porque cada chat necesitaba **dos** al mismo tiempo: la propia, retenida durante el LLM, y la del registro.
+3. *¿Por qué retenía la propia?* Porque el retrieval abre una transacción y nada la cerraba antes del LLM: el patrón por defecto de "una sesión por request".
+4. *¿Por qué no apareció en los tests?* Porque todos los tests de la API usan dobles de la base. Con un pool real hacen falta ~15 chats simultáneos para llenarlo.
+5. *¿Por qué no apareció en uso real?* Porque hasta ahora el uso fue de pocos alumnos a la vez. Con el LLM real, más lento, el quiebre llegaría **antes**, porque cada conexión queda retenida más tiempo.
+
+**Fix ([#644](https://github.com/nexusai-ucc/nexusAI/pull/644)):**
+- **Pool propio para el registro de consumo** (`get_ledger_session_factory` en `app/db/session.py`): 2 + 3 conexiones y un timeout de 5 s, configurables. El registro ya no compite con los requests.
+- **El chat cierra la transacción antes de llamar al LLM**, en `/messages` y en el stream. No retiene la conexión mientras el modelo responde.
+- Otros endpoints que llaman al LLM con una sesión abierta (quiz, resumen) ya no pueden interbloquearse, gracias al pool propio. Les queda retener la conexión durante el LLM, anotado como mejora.
+
+| Paso | Corrida | Resultado |
+|---|---|---|
+| Stress que lo encontró | Pruebas de carga [39292517339](https://github.com/nexusai-ucc/nexusAI/actions/runs/39292517339) | 🔴 colapso a 40 VUs |
+| Tests de regresión, sin fix | Backend CI [39325281433](https://github.com/nexusai-ucc/nexusAI/actions/runs/39325281433) (`b07770f`) | 🔴 con Postgres real y el pool de los requests agotado, `record_usage` espera hasta el `TimeoutError`; el chat no libera la conexión antes del LLM |
+| Fix | Backend CI [39325531204](https://github.com/nexusai-ucc/nexusAI/actions/runs/39325531204) | 🟢 620 tests pasan; el registro termina en ~0,5 s con el pool agotado |
+| Stress con el fix (registro prendido) | Pruebas de carga [39325730633](https://github.com/nexusai-ucc/nexusAI/actions/runs/39325730633) | 🟢 **sin quiebre hasta 100 VUs**: 6.196 chats, 99,98 % OK, p95 de 2,49 s plano en todos los escalones, ~20 pedidos/s, **0 registros perdidos** y 0 conexiones *idle in transaction* al final |
+
+**Acción preventiva:** `test_db_pool_contention.py` es el primer test del backend contra **Postgres real** (lo provee backend-ci). Si alguien vuelve a abrir sesiones del registro con el pool de los requests, falla.
+
 ## Ejecución fallida que detectó un problema real
 
 **DEF-05. "Sync derived repos"** publica el plugin y el backend en sus repos derivados (`moodle-local_nexusai`, `nexusai-backend`) en cada push a `development`.
@@ -155,3 +195,4 @@ También DEF-06 es una ejecución fallida que detectó un problema real (la fuga
 | 1.0 | 16/10/2026 | Formulario de defecto, severidades, ciclo de vida, DEF-01 a DEF-06, ejecución fallida real |
 | 1.1 | 19/10/2026 | DEF-07 (detectado por la prueba contra el proveedor real) y riesgo del modelo de producción |
 | 1.2 | 19/10/2026 | DEF-08 (detectado por una tabla de decisión) y columna de requisito, enlazada con [TRAZABILIDAD.md](TRAZABILIDAD.md) |
+| 1.3 | 19/10/2026 | DEF-09 (detectado por la prueba de stress) |
