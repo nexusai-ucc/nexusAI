@@ -16,8 +16,11 @@
   de Oracle Cloud, una por ambiente. Cada VM sigue su propia rama de git.
 - **Moodle NO corre ahí** — sigue local, en la máquina de cada uno, apuntando
   el plugin a la URL del ambiente que se quiera probar.
-- El deploy es **100% manual por SSH**. No hay CI/CD: un `git push` no cambia
-  nada solo en la VM. Hay que entrar y traer el código a mano.
+- **Staging se despliega solo**: cada push a la rama `staging` dispara
+  `.github/workflows/deploy-staging.yml`, que despliega por SSH con una clave
+  restringida, verifica el commit y corre un smoke test (TPC-08, ver
+  [`docs/calidad/CD_STAGING.md`](calidad/CD_STAGING.md)). **Producción sigue
+  siendo manual por SSH** (sección 3), igual que un deploy de emergencia en staging.
 - Las credenciales reales (SSH, API key, shared secret) **no están en este
   documento ni en el repo** — ver sección 6.
 
@@ -30,7 +33,7 @@
 | Nombre de la instancia | `nexusai-staging` | `nexusai-prod` |
 | IP pública | `146.181.62.67` | `159.112.139.166` |
 | IP privada | `10.0.0.180` | `10.0.0.252` |
-| Dominio | `api.146.181.62.67.nip.io` | `api.159.112.139.166.nip.io` |
+| Dominio | `api-staging.146.181.62.67.nip.io` | `api.159.112.139.166.nip.io` |
 | **Rama de git que sigue** | **`staging`** | **`main`** |
 | Creada | 2026-08-08 | 2026-08-05 |
 | Fault domain | FD-3 | FD-2 |
@@ -67,7 +70,7 @@ primero a `staging`.
 **Verificar que un ambiente está vivo** (no requiere acceso SSH):
 
 ```bash
-curl https://api.146.181.62.67.nip.io/health    # staging
+curl https://api-staging.146.181.62.67.nip.io/health    # staging
 curl https://api.159.112.139.166.nip.io/health  # producción
 # → {"status":"ok","version":"0.1.0","env":"...", "llm_model":"..."}
 ```
@@ -139,7 +142,7 @@ sudo docker ps
 **5. Confirmar que el health check responde** (desde la VM o desde afuera):
 
 ```bash
-curl https://api.146.181.62.67.nip.io/health   # ajustar según ambiente
+curl https://api-staging.146.181.62.67.nip.io/health   # ajustar según ambiente
 ```
 
 **6. Si algo no levanta, mirar logs del servicio con problemas:**
@@ -224,7 +227,7 @@ Cada VM tiene su propio valor en `~/nexusAI/NexusAI/.env`:
 
 ```bash
 # en nexusai-staging
-NEXUSAI_DOMAIN=api.146.181.62.67.nip.io
+NEXUSAI_DOMAIN=api-staging.146.181.62.67.nip.io
 
 # en nexusai-prod
 NEXUSAI_DOMAIN=api.159.112.139.166.nip.io
@@ -299,8 +302,8 @@ empezar a deployar, ahí conviene pasar a un gestor de contraseñas compartido
   ninguno, en ningún ambiente. Si se pierde una VM, se pierde su base entera.
   Es el pendiente más importante de esta lista.
 - Dominio real o DuckDNS en vez de `nip.io` (opcional, ver sección 5).
-- CI/CD para no depender de SSH manual (opcional). Implica cargar la clave SSH
-  como secret de GitHub — ver la alternativa evaluada en
-  [ADR-011](adr/011-deploy-self-hosted-oracle.md).
+- CD a producción: staging ya es automático (TPC-08) con una clave SSH
+  restringida a `scripts/deploy_vm.sh`; para producción haría falta otra clave
+  y otro environment, idealmente con aprobación manual antes del deploy.
 - Conectar el Moodle local + plugin a staging para probar el flujo completo
   antes de cada promoción a producción.

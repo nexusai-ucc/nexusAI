@@ -820,6 +820,65 @@ comporta como una hoja a pantalla completa (*bottom-sheet*).
 > materiales subidos con su estado de indexación; a la derecha, una pregunta de un
 > alumno que el material no pudo responder bien, con su similitud promedio.
 
+### Proceso de diseño de la interfaz
+
+El panel lateral descrito arriba es el resultado de dos iteraciones
+previas, documentadas en `docs/diseno/`.
+
+El primer concepto (`wireframes-mvp.html`, issue FRONT-01/#158,
+05/05/2026) era un *dropdown* flotante disparado por un ícono, no un
+modal de pantalla completa — decisión justificada explícitamente para
+que el alumno pueda leer el material del curso y conversar con el
+asistente al mismo tiempo, con Intercom, Crisp y el *widget* de ChatGPT
+nombrados como referencia. El *wireframe* define cinco estados de la
+vista de alumno (cerrado, bienvenida, conversando, cargando, y error
+—este último mostrando el texto real del error del backend, por ejemplo
+un HTTP 503, con opción de reintentar— ) y cuatro de la vista docente
+(vacío con zona de arrastrar y soltar, indexando con una barra de
+progreso marcada explícitamente como estimada, ya que el backend solo
+reporta `pending`/`indexing`/`indexed`/`error` y no un porcentaje real,
+lista de materiales ya indexados, y configuración del *plugin*). De las
+seis decisiones de diseño documentadas con su *trade-off*, dos son
+especialmente relevantes para el resto del informe: mostrar las fuentes
+citadas junto a cada respuesta en vez de solo el texto generado, atado
+al principio de "no inventar" que gobierna el diseño del asistente; y la
+indexación asíncrona del material, para no bloquear la interfaz del
+docente durante los 30 a 60 segundos que puede tardar procesar un PDF.
+
+El panel lateral que describe esta sección es, en cambio, el resultado
+de un rediseño posterior (`rds-01` a `rds-07`, 10 al 12/08/2026, issue
+#400): el *dropdown* original, con *resize* libre en sus cuatro bordes,
+se reemplaza por un panel acoplado al borde derecho de alto completo,
+que angosta de verdad el contenido de la página de Moodle (con un
+*fallback* silencioso si el tema activo no expone el selector esperado o
+el *viewport* es angosto), agrega un riel colapsado como nueva forma de
+reabrirlo, y elimina el cierre al hacer clic afuera —un panel acoplado
+ya no tiene sentido que se cierre solo por tocar el contenido del curso,
+ahora angostado y literalmente al lado—. La misma semana se rediseñaron,
+con el mismo criterio, el historial de conversaciones (de superponerse
+en una capa a convertirse en una vista más del propio panel) y la
+navegación del panel docente (de pestañas horizontales a un menú
+lateral).
+
+En paralelo, `docs/diseno/v0-prompts.md` (28 al 30/07/2026) documenta una
+capa de pulido visual sobre componentes de React que ya funcionaban, no
+un rediseño de lógica: *prompts* listos para pegar en v0.dev, la
+herramienta de Vercel para generar interfaces a partir de una descripción
+(v0, s.f.) —no debe confundirse con un *prompt* del asistente de IA del
+proyecto—. Los cinco *prompts* trabajados (*widget* de chat, plan de
+estudio personalizado, *quiz* del modo estudio, buscador semántico, panel
+docente) comparten un mismo bloque de sistema de diseño tomado de
+`react/src/styles.css` sin inventar uno nuevo: color primario `#6366f1`,
+radios de 4 a 16 píxeles, iconografía de trazo simple sin emojis, y
+referencias estéticas a Linear, Vercel y v0.dev mismo. El tamaño fijo del
+panel que fijan estos *prompts* —400×600 píxeles en escritorio,
+*bottom-sheet* a pantalla completa en *mobile*— coincide con el que ya
+describe esta misma subsección. Otras seis pantallas quedaron en una
+lista de pendientes, todavía sin *prompt* escrito.
+
+Las Figuras 2a a 2d de esta sección son capturas del MVP, anteriores al
+rediseño de agosto recién descrito.
+
 ## Implementación
 
 La solución se construyó de manera incremental, dividida en módulos lógicos:
@@ -1192,17 +1251,109 @@ de build separada.
 
 ## Pruebas
 
-La estrategia de pruebas combina:
+La estrategia de pruebas se organizó en nueve ciclos documentados como
+issues `TEST-01` a `TEST-09`, todas cerradas durante el Sprint 4 (MVP),
+cada una con un responsable y un alcance específico.
 
-- **Pruebas unitarias y de integración** automatizadas en el backend (extracción,
-  fragmentación, recuperación, autenticación HMAC), con una cobertura cercana al 80%.
-- **Pruebas funcionales** manuales sobre el plugin y la interfaz de chat.
-- **Pruebas de aceptación** vinculadas a los criterios definidos en los requerimientos.
-- **Evaluación de calidad de respuesta** mediante un conjunto de referencia
-  (*golden set*) de preguntas y respuestas esperadas.
+### Pruebas unitarias y de integración (backend)
 
-> **PENDIENTE —** consolidar los resultados de las pruebas con usuarios reales y los
-> valores medidos frente a los objetivos de latencia (RNF-06 a RNF-09).
+`TEST-02` cubrió la *suite* unitaria del backend en Python con
+**pytest** (pytest, s.f.), sobre RAG, *embeddings*, *chunking* y los *endpoints* de
+FastAPI. A la fecha de redacción de este capítulo, esa *suite*
+(`services/api/tests/`) tiene 530 funciones de test en 41 archivos —más
+que el *snapshot* de 37 tests que registra el Anexo C, porque la
+*suite* siguió creciendo después del MVP; ambos números son correctos,
+cada uno en su momento. Usa `@pytest.mark.asyncio` para los *endpoints*
+asíncronos, `@pytest.mark.parametrize` para cubrir variantes de un mismo
+caso, y *fixtures* de `conftest.py` (`fake_redis`,
+`fake_openai_chat_response`, `fake_chat_stream`) con `AsyncMock`/
+`MagicMock` y *dependency overrides* de FastAPI para simular Redis y al
+proveedor de LLM sin llamadas de red reales. Un archivo aparte,
+`tests/integration/test_llm_real.py`, se mantiene deliberadamente fuera
+de ese *mocking*: corre contra el proveedor de LLM real, para no
+depender únicamente de respuestas simuladas.
+
+Las pruebas de integración restantes fueron manuales: `TEST-03` verificó
+el flujo completo React → *plugin* PHP → backend Python → proveedor de
+LLM con datos reales; `TEST-04` probó el *plugin* en un *sandbox* real
+de Moodle con usuarios de prueba; `TEST-05` encadenó ambas en una sesión
+*end-to-end* completa, desde que un alumno abre el chat hasta que recibe
+una respuesta sobre material real de curso.
+
+### Pruebas automatizadas del frontend (Vitest)
+
+Antes de la issue `#311` (*QA-01*), el *widget* de React no tenía ningún
+test automatizado — ni Vitest (Vitest, s.f.) ni Jest estaban siquiera declarados en su
+`package.json`. La issue proponía priorizar los componentes con más
+estado (`StudyPlanPanel`, `AnalyticsDashboardPanel`,
+`ExamGeneratorPanel`); lo que efectivamente se implementó, en cambio,
+priorizó la lógica pura y la capa de API: `gift.js` (la conversión al
+formato GIFT de Moodle) llegó al 100% de cobertura como pedía la issue,
+y se suman pruebas de los módulos `api/*.js` y de un componente de
+manejo de errores — ocho archivos, 65 casos en total. Los paneles con
+estado que la issue señalaba como prioridad quedaron sin cubrir; se
+cuenta esta desviación tal cual, no como si el plan original se hubiera
+cumplido punto por punto. La *suite* corre en `frontend-ci.yml`, que
+sube el reporte de cobertura como artefacto de *build*; todavía no exige
+un umbral mínimo para pasar el CI, algo que una épica posterior de
+calidad de software agrega por fuera de esta issue.
+
+### Evaluación de calidad del asistente: dos campañas
+
+`TEST-08` produjo `golden_set.md`: una rúbrica manual de doce preguntas
+sobre contenido de base de datos, evaluadas en tres criterios de 1 a 5
+(Relevancia, Completitud, Honestidad). Esa corrida, ejecutada en el MVP,
+es la que ya resume el Anexo C (8 de 10 preguntas respondidas
+correctamente con citación adecuada, 2 de 2 casos donde el asistente
+admitió correctamente no poder responder, cero falsos positivos o
+negativos) — no se repite esa tabla acá.
+
+Existe una segunda campaña, automatizada y mucho más reciente
+(`investigacion/02-rag/eval-dataset.json` y `eval-report.json`,
+11/09/2026), que **no es la misma corrida con otro formato**: reusa las
+doce preguntas de `golden_set.md`, agregándoles palabras clave de
+referencia para automatizar el *scoring*, pero las corre contra un
+*fixture* sintético bajo un `course_id` dedicado (`990001`) en lugar del
+plan original de 30-50 preguntas anotadas por un docente real sobre
+material de curso genuino — ese plan más ambicioso nunca se ejecutó, y
+se documenta como limitación en lugar de ocultarlo. Mide en tres
+niveles: *retrieval* (ocho preguntas con respuesta esperada en el
+material) con **Recall@5 = 1,00** (objetivo >= 0,85, cumplido),
+**Precision@5 = 0,275** (objetivo >= 0,50, no cumplido, explicado por un
+corpus de prueba muy chico —unos nueve *chunks* en total— donde casi
+todo el top-5 son vecinos legítimos por superposición de *chunking*, no
+ruido) y **MRR = 0,9375** (objetivo >= 0,70, cumplido); *faithfulness* de
+la respuesta generada, evaluada por un segundo LLM como juez (de un
+proveedor distinto al que genera la respuesta en producción, para que el
+modelo no se autoevalúe); y honestidad del *fallback* ante las cuatro
+preguntas deliberadamente fuera de material. En esta corrida en
+particular, la cuota gratuita de Gemini se agotó a mitad de la ejecución
+y el modelo de *fallback* configurado resultó estar descontinuado,
+devolviendo error en vez de una respuesta — de las ocho preguntas de
+*faithfulness* solo dos llegaron a evaluarse (una fiel, una parcial por
+corte de respuesta) y ninguna de las cuatro de *fallback* se pudo medir.
+El propio reporte distingue explícitamente "no medible" de "0% de
+honestidad", y el hallazgo en sí —un modelo de respaldo roto que
+convierte una degradación esperable en un error duro— es, más allá del
+número, el resultado más valioso de haber corrido esta evaluación.
+
+### Pruebas de aceptación, usuarios reales y rendimiento
+
+`TEST-06` sumó *feedback* real de usabilidad y precisión de tres a cinco
+compañeros de la UCC usando el asistente con contenido real de curso.
+`TEST-09` midió tiempos de respuesta con el objetivo de mantener un
+promedio menor a 10 segundos. `TEST-07` cerró el ciclo con la corrección
+de los *bugs* encontrados en los pasos anteriores y una verificación de
+regresión. (Las pruebas automatizadas del *plugin* en sí —PHPUnit y
+Behat— se describen en "Prácticas de seguridad del plugin", no acá, por
+tratarse de una *suite* distinta a la del backend.)
+
+> **PENDIENTE —** arreglar el modelo de *fallback* descontinuado y
+> re-correr completos los niveles de *faithfulness* y honestidad de la
+> evaluación automatizada; ampliar el *dataset* a 30-50 preguntas con un
+> docente real sobre material de curso genuino; integrar `ragas` y
+> pytest al CI para que esta evaluación corra en cada *pull request*, no
+> solo manualmente.
 
 \newpage
 
@@ -1955,8 +2106,53 @@ En síntesis, el proyecto demuestra que es posible integrar asistencia académic
 contextualizada y auditable dentro del LMS institucional, amplificando el rol del docente
 en lugar de sustituirlo.
 
-> *(Espacio reservado para reflexiones personales del equipo, a incorporar si la
-> cátedra lo solicita.)*
+## Reflexiones personales del equipo
+
+> *(Borrador a validar por cada integrante antes de la entrega final —
+> cada uno puede reescribir su propio párrafo con su propia voz.)*
+
+**Delfina Salinas.** Como *Scrum Master*, el aprendizaje de gestión más
+concreto fue coordinar la documentación de un proyecto que seguía
+creciendo en paralelo, sin que eso bloqueara al resto del equipo —dividir
+la expansión de este mismo informe en issues pequeñas y acotadas
+(`PI-08` a `PI-22`), cada una con su fuente real ya identificada, resultó
+más sostenible que plantear una reescritura grande de una sola vez. En lo
+técnico, investigar la *Hook API* de Moodle me dejó un hallazgo que no
+esperaba: un *callback* que funcionaba sin problema en versiones viejas
+de la plataforma deja de funcionar en Moodle 4.4 en adelante sin ningún
+error visible, solo una advertencia de deprecación fácil de pasar por
+alto. Si lo volviera a hacer, documentaría las decisiones de diseño e
+infraestructura en el momento en que se toman —el rediseño de la
+interfaz de agosto, por ejemplo, quedó registrado solo en mensajes de
+*commit*— en lugar de tener que reconstruirlas meses después para este
+informe.
+
+**Santiago Tricherri.** Ejecutar una auditoría de seguridad real sobre
+el propio proyecto, en vez de aplicar una lista genérica de buenas
+prácticas, me obligó a mirar código que ya daba por "terminado" con otra
+exigencia, y encontré algo concreto que no habría aparecido de otra
+forma: una métrica de usuario que usaba un hash sin sal, reversible por
+fuerza bruta. En gestión, ser el único integrante con acceso de
+*deploy* a los dos ambientes de producción me mostró que esa
+concentración es una responsabilidad operativa real, no solo una
+formalidad en un documento. Si lo volviera a hacer, repartiría ese
+acceso antes de que se volviera un cuello de botella, en vez de esperar
+a que el equipo creciera para resolverlo.
+
+**Marcos Bugliotti.** Integrar un *plugin* de Moodle con un backend
+propio —*Hook API*, *capabilities*, *web services*— resultó
+sustancialmente más profundo de lo que parece desde afuera del proyecto;
+cada capa (autenticación, autorización, empaquetado del *frontend* como
+módulo AMD) terminó teniendo su propia complejidad real, no solo de
+diseño. En gestión, mantener la consistencia entre documentos de
+investigación escritos en momentos distintos del proyecto es más difícil
+de lo esperado: la inconsistencia de nombres de *capabilities* que
+encontramos al redactar este mismo informe —dos convenciones distintas
+documentadas en dos archivos distintos— es un ejemplo real de cómo
+terminología técnica puede divergir en silencio si nadie la revisa de
+conjunto. Si lo volviera a hacer, congelaría nombres y contratos técnicos
+clave más temprano en el proyecto, en lugar de dejarlos evolucionar
+libremente entre documentos de diseño.
 
 \newpage
 
@@ -2023,10 +2219,16 @@ sección, y toda referencia listada fue utilizada en el informe.
   [Software]. GitHub. https://github.com/pgvector/pgvector
 - Pydantic. (s.f.). *Pydantic documentation*. Recuperado 2026, de
   https://docs.pydantic.dev/
+- pytest. (s.f.). *pytest documentation*. Recuperado 2026, de
+  https://docs.pytest.org/
 - React. (s.f.). *React documentation — createRoot*. Recuperado 2026, de
   https://react.dev/reference/react-dom/client/createRoot
 - sse-starlette. (s.f.). *sse-starlette* [Software]. GitHub.
   https://github.com/sysid/sse-starlette
+- v0. (s.f.). *v0 by Vercel — Generative UI* [Software]. Vercel.
+  https://v0.dev/
+- Vitest. (s.f.). *Vitest documentation*. Recuperado 2026, de
+  https://vitest.dev/
 - Webpack. (s.f.). *Webpack documentation — Output, externals y code splitting*.
   Recuperado 2026, de https://webpack.js.org/configuration/output/
 
@@ -2125,7 +2327,6 @@ embeddings vectoriales y los datos relacionales viven en la misma instancia.
 ```mermaid
 erDiagram
     DOCUMENTS ||--o{ CHUNKS : "compone"
-    CHAT_SESSIONS ||--o{ MESSAGES : "contiene"
 
     DOCUMENTS {
         uuid id PK
@@ -2145,46 +2346,30 @@ erDiagram
         int token_count
         vector embedding "Vector 768 MVP, 1536 prod"
     }
-
-    CHAT_SESSIONS {
-        uuid id PK
-        int user_id "ID del alumno Moodle"
-        int course_id "0 = multi-curso"
-    }
-
-    MESSAGES {
-        uuid id PK
-        uuid session_id FK
-        string role "user, assistant, system"
-        text content
-        int token_count_prompt
-        int token_count_completion
-    }
-
-    UNANSWERED_QUESTIONS {
-        uuid id PK
-        int course_id
-        int user_id
-        text question
-        float max_similarity
-        int chunks_retrieved
-    }
 ```
 
 > **Figura 5.** Diagrama entidad-relación de NexusAI. *Fuente:* elaboración propia
-> (`entrega-final/15_modelo_datos.md`). *Texto alternativo:* cinco tablas — documents,
-> chunks, chat_sessions, messages y unanswered_questions — con `documents` componiendo
-> `chunks` y `chat_sessions` conteniendo `messages`.
+> (`entrega-final/15_modelo_datos.md`). *Texto alternativo:* dos tablas — documents y
+> chunks — con `documents` componiendo `chunks`, único par que hoy vive en el backend.
+> Las tablas de datos del alumno (sesiones de chat, mensajes, vacíos de contenido,
+> entre otras) se quitaron de este diagrama porque ya no viven en PostgreSQL — ver la
+> nota debajo.
 
 **Notas de implementación:** `chunks.embedding` usa un índice **HNSW** con distancia
 coseno (`m=16`, `ef_construction=200`) para búsqueda aproximada en tiempo casi
 constante. `documents` tiene un índice único parcial sobre
 `(course_id, filename, file_hash)` que evita reindexar el mismo archivo dos veces. El
 esquema evolucionó en 5 migraciones Alembic (001 a 004, con dos migraciones `004_*`
-desarrolladas en paralelo por integrantes distintos y luego encadenadas). Del lado del
-plugin Moodle, hoy solo existe `local_nexusai_placeholder` (vacía); las tablas
-`local_nexusai_usage`, `local_nexusai_cache` y `local_nexusai_course_settings` quedan
-planificadas para post-MVP.
+desarrolladas en paralelo por integrantes distintos y luego encadenadas). Por ADR-014
+(Anexo E), las tablas `CHAT_SESSIONS`, `MESSAGES` y `UNANSWERED_QUESTIONS` que figuraban
+antes en este diagrama ya no viven en PostgreSQL: los datos del alumno se movieron a
+dieciséis tablas nativas `local_nexusai_*` del lado del plugin de Moodle
+(`chat_sessions` → `local_nexusai_chat_sessions`, `messages` → `local_nexusai_messages`,
+`unanswered_questions` → `local_nexusai_gaps` —esta última cambió de nombre, no es la
+misma tabla solo renombrada—, además de intentos y errores de *quiz*, *flashcards* y
+alertas de calendario, entre otras). El backend conserva únicamente el índice vectorial
+del material de curso (`documents`/`chunks`, sin cambios) y las cachés de contenido, sin
+ningún dato personal del alumno.
 
 ## Anexo C — Métricas del proyecto
 
@@ -2231,9 +2416,12 @@ planificadas para post-MVP.
   [github.com/nexusai-ucc/nexusAI/actions](https://github.com/nexusai-ucc/nexusAI/actions)
 - **Release del MVP:** `v0.8.0-mvp`
   ([github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp](https://github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp)).
-  El plugin siguió evolucionando después del MVP (versión actual `0.14.2` según
-  `plugin/local/nexusai/version.php`) sin un *tag* formal más reciente en el
-  repositorio — pendiente etiquetar el próximo *release* (RNF-21).
+  El plugin siguió evolucionando después del MVP (versión actual `0.19.0`,
+  `MATURITY_BETA`, según `plugin/local/nexusai/version.php`) sin un *tag* formal
+  más reciente en el repositorio — pendiente etiquetar el próximo *release*
+  (RNF-21). Esa versión es la que está en curso de revisión en el Moodle
+  Plugins Directory (ver "Publicación en Moodle Marketplace" → "Estado
+  actual").
 
 > **Nota:** el backend está desplegado de forma permanente en dos ambientes sobre
 > Oracle Cloud (*Always Free*): *staging*, para pruebas del día a día
