@@ -1,6 +1,6 @@
 # Despliegue continuo a staging y smoke test (TPC-08)
 
-> Issue [#580](https://github.com/nexusai-ucc/nexusAI/issues/580) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.0, 19/10/2026
+> Issue [#580](https://github.com/nexusai-ucc/nexusAI/issues/580) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.1, 19/10/2026
 
 Hasta TPC-08, el deploy del backend era 100 % manual: el admin de deploy entraba por SSH a la VM y traía el código a mano ([DEPLOY_ORACLE.md](../DEPLOY_ORACLE.md) §3). Nada verificaba después que el ambiente funcionara.
 
@@ -82,8 +82,12 @@ La URL es una **variable** y no está escrita en el workflow. En TPC-07 se repor
 
 | Fecha | Corrida | Qué se probó | Resultado |
 |---|---|---|---|
-| _pendiente_ | | Deploy + verificación del commit + smoke completo, al primer merge a `staging` con la configuración cargada | |
-| _pendiente_ | | Smoke contra una URL que no responde (`workflow_dispatch` con `base_url`) | debe quedar en 🔴 |
+| 19/10/2026 | [39322298675](https://github.com/nexusai-ucc/nexusAI/actions/runs/39322298675) | **Deploy + verificación del commit + smoke completo** sobre `staging` @ `6dc94a0` (primer `workflow_dispatch` después del bootstrap manual) | 🟢 Deploy: rama OK, fast-forward, `nexusai-api` healthy; **DEPLOYED_SHA = commit pusheado**. Smoke: health 0,48 s · chat firmado HTTP 200 con `gpt-4o-mini` en **11,61 s** · anti-replay HTTP 401 |
+| 19/10/2026 | [39322438708](https://github.com/nexusai-ucc/nexusAI/actions/runs/39322438708) | **Smoke contra una URL que no responde**: `base_url=https://api.146.181.62.67.nip.io` (el dominio equivocado de la falsa alarma de TPC-07), sin deploy | 🔴 12 reintentos del health durante 2 min con `TLSV1_ALERT_INTERNAL_ERROR`, `FAIL` y **pipeline en rojo** (exit 1) |
+
+**Con eso se cumplen los tres criterios de la issue:** el workflow de CD está en el repo, hay una ejecución con deploy y smoke en verde, y el smoke pone el pipeline en rojo si staging no responde.
+
+**Observación de la primera corrida.** El chat firmado contra staging, con el LLM real, tardó **11,61 s**, por encima del SLA de 8 s de `TESTING.md` §6. Es una sola muestra: incluye la moderación por LLM, el embedding y la respuesta, y es la primera pregunta después del deploy, así que podría ser *cold start* (el SLA de *cold start* es < 15 s). El smoke no evalúa latencia a propósito, porque su trabajo es decir si el ambiente anda. La latencia con el proveedor real se mide en la corrida chica de [PRUEBAS_DE_CARGA.md](PRUEBAS_DE_CARGA.md) (TPC-09), con varias muestras y un umbral de p95.
 
 **Verificado en local antes del primer deploy** (19/10/2026):
 - `deploy_vm.sh` contra un repo de prueba con `sudo` y `docker` simulados:
@@ -97,3 +101,4 @@ La URL es una **variable** y no está escrita en el workflow. En TPC-07 se repor
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 19/10/2026 | Workflow de CD, script de deploy restringido, smoke con guarda de ambiente, configuración y plan de primeras corridas |
+| 1.1 | 19/10/2026 | Primeras corridas reales: verde (deploy + commit verificado + smoke) y roja provocada; observación de latencia |
