@@ -15,7 +15,7 @@ on:
     inputs:
       llm_model:
         description: Modelo de chat a probar
-        default: gemini-2.5-flash
+        default: gemini-3.8-flash
   schedule:
     - cron: '0 9 * * *'   # 06:00 hora de Argentina
   push:
@@ -43,7 +43,7 @@ jobs:
       INTEGRATION_REPORT: ${{ github.workspace }}/integration-report.jsonl
       LLM_API_KEY: ${{ secrets.GEMINI_API_KEY_CI }}
       LLM_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
-      LLM_MODEL: ${{ inputs.llm_model || 'gemini-2.5-flash' }}
+      LLM_MODEL: ${{ inputs.llm_model || 'gemini-3.8-flash' }}
       # Sin secundario: se mide el proveedor configurado y la cascada interna.
       LLM_FALLBACK_API_KEY: ''
       LLM_FALLBACK_BASE_URL: ''
