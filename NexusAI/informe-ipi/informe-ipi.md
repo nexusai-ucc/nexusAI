@@ -927,6 +927,125 @@ flowchart TB
 > pasando por extracción de texto, limpieza, fragmentación y generación de
 > *embeddings*.
 
+## Arquitectura técnica del backend
+
+Las Figuras 1 y 3 muestran la arquitectura y el flujo de una consulta a
+nivel de componentes y secuencia; esta sección describe el mecanismo real
+detrás de cada pieza marcada en esos diagramas
+(`investigacion/05-backend-fastapi/`).
+
+### Autenticación HMAC en tres capas
+
+El plugin y el backend son dos servicios independientes, y la clave del
+proveedor de IA vive solo en el backend. Por eso el navegador nunca habla
+directamente con FastAPI: todas las solicitudes pasan por un *proxy*
+PHP dentro de Moodle (`investigacion/05-backend-fastapi/autenticacion-hmac.md`),
+lo que evita exponer la clave en el cliente, elimina la necesidad de CORS
+entre dominios y reutiliza la sesión ya autenticada de Moodle. El lado PHP
+usa la clase `curl` propia de Moodle en lugar de `file_get_contents`,
+porque muchas instalaciones universitarias deshabilitan
+`allow_url_fopen`; esa clase respeta además `$CFG->proxyhost`/`proxyport`
+y las listas `curlsecurityblockedhosts`/`curlsecurityallowedport` que fija
+cada institución, habitualmente limitadas a los puertos 80 y 443 — razón
+por la que el backend solo necesita responder en 443, dado que conseguir
+que el equipo de TI de una universidad habilite un puerto no estándar
+puede tardar entre dos y ocho semanas.
+
+Del lado del servidor, un `HMACSecurityMiddleware` se aplica a toda
+solicitud salvo `/docs`, `/openapi.json` y `/health`
+(`investigacion/05-backend-fastapi/lifespan-y-estado.md`). Verifica, en
+orden: (1) que el *timestamp* esté dentro de la ventana de tolerancia de 5
+minutos ya fijada en ADR-005; (2) que el *nonce* no se haya visto antes,
+contra un almacén de nonces (hoy un conjunto en memoria, con la migración
+a Redis con `SET NX EX 300` prevista en el propio ADR-005 como paso a
+producción); y (3) que la firma HMAC-SHA256 coincida, comparada con
+`hmac.compare_digest` para evitar *timing attacks* (Krawczyk et al., 1997).
+La implementación amplía la cadena canónica que firma ADR-005
+(`timestamp + nonce + body`) agregando también el método HTTP y el *path*
+(`MÉTODO\nPATH\ntimestamp\nnonce\nbody`), de modo que una firma válida
+para un endpoint no pueda reutilizarse contra otro. El cuerpo de la
+solicitud se lee una vez para validarlo y se reinyecta en el *stream* de
+la petición para que el router de destino pueda volver a leerlo. Además
+de JWT y mTLS —descartados en ADR-005—, se descartó exponer el backend
+directamente al navegador vía CORS, por el riesgo de que la clave del
+proveedor de IA terminara visible en el cliente; el esquema de tres capas
+mitiga específicamente el ataque de *replay* que un esquema de solo
+`Bearer` no cubre (OWASP, s.f.).
+
+### Esquema de base de datos: alcance vigente y migración de dimensión
+
+El Anexo B documenta el modelo de datos vigente y los parámetros del
+índice HNSW (`m=16`, `ef_construction=200`); por ADR-002 y ADR-014, hoy
+PostgreSQL/pgvector indexa únicamente los *chunks* del material de curso,
+ya que los datos del alumno se movieron a tablas nativas de Moodle. Un
+detalle operativo que no está en ningún otro capítulo
+(`investigacion/05-backend-fastapi/database-schema.md`) es la migración de
+dimensión de los *embeddings* al pasar de Gemini (MVP, 768 dimensiones) a
+OpenAI (producción, 1536 dimensiones) bajo ADR-004: los vectores de un
+modelo no son comparables con los de otro, así que no alcanza con
+cambiar el tipo de columna. El procedimiento elimina el índice HNSW
+existente, modifica la columna `embedding` a la nueva dimensión, recrea el
+índice y marca todos los *chunks* con `status = 'pending'` para que el
+pipeline de indexación (Figura 4) los vuelva a procesar y reemplace sus
+vectores con el nuevo modelo.
+
+### Streaming de respuestas: *Server-Sent Events*
+
+La Figura 3 ya muestra el flujo de una consulta en tiempo real; el
+presupuesto de latencia detrás de esa figura
+(`investigacion/05-backend-fastapi/sse-streaming.md`) es de
+aproximadamente 130 ms para la búsqueda vectorial y cercano a 200 ms hasta
+el primer token visible para el alumno. Se eligió *Server-Sent Events*
+sobre *WebSockets* porque el canal es unidireccional (servidor → cliente,
+suficiente para un chat), corre sobre HTTP/443 puro sin *upgrade* de
+protocolo, y varios *proxies* y *firewalls* universitarios bloquean o
+manejan mal el *handshake* de WebSocket, mientras que una respuesta SSE se
+ve, a efectos de la red, como una respuesta HTTP larga común. El formato
+en el cable es simple (`data: {"token": "..."}\n\n`, con un evento final
+`completion`); el endpoint FastAPI envuelve un generador asíncrono con
+`EventSourceResponse` (sse-starlette, s.f.) que consulta la API de OpenAI
+en modo *streaming* y revisa en cada iteración si el cliente se
+desconectó, para dejar de generar —y de pagar— tokens en cuanto el alumno
+abandona la conversación. El patrón *Hybrid PHP Proxy* de la sección
+anterior se mantiene también para el *streaming*: el `EventSource` del
+navegador habla con el *endpoint* AJAX de Moodle, que reenvía el flujo del
+backend sin romperlo.
+
+### Contratos de datos: *schemas* Pydantic
+
+Las solicitudes y respuestas del backend se validan con Pydantic V2
+(`investigacion/05-backend-fastapi/pydantic-schemas.md`; Pydantic, s.f.).
+El *schema* de entrada declara `model_config = ConfigDict(extra='forbid')`
+como decisión explícita de seguridad: a diferencia del comportamiento por
+defecto de Pydantic V1, que ignora en silencio cualquier campo no
+declarado, esta configuración rechaza con un error 422 cualquier campo
+extra en el cuerpo de la solicitud —por ejemplo, un campo `admin_token`
+agregado por error o con intención maliciosa— en lugar de aceptarlo sin
+aviso. El *schema* de salida incluye un `confidence_score` entre 0 y 1;
+cuando cae por debajo de un umbral, la interfaz debe advertir al alumno
+que la respuesta se basa en información parcial, en vez de presentarla
+con la misma certeza que una respuesta bien respaldada por el material
+del curso. Para las respuestas que necesitan esa estructura garantizada,
+el backend usa *Structured Outputs* de OpenAI
+(`client.beta.chat.completions.parse`), que fuerza al modelo a decodificar
+dentro del *schema* declarado; esto es una garantía más fuerte que pedir
+`response_format={"type": "json_object"}`, que solo asegura JSON
+sintácticamente válido, sin garantizar que las claves y tipos coincidan
+con el *schema* esperado.
+
+### Ciclo de vida y estado de la aplicación
+
+FastAPI dejó obsoletos los *hooks* `@app.on_event("startup"/"shutdown")`
+desde la versión 0.95, en favor de un *context manager* asíncrono
+`lifespan` (`investigacion/05-backend-fastapi/lifespan-y-estado.md`;
+FastAPI, s.f.). En el arranque, ese bloque inicializa una única vez el
+cliente de la base vectorial y lo expone en `app.state`, compartido entre
+todas las solicitudes sin reabrir la conexión en cada una; en el mismo
+punto de armado de la aplicación se registra el `HMACSecurityMiddleware`
+descrito más arriba, de modo que la seguridad y el estado compartido de la
+app se configuran juntos, antes de que el servidor empiece a aceptar
+tráfico.
+
 ## Pruebas
 
 La estrategia de pruebas combina:
@@ -1360,6 +1479,8 @@ sección, y toda referencia listada fue utilizada en el informe.
 - Coursera. (2023). *Coursera launches Coach, a personalized AI-powered coaching
   experience, and new applications of GenAI in the enterprise*. Coursera Blog.
   https://blog.coursera.org/coursera-launches-coach/
+- FastAPI. (s.f.). *FastAPI documentation*. Recuperado 2026, de
+  https://fastapi.tiangolo.com/
 - Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, H., &
   Wang, H. (2023). *Retrieval-augmented generation for large language models: A survey.*
   arXiv. https://arxiv.org/abs/2312.10997
@@ -1371,6 +1492,8 @@ sección, y toda referencia listada fue utilizada en el informe.
   Computing Surveys, 55*(12), 1–38. https://doi.org/10.1145/3571730
 - Khan Academy. (s.f.). *Khan Labs — Khanmigo*. Recuperado 2026, de
   https://www.khanacademy.org/khan-labs
+- Krawczyk, H., Bellare, M., & Canetti, R. (1997). *HMAC: Keyed-hashing for message
+  authentication* (RFC 2104). IETF. https://doi.org/10.17487/RFC2104
 - Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H.,
   Lewis, M., Yih, W., Rocktäschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-augmented
   generation for knowledge-intensive NLP tasks. *Advances in Neural Information Processing
@@ -1383,10 +1506,16 @@ sección, y toda referencia listada fue utilizada en el informe.
   https://moodledev.io/general/community/plugincontribution/checklist
 - OpenAI. (s.f.-a). *ChatGPT Edu*. Recuperado 2026, de https://openai.com/chatgpt/education/
 - OpenAI. (s.f.-b). *GPT-4o pricing*. Recuperado 2026, de https://openai.com/api/pricing/
+- OWASP. (s.f.). *Replay attack*. OWASP Foundation. Recuperado 2026, de
+  https://owasp.org/www-community/attacks/Replay_attack
 - pdfplumber. (s.f.). *pdfplumber* [Software]. GitHub.
   https://github.com/jsvine/pdfplumber
 - pgvector. (s.f.). *pgvector: Open-source vector similarity search for Postgres*
   [Software]. GitHub. https://github.com/pgvector/pgvector
+- Pydantic. (s.f.). *Pydantic documentation*. Recuperado 2026, de
+  https://docs.pydantic.dev/
+- sse-starlette. (s.f.). *sse-starlette* [Software]. GitHub.
+  https://github.com/sysid/sse-starlette
 
 \newpage
 
