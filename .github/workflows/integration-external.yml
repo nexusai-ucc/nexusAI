@@ -19,7 +19,7 @@ on:
   schedule:
     - cron: '0 9 * * *'   # 06:00 hora de Argentina
   push:
-    branches: [development, test/579-tpc-07-integracion]  # TEMPORAL: primera corrida antes del merge
+    branches: [development]
     paths:
       - 'NexusAI/services/api/app/providers/**'
       - 'NexusAI/services/api/tests/integration/**'

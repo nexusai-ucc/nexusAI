@@ -1,6 +1,6 @@
 # Integración externa (TPC-07)
 
-> Issue [#579](https://github.com/nexusai-ucc/nexusAI/issues/579) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.0, 16/10/2026
+> Issue [#579](https://github.com/nexusai-ucc/nexusAI/issues/579) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.1, 19/10/2026
 
 NexusAI depende de dos sistemas externos que no controla:
 - **Moodle**, que aloja el plugin y le da usuarios, cursos, permisos y archivos;
@@ -93,7 +93,7 @@ Todo el CI corre sin red hacia el proveedor:
 
 ## 5. Proveedor real
 
-`services/api/tests/integration/test_llm_real.py` (marcador `integration`) llama a **Gemini de verdad**, con una key free tier **solo para CI** (secret `GEMINI_API_KEY_CI`, separada de la de producción).
+`services/api/tests/integration/test_llm_real.py` (marcador `integration`) llama a **Gemini de verdad**, con una key free tier **solo para CI** (secret `GEMINI_API_KEY_CI`, en un proyecto de Google propio, separado del de producción). El modelo de chat es `gemini-3.8-flash`; se puede elegir otro al dispararlo a mano.
 
 | Test | Qué demuestra |
 |---|---|
@@ -105,9 +105,16 @@ Todo el CI corre sin red hacia el proveedor:
 
 **Resultados:**
 
-| Fecha | Corrida | Chat (s) | Fallback 404 (s) | Embeddings (s) | Resultado |
-|---|---|---|---|---|---|
-| _pendiente: primera corrida con el secret cargado_ | | | | | |
+| Fecha | Corrida | Modelo | Chat (s) | Fallback 404 (s) | Embeddings (s) | Resultado |
+|---|---|---|---|---|---|---|
+| 19/10/2026 | [39257255231](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257255231) | `gemini-2.5-flash` | — | — | — | 🔴 3/3 fallan: el modelo da **404 para proyectos nuevos** y `embed_many` rompe con `index=None` (**DEF-07**) |
+| 19/10/2026 | [39257509226 (intento 1)](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257509226/attempts/1) | `gemini-3.8-flash` | **20,12** | 6,36 | 1,46 | 🟡 2/3: fallback y embeddings pasan; el chat **supera el SLA de 8 s** |
+| 19/10/2026 | [39257509226 (intento 2)](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257509226/attempts/2) | `gemini-3.8-flash` | 3,43 | 2,46 | 0,87 | 🟢 3/3 |
+
+**Lo que encontró la prueba real (y ningún doble podía encontrar):**
+1. **El modelo de producción ya no se ofrece a proyectos nuevos.** Google responde `This model models/gemini-2.5-flash is no longer available to new users` a cualquier key de un proyecto creado ahora. Producción sigue andando porque su proyecto es anterior, pero **si se rota la key a un proyecto nuevo, el chat de producción da 404** (la cadena de fallback lo absorbe solo si hay eslabones configurados). Queda como observación de riesgo en [REGISTRO_DEFECTOS.md](REGISTRO_DEFECTOS.md): migrar producción a `gemini-3.8-flash` antes de rotar la key.
+2. **DEF-07:** Gemini devuelve los embeddings con `index=None` y `embed_many` los ordenaba por ese campo, así que fallaba con `TypeError`. Los dobles siempre traían un `index` entero. Corregido en este PR, con test de regresión.
+3. **La latencia del free tier tiene picos.** El mismo modelo respondió en 20,1 s y, en la corrida siguiente, en 3,4 s. El SLA de 8 s se cumple en el caso típico pero no en la cola: es un dato para el informe de stress (TPC-09) y una razón más para que producción no use el free tier.
 
 ## 6. E2E contra el backend desplegado
 
@@ -132,7 +139,8 @@ El fallo de staging es justamente lo que el smoke tiene que detectar: el script 
 
 | Riesgo | Mitigación |
 |---|---|
-| Google retira un modelo sin aviso (pasó con `gemini-2.0-flash` y `2.5-flash-lite`) | Fallback ante 404, probado contra el proveedor real todos los días |
+| Google retira un modelo sin aviso (pasó con `gemini-2.0-flash` y `2.5-flash-lite`, y `2.5-flash` ya no se ofrece a proyectos nuevos) | Fallback ante 404, probado contra el proveedor real todos los días. Migrar producción a `gemini-3.8-flash` |
+| Picos de latencia del proveedor (20 s medidos en el free tier) | Medido a diario contra el SLA; se profundiza en TPC-09 |
 | Se agota la cuota del free tier del CI | Corrida diaria con 3 llamadas chicas, `workflow_dispatch` para lo demás. Key separada de producción |
 | Cambia el contrato entre plugin y backend sin que se note | `contracts/` leído por los dos CI |
 | Staging caído, sin TLS | El E2E post-deploy lo detecta. Pendiente de que lo resuelva el admin de deploy (TPC-08) |
@@ -143,3 +151,4 @@ El fallo de staging es justamente lo que el smoke tiene que detectar: el script 
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 16/10/2026 | Contratos, contract testing, dobles de fallas, proveedor real, E2E desplegado |
+| 1.1 | 19/10/2026 | Primeras corridas contra Gemini real: DEF-07, modelo no disponible para proyectos nuevos, picos de latencia |

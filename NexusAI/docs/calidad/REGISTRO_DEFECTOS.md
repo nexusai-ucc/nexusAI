@@ -35,6 +35,7 @@ Abierto ──► En curso ──► Test de regresión en ROJO ──► Fix �
 | [DEF-04](#def-04) | MMR-301 ítem 4: al borrar un curso no se purgaban del backend los posts de foro indexados | Plugin (privacidad) | Alta | Auditoría para Moodle Marketplace | Corregido | [#572](https://github.com/nexusai-ucc/nexusAI/pull/572) | `tests/backend_tasks_test.php` |
 | [DEF-05](#def-05) | CI: "Sync derived repos" falla por `SYNC_REPOS_TOKEN` vencido; los repos derivados dejan de actualizarse | CI / despliegue | Media | **Pipeline** | Corregido | token renovado (14/10) | la propia corrida del workflow |
 | [DEF-06](#def-06) | Tests: un mock de `curl` sobrevivía entre tests y rompía `sync_forum_post_test` | Tests del plugin | Baja | **Pipeline** (PR #603) | Corregido | `df38ed9` | `tests/external/external_testcase.php::tearDown` |
+| [DEF-07](#def-07) | `embed_many` rompe con `TypeError` cuando el proveedor devuelve los embeddings sin `index` (Gemini) | Backend (proveedor de embeddings) | Media | **Prueba contra el proveedor real** (TPC-07, 19/10) | Corregido | [#628](https://github.com/nexusai-ucc/nexusAI/pull/628) | `tests/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index`, `tests/integration/test_llm_real.py` |
 
 ### DEF-01
 
@@ -93,6 +94,20 @@ El fix (`df38ed9`): `external_testcase::tearDown()` vacía la lista por Reflecti
 | Tests con la fuga | Quality Gate [38795204969](https://github.com/nexusai-ucc/nexusAI/actions/runs/38795204969) (`fb098e8`) | 🔴 `sync_forum_post_test` y un test de subida fallan |
 | Con `tearDown` | Moodle Plugin CI [38796605485](https://github.com/nexusai-ucc/nexusAI/actions/runs/38796605485) · Quality Gate [38796605471](https://github.com/nexusai-ucc/nexusAI/actions/runs/38796605471) (`f016105`) | 🟢 7 combinaciones de Moodle en verde |
 
+### DEF-07
+
+`EmbeddingProvider.embed_many()` reordenaba la respuesta con `sorted(response.data, key=lambda d: d.index)`. La API de Gemini compatible con OpenAI devuelve `index=None`, así que la comparación fallaba con `TypeError: '<' not supported between instances of 'int' and 'NoneType'`.
+
+- **Impacto:** hoy bajo, porque la indexación de documentos usa `embed()` de a un texto. Pero `embed_many` es la vía recomendada en el propio código para indexar en lote, y cualquiera que la adoptara rompía la indexación con Gemini.
+- **Por qué no lo vio ningún test:** los dobles (`test_embed_many_preserves_order`) siempre traían un `index` entero, que es lo que promete el SDK de OpenAI. Solo la llamada real mostró que Gemini no cumple esa parte del contrato.
+- **Fix:** si algún elemento viene sin `index`, se respeta el orden de la respuesta (que es el del input); si todos lo traen, se sigue ordenando.
+
+| Paso | Corrida | Resultado |
+|---|---|---|
+| Prueba real, sin fix | Integración externa [39257255231](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257255231) | 🔴 `TypeError` en `embed_many` |
+| Test de regresión, sin fix (local) | `pytest -k omits_index` | 🔴 `TypeError` |
+| Fix | Integración externa [39257509226](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257509226/attempts/2) · `pytest tests/test_providers.py` | 🟢 768 dimensiones y orden correcto |
+
 ## Ejecución fallida que detectó un problema real
 
 **DEF-05. "Sync derived repos"** publica el plugin y el backend en sus repos derivados (`moodle-local_nexusai`, `nexusai-backend`) en cada push a `development`.
@@ -112,7 +127,8 @@ También DEF-06 es una ejecución fallida que detectó un problema real (la fuga
 
 | Observación | Por qué no es un defecto | Seguimiento |
 |---|---|---|
-| `providers/llm.py`: los timeouts y errores de conexión **no** disparan el fallback al proveedor secundario | Es una decisión de diseño documentada en el código: se asume que afectan a todos los eslabones por igual | Reevaluar en TPC-07. El primario (OpenAI) y el secundario (Groq) son proveedores distintos, así que un timeout de uno no implica una caída del otro |
+| `providers/llm.py`: los timeouts y errores de conexión **no** disparan el fallback al proveedor secundario | Es una decisión de diseño documentada en el código: se asume que afectan a todos los eslabones por igual Fijado por `test_providers_failure_modes.py` (TPC-07). Riesgo aceptado: el primario y el secundario pueden ser proveedores distintos, así que un timeout de uno no implica una caída del otro. Ver [INTEGRACION_EXTERNA.md](INTEGRACION_EXTERNA.md) §2.2 |
+| Producción usa `gemini-2.5-flash`, que Google ya **no ofrece a proyectos nuevos** (404 `no longer available to new users`, visto en la [primera corrida real](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257255231)) | Producción funciona: su proyecto es anterior al corte | Si se rota la key a un proyecto nuevo, el chat da 404. Migrar `LLM_MODEL` a `gemini-3.8-flash` antes de rotar (lo decide el admin de deploy) |
 | Behat del plugin con 0 escenarios | No hay comportamiento incorrecto: falta cobertura de aceptación | TPC-04 / TPC-07 |
 
 ## Historial de versiones
@@ -120,3 +136,4 @@ También DEF-06 es una ejecución fallida que detectó un problema real (la fuga
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 16/10/2026 | Formulario de defecto, severidades, ciclo de vida, DEF-01 a DEF-06, ejecución fallida real |
+| 1.1 | 19/10/2026 | DEF-07 (detectado por la prueba contra el proveedor real) y riesgo del modelo de producción |
