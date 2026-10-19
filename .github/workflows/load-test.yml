@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
-      SCENARIO: ${{ inputs.scenario || 'stress' }}  # TEMPORAL
+      SCENARIO: ${{ inputs.scenario || 'todos' }}  # TEMPORAL
       MOCK_LLM_LATENCY_MS: ${{ inputs.mock_latency_ms || '1500' }}
       OUT_DIR: ${{ github.workspace }}/load-report
     steps:
@@ -82,7 +82,7 @@ jobs:
 
   staging:
     name: Corrida chica contra staging (LLM real)
-    if: inputs.target == 'staging'
+    if: github.event_name == 'push' || inputs.target == 'staging'  # TEMPORAL
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     environment:
