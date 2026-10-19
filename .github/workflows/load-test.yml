@@ -69,7 +69,7 @@ jobs:
             echo "Runner: $(nproc) vCPU, $(free -g | awk '/Mem:/{print $2}') GB RAM"
             echo ""
             for f in "$OUT_DIR"/summary-*.md "$OUT_DIR"/analisis-*.md; do
-              [ -f "$f" ] && { cat "$f"; echo ""; }
+              if [ -f "$f" ]; then cat "$f"; echo ""; fi
             done
           } >> "$GITHUB_STEP_SUMMARY"
 
