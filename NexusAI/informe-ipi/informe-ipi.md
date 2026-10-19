@@ -820,6 +820,65 @@ comporta como una hoja a pantalla completa (*bottom-sheet*).
 > materiales subidos con su estado de indexación; a la derecha, una pregunta de un
 > alumno que el material no pudo responder bien, con su similitud promedio.
 
+### Proceso de diseño de la interfaz
+
+El panel lateral descrito arriba es el resultado de dos iteraciones
+previas, documentadas en `docs/diseno/`.
+
+El primer concepto (`wireframes-mvp.html`, issue FRONT-01/#158,
+05/05/2026) era un *dropdown* flotante disparado por un ícono, no un
+modal de pantalla completa — decisión justificada explícitamente para
+que el alumno pueda leer el material del curso y conversar con el
+asistente al mismo tiempo, con Intercom, Crisp y el *widget* de ChatGPT
+nombrados como referencia. El *wireframe* define cinco estados de la
+vista de alumno (cerrado, bienvenida, conversando, cargando, y error
+—este último mostrando el texto real del error del backend, por ejemplo
+un HTTP 503, con opción de reintentar— ) y cuatro de la vista docente
+(vacío con zona de arrastrar y soltar, indexando con una barra de
+progreso marcada explícitamente como estimada, ya que el backend solo
+reporta `pending`/`indexing`/`indexed`/`error` y no un porcentaje real,
+lista de materiales ya indexados, y configuración del *plugin*). De las
+seis decisiones de diseño documentadas con su *trade-off*, dos son
+especialmente relevantes para el resto del informe: mostrar las fuentes
+citadas junto a cada respuesta en vez de solo el texto generado, atado
+al principio de "no inventar" que gobierna el diseño del asistente; y la
+indexación asíncrona del material, para no bloquear la interfaz del
+docente durante los 30 a 60 segundos que puede tardar procesar un PDF.
+
+El panel lateral que describe esta sección es, en cambio, el resultado
+de un rediseño posterior (`rds-01` a `rds-07`, 10 al 12/08/2026, issue
+#400): el *dropdown* original, con *resize* libre en sus cuatro bordes,
+se reemplaza por un panel acoplado al borde derecho de alto completo,
+que angosta de verdad el contenido de la página de Moodle (con un
+*fallback* silencioso si el tema activo no expone el selector esperado o
+el *viewport* es angosto), agrega un riel colapsado como nueva forma de
+reabrirlo, y elimina el cierre al hacer clic afuera —un panel acoplado
+ya no tiene sentido que se cierre solo por tocar el contenido del curso,
+ahora angostado y literalmente al lado—. La misma semana se rediseñaron,
+con el mismo criterio, el historial de conversaciones (de superponerse
+en una capa a convertirse en una vista más del propio panel) y la
+navegación del panel docente (de pestañas horizontales a un menú
+lateral).
+
+En paralelo, `docs/diseno/v0-prompts.md` (28 al 30/07/2026) documenta una
+capa de pulido visual sobre componentes de React que ya funcionaban, no
+un rediseño de lógica: *prompts* listos para pegar en v0.dev, la
+herramienta de Vercel para generar interfaces a partir de una descripción
+(v0, s.f.) —no debe confundirse con un *prompt* del asistente de IA del
+proyecto—. Los cinco *prompts* trabajados (*widget* de chat, plan de
+estudio personalizado, *quiz* del modo estudio, buscador semántico, panel
+docente) comparten un mismo bloque de sistema de diseño tomado de
+`react/src/styles.css` sin inventar uno nuevo: color primario `#6366f1`,
+radios de 4 a 16 píxeles, iconografía de trazo simple sin emojis, y
+referencias estéticas a Linear, Vercel y v0.dev mismo. El tamaño fijo del
+panel que fijan estos *prompts* —400×600 píxeles en escritorio,
+*bottom-sheet* a pantalla completa en *mobile*— coincide con el que ya
+describe esta misma subsección. Otras seis pantallas quedaron en una
+lista de pendientes, todavía sin *prompt* escrito.
+
+Las Figuras 2a a 2d de esta sección son capturas del MVP, anteriores al
+rediseño de agosto recién descrito.
+
 ## Implementación
 
 La solución se construyó de manera incremental, dividida en módulos lógicos:
@@ -2121,6 +2180,8 @@ sección, y toda referencia listada fue utilizada en el informe.
   https://react.dev/reference/react-dom/client/createRoot
 - sse-starlette. (s.f.). *sse-starlette* [Software]. GitHub.
   https://github.com/sysid/sse-starlette
+- v0. (s.f.). *v0 by Vercel — Generative UI* [Software]. Vercel.
+  https://v0.dev/
 - Vitest. (s.f.). *Vitest documentation*. Recuperado 2026, de
   https://vitest.dev/
 - Webpack. (s.f.). *Webpack documentation — Output, externals y code splitting*.
