@@ -36,7 +36,7 @@ Abierto ──► En curso ──► Test de regresión en ROJO ──► Fix �
 | [DEF-05](#def-05) | CI: "Sync derived repos" falla por `SYNC_REPOS_TOKEN` vencido; los repos derivados dejan de actualizarse | — (proceso) | CI / despliegue | Media | **Pipeline** | Corregido | token renovado (14/10) | la propia corrida del workflow |
 | [DEF-06](#def-06) | Tests: un mock de `curl` sobrevivía entre tests y rompía `sync_forum_post_test` | — (proceso) | Tests del plugin | Baja | **Pipeline** (PR #603) | Corregido | `df38ed9` | `tests/external/external_testcase.php::tearDown` |
 | [DEF-07](#def-07) | `embed_many` rompe con `TypeError` cuando el proveedor devuelve los embeddings sin `index` (Gemini) | HU-010 | Backend (proveedor de embeddings) | Media | **Prueba contra el proveedor real** (TPC-07, 19/10) | Corregido | [#628](https://github.com/nexusai-ucc/nexusAI/pull/628) | `tests/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index`, `tests/integration/test_llm_real.py` |
-| [DEF-08](#def-08) | El quiz con un tema sin material responde siempre en español cuando la similitud es baja (no sigue el idioma de la interfaz) | HU-031 | Backend (quiz) | Baja | **Tabla de decisión** de HU-031 (TPC-04, 19/10) | Corregido | __PR__ | `tests/test_quiz_router.py::test_cp_quiz_19_tema_sin_material_responde_en_el_idioma_de_la_interfaz` |
+| [DEF-08](#def-08) | El quiz con un tema sin material responde siempre en español cuando la similitud es baja (no sigue el idioma de la interfaz) | HU-031 | Backend (quiz) | Baja | **Tabla de decisión** de HU-031 (TPC-04, 19/10) | Corregido | [#632](https://github.com/nexusai-ucc/nexusAI/pull/632) | `tests/test_quiz_router.py::test_cp_quiz_19_tema_sin_material_responde_en_el_idioma_de_la_interfaz` |
 
 ### DEF-01
 
