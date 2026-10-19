@@ -970,7 +970,7 @@ de JWT y mTLS —descartados en ADR-005—, se descartó exponer el backend
 directamente al navegador vía CORS, por el riesgo de que la clave del
 proveedor de IA terminara visible en el cliente; el esquema de tres capas
 mitiga específicamente el ataque de *replay* que un esquema de solo
-`Bearer` no cubre (OWASP, s.f.).
+`Bearer` no cubre (OWASP, s.f.-a).
 
 ### Esquema de base de datos: alcance vigente y migración de dimensión
 
@@ -1203,6 +1203,161 @@ La estrategia de pruebas combina:
 
 > **PENDIENTE —** consolidar los resultados de las pruebas con usuarios reales y los
 > valores medidos frente a los objetivos de latencia (RNF-06 a RNF-09).
+
+\newpage
+
+# Seguridad y cumplimiento
+
+Las secciones anteriores describieron la arquitectura de seguridad desde
+el diseño (autenticación HMAC, *capabilities*, Privacy API). Este
+capítulo da respaldo concreto a esas decisiones: una auditoría de
+seguridad real ejecutada sobre el proyecto, la estrategia de privacidad
+bajo la que opera, y las prácticas del plugin que todavía no se
+explicaron en profundidad.
+
+## Auditoría de seguridad: OWASP Top 10 y análisis de dependencias
+
+En agosto de 2026 el equipo ejecutó una auditoría de seguridad formal
+sobre el proyecto (`docs/security/owasp-audit-2026-08.md`), combinando
+análisis automatizado de dependencias (`pip-audit` en el backend, `npm
+audit` en el *widget* de React) con un *checklist* manual del OWASP Top
+10 (OWASP, s.f.-b) aplicado específicamente a NexusAI. El escaneo de
+dependencias del backend pasó de 43 CVEs en 11 paquetes a 12 CVEs en 3:
+dos paquetes sin uso real en el código (`python-jose[cryptography]`,
+`python-multipart`) se eliminaron por completo —verificado por `grep`
+en todo `app/`, ya que la autenticación usa el módulo `hmac` de la
+librería estándar, no JWT, y las subidas de archivo son JSON+base64, no
+*multipart*—, `Pillow` se actualizó de 10.4.0 a 12.3.0, y las 12 CVEs
+restantes quedan **aceptadas y documentadas por CI, no ignoradas en
+bloque**: `starlette` está fijado por la versión de FastAPI en uso (una
+corrección completa implicaría migrar cada *router*), `pdfminer-six`
+está fijado transitivamente por `pdfplumber`, el núcleo del *pipeline* de
+extracción de PDF del sistema RAG (actualizarlo sin pruebas dedicadas
+arriesga romper la función central del producto), y `pytest` es una
+dependencia de desarrollo que nunca llega a producción. El frontend pasó
+de 6 vulnerabilidades (1 baja, 1 moderada, 4 altas) a 0, resueltas con
+`npm audit fix` sin forzar actualizaciones mayores; la auditoría destaca
+en particular `dompurify`, que sanitiza las respuestas del asistente
+antes de insertarlas en el DOM (`MessageBubble.jsx`) — la única
+superficie real de XSS del *widget*. Como hallazgo colateral, la
+auditoría encontró que el *workflow* de CI del frontend apuntaba a un
+`package.json` que no existe (la ruta real está un nivel más abajo, en
+`react/`), por lo que ese *job* nunca había corrido realmente en ningún
+PR anterior; se corrigió como parte de esta misma issue.
+
+El *checklist* OWASP Top 10 aplicado al proyecto confirma, entre otros
+puntos: **A01 (control de acceso roto)** mitigado — todo *endpoint* exige
+`verify_hmac` y toda función externa de Moodle valida contexto y
+*capability* antes de delegar, con el `user_id` siempre tomado de
+`$USER->id`, nunca controlable por el alumno; **A02 (fallas
+criptográficas)** mitigado por el esquema HMAC de tres capas ya descrito;
+**A03 (inyección/XSS)** mitigado por *queries* parametrizadas y el
+saneo de respuestas con `DOMPurify` mencionado arriba; **A07 (fallas de
+autenticación)** mitigado por el *nonce* anti-*replay* en Redis y el uso
+de `compare_digest` para comparar secretos; y **A09 (fallas de *logging*
+y monitoreo)**, marcado como parcialmente cubierto: existe *logging*
+estructurado de acceso, pero la auditoría confirma explícitamente, tras
+revisar el código de chat, cuestionarios y foros, que **en ningún lugar
+se registra el contenido en texto plano de los mensajes**. La auditoría
+también documenta, con honestidad, los *gaps* que quedan abiertos:
+el límite de 50 consultas diarias por alumno está documentado como
+decisión de diseño pero **no implementado en código** (solo el límite
+por minuto sí corre en producción), y no existe moderación de contenido
+sobre las respuestas del asistente. Esta auditoría es la evidencia
+directa que respalda **RNF-01** (la clave del proveedor de IA nunca llega
+al navegador), **RNF-02** y **RNF-03** (HMAC en tres capas, rechazo de
+firmas/timestamps/*nonces* inválidos) y **RNF-05** (un alumno no puede
+leer sesiones de chat ajenas); **RNF-04** (validación de la *capability*
+`local/nexusai:use`) queda respaldado por el punto A01 del *checklist* y
+por el capítulo de Capabilities ya descrito en la arquitectura del
+plugin.
+
+## Estrategia de privacidad y cumplimiento normativo
+
+El Anexo E ya resume las decisiones de ADR-006 y ADR-014 —los
+disparadores que llevaron de `null_provider` a mover los datos del
+alumno a tablas nativas de Moodle, y los tres números de latencia que
+motivaron el cambio—; esta sección desarrolla el marco de cumplimiento
+detrás de esas decisiones, que el Anexo E no profundiza. El propio
+ADR-006 encuadra la estrategia de privacidad bajo dos marcos normativos
+explícitos: la Ley de Protección de Datos Personales argentina (Ley
+25.326) y el RGPD europeo, y enumera las categorías concretas de datos
+personales en juego: los mensajes que el alumno envía al chat, el
+historial de conversación, el vínculo entre el `user_id` de Moodle y las
+sesiones/*embeddings*, y las métricas de uso. Una limitación real que el
+ADR documenta sin suavizar: la Privacy API de Moodle permite a un
+administrador exportar o borrar los datos personales que viven en tablas
+de Moodle, pero **no alcanza al backend externo en Python** — mientras
+los datos del alumno vivieron ahí (antes de ADR-014), un pedido de
+derecho al olvido requería coordinación manual con quien administra el
+backend, no un botón en la interfaz estándar de Moodle. Por eso, antes de
+desplegar el proyecto con alumnos reales fuera del entorno de prueba, el
+ADR deja pendiente la firma de un **Acuerdo de Tratamiento de Datos
+(DPA)** con la UCC, con responsabilidad asignada a Belén Zarazaga (Admin
+de Proyectos) para coordinarlo con el área legal de la universidad.
+
+Un hallazgo concreto de la migración de ADR-014, más valioso que
+cualquier afirmación general de cumplimiento: al revisar las métricas de
+uso para decidir qué datos mover, el equipo encontró que el identificador
+de usuario usado en esas métricas era un hash **SHA-256 sin sal** de un
+número entero (el `user_id` de Moodle) — un esquema de pseudonimización
+roto en la práctica, porque el espacio de IDs de usuario es lo
+suficientemente chico como para recalcular el hash de cada ID posible y
+revertirlo por fuerza bruta. El propio proyecto identificó y documentó
+esta falla como parte de endurecer su postura de privacidad, no como un
+hallazgo externo. La migración en sí incorporó mecánica de retención
+explícita: *backups* previos, un ensayo completo sobre una copia de
+producción en *staging*, verificación de conteos y consumo por curso/mes
+antes de dar la migración por buena, y las tablas viejas del backend se
+archivaron durante 60 días antes de borrarlas definitivamente, en lugar
+de eliminarlas de inmediato. Vale la pena notar que **RNF-14** del Anexo
+A ("el plugin declara su Privacy API según la versión de Moodle,
+`null_provider` en MVP") quedó desactualizado por este mismo cambio de
+arquitectura — la estrategia vigente ya no es `null_provider` sino el
+modelo híbrido de ADR-014; la corrección de esa fila de la tabla excede
+el alcance de este capítulo.
+
+## Prácticas de seguridad del plugin
+
+Más allá de las *capabilities* y el patrón de autorización ya descritos,
+`seguridad-capabilities.md` documenta un conjunto de prácticas de
+seguridad a nivel de código que todavía no aparecían en el informe. El
+plugin nunca lee `$_GET`/`$_POST` directamente: todo parámetro de
+entrada pasa por `required_param()` u `optional_param()` con una
+constante `PARAM_*` (`PARAM_INT`, `PARAM_TEXT`, `PARAM_ALPHANUMEXT`,
+etc.), que valida y sanea el tipo antes de que el valor llegue a
+cualquier lógica de negocio. El código se valida además contra el estilo
+de codificación de Moodle con `local_codechecker`. Los errores del
+backend o del proveedor de IA se manejan con `moodle_exception` y un
+mensaje amigable para el usuario — nunca con `die()` o `exit()`, que
+cortarían la ejecución de Moodle de forma abrupta — y cada interacción
+relevante con el asistente se registra a través de la Events API de
+Moodle para fines de auditoría. Las pruebas del plugin se automatizan
+con PHPUnit para la lógica de negocio y Behat para los flujos de usuario,
+mockeando el proveedor de LLM para que los resultados sean
+deterministas — un nivel de prueba que `## Pruebas` no menciona, porque
+esa sección describe la cobertura del backend, no la del plugin. Por
+último, `thirdpartylibs.xml` declara cada librería de terceros empaquetada
+en el plugin —React, Webpack y sus dependencias— con su nombre, versión y
+licencia, un requisito de la revisión de Moodle.org.
+
+La misma fuente incluye una tabla de riesgos y mitigaciones pensada
+explícitamente para la defensa ante el jurado: la exposición de la clave
+del proveedor de IA se mitiga con el patrón *Hybrid PHP Proxy* ya
+descrito; el acceso entre cursos se mitiga filtrando por `course_id` en
+la búsqueda vectorial y validando la *capability* en el contexto del
+curso; que un alumno vea respuestas de otro se mitiga con el campo
+`userid` en cada mensaje y el filtrado correspondiente; que un alumno
+evite `require_login` se mitiga porque esa validación es la primera
+línea de toda función externa; y un cambio de proveedor de LLM se
+resuelve solo con configuración, gracias a la abstracción `LLMProvider`.
+El riesgo más específico de la lista —y el que ningún *checklist*
+genérico como el OWASP Top 10 de la sección anterior cubre— es la
+**inyección de *prompt*** a través del material de curso: un documento
+subido por un docente podría contener texto diseñado para manipular al
+modelo de lenguaje. La mitigación documentada es estructurar el *prompt*
+con delimitadores explícitos y una instrucción de sistema firme que el
+contenido del curso no puede sobreescribir.
 
 \newpage
 
@@ -1658,8 +1813,10 @@ sección, y toda referencia listada fue utilizada en el informe.
   services*. Recuperado 2026, de https://moodledev.io/docs/apis/subsystems/external
 - OpenAI. (s.f.-a). *ChatGPT Edu*. Recuperado 2026, de https://openai.com/chatgpt/education/
 - OpenAI. (s.f.-b). *GPT-4o pricing*. Recuperado 2026, de https://openai.com/api/pricing/
-- OWASP. (s.f.). *Replay attack*. OWASP Foundation. Recuperado 2026, de
+- OWASP. (s.f.-a). *Replay attack*. OWASP Foundation. Recuperado 2026, de
   https://owasp.org/www-community/attacks/Replay_attack
+- OWASP. (s.f.-b). *OWASP Top 10*. OWASP Foundation. Recuperado 2026, de
+  https://owasp.org/www-project-top-ten/
 - pdfplumber. (s.f.). *pdfplumber* [Software]. GitHub.
   https://github.com/jsvine/pdfplumber
 - pgvector. (s.f.). *pgvector: Open-source vector similarity search for Postgres*
