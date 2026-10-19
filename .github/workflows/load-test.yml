@@ -1,0 +1,125 @@
+name: Pruebas de carga (k6)
+#
+# TPC-09 (issue #581): stress y esfuerzo sostenido con umbrales evaluados por
+# el pipeline. Ver docs/calidad/PRUEBAS_DE_CARGA.md.
+#
+#   target=local    backend efímero en el runner (misma imagen que prod,
+#                   Postgres+pgvector y Redis reales, LLM simulado):
+#                   scripts/load/run_load.sh <escenario>.
+#   target=staging  corrida chica contra staging con el LLM REAL
+#                   (escenario `real`: 2 VUs, 2 min), con las credenciales
+#                   del environment staging (TPC-08).
+#
+# Solo a mano: una corrida de stress tarda ~15 min y no aporta en cada PR.
+# k6 sale con código ≠ 0 si un umbral no se cumple → el job queda en rojo.
+
+on:
+  push:  # TEMPORAL: primeras corridas antes del merge
+    branches: [test/581-tpc-09-carga]
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: Escenario (target local)
+        type: choice
+        default: todos
+        options: [todos, smoke, sostenido, stress, rate_limit, dedup]
+      mock_latency_ms:
+        description: Latencia media simulada del LLM, en ms (target local)
+        default: '1500'
+      target:
+        description: Dónde correr
+        type: choice
+        default: local
+        options: [local, staging]
+
+concurrency:
+  group: load-test-${{ inputs.target || 'local' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  local:
+    name: Carga contra backend efímero (LLM simulado)
+    if: (inputs.target || 'local') == 'local'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    env:
+      SCENARIO: ${{ inputs.scenario || 'smoke' }}  # TEMPORAL
+      MOCK_LLM_LATENCY_MS: ${{ inputs.mock_latency_ms || '1500' }}
+      OUT_DIR: ${{ github.workspace }}/load-report
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: '0.54.0'
+
+      - name: Correr k6 (${{ env.SCENARIO }})
+        working-directory: NexusAI
+        run: ./scripts/load/run_load.sh "$SCENARIO"
+
+      - name: Reporte en el resumen
+        if: always()
+        run: |
+          {
+            echo "## Pruebas de carga — \`$SCENARIO\` (LLM simulado: ${MOCK_LLM_LATENCY_MS} ms)"
+            echo ""
+            echo "Runner: $(nproc) vCPU, $(free -g | awk '/Mem:/{print $2}') GB RAM"
+            echo ""
+            for f in "$OUT_DIR"/summary-*.md "$OUT_DIR"/analisis-*.md; do
+              [ -f "$f" ] && { cat "$f"; echo ""; }
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-report-${{ env.SCENARIO }}
+          path: load-report/
+          retention-days: 30
+
+  staging:
+    name: Corrida chica contra staging (LLM real)
+    if: inputs.target == 'staging'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    env:
+      OUT_DIR: ${{ github.workspace }}/load-report
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: NexusAI/scripts
+
+      - uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: '0.54.0'
+
+      - name: Correr k6 (real)
+        env:
+          BASE_URL: ${{ vars.STAGING_URL }}
+          NEXUSAI_API_KEY: ${{ secrets.NEXUSAI_E2E_API_KEY }}
+          NEXUSAI_SHARED_SECRET: ${{ secrets.NEXUSAI_E2E_SHARED_SECRET }}
+        run: |
+          if [ -z "$BASE_URL" ] || [ -z "$NEXUSAI_API_KEY" ]; then
+            echo "::error::Falta configurar el environment staging (ver docs/calidad/CD_STAGING.md)."
+            exit 1
+          fi
+          mkdir -p "$OUT_DIR"
+          SUMMARY_DIR="$OUT_DIR" k6 run --quiet -e SCENARIO=real \
+              --out "json=$OUT_DIR/raw-real.json.gz" NexusAI/scripts/load/nexus_load.js
+
+      - name: Reporte en el resumen
+        if: always()
+        run: cat "$OUT_DIR"/summary-real.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-report-real
+          path: load-report/
+          retention-days: 30

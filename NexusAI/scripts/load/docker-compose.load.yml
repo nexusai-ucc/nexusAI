@@ -1,0 +1,63 @@
+# Override de compose para las pruebas de carga (TPC-09, #581).
+#
+#   docker compose --env-file scripts/load/load.env -p nexusai-load \
+#     -f docker-compose.yml -f scripts/load/docker-compose.load.yml up -d --build
+#
+# (lo hace scripts/load/run_load.sh). Las rutas son relativas a NexusAI/, el
+# directorio del primer archivo.
+#
+# Respecto del compose de dev:
+#   - api como en producción: ./entrypoint.sh (migraciones + uvicorn sin
+#     --reload), sin montar el código encima de la imagen;
+#   - el LLM y los embeddings los sirve mock-llm (misma imagen que la API,
+#     que ya trae fastapi y uvicorn);
+#   - nombres de containers propios y sin publicar Postgres/Redis, para no
+#     chocar con un stack de dev levantado en la misma máquina.
+
+services:
+  postgres:
+    container_name: nexusai-load-postgres
+    ports: !reset []
+
+  redis:
+    container_name: nexusai-load-redis
+    ports: !reset []
+
+  api:
+    container_name: nexusai-load-api
+    env_file: !override
+      - scripts/load/load.env
+    command: ["./entrypoint.sh"]
+    volumes: !reset []
+    depends_on:
+      mock-llm:
+        condition: service_healthy
+
+  mock-llm:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: nexusai-load-mock-llm
+    command: ["uvicorn", "mock_llm:app", "--app-dir", "/mock", "--host", "0.0.0.0", "--port", "9000"]
+    environment:
+      MOCK_LLM_LATENCY_MS: ${MOCK_LLM_LATENCY_MS:-1500}
+      MOCK_LLM_JITTER_MS: ${MOCK_LLM_JITTER_MS:-500}
+    volumes:
+      - ./scripts/load/mock_llm.py:/mock/mock_llm.py:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [nexusai-net]
+
+networks:
+  nexusai-net:
+    name: nexusai-load-net
+
+# Volúmenes propios: nunca tocar la base de un stack de dev en la misma máquina.
+volumes:
+  postgres_data:
+    name: nexusai_load_postgres_data
+  redis_data:
+    name: nexusai_load_redis_data
