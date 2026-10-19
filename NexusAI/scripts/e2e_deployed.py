@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""E2E contra un backend de NexusAI desplegado (TPC-07 #579, lo usa TPC-08).
+"""E2E contra un backend de NexusAI desplegado (TPC-07 #579; smoke de TPC-08 #580).
 
 Recorre la integración completa desde afuera, como lo hace el plugin:
 
@@ -21,6 +21,11 @@ USO
         python3 scripts/e2e_deployed.py --base-url https://api-staging.146.181.62.67.nip.io --course-id 2
 
 Sale con 0 si todo pasa, 1 si algo falla. Imprime el tiempo de cada paso.
+
+En el pipeline de deploy (.github/workflows/deploy-staging.yml) se usa con
+`--retries-health` (la API y Caddy tardan en levantar después del deploy) y
+`--expect-env staging` (un smoke que por error apunta a producción no puede
+dar verde).
 """
 
 from __future__ import annotations
@@ -92,18 +97,29 @@ def main() -> int:
     parser.add_argument("--health-only", action="store_true")
     parser.add_argument("--course-id", type=int, default=2)
     parser.add_argument("--question", default="¿De qué trata el material de este curso? Respondé en una oración.")
+    parser.add_argument(
+        "--retries-health", type=int, default=0, help="reintentos del health, cada 10 s (arranque post-deploy)"
+    )
+    parser.add_argument("--expect-env", help="falla si /health reporta otro ambiente (ej. staging)")
     args = parser.parse_args()
     base = args.base_url.rstrip("/")
     run = Run()
 
-    # 1. Health.
-    start = time.perf_counter()
-    try:
-        status, data = _request("GET", f"{base}/health")
-        ok = status == 200 and data.get("status") == "ok"
-        detail = f"HTTP {status} env={data.get('env')} model={data.get('llm_model')}"
-    except (urllib.error.URLError, TimeoutError, OSError) as err:
-        ok, detail = False, f"sin respuesta: {err}"
+    # 1. Health (con reintentos opcionales mientras el deploy termina de levantar).
+    for attempt in range(args.retries_health + 1):
+        start = time.perf_counter()
+        try:
+            status, data = _request("GET", f"{base}/health")
+            ok = status == 200 and data.get("status") == "ok"
+            detail = f"HTTP {status} env={data.get('env')} model={data.get('llm_model')}"
+        except (urllib.error.URLError, TimeoutError, OSError) as err:
+            ok, data, detail = False, {}, f"sin respuesta: {err}"
+        if ok or attempt == args.retries_health:
+            break
+        print(f"[....] health intento {attempt + 1}: {detail}; reintento en 10 s")
+        time.sleep(10)
+    if ok and args.expect_env and data.get("env") != args.expect_env:
+        ok, detail = False, f"{detail} (se esperaba env={args.expect_env})"
     run.step("health", ok, detail, time.perf_counter() - start)
     if args.health_only or run.failed:
         return 1 if run.failed else 0
@@ -116,7 +132,11 @@ def main() -> int:
 
     # 2. Chat firmado (el mismo camino que local\chat_turn del plugin).
     body = json.dumps(
-        {"course_id": args.course_id, "user_id": 1, "question": args.question, "history": []},
+        # visible_cmids=[]: el plugin siempre manda la lista (VIS-01) y el backend
+        # rechaza el pedido sin ella. Vacía, el usuario no ve material: la
+        # respuesta es la de "no encontré", que igual pasa por HMAC, base,
+        # LLM y Redis sin depender de que el ambiente tenga un curso cargado.
+        {"course_id": args.course_id, "user_id": 1, "question": args.question, "history": [], "visible_cmids": []},
         ensure_ascii=False,
         separators=(",", ":"),
     ).encode("utf-8")
