@@ -30,7 +30,7 @@
 | Nombre de la instancia | `nexusai-staging` | `nexusai-prod` |
 | IP pública | `146.181.62.67` | `159.112.139.166` |
 | IP privada | `10.0.0.180` | `10.0.0.252` |
-| Dominio | `api.146.181.62.67.nip.io` | `api.159.112.139.166.nip.io` |
+| Dominio | `api-staging.146.181.62.67.nip.io` | `api.159.112.139.166.nip.io` |
 | **Rama de git que sigue** | **`staging`** | **`main`** |
 | Creada | 2026-08-08 | 2026-08-05 |
 | Fault domain | FD-3 | FD-2 |
@@ -67,7 +67,7 @@ primero a `staging`.
 **Verificar que un ambiente está vivo** (no requiere acceso SSH):
 
 ```bash
-curl https://api.146.181.62.67.nip.io/health    # staging
+curl https://api-staging.146.181.62.67.nip.io/health    # staging
 curl https://api.159.112.139.166.nip.io/health  # producción
 # → {"status":"ok","version":"0.1.0","env":"...", "llm_model":"..."}
 ```
@@ -139,7 +139,7 @@ sudo docker ps
 **5. Confirmar que el health check responde** (desde la VM o desde afuera):
 
 ```bash
-curl https://api.146.181.62.67.nip.io/health   # ajustar según ambiente
+curl https://api-staging.146.181.62.67.nip.io/health   # ajustar según ambiente
 ```
 
 **6. Si algo no levanta, mirar logs del servicio con problemas:**
@@ -224,7 +224,7 @@ Cada VM tiene su propio valor en `~/nexusAI/NexusAI/.env`:
 
 ```bash
 # en nexusai-staging
-NEXUSAI_DOMAIN=api.146.181.62.67.nip.io
+NEXUSAI_DOMAIN=api-staging.146.181.62.67.nip.io
 
 # en nexusai-prod
 NEXUSAI_DOMAIN=api.159.112.139.166.nip.io
