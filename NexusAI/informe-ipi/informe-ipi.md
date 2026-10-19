@@ -1046,6 +1046,150 @@ descrito más arriba, de modo que la seguridad y el estado compartido de la
 app se configuran juntos, antes de que el servidor empiece a aceptar
 tráfico.
 
+## Arquitectura técnica del plugin Moodle
+
+Esta sección completa, del lado del plugin, el mecanismo que la sección
+anterior describió del lado del backend
+(`investigacion/01-moodle/`, `investigacion/06-frontend-react/`): cómo se
+inyecta el widget en la página, cómo se controla quién puede usarlo, cómo
+se expone (y se consume) la capa de integración con Moodle, y cómo
+convive React —pensado para *bundlers* modernos— dentro del sistema de
+módulos AMD de Moodle.
+
+### Inyección del widget: Hook API y *callback* legado
+
+Moodle 4.4 introdujo una API de *hooks* tipada (PSR-14) que reemplaza a
+los *callbacks* por convención de nombre. El equipo verificó durante el
+Sprint 1, sobre un build real de Moodle 4.5 (`2024042200`), que el
+*callback* legado `before_footer()` sigue ejecutándose en 4.4 en
+adelante, pero **su valor de retorno ya no se imprime** — Moodle solo
+emite una advertencia de deprecación
+(`investigacion/01-moodle/hooks-y-apis.md`). Para no romper el widget en
+ninguna versión soportada, NexusAI implementa los dos mecanismos a la
+vez: el *callback* legado `local_nexusai_before_footer()` en `lib.php`
+sigue activo para Moodle 4.1–4.3, y un *listener* tipado
+(`classes/hook/output/before_footer_listener.php`, registrado en
+`db/hooks.php` contra
+`\core\hook\output\before_footer_html_generation::class`) atiende 4.4 en
+adelante usando `$hook->add_html(...)` en lugar de un `return`. El
+*callback* legado se protege con un *guard* de versión
+(`if ((int)$CFG->version >= 2024041600) return '';`) para no inyectar el
+widget dos veces cuando ambos caminos están activos. Antes de inyectar
+nada, ambos caminos validan `isloggedin()`, `!isguestuser()`,
+`$COURSE->id > 1` y `has_capability('local/nexusai:use', $context)`, y
+llaman a `$PAGE->requires->js_call_amd('local_nexusai/chatwidget-lazy',
+'init', [[...]])` con `courseid`, `userid`, `sesskey`, `wwwroot` y `lang`
+(Moodle HQ, s.f.-b).
+
+### Capabilities y control de acceso
+
+El acceso al plugin se controla con tres *capabilities* declaradas en
+`db/access.php` (`investigacion/01-moodle/seguridad-capabilities.md`;
+Moodle HQ, s.f.-a): `local/nexusai:use` (lectura, contexto de curso,
+permitida a estudiante, docente, docente editor y administrador),
+`local/nexusai:manage` (escritura, riesgo `RISK_CONFIG`, solo docente
+editor/administrador) y `local/nexusai:reindex` (escritura, riesgo
+`RISK_DATALOSS`, mismo alcance que `:manage`). El patrón de verificación
+es siempre `require_login($course)` → `context_course::instance()` →
+`require_capability(...)`. El secreto compartido con el backend se
+almacena vía `admin_setting_configpasswordunmask` (nunca en texto plano
+visible en el formulario) y se recupera con
+`get_config('local_nexusai', 'shared_secret')`. La Privacy API
+(`classes/privacy/provider.php`) no es opcional: un plugin sin ella no
+pasa la revisión de Moodle.org, y debe declarar al proveedor de IA como
+una *external location* (`add_external_location_link('llm_provider',
+...)`) con un nombre deliberadamente genérico, no atado a un proveedor
+puntual — consistente con la abstracción `LLMProvider` ya vista en
+ADR-003 y con el hecho de que, por ADR-006 y ADR-014, los datos
+personales del alumno terminaron viviendo en tablas nativas de Moodle y
+no en el backend. (Una fuente del proyecto,
+`arquitectura-plugin-detallada.md`, registra una iteración anterior de
+estos mismos nombres —`local/nexusai:usechat` y `local/nexusai:manageconfig`,
+esta última a nivel de sistema—; el resto del informe y las Figuras 1 y 3
+ya usan `:use`/`:manage`/`:reindex`, por lo que esta sección se ancla a
+esos tres nombres.)
+
+### *Web services*: el patrón de tres métodos
+
+Moodle expone sus funciones externas en tres capas: una interfaz de
+servidor externo (REST/SOAP/XML-RPC), una API pública en PHP que extiende
+`external_api`, y una API interna de bajo nivel que no valida nada por sí
+misma y confía en que la capa pública ya lo hizo
+(`investigacion/01-moodle/webservices-teoria.md`; Moodle HQ, s.f.-e).
+Toda función externa sigue el mismo patrón obligatorio de tres métodos:
+`execute_parameters()` define un contrato tipado que bloquea inyección de
+parámetros no esperados, `execute()` debe empezar siempre con
+`validate_parameters()` y seguir con `validate_context()` y
+`require_capability()` antes de tocar cualquier dato, y
+`execute_returns()` sanea la salida con
+`external_api::clean_return_value()`. NexusAI decidió **no** habilitar
+Web Services REST para la comunicación Moodle→FastAPI —esa llamada la
+resuelve el *proxy* PHP interno con autenticación HMAC ya descrito en
+"Autenticación HMAC en tres capas"—, pero sí los **consume** en sentido
+inverso: para extraer el material de un curso, el backend llama a
+`core_course_get_contents` con un token de servicio, recorre secciones y
+módulos, filtra los archivos PDF y los descarga adjuntando el mismo
+token a la URL del archivo. El Subsistema de IA nativo de Moodle 4.5+
+—que resolvería parte de este problema sin plugin propio— se descartó
+explícitamente por su limitación de diseño: solo soporta solicitudes
+atómicas de pedido/respuesta, sin memoria conversacional persistente a lo
+largo de un cuatrimestre, que es exactamente el caso de uso de NexusAI.
+
+### React como módulo AMD
+
+Moodle organiza su JavaScript en módulos AMD/RequireJS compilados con
+Grunt, mientras que React se piensa para *bundlers* modernos con módulos
+ES/CommonJS y encapsulación propia — dos mundos que no se integran
+directamente
+(`investigacion/06-frontend-react/integracion-moodle-amd.md`; Moodle HQ,
+s.f.-c). La solución adoptada compila todo el frontend de React en un
+único *bundle* AMD autocontenido (`amd/build/chatwidget-lazy.min.js`) que
+exporta una función `init()`, montada con `createRoot` (React, s.f.) y
+cargada por Moodle con `js_call_amd()`. Un
+detalle fácil de pasar por alto: los parámetros de `js_call_amd()` deben
+pasarse como un arreglo anidado dentro de otro arreglo (`[[...]]`) — el
+arreglo externo se expande como argumentos posicionales de `init()`, así
+que el arreglo interno llega como un único objeto; un arreglo plano
+entregaría los parámetros como argumentos sueltos en lugar de un objeto.
+El sufijo `-lazy` en el nombre del archivo es obligatorio: sin él, el
+sistema de agrupamiento de módulos AMD de Moodle fusionaría el *bundle*
+de React (grande, con su propio runtime) con otros módulos AMD, generando
+errores de módulo duplicado. React se comunica con Moodle únicamente a
+través de `core/ajax`, que agrega automáticamente el `sesskey` (protección
+CSRF), reutiliza la sesión ya autenticada y mantiene el mismo origen —sin
+necesidad de CORS. Durante el Sprint 1 el equipo encontró y documentó un
+*bug* real de producción: los `import()` dinámicos de Webpack (Webpack,
+s.f.) (`import('react')`, `import('./ChatApp')`) generan *chunks* que, sin
+`output.publicPath` configurado, se resuelven en relación con la URL del
+último script que el navegador ejecutó —en este caso, el CDN de MathJax—,
+lo que producía un `ChunkLoadError` real intentando cargar el *chunk*
+desde `cdn.jsdelivr.net`. La corrección tuvo dos partes obligatorias:
+fijar `publicPath` a la ruta real del *bundle* en el plugin y desactivar
+la división de código (`splitChunks: false`, `runtimeChunk: false`), y
+reemplazar todos los `import()` dinámicos por *imports* estáticos en el
+punto de entrada.
+
+### Empaquetado con Webpack
+
+La configuración de Webpack 5
+(`investigacion/06-frontend-react/webpack-config.md`) declara como
+*externals* a `core/ajax`, `core/str`, `core/notification`,
+`core/templates` y `jquery`: no se empaquetan dentro del *bundle* de
+React porque Moodle ya los expone en tiempo de ejecución, lo que permite
+reutilizar el *sesskey*/CSRF de `core/ajax`, las cadenas de idioma de
+Moodle en `core/str`, su sistema de notificaciones, y evitar una segunda
+copia de `jquery` corriendo junto a la que varios módulos núcleo de
+Moodle ya esperan como variable global. El CSS del widget usa *CSS
+Modules* con el prefijo `nexusai-` en cada clase, para no colisionar con
+las clases del tema Boost/Bootstrap que Moodle ya carga en toda la
+página. El tamaño final del *bundle* —React 18 más la interfaz de
+chat propia— ronda los 200-220KB comprimidos, dentro del umbral de 512KB
+que Webpack usa para advertir sobre *bundles* demasiado grandes. Por
+convención para plugins distribuibles de Moodle, el archivo compilado
+`amd/build/chatwidget-lazy.min.js` se commitea al repositorio junto con
+el código fuente de React, en lugar de generarse solo en una *pipeline*
+de build separada.
+
 ## Pruebas
 
 La estrategia de pruebas combina:
@@ -1076,7 +1220,7 @@ plugin hasta el momento de este informe.
 
 El formulario de registro de un plugin en moodle.org no admite indicar una
 subcarpeta: recibe una URL de repositorio y asume que su raíz es la raíz
-del plugin (Moodle HQ, s.f.). El código de NexusAI, sin embargo, vive
+del plugin (Moodle HQ, s.f.-d). El código de NexusAI, sin embargo, vive
 dentro de un monorepo (`nexusAI`) junto al backend, la documentación y el
 material de investigación del proyecto, cuatro niveles por debajo de la
 raíz real del repositorio git. Un validador automático que clona el repo y
@@ -1502,8 +1646,16 @@ sección, y toda referencia listada fue utilizada en el informe.
   https://www.microsoft.com/en-us/education/products/copilot
 - Moodle HQ. (2024). *Moodle Developer Documentation — Plugin types: local*.
   https://moodledev.io/docs/apis/plugintypes/local
-- Moodle HQ. (s.f.). *Plugin contribution checklist*. Recuperado 2026, de
+- Moodle HQ. (s.f.-a). *Moodle Developer Documentation — Access API*. Recuperado 2026,
+  de https://moodledev.io/docs/apis/subsystems/access
+- Moodle HQ. (s.f.-b). *Moodle Developer Documentation — Hooks API*. Recuperado 2026,
+  de https://moodledev.io/docs/apis/core/hooks
+- Moodle HQ. (s.f.-c). *Moodle Developer Documentation — JavaScript modules*.
+  Recuperado 2026, de https://moodledev.io/docs/guides/javascript/modules
+- Moodle HQ. (s.f.-d). *Plugin contribution checklist*. Recuperado 2026, de
   https://moodledev.io/general/community/plugincontribution/checklist
+- Moodle HQ. (s.f.-e). *Moodle Developer Documentation — External functions and web
+  services*. Recuperado 2026, de https://moodledev.io/docs/apis/subsystems/external
 - OpenAI. (s.f.-a). *ChatGPT Edu*. Recuperado 2026, de https://openai.com/chatgpt/education/
 - OpenAI. (s.f.-b). *GPT-4o pricing*. Recuperado 2026, de https://openai.com/api/pricing/
 - OWASP. (s.f.). *Replay attack*. OWASP Foundation. Recuperado 2026, de
@@ -1514,8 +1666,12 @@ sección, y toda referencia listada fue utilizada en el informe.
   [Software]. GitHub. https://github.com/pgvector/pgvector
 - Pydantic. (s.f.). *Pydantic documentation*. Recuperado 2026, de
   https://docs.pydantic.dev/
+- React. (s.f.). *React documentation — createRoot*. Recuperado 2026, de
+  https://react.dev/reference/react-dom/client/createRoot
 - sse-starlette. (s.f.). *sse-starlette* [Software]. GitHub.
   https://github.com/sysid/sse-starlette
+- Webpack. (s.f.). *Webpack documentation — Output, externals y code splitting*.
+  Recuperado 2026, de https://webpack.js.org/configuration/output/
 
 \newpage
 
