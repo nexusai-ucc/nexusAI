@@ -18,7 +18,7 @@ USO
     # Flujo completo (staging): las credenciales salen de variables de entorno,
     # nunca de argumentos (quedarían en el historial del shell o en los logs).
     NEXUSAI_E2E_API_KEY=... NEXUSAI_E2E_SHARED_SECRET=... \\
-        python3 scripts/e2e_deployed.py --base-url https://api.146.181.62.67.nip.io --course-id 2
+        python3 scripts/e2e_deployed.py --base-url https://api-staging.146.181.62.67.nip.io --course-id 2
 
 Sale con 0 si todo pasa, 1 si algo falla. Imprime el tiempo de cada paso.
 """

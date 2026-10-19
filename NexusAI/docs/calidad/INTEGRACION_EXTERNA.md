@@ -1,6 +1,6 @@
 # Integración externa (TPC-07)
 
-> Issue [#579](https://github.com/nexusai-ucc/nexusAI/issues/579) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.1, 19/10/2026
+> Issue [#579](https://github.com/nexusai-ucc/nexusAI/issues/579) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.2, 19/10/2026
 
 NexusAI depende de dos sistemas externos que no controla:
 - **Moodle**, que aloja el plugin y le da usuarios, cursos, permisos y archivos;
@@ -131,9 +131,11 @@ Las credenciales salen de variables de entorno, nunca de argumentos. Sale con un
 | Ambiente | `--health-only` | Flujo completo |
 |---|---|---|
 | Producción (`api.159.112.139.166.nip.io`) | ✅ HTTP 200, `gemini-2.5-flash`, 0,32 s | No se corre en producción (gasta tokens y escribe datos reales) |
-| Staging (`api.146.181.62.67.nip.io`) | ❌ `TLSV1_ALERT_INTERNAL_ERROR`: la VM acepta la conexión pero Caddy no presenta un certificado válido | Bloqueado hasta que staging vuelva (lo resuelve el admin de deploy) |
+| Staging (`api-staging.146.181.62.67.nip.io`) | ✅ HTTP 200, `env=staging`, `gpt-4o-mini`, 0,55 s (19/10) | Se corre en el smoke post-deploy (TPC-08), con las credenciales de staging como secrets |
 
-El fallo de staging es justamente lo que el smoke tiene que detectar: el script lo marca como `FAIL` y sale con 1.
+**Falsa alarma del 16/10.** La primera corrida contra staging usó `api.146.181.62.67.nip.io` y falló con `TLSV1_ALERT_INTERNAL_ERROR`, así que se reportó staging como caído. No lo estaba: el dominio real es `api-staging.…`, y Caddy solo tiene certificado para ese nombre. El dominio equivocado venía de `docs/DEPLOY_ORACLE.md`, que el admin de deploy corrigió en #630.
+
+Lección: el script detectó bien que *esa* URL no servía (sale con 1 y `FAIL`), pero el mensaje TLS se parece a un servicio caído. Por eso el smoke de TPC-08 toma la URL de una variable del pipeline y no de la documentación.
 
 ## 7. Riesgos de la integración
 
@@ -143,7 +145,7 @@ El fallo de staging es justamente lo que el smoke tiene que detectar: el script 
 | Picos de latencia del proveedor (20 s medidos en el free tier) | Medido a diario contra el SLA; se profundiza en TPC-09 |
 | Se agota la cuota del free tier del CI | Corrida diaria con 3 llamadas chicas, `workflow_dispatch` para lo demás. Key separada de producción |
 | Cambia el contrato entre plugin y backend sin que se note | `contracts/` leído por los dos CI |
-| Staging caído, sin TLS | El E2E post-deploy lo detecta. Pendiente de que lo resuelva el admin de deploy (TPC-08) |
+| Staging no disponible, o la URL documentada no coincide con el certificado | El E2E post-deploy lo detecta; la URL vive en una variable del pipeline (TPC-08), no se copia de la documentación |
 | Embeddings sin proveedor alternativo | Riesgo aceptado, documentado en el plan de contingencia |
 
 ## Historial de versiones
@@ -152,3 +154,4 @@ El fallo de staging es justamente lo que el smoke tiene que detectar: el script 
 |---|---|---|
 | 1.0 | 16/10/2026 | Contratos, contract testing, dobles de fallas, proveedor real, E2E desplegado |
 | 1.1 | 19/10/2026 | Primeras corridas contra Gemini real: DEF-07, modelo no disponible para proyectos nuevos, picos de latencia |
+| 1.2 | 19/10/2026 | URL correcta de staging (`api-staging.…`): el error TLS del 16/10 era el dominio, no una caída |
