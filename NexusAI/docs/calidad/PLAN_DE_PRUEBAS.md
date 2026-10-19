@@ -1,6 +1,6 @@
 # Plan de pruebas — NexusAI
 
-> **Versión 1.0** · 14/10/2026 · Issue [#575](https://github.com/nexusai-ucc/nexusAI/issues/575) (TPC-03), épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584).
+> **Versión 1.1** · 19/10/2026 · Issue [#575](https://github.com/nexusai-ucc/nexusAI/issues/575) (TPC-03), épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584).
 > Este plan se versiona en el repo junto al código. Cada cambio entra por PR y se anota en el [historial](#historial-de-versiones).
 >
 > Relacionados: [`LINEA_BASE.md`](LINEA_BASE.md) (métricas iniciales), [`EPICA_TP_CALIDAD.md`](EPICA_TP_CALIDAD.md) (subtareas), [`services/api/TESTING.md`](../../services/api/TESTING.md) (criterios y guiones del MVP), [`entrega-final/21_testing.md`](../../entrega-final/21_testing.md) (estrategia de testing del MVP).
@@ -42,7 +42,7 @@
 
 Además entran dos requisitos no funcionales transversales: **visibilidad del material** (VIS-01…06, un alumno nunca recibe material que no ve en Moodle) y **privacidad** (Privacy API de Moodle / GDPR).
 
-La trazabilidad requisito → caso → defecto se completa en TPC-04 ([#576](https://github.com/nexusai-ucc/nexusAI/issues/576)).
+La trazabilidad requisito → caso → defecto está en [`TRAZABILIDAD.md`](TRAZABILIDAD.md), y los casos de caja negra en [`CASOS_DE_PRUEBA.md`](CASOS_DE_PRUEBA.md) (TPC-04, [#576](https://github.com/nexusai-ucc/nexusAI/issues/576)).
 
 **Fuera de alcance:** la calidad pedagógica de las respuestas del LLM más allá del golden set (`services/api/tests/golden_set.md`), la app móvil de Moodle y la infraestructura de la UCC (no hay servidor de la UCC).
 
@@ -167,3 +167,4 @@ La eficiencia de desempeño queda cuarta: hay SLAs, pero un chat lento y correct
 | Versión | Fecha | Cambio | Issue |
 |---|---|---|---|
 | 1.0 | 14/10/2026 | Versión inicial: alcance, objetivos, contingencia, niveles, criterios, riesgos, ISO 25010, QA/QC | #575 |
+| 1.1 | 19/10/2026 | Links a la matriz de trazabilidad y a los casos de prueba | #576 |

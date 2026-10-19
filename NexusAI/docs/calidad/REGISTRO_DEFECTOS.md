@@ -1,6 +1,6 @@
 # Registro de defectos (TPC-06)
 
-> Issue [#578](https://github.com/nexusai-ucc/nexusAI/issues/578) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.0, 16/10/2026
+> Issue [#578](https://github.com/nexusai-ucc/nexusAI/issues/578) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.2, 19/10/2026
 
 El registro de defectos de NexusAI vive en **GitHub Issues**, con el formulario **🐞 Defecto** (`.github/ISSUE_TEMPLATE/defecto.yml`) y las labels `bug`, `tipo:defecto` y `severidad:*`. Este documento es la vista consolidada para el TP: lista cada defecto con su origen, su fix, su test de regresión y las corridas de CI que lo muestran.
 
@@ -27,15 +27,16 @@ Abierto ──► En curso ──► Test de regresión en ROJO ──► Fix �
 
 ## Defectos registrados
 
-| ID | Defecto | Componente | Severidad | Detectado por | Estado | Fix | Test de regresión |
-|---|---|---|---|---|---|---|---|
-| [DEF-01](#def-01) | Racha, flashcards y webhook ignoran la respuesta de Moodle (`ajax.call` sin esperar) | Widget React | Media | Tests unitarios (TPC-05, 15/10) | Corregido | [#624](https://github.com/nexusai-ucc/nexusAI/pull/624) · issue [#623](https://github.com/nexusai-ucc/nexusAI/issues/623) | `react/src/api/quiz.test.js`, `react/src/api/services.test.js`, `react/src/api/ajaxUsage.test.js` |
-| [DEF-02](#def-02) | VOICE-02: toda pregunta por voz se rechaza (MIME con codec) y el error no se muestra | Plugin + backend + widget | Alta | Uso real | Corregido | [#591](https://github.com/nexusai-ucc/nexusAI/pull/591) · issue [#590](https://github.com/nexusai-ucc/nexusAI/issues/590) | `tests/chat_voice_transcribe_test.php`, `services/api/tests/test_voice_router.py`, `react/src/api/voice.test.js`, `ChatInput.test.jsx` |
-| [DEF-03](#def-03) | El Privacy provider no exportaba ni borraba nada: se ignoraba el contexto de curso (`add_from_sql`) | Plugin (Privacy API) | Alta | Primera corrida de PHPUnit sobre el provider | Corregido | `d2d13fc` (13/09) | `tests/privacy_provider_test.php`, `privacy_provider_tables_test.php` |
-| [DEF-04](#def-04) | MMR-301 ítem 4: al borrar un curso no se purgaban del backend los posts de foro indexados | Plugin (privacidad) | Alta | Auditoría para Moodle Marketplace | Corregido | [#572](https://github.com/nexusai-ucc/nexusAI/pull/572) | `tests/backend_tasks_test.php` |
-| [DEF-05](#def-05) | CI: "Sync derived repos" falla por `SYNC_REPOS_TOKEN` vencido; los repos derivados dejan de actualizarse | CI / despliegue | Media | **Pipeline** | Corregido | token renovado (14/10) | la propia corrida del workflow |
-| [DEF-06](#def-06) | Tests: un mock de `curl` sobrevivía entre tests y rompía `sync_forum_post_test` | Tests del plugin | Baja | **Pipeline** (PR #603) | Corregido | `df38ed9` | `tests/external/external_testcase.php::tearDown` |
-| [DEF-07](#def-07) | `embed_many` rompe con `TypeError` cuando el proveedor devuelve los embeddings sin `index` (Gemini) | Backend (proveedor de embeddings) | Media | **Prueba contra el proveedor real** (TPC-07, 19/10) | Corregido | [#628](https://github.com/nexusai-ucc/nexusAI/pull/628) | `tests/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index`, `tests/integration/test_llm_real.py` |
+| ID | Defecto | Requisito | Componente | Severidad | Detectado por | Estado | Fix | Test de regresión |
+|---|---|---|---|---|---|---|---|---|
+| [DEF-01](#def-01) | Racha, flashcards y webhook ignoran la respuesta de Moodle (`ajax.call` sin esperar) | HU-030 | Widget React | Media | Tests unitarios (TPC-05, 15/10) | Corregido | [#624](https://github.com/nexusai-ucc/nexusAI/pull/624) · issue [#623](https://github.com/nexusai-ucc/nexusAI/issues/623) | `react/src/api/quiz.test.js`, `react/src/api/services.test.js`, `react/src/api/ajaxUsage.test.js` |
+| [DEF-02](#def-02) | VOICE-02: toda pregunta por voz se rechaza (MIME con codec) y el error no se muestra | HU-001 | Plugin + backend + widget | Alta | Uso real | Corregido | [#591](https://github.com/nexusai-ucc/nexusAI/pull/591) · issue [#590](https://github.com/nexusai-ucc/nexusAI/issues/590) | `tests/chat_voice_transcribe_test.php`, `services/api/tests/test_voice_router.py`, `react/src/api/voice.test.js`, `ChatInput.test.jsx` |
+| [DEF-03](#def-03) | El Privacy provider no exportaba ni borraba nada: se ignoraba el contexto de curso (`add_from_sql`) | PRIV | Plugin (Privacy API) | Alta | Primera corrida de PHPUnit sobre el provider | Corregido | `d2d13fc` (13/09) | `tests/privacy_provider_test.php`, `privacy_provider_tables_test.php` |
+| [DEF-04](#def-04) | MMR-301 ítem 4: al borrar un curso no se purgaban del backend los posts de foro indexados | PRIV | Plugin (privacidad) | Alta | Auditoría para Moodle Marketplace | Corregido | [#572](https://github.com/nexusai-ucc/nexusAI/pull/572) | `tests/backend_tasks_test.php` |
+| [DEF-05](#def-05) | CI: "Sync derived repos" falla por `SYNC_REPOS_TOKEN` vencido; los repos derivados dejan de actualizarse | — (proceso) | CI / despliegue | Media | **Pipeline** | Corregido | token renovado (14/10) | la propia corrida del workflow |
+| [DEF-06](#def-06) | Tests: un mock de `curl` sobrevivía entre tests y rompía `sync_forum_post_test` | — (proceso) | Tests del plugin | Baja | **Pipeline** (PR #603) | Corregido | `df38ed9` | `tests/external/external_testcase.php::tearDown` |
+| [DEF-07](#def-07) | `embed_many` rompe con `TypeError` cuando el proveedor devuelve los embeddings sin `index` (Gemini) | HU-010 | Backend (proveedor de embeddings) | Media | **Prueba contra el proveedor real** (TPC-07, 19/10) | Corregido | [#628](https://github.com/nexusai-ucc/nexusAI/pull/628) | `tests/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index`, `tests/integration/test_llm_real.py` |
+| [DEF-08](#def-08) | El quiz con un tema sin material responde siempre en español cuando la similitud es baja (no sigue el idioma de la interfaz) | HU-031 | Backend (quiz) | Baja | **Tabla de decisión** de HU-031 (TPC-04, 19/10) | Corregido | __PR__ | `tests/test_quiz_router.py::test_cp_quiz_19_tema_sin_material_responde_en_el_idioma_de_la_interfaz` |
 
 ### DEF-01
 
@@ -108,6 +109,22 @@ El fix (`df38ed9`): `external_testcase::tearDown()` vacía la lista por Reflecti
 | Test de regresión, sin fix (local) | `pytest -k omits_index` | 🔴 `TypeError` |
 | Fix | Integración externa [39257509226](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257509226/attempts/2) · `pytest tests/test_providers.py` | 🟢 768 dimensiones y orden correcto |
 
+### DEF-08
+
+Con un tema pedido, `generate_quiz` rechaza el pedido en dos lugares:
+- cuando la similitud máxima del material no llega al umbral;
+- cuando el LLM dice que el tema no está en el material.
+
+El segundo mensaje y el 404 de "curso sin material" siguen el idioma de la interfaz con `localized()`. El primero estaba escrito a mano en español, así que un alumno con Moodle en inglés recibía *"No encontré material sobre ese tema…"*. Además, no nombraba el tema, a diferencia del otro rechazo.
+
+- **Cómo apareció:** al armar la tabla de decisión de HU-031 ([CASOS_DE_PRUEBA.md](CASOS_DE_PRUEBA.md) §4.3), las reglas Q1 y Q2 tienen la misma acción (422, "no hay material sobre el tema"). Comparar sus mensajes mostró que solo uno estaba localizado. Ningún test pasaba por Q1: la rama "quiz con tema" tenía 0 % de cobertura (§5 de ese documento).
+- **Fix:** el mensaje de Q1 usa `localized(resolve_language(request, topic), …)` con el mismo texto que Q2.
+
+| Paso | Corrida | Resultado |
+|---|---|---|
+| Test de regresión, sin fix (local) | `pytest -k cp_quiz_19` | 🔴 el detalle en inglés no contiene "couldn't find material" |
+| Fix | `pytest tests/test_quiz_router.py` | 🟢 87 tests pasan |
+
 ## Ejecución fallida que detectó un problema real
 
 **DEF-05. "Sync derived repos"** publica el plugin y el backend en sus repos derivados (`moodle-local_nexusai`, `nexusai-backend`) en cada push a `development`.
@@ -137,3 +154,4 @@ También DEF-06 es una ejecución fallida que detectó un problema real (la fuga
 |---|---|---|
 | 1.0 | 16/10/2026 | Formulario de defecto, severidades, ciclo de vida, DEF-01 a DEF-06, ejecución fallida real |
 | 1.1 | 19/10/2026 | DEF-07 (detectado por la prueba contra el proveedor real) y riesgo del modelo de producción |
+| 1.2 | 19/10/2026 | DEF-08 (detectado por una tabla de decisión) y columna de requisito, enlazada con [TRAZABILIDAD.md](TRAZABILIDAD.md) |
