@@ -64,10 +64,11 @@ export async function summarizeDocument({ documentId, courseId }) {
         };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_document_summarize",
         args: { documentid: documentId, courseid: courseId },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -93,10 +94,11 @@ export async function getPreExamSummary(courseId, section = null) {
         };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_document_pre_exam_summary",
         args: { courseid: courseId, section },
     }]);
+    const response = await responsePromise;
 
     return response;
 }

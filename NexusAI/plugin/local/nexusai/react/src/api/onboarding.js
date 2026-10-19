@@ -73,10 +73,11 @@ export async function getCourseSetupState(courseId) {
         return { ...MOCK_STATE, courseid: courseId || 0 };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_course_setup_state",
         args: { courseid: courseId },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -96,10 +97,11 @@ export async function getOnboardingState(courseId) {
         return { ...MOCK_ONBOARDING_STATE, courseid: courseId || 0 };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_onboarding_state_get",
         args: { courseid: courseId },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -120,10 +122,11 @@ export async function setOnboardingState(courseId, { dismissed, skipped }) {
         return { success: true };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_onboarding_state_set",
         args: { courseid: courseId, dismissed: !!dismissed, skipped: skipped || [] },
     }]);
+    const response = await responsePromise;
 
     return response;
 }

@@ -1065,10 +1065,11 @@ async function callMoodle(methodname, args) {
   if (!fetchMany) {
     throw new Error("core/ajax not available (running outside Moodle)");
   }
-  const [response] = await fetchMany([{
+  const [responsePromise] = fetchMany([{
     methodname,
     args
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -1426,7 +1427,7 @@ async function listGaps(courseId, days = 30, limit = 30, includeArchived = false
       days
     };
   }
-  const [response] = await fetchMany([{
+  const [responsePromise] = fetchMany([{
     methodname: "local_nexusai_gaps_list",
     args: {
       courseid: courseId,
@@ -1436,6 +1437,7 @@ async function listGaps(courseId, days = 30, limit = 30, includeArchived = false
       offset
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -1457,7 +1459,7 @@ async function archiveGap(courseId, questionIds, archived) {
       affected: questionIds.length
     };
   }
-  const [response] = await fetchMany([{
+  const [responsePromise] = fetchMany([{
     methodname: "local_nexusai_gaps_archive",
     args: {
       courseid: courseId,
@@ -1465,6 +1467,7 @@ async function archiveGap(courseId, questionIds, archived) {
       archived
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 const MOCK_FAQ_TOPICS = {
@@ -1503,13 +1506,14 @@ async function getFaqTopics(courseId, days = 30) {
       days
     };
   }
-  const [response] = await fetchMany([{
+  const [responsePromise] = fetchMany([{
     methodname: "local_nexusai_analytics_faq_topics",
     args: {
       courseid: courseId,
       days
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 const MOCK_ANALYTICS_DASHBOARD = {
@@ -1591,13 +1595,14 @@ async function getAnalyticsDashboard(courseId, days = 30) {
       period_days: days
     };
   }
-  const [response] = await fetchMany([{
+  const [responsePromise] = fetchMany([{
     methodname: "local_nexusai_analytics_dashboard",
     args: {
       courseid: courseId,
       days
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 ;// ./src/api/courseSections.js
@@ -1665,12 +1670,13 @@ async function listCourseSections(courseId) {
       name: "Unidad 2"
     }];
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_course_sections_list",
     args: {
       courseid: courseId
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 // EXTERNAL MODULE: ./node_modules/react/jsx-runtime.js
@@ -5136,10 +5142,11 @@ async function generateQuiz({
     questiontype: questionType,
     difficulty
   };
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_generate",
     args
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5190,7 +5197,7 @@ async function generateExam({
       questions: mockQuestions
     };
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_exam_generate",
     args: {
       courseid: courseId,
@@ -5202,6 +5209,7 @@ async function generateExam({
       topics: focusTopics
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5231,7 +5239,7 @@ async function evaluateOpenAnswer({
       feedback: isCorrect ? "Buena respuesta. Mencionaste los conceptos clave. (Evaluación simulada — en el sistema real la IA compara con el material del curso.)" : "La respuesta es demasiado breve. Desarrollá más el concepto. (Evaluación simulada.)"
     };
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_evaluate",
     args: {
       courseid: courseId,
@@ -5240,6 +5248,7 @@ async function evaluateOpenAnswer({
       useranswer: userAnswer
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5264,7 +5273,7 @@ async function recordQuizErrors({
   if (!ajax) return {
     stored: 0
   };
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_errors_record",
     args: {
       courseid: courseId,
@@ -5283,6 +5292,7 @@ async function recordQuizErrors({
       }))
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5302,7 +5312,7 @@ async function listQuizErrors(courseId, days = 90, limit = 100, offset = 0) {
     total: 0,
     items: []
   };
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_errors_list",
     args: {
       courseid: courseId,
@@ -5311,6 +5321,7 @@ async function listQuizErrors(courseId, days = 90, limit = 100, offset = 0) {
       offset
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5325,12 +5336,13 @@ async function clearQuizErrors(courseId) {
   if (!ajax) return {
     deleted: 0
   };
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_errors_clear",
     args: {
       courseid: courseId
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5360,7 +5372,7 @@ async function saveQuizAttempt({
     id: "mock",
     created_at: new Date().toISOString()
   };
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_attempt_save",
     args: {
       courseid: courseId,
@@ -5371,6 +5383,7 @@ async function saveQuizAttempt({
       correctcount: correctCount
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5409,7 +5422,7 @@ async function listQuizAttempts(courseId, days = 90, limit = 20) {
       }]
     };
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_attempt_list",
     args: {
       courseid: courseId,
@@ -5417,6 +5430,7 @@ async function listQuizAttempts(courseId, days = 90, limit = 20) {
       limit
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5434,13 +5448,14 @@ async function getReviewSuggestions(courseId, days = 90) {
     total_errors: 0,
     suggestions: []
   };
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_review_suggestions",
     args: {
       courseid: courseId,
       days
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5467,13 +5482,14 @@ async function getStudyPlan(courseId, days = 30) {
       }]
     };
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_study_plan",
     args: {
       courseid: courseId,
       days
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5497,7 +5513,7 @@ async function dismissStudyPlanTopic(courseId, quizErrorIds = [], gapQuestionIds
       affected: quizErrorIds.length + gapQuestionIds.length
     };
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_study_plan_dismiss",
     args: {
       courseid: courseId,
@@ -5505,6 +5521,7 @@ async function dismissStudyPlanTopic(courseId, quizErrorIds = [], gapQuestionIds
       gapquestionids: gapQuestionIds
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5528,13 +5545,14 @@ async function suggestDifficulty(courseId, topic = "") {
       accuracy_pct: null
     };
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_suggest_difficulty",
     args: {
       courseid: courseId,
       topic
     }
   }]);
+  const response = await responsePromise;
   return {
     difficulty: response.difficulty ?? null,
     reason: response.reason ?? null,
@@ -5563,13 +5581,14 @@ async function getFlashcardsSummary(courseId, topic = "") {
       total_count: 0
     };
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_flashcards_summary",
     args: {
       courseid: courseId,
       topic
     }
   }]);
+  const response = await responsePromise;
   return {
     due_count: response.duecount ?? 0,
     total_count: response.totalcount ?? 0
@@ -5591,7 +5610,7 @@ async function getDueFlashcards(courseId, topic = "", limit = 10) {
     course_id: courseId,
     questions: []
   };
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_flashcards_due",
     args: {
       courseid: courseId,
@@ -5599,6 +5618,7 @@ async function getDueFlashcards(courseId, topic = "", limit = 10) {
       limit
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5619,7 +5639,7 @@ async function submitFlashcardReviews(courseId, reviews) {
   if (!ajax) return {
     updated: 0
   };
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_flashcards_review_batch",
     args: {
       courseid: courseId,
@@ -5629,6 +5649,7 @@ async function submitFlashcardReviews(courseId, reviews) {
       }))
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -5645,12 +5666,13 @@ async function getStudyStreak(courseId) {
     current_streak: 0,
     practiced_today: false
   };
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_quiz_streak",
     args: {
       courseid: courseId
     }
   }]);
+  const response = await responsePromise;
   return {
     current_streak: response.currentstreak ?? 0,
     practiced_today: response.practicedtoday ?? false
@@ -6535,7 +6557,7 @@ async function searchMaterial({
       results: filtered
     };
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_search_query",
     args: {
       query: query.trim(),
@@ -6547,6 +6569,7 @@ async function searchMaterial({
       sectionunassigned: sectionUnassigned
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 ;// ./src/api/summary.js
@@ -6614,13 +6637,14 @@ async function summarizeDocument({
       total_chunks: 15
     };
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_document_summarize",
     args: {
       documentid: documentId,
       courseid: courseId
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 
@@ -6646,13 +6670,14 @@ async function getPreExamSummary(courseId, section = null) {
       total_documents: 1
     };
   }
-  const [response] = await ajax.call([{
+  const [responsePromise] = ajax.call([{
     methodname: "local_nexusai_document_pre_exam_summary",
     args: {
       courseid: courseId,
       section
     }
   }]);
+  const response = await responsePromise;
   return response;
 }
 ;// ./src/components/SearchPanel.jsx

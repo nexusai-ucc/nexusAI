@@ -170,12 +170,13 @@ export async function sendMessage({ question, courseId, userId, sessionId, multi
         args.sessionid = sessionId;
     }
 
-    const [response] = await fetchMany([
+    const [responsePromise] = fetchMany([
         {
             methodname: "local_nexusai_chat_send",
             args,
         },
     ]);
+    const response = await responsePromise;
 
     // If the External Function returns an error, core/ajax rejects on its own.
     // If it returns OK, we expect the same shape as the Python backend:
@@ -211,7 +212,7 @@ export async function submitMessageFeedback({ messageId, courseId, isHelpful, co
         return { ok: true };
     }
 
-    const [response] = await fetchMany([
+    const [responsePromise] = fetchMany([
         {
             methodname: "local_nexusai_chat_message_feedback",
             args: {
@@ -222,6 +223,7 @@ export async function submitMessageFeedback({ messageId, courseId, isHelpful, co
             },
         },
     ]);
+    const response = await responsePromise;
 
     return response;
 }
