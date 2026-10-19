@@ -1192,17 +1192,109 @@ de build separada.
 
 ## Pruebas
 
-La estrategia de pruebas combina:
+La estrategia de pruebas se organizó en nueve ciclos documentados como
+issues `TEST-01` a `TEST-09`, todas cerradas durante el Sprint 4 (MVP),
+cada una con un responsable y un alcance específico.
 
-- **Pruebas unitarias y de integración** automatizadas en el backend (extracción,
-  fragmentación, recuperación, autenticación HMAC), con una cobertura cercana al 80%.
-- **Pruebas funcionales** manuales sobre el plugin y la interfaz de chat.
-- **Pruebas de aceptación** vinculadas a los criterios definidos en los requerimientos.
-- **Evaluación de calidad de respuesta** mediante un conjunto de referencia
-  (*golden set*) de preguntas y respuestas esperadas.
+### Pruebas unitarias y de integración (backend)
 
-> **PENDIENTE —** consolidar los resultados de las pruebas con usuarios reales y los
-> valores medidos frente a los objetivos de latencia (RNF-06 a RNF-09).
+`TEST-02` cubrió la *suite* unitaria del backend en Python con
+**pytest** (pytest, s.f.), sobre RAG, *embeddings*, *chunking* y los *endpoints* de
+FastAPI. A la fecha de redacción de este capítulo, esa *suite*
+(`services/api/tests/`) tiene 530 funciones de test en 41 archivos —más
+que el *snapshot* de 37 tests que registra el Anexo C, porque la
+*suite* siguió creciendo después del MVP; ambos números son correctos,
+cada uno en su momento. Usa `@pytest.mark.asyncio` para los *endpoints*
+asíncronos, `@pytest.mark.parametrize` para cubrir variantes de un mismo
+caso, y *fixtures* de `conftest.py` (`fake_redis`,
+`fake_openai_chat_response`, `fake_chat_stream`) con `AsyncMock`/
+`MagicMock` y *dependency overrides* de FastAPI para simular Redis y al
+proveedor de LLM sin llamadas de red reales. Un archivo aparte,
+`tests/integration/test_llm_real.py`, se mantiene deliberadamente fuera
+de ese *mocking*: corre contra el proveedor de LLM real, para no
+depender únicamente de respuestas simuladas.
+
+Las pruebas de integración restantes fueron manuales: `TEST-03` verificó
+el flujo completo React → *plugin* PHP → backend Python → proveedor de
+LLM con datos reales; `TEST-04` probó el *plugin* en un *sandbox* real
+de Moodle con usuarios de prueba; `TEST-05` encadenó ambas en una sesión
+*end-to-end* completa, desde que un alumno abre el chat hasta que recibe
+una respuesta sobre material real de curso.
+
+### Pruebas automatizadas del frontend (Vitest)
+
+Antes de la issue `#311` (*QA-01*), el *widget* de React no tenía ningún
+test automatizado — ni Vitest (Vitest, s.f.) ni Jest estaban siquiera declarados en su
+`package.json`. La issue proponía priorizar los componentes con más
+estado (`StudyPlanPanel`, `AnalyticsDashboardPanel`,
+`ExamGeneratorPanel`); lo que efectivamente se implementó, en cambio,
+priorizó la lógica pura y la capa de API: `gift.js` (la conversión al
+formato GIFT de Moodle) llegó al 100% de cobertura como pedía la issue,
+y se suman pruebas de los módulos `api/*.js` y de un componente de
+manejo de errores — ocho archivos, 65 casos en total. Los paneles con
+estado que la issue señalaba como prioridad quedaron sin cubrir; se
+cuenta esta desviación tal cual, no como si el plan original se hubiera
+cumplido punto por punto. La *suite* corre en `frontend-ci.yml`, que
+sube el reporte de cobertura como artefacto de *build*; todavía no exige
+un umbral mínimo para pasar el CI, algo que una épica posterior de
+calidad de software agrega por fuera de esta issue.
+
+### Evaluación de calidad del asistente: dos campañas
+
+`TEST-08` produjo `golden_set.md`: una rúbrica manual de doce preguntas
+sobre contenido de base de datos, evaluadas en tres criterios de 1 a 5
+(Relevancia, Completitud, Honestidad). Esa corrida, ejecutada en el MVP,
+es la que ya resume el Anexo C (8 de 10 preguntas respondidas
+correctamente con citación adecuada, 2 de 2 casos donde el asistente
+admitió correctamente no poder responder, cero falsos positivos o
+negativos) — no se repite esa tabla acá.
+
+Existe una segunda campaña, automatizada y mucho más reciente
+(`investigacion/02-rag/eval-dataset.json` y `eval-report.json`,
+11/09/2026), que **no es la misma corrida con otro formato**: reusa las
+doce preguntas de `golden_set.md`, agregándoles palabras clave de
+referencia para automatizar el *scoring*, pero las corre contra un
+*fixture* sintético bajo un `course_id` dedicado (`990001`) en lugar del
+plan original de 30-50 preguntas anotadas por un docente real sobre
+material de curso genuino — ese plan más ambicioso nunca se ejecutó, y
+se documenta como limitación en lugar de ocultarlo. Mide en tres
+niveles: *retrieval* (ocho preguntas con respuesta esperada en el
+material) con **Recall@5 = 1,00** (objetivo >= 0,85, cumplido),
+**Precision@5 = 0,275** (objetivo >= 0,50, no cumplido, explicado por un
+corpus de prueba muy chico —unos nueve *chunks* en total— donde casi
+todo el top-5 son vecinos legítimos por superposición de *chunking*, no
+ruido) y **MRR = 0,9375** (objetivo >= 0,70, cumplido); *faithfulness* de
+la respuesta generada, evaluada por un segundo LLM como juez (de un
+proveedor distinto al que genera la respuesta en producción, para que el
+modelo no se autoevalúe); y honestidad del *fallback* ante las cuatro
+preguntas deliberadamente fuera de material. En esta corrida en
+particular, la cuota gratuita de Gemini se agotó a mitad de la ejecución
+y el modelo de *fallback* configurado resultó estar descontinuado,
+devolviendo error en vez de una respuesta — de las ocho preguntas de
+*faithfulness* solo dos llegaron a evaluarse (una fiel, una parcial por
+corte de respuesta) y ninguna de las cuatro de *fallback* se pudo medir.
+El propio reporte distingue explícitamente "no medible" de "0% de
+honestidad", y el hallazgo en sí —un modelo de respaldo roto que
+convierte una degradación esperable en un error duro— es, más allá del
+número, el resultado más valioso de haber corrido esta evaluación.
+
+### Pruebas de aceptación, usuarios reales y rendimiento
+
+`TEST-06` sumó *feedback* real de usabilidad y precisión de tres a cinco
+compañeros de la UCC usando el asistente con contenido real de curso.
+`TEST-09` midió tiempos de respuesta con el objetivo de mantener un
+promedio menor a 10 segundos. `TEST-07` cerró el ciclo con la corrección
+de los *bugs* encontrados en los pasos anteriores y una verificación de
+regresión. (Las pruebas automatizadas del *plugin* en sí —PHPUnit y
+Behat— se describen en "Prácticas de seguridad del plugin", no acá, por
+tratarse de una *suite* distinta a la del backend.)
+
+> **PENDIENTE —** arreglar el modelo de *fallback* descontinuado y
+> re-correr completos los niveles de *faithfulness* y honestidad de la
+> evaluación automatizada; ampliar el *dataset* a 30-50 preguntas con un
+> docente real sobre material de curso genuino; integrar `ragas` y
+> pytest al CI para que esta evaluación corra en cada *pull request*, no
+> solo manualmente.
 
 \newpage
 
@@ -2023,10 +2115,14 @@ sección, y toda referencia listada fue utilizada en el informe.
   [Software]. GitHub. https://github.com/pgvector/pgvector
 - Pydantic. (s.f.). *Pydantic documentation*. Recuperado 2026, de
   https://docs.pydantic.dev/
+- pytest. (s.f.). *pytest documentation*. Recuperado 2026, de
+  https://docs.pytest.org/
 - React. (s.f.). *React documentation — createRoot*. Recuperado 2026, de
   https://react.dev/reference/react-dom/client/createRoot
 - sse-starlette. (s.f.). *sse-starlette* [Software]. GitHub.
   https://github.com/sysid/sse-starlette
+- Vitest. (s.f.). *Vitest documentation*. Recuperado 2026, de
+  https://vitest.dev/
 - Webpack. (s.f.). *Webpack documentation — Output, externals y code splitting*.
   Recuperado 2026, de https://webpack.js.org/configuration/output/
 
