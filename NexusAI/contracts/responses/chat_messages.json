@@ -1,0 +1,27 @@
+{
+  "_endpoint": "POST /api/v1/chat/messages",
+  "_model": "app.chat.schemas.ChatResponse",
+  "_consumer": "plugin: external\\chat_send (via local\\chat_turn)",
+  "answer": "Una pila es una estructura LIFO: el último elemento en entrar es el primero en salir.",
+  "prompt_tokens": 812,
+  "completion_tokens": 64,
+  "total_tokens": 876,
+  "metrics": {
+    "latency_ms": 2140.5,
+    "prompt_tokens": 812,
+    "completion_tokens": 64,
+    "total_tokens": 876,
+    "model": "gemini-2.5-flash",
+    "provider": "gemini",
+    "fallback": false,
+    "chunks_retrieved": 4,
+    "has_relevant_context": true,
+    "grounded": true,
+    "multicourse": false
+  },
+  "gap": {
+    "is_gap": false,
+    "max_similarity": 0.83,
+    "chunks_retrieved": 4
+  }
+}
