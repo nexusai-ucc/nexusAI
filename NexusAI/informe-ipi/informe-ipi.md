@@ -1361,6 +1361,198 @@ contenido del curso no puede sobreescribir.
 
 \newpage
 
+# Despliegue e infraestructura
+
+## Topología: del plan original a las dos VMs reales
+
+El ADR-011 (Anexo E) ya cuenta por qué el backend pasó por tres destinos
+de despliegue distintos a lo largo del proyecto hasta quedar en Oracle
+Cloud. Esta sección documenta cómo es ese despliegue en la práctica, no
+por qué cambió.
+
+```mermaid
+flowchart TB
+    subgraph UCC["UCC — Infraestructura universidad"]
+        MOODLE["Moodle 4.x<br/>(servidor existente UCC)<br/>+ plugin local_nexusai instalado"]
+        POSTGRES_UCC[("PostgreSQL UCC<br/>+ extensión pgvector<br/>tablas Moodle + nexusai_*")]
+        MOODLE <--> POSTGRES_UCC
+    end
+
+    subgraph CLOUD["Railway Hobby (~$5/mes)"]
+        DOCKER["Docker container<br/>FastAPI + Uvicorn"]
+        REDIS_C[("Redis container<br/>cache + rate limit + nonce")]
+    end
+
+    subgraph LLMSVC["Externo (configurable)"]
+        GEMINI["Gemini 2.5 Flash<br/>tier gratuito ($0)"]
+    end
+
+    subgraph BROWSER["Alumnos / docentes"]
+        NAV["Navegador<br/>https://moodle.ucc.edu.ar"]
+    end
+
+    NAV -->|HTTPS| MOODLE
+    MOODLE -->|HTTPS + HMAC<br/>puerto 443| DOCKER
+    DOCKER -->|"SQL + vector<br/>(misma DB que Moodle)"| POSTGRES_UCC
+    DOCKER <--> REDIS_C
+    DOCKER -->|HTTPS<br/>Bearer key| GEMINI
+
+    style MOODLE fill:#fff3e0,color:#000,stroke:#f57c00
+    style DOCKER fill:#e8f5e9,color:#000,stroke:#388e3c
+    style GEMINI fill:#f3e5f5,color:#000,stroke:#7b1fa2
+    style POSTGRES_UCC fill:#e1f5fe,color:#000,stroke:#0277bd
+```
+
+> **Figura 6.** Arquitectura de despliegue originalmente planificada en mayo
+> de 2026, sobre infraestructura propia de la UCC (Railway/Hetzner,
+> PostgreSQL de la universidad). *Fuente:* elaboración propia
+> (`docs/diagrams/deployment.md`). **No vigente**: se conserva tal cual,
+> sin reescribirla, por el mismo criterio que ya aplica ADR-011 a la
+> documentación histórica del proyecto. El despliegue real reemplazó
+> Railway/Hetzner y el PostgreSQL de la UCC por infraestructura
+> autogestionada en Oracle Cloud, y nunca llegó a correr Moodle junto al
+> resto del *stack*.
+
+```mermaid
+flowchart TB
+    subgraph GH["GitHub"]
+        DEV["development"]
+        STG_B["staging"]
+        MAIN_B["main"]
+        DEV -->|PR| STG_B
+        STG_B -->|PR| MAIN_B
+    end
+
+    subgraph VMSTG["VM nexusai-staging — Oracle Cloud Always Free<br/>146.181.62.67 · api.146.181.62.67.nip.io"]
+        CADDY_S["nexusai-caddy<br/>TLS automático (Let's Encrypt)"]
+        API_S["nexusai-api<br/>FastAPI + Uvicorn"]
+        PG_S[("nexusai-postgres<br/>+ pgvector")]
+        REDIS_S[("nexusai-redis")]
+        CADDY_S --> API_S
+        API_S --> PG_S
+        API_S --> REDIS_S
+    end
+
+    subgraph VMPROD["VM nexusai-prod — Oracle Cloud Always Free<br/>159.112.139.166 · api.159.112.139.166.nip.io"]
+        CADDY_P["nexusai-caddy<br/>TLS automático (Let's Encrypt)"]
+        API_P["nexusai-api<br/>FastAPI + Uvicorn"]
+        PG_P[("nexusai-postgres<br/>+ pgvector")]
+        REDIS_P[("nexusai-redis")]
+        CADDY_P --> API_P
+        API_P --> PG_P
+        API_P --> REDIS_P
+    end
+
+    subgraph LOCAL["Cada integrante del equipo"]
+        MOODLE_L["Moodle local<br/>+ plugin local_nexusai"]
+    end
+
+    STG_B -.->|deploy manual por SSH| VMSTG
+    MAIN_B -.->|deploy manual por SSH| VMPROD
+    MOODLE_L -->|HTTPS + HMAC| CADDY_S
+    MOODLE_L -->|HTTPS + HMAC| CADDY_P
+
+    style CADDY_S fill:#fff3e0,color:#000,stroke:#f57c00
+    style CADDY_P fill:#fff3e0,color:#000,stroke:#f57c00
+    style API_S fill:#e8f5e9,color:#000,stroke:#388e3c
+    style API_P fill:#e8f5e9,color:#000,stroke:#388e3c
+```
+
+> **Figura 7.** Topología real del despliegue, vigente desde agosto de
+> 2026. *Fuente:* elaboración propia (`docs/DEPLOY_ORACLE.md`). *Texto
+> alternativo:* dos VMs *Always Free* de Oracle Cloud (Oracle, s.f.), una
+> por ambiente, cada una siguiendo su propia rama de Git y corriendo los
+> mismos cuatro contenedores Docker; Moodle no corre en ninguna VM — cada
+> integrante del equipo lo sigue corriendo localmente, apuntando el
+> *plugin* al ambiente que necesite probar.
+
+Cada VM es una instancia `VM.Standard.E2.1.Micro` (1 OCPU / 1 GB RAM, más
+4 GB de *swap*) en la región Chile Central, con el proyecto clonado en
+`~/nexusAI/NexusAI`. La de *staging* (`nexusai-staging`, creada el
+2026-08-08) sigue la rama `staging`; la de producción (`nexusai-prod`,
+creada el 2026-08-05) sigue `main`. La regla de oro del equipo es que
+cada VM sigue exclusivamente la rama de su ambiente — nunca se hace
+`git pull origin development` directamente sobre una VM "para probar
+algo rápido", porque deja ese ambiente en un estado que no corresponde a
+ninguna rama y el siguiente *deploy* normal lo pisa sin aviso.
+
+## El proceso de despliegue manual
+
+No hay integración continua hacia las VMs — un `git push` no cambia nada
+por sí solo, hay que entrar por SSH y traer el código a mano
+(`docs/DEPLOY_ORACLE.md`). El procedimiento es idéntico en los dos
+ambientes: mergear la *pull request* a la rama correspondiente, conectarse
+por SSH y confirmar con `git branch --show-current` que la VM está parada
+en la rama esperada, `git pull` y levantar de nuevo el *stack* con `sudo
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+--build` (Docker, s.f.) — el `--build` solo es necesario cuando cambió
+código del backend; un cambio solo en el *plugin* de Moodle no toca la
+VM en absoluto. Después de levantar, se confirma que los cuatro
+contenedores estén `Up`/*healthy* con `docker ps`, que el *health check*
+responda con el `env` correcto, y ante cualquier falla se revisan los
+logs de `nexusai-api` o `nexusai-caddy`. Las migraciones de Alembic
+corren solas en este flujo: `entrypoint.sh` ejecuta `alembic upgrade
+head` antes de levantar Uvicorn, y si una migración falla el contenedor
+de la API directamente no llega a levantar — a diferencia del entorno de
+desarrollo local, donde esa migración se corre a mano.
+
+Un único archivo `Caddyfile` (Caddy, s.f.) sirve a ambos ambientes porque
+el dominio no está *hardcodeado* en el repositorio: sale de la variable
+de entorno `NEXUSAI_DOMAIN`, distinta en el `.env` de cada VM, que Caddy
+usa para pedir automáticamente el certificado TLS a Let's Encrypt (Let's
+Encrypt, s.f.). Cuando ese valor no coincide con el dominio real por el
+que se accede, Caddy levanta igual pero no consigue el certificado: el
+sitio responde por HTTP con una redirección 308 mientras el HTTPS falla
+con un error de TLS — el *fix* es corregir `NEXUSAI_DOMAIN` y volver a
+levantar el *stack*. Los dominios usados (`api.146.181.62.67.nip.io`,
+`api.159.112.139.166.nip.io`) son de `nip.io`, un servicio gratuito que
+resuelve ese formato de dominio a la IP que contiene sin necesidad de
+registrarlo; la contrapartida es que, si la IP pública de una VM cambia,
+el dominio cambia con ella y hay que actualizar el `.env` de esa VM, la
+documentación y la configuración del *plugin* en cada Moodle local.
+
+Las credenciales se dividen en dos grupos con necesidades distintas: el
+`.env` completo de cada VM y la clave SSH privada, que hoy solo necesita
+Santiago —único integrante con cuenta propia de Oracle Cloud y, por lo
+tanto, único administrador de *deploy*—; y los tres valores de
+configuración del *plugin* (URL del backend, *API key*, secreto
+compartido), que sí necesita cualquier compañero que quiera probar el
+flujo completo contra un backend público, ingresados directamente en la
+pantalla de configuración del *plugin* en Moodle y compartidos por un
+canal directo, nunca por *git*/*issue*/PR. La *API key* y el secreto
+compartido son distintos entre *staging* y producción: cambiar la URL del
+backend del *plugin* sin cambiar también esos dos valores rompe la
+validación HMAC.
+
+## Operación, mantenimiento y brechas pendientes
+
+La limitación de 1 GB de RAM por VM —ya mencionada en ADR-012 como
+motivo para no sumar un *stack* de observabilidad— también se monitorea
+de forma manual con `free -h` y `docker stats --no-stream` cuando hace
+falta. Dos tareas recurrentes mantienen el consumo de IA auditable: un
+*cron* diario (`30 3 * * *`) corre `scripts/rollup_llm_usage.py` dentro
+del contenedor de la API para consolidar por día el detalle de más de 13
+meses de uso de LLM, y un *script* de *backfill*
+(`scripts/backfill_llm_usage.py`) se corrió una vez, de forma idempotente,
+para cargar hacia atrás los tokens históricos del chat después de que la
+migración 023 creara las tablas `llm_usage`, `model_prices` y
+`llm_usage_daily`.
+
+El propio equipo documenta, sin disfrazarlas, las brechas que quedan
+abiertas en este despliegue interino. La más crítica: **no hay *backups*
+automáticos de PostgreSQL en ningún ambiente** — si se pierde una VM, se
+pierde su base de datos entera, y hoy no existe ningún `pg_dump`
+programado que lo evite. Le siguen, en orden de importancia menor: la
+dependencia de dominios `nip.io` en lugar de un dominio propio o DuckDNS;
+la ausencia de integración continua hacia las VMs, que implicaría cargar
+la clave SSH como *secret* de GitHub —alternativa ya evaluada y
+descartada en ADR-011—; y la falta de un Moodle de *staging* con el
+*plugin* conectado para probar el flujo completo antes de cada promoción
+a producción, hoy reemplazada por pruebas manuales desde el Moodle local
+de cada integrante.
+
+\newpage
+
 # Publicación en Moodle Marketplace
 
 Más allá de las pruebas internas descritas en la sección anterior, el
@@ -1773,11 +1965,15 @@ en lugar de sustituirlo.
 Las referencias siguen la norma APA v7. Toda fuente citada en el texto figura en esta
 sección, y toda referencia listada fue utilizada en el informe.
 
+- Caddy. (s.f.). *Caddy documentation — Automatic HTTPS*. Recuperado 2026, de
+  https://caddyserver.com/docs/automatic-https
 - ChromaDB. (s.f.). *Chroma documentation*. Recuperado 2026, de
   https://docs.trychroma.com/
 - Coursera. (2023). *Coursera launches Coach, a personalized AI-powered coaching
   experience, and new applications of GenAI in the enterprise*. Coursera Blog.
   https://blog.coursera.org/coursera-launches-coach/
+- Docker. (s.f.). *Docker Compose documentation*. Recuperado 2026, de
+  https://docs.docker.com/compose/
 - FastAPI. (s.f.). *FastAPI documentation*. Recuperado 2026, de
   https://fastapi.tiangolo.com/
 - Gao, Y., Xiong, Y., Gao, X., Jia, K., Pan, J., Bi, Y., Dai, Y., Sun, J., Wang, H., &
@@ -1793,6 +1989,8 @@ sección, y toda referencia listada fue utilizada en el informe.
   https://www.khanacademy.org/khan-labs
 - Krawczyk, H., Bellare, M., & Canetti, R. (1997). *HMAC: Keyed-hashing for message
   authentication* (RFC 2104). IETF. https://doi.org/10.17487/RFC2104
+- Let's Encrypt. (s.f.). *Let's Encrypt — How it works*. Recuperado 2026, de
+  https://letsencrypt.org/how-it-works/
 - Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H.,
   Lewis, M., Yih, W., Rocktäschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-augmented
   generation for knowledge-intensive NLP tasks. *Advances in Neural Information Processing
@@ -1813,6 +2011,8 @@ sección, y toda referencia listada fue utilizada en el informe.
   services*. Recuperado 2026, de https://moodledev.io/docs/apis/subsystems/external
 - OpenAI. (s.f.-a). *ChatGPT Edu*. Recuperado 2026, de https://openai.com/chatgpt/education/
 - OpenAI. (s.f.-b). *GPT-4o pricing*. Recuperado 2026, de https://openai.com/api/pricing/
+- Oracle. (s.f.). *Oracle Cloud Infrastructure — Always Free resources*.
+  Recuperado 2026, de https://www.oracle.com/cloud/free/
 - OWASP. (s.f.-a). *Replay attack*. OWASP Foundation. Recuperado 2026, de
   https://owasp.org/www-community/attacks/Replay_attack
 - OWASP. (s.f.-b). *OWASP Top 10*. OWASP Foundation. Recuperado 2026, de
