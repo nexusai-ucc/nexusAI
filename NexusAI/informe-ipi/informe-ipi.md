@@ -2106,8 +2106,53 @@ En síntesis, el proyecto demuestra que es posible integrar asistencia académic
 contextualizada y auditable dentro del LMS institucional, amplificando el rol del docente
 en lugar de sustituirlo.
 
-> *(Espacio reservado para reflexiones personales del equipo, a incorporar si la
-> cátedra lo solicita.)*
+## Reflexiones personales del equipo
+
+> *(Borrador a validar por cada integrante antes de la entrega final —
+> cada uno puede reescribir su propio párrafo con su propia voz.)*
+
+**Delfina Salinas.** Como *Scrum Master*, el aprendizaje de gestión más
+concreto fue coordinar la documentación de un proyecto que seguía
+creciendo en paralelo, sin que eso bloqueara al resto del equipo —dividir
+la expansión de este mismo informe en issues pequeñas y acotadas
+(`PI-08` a `PI-22`), cada una con su fuente real ya identificada, resultó
+más sostenible que plantear una reescritura grande de una sola vez. En lo
+técnico, investigar la *Hook API* de Moodle me dejó un hallazgo que no
+esperaba: un *callback* que funcionaba sin problema en versiones viejas
+de la plataforma deja de funcionar en Moodle 4.4 en adelante sin ningún
+error visible, solo una advertencia de deprecación fácil de pasar por
+alto. Si lo volviera a hacer, documentaría las decisiones de diseño e
+infraestructura en el momento en que se toman —el rediseño de la
+interfaz de agosto, por ejemplo, quedó registrado solo en mensajes de
+*commit*— en lugar de tener que reconstruirlas meses después para este
+informe.
+
+**Santiago Tricherri.** Ejecutar una auditoría de seguridad real sobre
+el propio proyecto, en vez de aplicar una lista genérica de buenas
+prácticas, me obligó a mirar código que ya daba por "terminado" con otra
+exigencia, y encontré algo concreto que no habría aparecido de otra
+forma: una métrica de usuario que usaba un hash sin sal, reversible por
+fuerza bruta. En gestión, ser el único integrante con acceso de
+*deploy* a los dos ambientes de producción me mostró que esa
+concentración es una responsabilidad operativa real, no solo una
+formalidad en un documento. Si lo volviera a hacer, repartiría ese
+acceso antes de que se volviera un cuello de botella, en vez de esperar
+a que el equipo creciera para resolverlo.
+
+**Marcos Bugliotti.** Integrar un *plugin* de Moodle con un backend
+propio —*Hook API*, *capabilities*, *web services*— resultó
+sustancialmente más profundo de lo que parece desde afuera del proyecto;
+cada capa (autenticación, autorización, empaquetado del *frontend* como
+módulo AMD) terminó teniendo su propia complejidad real, no solo de
+diseño. En gestión, mantener la consistencia entre documentos de
+investigación escritos en momentos distintos del proyecto es más difícil
+de lo esperado: la inconsistencia de nombres de *capabilities* que
+encontramos al redactar este mismo informe —dos convenciones distintas
+documentadas en dos archivos distintos— es un ejemplo real de cómo
+terminología técnica puede divergir en silencio si nadie la revisa de
+conjunto. Si lo volviera a hacer, congelaría nombres y contratos técnicos
+clave más temprano en el proyecto, en lugar de dejarlos evolucionar
+libremente entre documentos de diseño.
 
 \newpage
 
