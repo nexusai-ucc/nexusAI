@@ -29,6 +29,10 @@ services:
       - scripts/load/load.env
     command: ["./entrypoint.sh"]
     volumes: !reset []
+    # Sin el bind mount de dev, /app/uploads no existe y el usuario del
+    # container (uid 1001) no puede crearlo: un tmpfs escribible lo reemplaza.
+    tmpfs:
+      - /app/uploads:mode=1777
     depends_on:
       mock-llm:
         condition: service_healthy
