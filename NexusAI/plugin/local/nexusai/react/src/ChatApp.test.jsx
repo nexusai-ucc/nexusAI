@@ -157,7 +157,7 @@ describe("ChatApp — envío de pregunta y respuesta (flujo central)", () => {
         await user.click(screen.getByRole("button", { name: "Regenerar" }));
 
         // Assert.
-        await waitFor(() => expect(screen.getByText(/Segunda respuesta\./)).toBeInTheDocument());
+        expect(await screen.findByText(/Segunda respuesta\./)).toBeInTheDocument();
         expect(screen.queryByText(/Primera respuesta\./)).not.toBeInTheDocument();
         expect(sendMessageStream).toHaveBeenCalledTimes(2);
     });
