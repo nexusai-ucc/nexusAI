@@ -14,8 +14,6 @@ name: Pruebas de carga (k6)
 # k6 sale con código ≠ 0 si un umbral no se cumple → el job queda en rojo.
 
 on:
-  push:  # TEMPORAL: primeras corridas antes del merge
-    branches: [test/581-tpc-09-carga]
   workflow_dispatch:
     inputs:
       scenario:
@@ -46,7 +44,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
-      SCENARIO: ${{ inputs.scenario || 'todos' }}  # TEMPORAL
+      SCENARIO: ${{ inputs.scenario || 'todos' }}
       MOCK_LLM_LATENCY_MS: ${{ inputs.mock_latency_ms || '1500' }}
       OUT_DIR: ${{ github.workspace }}/load-report
     steps:
@@ -82,7 +80,7 @@ jobs:
 
   staging:
     name: Corrida chica contra staging (LLM real)
-    if: github.event_name == 'push' || inputs.target == 'staging'  # TEMPORAL
+    if: inputs.target == 'staging'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     environment:
