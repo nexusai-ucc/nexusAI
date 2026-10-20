@@ -212,4 +212,20 @@ describe("ChatInput — marcador de texto pegado según el idioma", () => {
         await user.click(screen.getByRole("button", { name: /enviar/i }));
         expect(onSend).toHaveBeenCalledWith(LONG_PASTE);
     });
+
+    it("la x del pegado también se acciona con el teclado (Enter)", async () => {
+        // Arrange.
+        const user = userEvent.setup();
+        const { textarea } = await pasteLongText(user, { lang: "es" });
+        const remove = screen.getByRole("button", { name: "Quitar pegado #1" });
+
+        // Act.
+        remove.focus();
+        await user.keyboard("{Enter}");
+
+        // Assert.
+        expect(screen.queryByRole("button", { name: "Quitar pegado #1" })).not.toBeInTheDocument();
+        expect(textarea.value).not.toMatch(/Pegado #1/);
+    });
 });
+

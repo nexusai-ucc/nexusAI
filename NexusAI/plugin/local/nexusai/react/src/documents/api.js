@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+import { randomFloat } from "../api/random";
+
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
@@ -549,7 +551,7 @@ const MOCK_ANALYTICS_DASHBOARD = {
         d.setDate(d.getDate() - (13 - i));
         return {
             date: d.toISOString().slice(0, 10),
-            message_count: Math.round(3 + Math.random() * 12),
+            message_count: Math.round(3 + randomFloat() * 12),
         };
     }),
     quiz_score_distribution: {

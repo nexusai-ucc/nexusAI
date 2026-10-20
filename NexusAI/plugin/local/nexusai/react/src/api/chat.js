@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+import { randomFloat } from "./random";
+
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
@@ -73,7 +75,7 @@ let mockResponseIdx = 0;
 
 async function mockSendMessage({ question, sessionId }) {
     // Simulate the LLM's latency (between 600ms and 1.4s)
-    const delay = 600 + Math.random() * 800;
+    const delay = 600 + randomFloat() * 800;
     await new Promise((resolve) => setTimeout(resolve, delay));
 
     const newSessionId = sessionId || `mock-session-${Date.now()}`;

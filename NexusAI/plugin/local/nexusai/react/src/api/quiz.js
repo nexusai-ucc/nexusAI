@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+import { randomFloat } from "./random";
+
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
@@ -94,7 +96,7 @@ export async function generateQuiz({ courseId, topic = "", numQuestions = 5, que
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
-        await new Promise((r) => setTimeout(r, 800 + Math.random() * 800));
+        await new Promise((r) => setTimeout(r, 800 + randomFloat() * 800));
         // Filter mock questions by requested type (or return mix)
         let mockQuestions = MOCK_QUIZ.questions;
         if (questionType !== "mix") {
@@ -143,7 +145,7 @@ export async function generateExam({ courseId, documentIds, topic = "", numQuest
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
-        await new Promise((r) => setTimeout(r, 800 + Math.random() * 800));
+        await new Promise((r) => setTimeout(r, 800 + randomFloat() * 800));
         let mockQuestions = MOCK_QUIZ.questions.filter((q) => q.question_type !== "flashcard");
         if (questionType !== "mix") {
             const filtered = mockQuestions.filter((q) => q.question_type === questionType);
@@ -186,7 +188,7 @@ export async function evaluateOpenAnswer({ courseId, question, modelAnswer, user
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
-        await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
+        await new Promise((r) => setTimeout(r, 600 + randomFloat() * 400));
         const isCorrect = userAnswer.trim().length > 15;
         return {
             correct:  isCorrect,

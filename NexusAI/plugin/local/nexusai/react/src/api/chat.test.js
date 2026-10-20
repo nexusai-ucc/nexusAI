@@ -212,3 +212,19 @@ describe("sendMessageStream — messages in the interface language", () => {
         ).rejects.toThrow("La pregunta no puede estar vacía");
     });
 });
+
+describe("sendMessage sin Moodle (modo de desarrollo)", () => {
+    it("responde con un mensaje de ejemplo después de la demora simulada", async () => {
+        // Arrange.
+        const { sendMessage, resetMockState } = await import("./chat.js");
+        resetMockState();
+
+        // Act.
+        const { withFakeTimers } = await import("../test-utils/moodleAjax.js");
+        const result = await withFakeTimers(() => sendMessage({ question: "Hola", courseId: 1, userId: 1 }));
+
+        // Assert.
+        expect(JSON.stringify(result)).toMatch(/respuesta de prueba|mock/i);
+    });
+});
+
