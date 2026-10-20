@@ -1,6 +1,6 @@
 # Métricas interpretadas y mejora medida (TPC-10)
 
-> Issue [#582](https://github.com/nexusai-ucc/nexusAI/issues/582) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.0, 20/10/2026
+> Issue [#582](https://github.com/nexusai-ucc/nexusAI/issues/582) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.1, 20/10/2026
 
 Este documento reúne las métricas de NexusAI al cierre del TP, las compara con el punto de partida e interpreta qué dicen. **Ningún número está escrito a mano**: cada uno sale de una corrida del pipeline, de la API de SonarCloud o de la API de GitHub, y la columna "Fuente" dice de cuál.
 
@@ -25,8 +25,8 @@ El historial completo está en la [actividad del proyecto en SonarCloud](https:/
 | Cobertura de decisiones (Sonar) | 44,7 % | 70,4 % | +25,7 pp | Sonar |
 | **Bugs** | **26** | **0** | −26 | Sonar |
 | Confiabilidad | **D** | **A** | ↑ 3 niveles | Sonar |
-| **Vulnerabilidades** | **14** | **1** | −13 | Sonar |
-| Seguridad | D | D* | — | Sonar |
+| **Vulnerabilidades** | **14** | **0** | −14 | Sonar |
+| Seguridad | **D** | **A** | ↑ 3 niveles | Sonar |
 | Code smells | 831 | 797 | −34 | Sonar |
 | Deuda técnica | 4.676 min | 4.600 min | −76 min | Sonar |
 | Ratio de deuda / Mantenibilidad | 0,4 % / A | 0,4 % / A | = | Sonar |
@@ -35,7 +35,7 @@ El historial completo está en la [actividad del proyecto en SonarCloud](https:/
 | Complejidad cognitiva | 3.612 | 3.619 | +7 | Sonar |
 | Complejidad ciclomática cada 1.000 líneas | 135,6 | 135,6 | = | Sonar (cálculo) |
 
-\* La vulnerabilidad que queda es `store_util::question_hash()` con `sha1` (`php:S4790`). Se dejó así a propósito: agrupa preguntas repetidas, no tiene ningún uso de seguridad, y cambiar el algoritmo rompería el agrupamiento de los hashes ya guardados en cada Moodle. Se marca en Sonar como revisada (*Accept*), y entonces la seguridad pasa a **A**. Ver §6.
+De las 14 vulnerabilidades, 13 se corrigieron en el código. La restante, `store_util::question_hash()` con `sha1` (`php:S4790`), se **revisó y se aceptó** en SonarCloud con su justificación: agrupa preguntas repetidas, no tiene ningún uso de seguridad, y cambiar el algoritmo rompería el agrupamiento de los hashes ya guardados en cada Moodle.
 
 **Interpretación:**
 - **Cobertura.** Es el cambio más grande y fue un objetivo explícito: el nivel 3 exige 80 % sobre el código existente. Sonar da unos puntos menos que el pipeline porque mezcla líneas y decisiones, y las decisiones son más difíciles de cubrir. Los dos miden lo mismo con distinta fórmula, y se movieron en paralelo (+27 pp contra +26,5 pp).
@@ -162,7 +162,6 @@ Es el principio de "las pruebas exhaustivas son imposibles", llevado a la práct
 
 | Qué | Estado | Por qué |
 |---|---|---|
-| Seguridad D | Queda 1 vulnerabilidad | Es la revisión pendiente del `sha1` de §1 (no sensible). Al marcarla como revisada en Sonar, pasa a A |
 | 797 code smells | Sin trabajar | Mantenibilidad A y ratio de deuda de 0,4 %. Con el tiempo del TP, priorizamos bugs y vulnerabilidades, que afectan el comportamiento |
 | Complejidad | Igual por cada 1.000 líneas | No se refactorizó. Las funciones más complejas (los routers de chat y quiz) tienen ahora tests de caja negra y 100 % de decisión en lo que se tocó (TPC-04), lo que hace segura una refactorización futura |
 | Regla `php:S6600` | Desactivada para el PHP del plugin | Contradice el estándar de Moodle, que exige `require_once(...)` con paréntesis: se comprobó que sin paréntesis falla el phpcs del CI en las 7 combinaciones ([HERRAMIENTA_SONARCLOUD.md](HERRAMIENTA_SONARCLOUD.md)) |
@@ -172,3 +171,4 @@ Es el principio de "las pruebas exhaustivas son imposibles", llevado a la práct
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 20/10/2026 | Métricas de producto antes/después, tres mejoras medidas, lead time, tasa de fallos, avance de la épica y defectos por técnica |
+| 1.1 | 20/10/2026 | Seguridad D → A: el `sha1` se revisó y se aceptó en SonarCloud (0 vulnerabilidades) |

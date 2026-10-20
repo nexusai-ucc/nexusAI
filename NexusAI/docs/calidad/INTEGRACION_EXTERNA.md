@@ -1,6 +1,6 @@
 # Integración externa (TPC-07)
 
-> Issue [#579](https://github.com/nexusai-ucc/nexusAI/issues/579) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.2, 19/10/2026
+> Issue [#579](https://github.com/nexusai-ucc/nexusAI/issues/579) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.3, 20/10/2026
 
 NexusAI depende de dos sistemas externos que no controla:
 - **Moodle**, que aloja el plugin y le da usuarios, cursos, permisos y archivos;
@@ -101,7 +101,7 @@ Todo el CI corre sin red hacia el proveedor:
 | `test_real_retired_model_falls_through_to_the_next_link` | Con un modelo inexistente primero en la cadena, el **404 real** de Google hace caer al siguiente eslabón y la respuesta queda marcada `fallback: true` |
 | `test_real_embeddings_have_the_contract_dimensions_and_meaning` | Los vectores reales tienen 768 dimensiones, y dos frases sobre lo mismo quedan más cerca (coseno) que dos frases distintas |
 
-**Cuándo corre:** el workflow `.github/workflows/integration-external.yml` se ejecuta todos los días a las 06:00 (ART), a mano (`workflow_dispatch`, con el modelo elegible) y en cada push a `development` que toque `app/providers/`. No corre en PRs, porque los PRs de forks no tienen secrets y cada corrida gasta cuota. En el CI normal los tests se saltean solos.
+**Cuándo corre:** el workflow `.github/workflows/integration-external.yml` se ejecuta todos los días a las 06:00 (ART) (**desde que está en `main`**: GitHub solo corre los `schedule` de la rama por defecto, así que mientras estuvo en `development` no corrió ninguna vez), a mano (`workflow_dispatch`, con el modelo elegible) y en cada push a `development` que toque `app/providers/`. No corre en PRs, porque los PRs de forks no tienen secrets y cada corrida gasta cuota. En el CI normal los tests se saltean solos.
 
 **Resultados:**
 
@@ -110,6 +110,7 @@ Todo el CI corre sin red hacia el proveedor:
 | 19/10/2026 | [39257255231](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257255231) | `gemini-2.5-flash` | — | — | — | 🔴 3/3 fallan: el modelo da **404 para proyectos nuevos** y `embed_many` rompe con `index=None` (**DEF-07**) |
 | 19/10/2026 | [39257509226 (intento 1)](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257509226/attempts/1) | `gemini-3.8-flash` | **20,12** | 6,36 | 1,46 | 🟡 2/3: fallback y embeddings pasan; el chat **supera el SLA de 8 s** |
 | 19/10/2026 | [39257509226 (intento 2)](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257509226/attempts/2) | `gemini-3.8-flash` | 3,43 | 2,46 | 0,87 | 🟢 3/3 |
+| 19/10/2026 | [39260816477](https://github.com/nexusai-ucc/nexusAI/actions/runs/39260816477) (push a `development`) | `gemini-3.8-flash` | **112,83** | — | — | 🔴 el chat superó el SLA por lejos; fallback y embeddings pasaron. Variabilidad del plan gratis |
 
 **Lo que encontró la prueba real (y ningún doble podía encontrar):**
 1. **El modelo de producción ya no se ofrece a proyectos nuevos.** Google responde `This model models/gemini-2.5-flash is no longer available to new users` a cualquier key de un proyecto creado ahora. Producción sigue andando porque su proyecto es anterior, pero **si se rota la key a un proyecto nuevo, el chat de producción da 404** (la cadena de fallback lo absorbe solo si hay eslabones configurados). Queda como observación de riesgo en [REGISTRO_DEFECTOS.md](REGISTRO_DEFECTOS.md): migrar producción a `gemini-3.8-flash` antes de rotar la key.
@@ -155,3 +156,4 @@ Lección: el script detectó bien que *esa* URL no servía (sale con 1 y `FAIL`)
 | 1.0 | 16/10/2026 | Contratos, contract testing, dobles de fallas, proveedor real, E2E desplegado |
 | 1.1 | 19/10/2026 | Primeras corridas contra Gemini real: DEF-07, modelo no disponible para proyectos nuevos, picos de latencia |
 | 1.2 | 19/10/2026 | URL correcta de staging (`api-staging.…`): el error TLS del 16/10 era el dominio, no una caída |
+| 1.3 | 20/10/2026 | Corrida de 112 s; la prueba diaria solo corre desde `main` |
