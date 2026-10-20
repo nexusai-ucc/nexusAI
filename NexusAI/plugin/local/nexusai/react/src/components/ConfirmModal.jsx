@@ -87,16 +87,18 @@ export default function ConfirmModal({
     }, [onCancel, busy]);
 
     return (
+        // El fondo cierra con un click que cae en él mismo (no en el diálogo);
+        // con teclado se cierra con Escape (listener de arriba).
         <div
             className="nexusai-confirm-overlay"
-            onClick={() => { if (!busy) onCancel(); }}
+            role="presentation"
+            onClick={(e) => { if (e.target === e.currentTarget && !busy) onCancel(); }}
         >
             <div
                 className="nexusai-confirm"
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby="nexusai-confirm-title"
-                onClick={(e) => e.stopPropagation()}
             >
                 <h2 className="nexusai-confirm__title" id="nexusai-confirm-title">
                     {title}

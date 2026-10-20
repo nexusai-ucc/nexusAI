@@ -224,6 +224,8 @@ export default function ExamGeneratorPanel({ courseId, lang = "es" }) {
                         Object.fromEntries(topics.map((t) => [focusTopicKey(t), true]))
                     );
                 })
+                // Sin sugerencias el examen se arma igual: lista vacía, sin romper.
+                .catch(() => setFocusTopics([]))
                 .finally(() => {
                     setFocusTopicsLoading(false);
                     setFocusTopicsLoaded(true);

@@ -1872,7 +1872,7 @@ function ChatInput({
     if (voiceState === "recording") {
       stopRecording();
     } else if (voiceState !== "transcribing") {
-      startRecording();
+      void startRecording(); // maneja sus errores adentro
     }
   };
   const onPaste = e => {
@@ -1920,10 +1920,18 @@ function ChatInput({
         }), L.pastedLabel(p.id, p.lines), /*#__PURE__*/(0,jsx_runtime.jsx)("span", {
           className: "nexusai-input__paste-chip-remove",
           role: "button",
+          tabIndex: 0,
           "aria-label": L.removePaste(p.id),
           onClick: e => {
             e.stopPropagation();
             removePaste(p.id);
+          },
+          onKeyDown: e => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.stopPropagation();
+              removePaste(p.id);
+            }
           },
           children: /*#__PURE__*/(0,jsx_runtime.jsx)(IconX, {
             size: 11
@@ -21098,6 +21106,39 @@ var temml$1 = {
 
 
 
+;// ./src/api/random.js
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+// Números al azar con el generador criptográfico del navegador (SonarCloud
+// javascript:S2245). Se usa para ids de la UI y para las demoras simuladas de
+// los dobles de desarrollo: nada sensible, pero así no queda ningún
+// Math.random. getRandomValues funciona también fuera de https (Moodle local).
+
+/** Número uniforme en [0, 1). */
+function randomFloat() {
+  const [value] = globalThis.crypto.getRandomValues(new Uint32Array(1));
+  return value / 2 ** 32;
+}
+
+/** Id corto e irrepetible para elementos de la UI. */
+function randomId() {
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(8));
+  const hex = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+  return `${Date.now()}-${hex}`;
+}
 ;// ./src/api/chat.js
 // This file is part of Moodle - https://moodle.org/
 //
@@ -21113,6 +21154,8 @@ var temml$1 = {
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+
 
 /**
  * Part of the NexusAI plugin (local_nexusai).
@@ -21170,7 +21213,7 @@ async function mockSendMessage({
   sessionId
 }) {
   // Simulate the LLM's latency (between 600ms and 1.4s)
-  const delay = 600 + Math.random() * 800;
+  const delay = 600 + randomFloat() * 800;
   await new Promise(resolve => setTimeout(resolve, delay));
   const newSessionId = sessionId || `mock-session-${Date.now()}`;
   const userMessage = {
@@ -22122,6 +22165,7 @@ function TypingIndicator({
   });
 }
 ;// ./src/api/quiz.js
+/* unused harmony import specifier */ var quiz_randomFloat;
 // This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -22136,6 +22180,8 @@ function TypingIndicator({
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+
 
 /**
  * Part of the NexusAI plugin (local_nexusai).
@@ -22217,7 +22263,7 @@ async function generateQuiz({
 }) {
   const ajax = await quiz_getMoodleAjax();
   if (!ajax) {
-    await new Promise(r => setTimeout(r, 800 + Math.random() * 800));
+    await new Promise(r => setTimeout(r, 800 + randomFloat() * 800));
     // Filter mock questions by requested type (or return mix)
     let mockQuestions = MOCK_QUIZ.questions;
     if (questionType !== "mix") {
@@ -22275,7 +22321,7 @@ async function generateExam({
 }) {
   const ajax = await quiz_getMoodleAjax();
   if (!ajax) {
-    await new Promise(r => setTimeout(r, 800 + Math.random() * 800));
+    await new Promise(r => setTimeout(r, 800 + quiz_randomFloat() * 800));
     let mockQuestions = MOCK_QUIZ.questions.filter(q => q.question_type !== "flashcard");
     if (questionType !== "mix") {
       const filtered = mockQuestions.filter(q => q.question_type === questionType);
@@ -22327,7 +22373,7 @@ async function evaluateOpenAnswer({
 }) {
   const ajax = await quiz_getMoodleAjax();
   if (!ajax) {
-    await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
+    await new Promise(r => setTimeout(r, 600 + randomFloat() * 400));
     const isCorrect = userAnswer.trim().length > 15;
     return {
       correct: isCorrect,
@@ -22920,6 +22966,7 @@ function getFriendlyErrorMessage(err, fallback, lang = "es") {
 
 
 
+
 // SP-17 (#363): "Export to PDF" — client-side, same approach as gift.js
 // (no round-trip to the backend). Unlike GIFT (plain text, Blob +
 // <a download>), a real PDF would need a library (jsPDF, ~200KB+) —
@@ -23250,7 +23297,7 @@ function QuizPanel({
       setScore(s => s + 1);
     } else {
       wrongAnswersRef.current.push({
-        id: `${Date.now()}-${Math.random()}`,
+        id: randomId(),
         timestamp: new Date().toISOString(),
         question_type: q.question_type || "multiple_choice",
         question: q.question,
@@ -23291,7 +23338,7 @@ function QuizPanel({
       setScore(s => s + 1);
     } else {
       wrongAnswersRef.current.push({
-        id: `${Date.now()}-${Math.random()}`,
+        id: randomId(),
         timestamp: new Date().toISOString(),
         question_type: "flashcard",
         question: q.question,
@@ -23332,7 +23379,7 @@ function QuizPanel({
         setScore(s => s + 1);
       } else {
         wrongAnswersRef.current.push({
-          id: `${Date.now()}-${Math.random()}`,
+          id: randomId(),
           timestamp: new Date().toISOString(),
           question_type: q.question_type,
           question: q.question,
@@ -23803,7 +23850,7 @@ function QuizPanel({
           onChange: e => setOpenAnswer(e.target.value),
           disabled: reveal || evaluating,
           onKeyDown: e => {
-            if (e.key === "Enter" && openAnswer.trim() && !reveal && !evaluating) verifyOpen();
+            if (e.key === "Enter" && openAnswer.trim() && !reveal && !evaluating) void verifyOpen();
           }
         })]
       }), isFlashcard && reveal && /*#__PURE__*/(0,jsx_runtime.jsxs)("div", {
@@ -24219,43 +24266,48 @@ function ConfirmModal({
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [onCancel, busy]);
-  return /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
-    className: "nexusai-confirm-overlay",
-    onClick: () => {
-      if (!busy) onCancel();
-    },
-    children: /*#__PURE__*/(0,jsx_runtime.jsxs)("div", {
-      className: "nexusai-confirm",
-      role: "alertdialog",
-      "aria-modal": "true",
-      "aria-labelledby": "nexusai-confirm-title",
-      onClick: e => e.stopPropagation(),
-      children: [/*#__PURE__*/(0,jsx_runtime.jsx)("h2", {
-        className: "nexusai-confirm__title",
-        id: "nexusai-confirm-title",
-        children: title
-      }), /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
-        className: "nexusai-confirm__body",
-        children: children
-      }), /*#__PURE__*/(0,jsx_runtime.jsxs)("div", {
-        className: "nexusai-confirm__actions",
-        children: [/*#__PURE__*/(0,jsx_runtime.jsx)("button", {
-          type: "button",
-          ref: cancelRef,
-          className: "nexusai-confirm__btn nexusai-confirm__btn--cancel",
-          onClick: onCancel,
-          disabled: busy,
-          children: cancelLabel
-        }), /*#__PURE__*/(0,jsx_runtime.jsx)("button", {
-          type: "button",
-          className: "nexusai-confirm__btn " + (danger ? "nexusai-confirm__btn--danger" : "nexusai-confirm__btn--confirm"),
-          onClick: onConfirm,
-          disabled: busy,
-          children: confirmLabel
+  return (
+    /*#__PURE__*/
+    // El fondo cierra con un click que cae en él mismo (no en el diálogo);
+    // con teclado se cierra con Escape (listener de arriba).
+    (0,jsx_runtime.jsx)("div", {
+      className: "nexusai-confirm-overlay",
+      role: "presentation",
+      onClick: e => {
+        if (e.target === e.currentTarget && !busy) onCancel();
+      },
+      children: /*#__PURE__*/(0,jsx_runtime.jsxs)("div", {
+        className: "nexusai-confirm",
+        role: "alertdialog",
+        "aria-modal": "true",
+        "aria-labelledby": "nexusai-confirm-title",
+        children: [/*#__PURE__*/(0,jsx_runtime.jsx)("h2", {
+          className: "nexusai-confirm__title",
+          id: "nexusai-confirm-title",
+          children: title
+        }), /*#__PURE__*/(0,jsx_runtime.jsx)("div", {
+          className: "nexusai-confirm__body",
+          children: children
+        }), /*#__PURE__*/(0,jsx_runtime.jsxs)("div", {
+          className: "nexusai-confirm__actions",
+          children: [/*#__PURE__*/(0,jsx_runtime.jsx)("button", {
+            type: "button",
+            ref: cancelRef,
+            className: "nexusai-confirm__btn nexusai-confirm__btn--cancel",
+            onClick: onCancel,
+            disabled: busy,
+            children: cancelLabel
+          }), /*#__PURE__*/(0,jsx_runtime.jsx)("button", {
+            type: "button",
+            className: "nexusai-confirm__btn " + (danger ? "nexusai-confirm__btn--danger" : "nexusai-confirm__btn--confirm"),
+            onClick: onConfirm,
+            disabled: busy,
+            children: confirmLabel
+          })]
         })]
-      })]
+      })
     })
-  });
+  );
 }
 ;// ./src/components/ReviewPanel.jsx
 // This file is part of Moodle - https://moodle.org/
@@ -24858,6 +24910,8 @@ async function getUpcomingEvents(courseId, days = 30) {
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+
+
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
@@ -24898,7 +24952,7 @@ async function summarizeDocument({
   if (!documentId) throw new Error("document_id es requerido");
   const ajax = await summary_getMoodleAjax();
   if (!ajax) {
-    await new Promise(r => setTimeout(r, 1200 + Math.random() * 600));
+    await new Promise(r => setTimeout(r, 1200 + randomFloat() * 600));
     return {
       document_id: documentId,
       document_filename: "documento.pdf",
@@ -24930,7 +24984,7 @@ async function summarizeDocument({
 async function getPreExamSummary(courseId, section = null) {
   const ajax = await summary_getMoodleAjax();
   if (!ajax) {
-    await new Promise(r => setTimeout(r, 1200 + Math.random() * 600));
+    await new Promise(r => setTimeout(r, 1200 + randomFloat() * 600));
     return {
       summary: _MOCK_PRE_EXAM_SUMMARY,
       documents_used: [{
@@ -25480,6 +25534,8 @@ function StudyPanel({
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+
+
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
@@ -25564,7 +25620,7 @@ async function searchMaterial({
   }
   const ajax = await search_getMoodleAjax();
   if (!ajax) {
-    await new Promise(r => setTimeout(r, 600 + Math.random() * 400));
+    await new Promise(r => setTimeout(r, 600 + randomFloat() * 400));
     let filtered = materialType ? MOCK_RESULTS.filter(r => r.mime_type === materialType) : MOCK_RESULTS;
     if (sectionUnassigned) {
       filtered = filtered.filter(r => r.section === null || r.section === undefined);
@@ -25833,7 +25889,7 @@ function SearchPanel({
   };
   const selectRecentSearch = q => {
     setQuery(q);
-    performSearch(q);
+    void performSearch(q); // maneja sus errores adentro
   };
   const switchScope = toGlobal => {
     setGlobalMode(toGlobal);
@@ -28346,6 +28402,10 @@ function BudgetBar({
     if (!(Number(courseId) > 0)) return undefined;
     fetchStatus(courseId).then(s => {
       if (!cancelled) setStatus(s);
+    })
+    // Si el presupuesto no se puede leer, la barra no se muestra.
+    .catch(() => {
+      if (!cancelled) setStatus(null);
     });
     return () => {
       cancelled = true;
@@ -29113,8 +29173,10 @@ function ChatApp({
       setBudgetTick(n => n + 1);
     }
   };
+
+  // `void`: send maneja sus errores adentro (try/catch y setError).
   const retry = () => {
-    if (lastQuestion) send(lastQuestion);
+    if (lastQuestion) void send(lastQuestion);
   };
 
   // ASIST-03 (#359): resends the last question, replacing the last visible
@@ -29130,7 +29192,7 @@ function ChatApp({
       const cut = prev[idx - 1]?.role === "user" ? idx - 1 : idx;
       return prev.slice(0, cut);
     });
-    send(lastQuestion);
+    void send(lastQuestion);
   };
   const clearChat = () => {
     setMessages([]);

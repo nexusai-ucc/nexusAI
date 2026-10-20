@@ -43,9 +43,14 @@ export default function BudgetBar({ courseId, refreshKey = 0, lang = "es", fetch
     useEffect(() => {
         let cancelled = false;
         if (!(Number(courseId) > 0)) return undefined;
-        fetchStatus(courseId).then((s) => {
-            if (!cancelled) setStatus(s);
-        });
+        fetchStatus(courseId)
+            .then((s) => {
+                if (!cancelled) setStatus(s);
+            })
+            // Si el presupuesto no se puede leer, la barra no se muestra.
+            .catch(() => {
+                if (!cancelled) setStatus(null);
+            });
         return () => { cancelled = true; };
     }, [courseId, refreshKey, fetchStatus]);
 
