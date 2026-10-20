@@ -34,7 +34,7 @@ describe("ConfirmModal", () => {
         const { onCancel } = renderModal();
 
         // Act.
-        fireEvent.click(screen.getByRole("presentation"));
+        fireEvent.click(screen.getByRole("alertdialog").parentElement);
 
         // Assert.
         expect(onCancel).toHaveBeenCalledTimes(1);
@@ -51,12 +51,24 @@ describe("ConfirmModal", () => {
         expect(onCancel).not.toHaveBeenCalled();
     });
 
-    it("Escape cancela, salvo mientras confirma", () => {
+    it("Escape cancela", () => {
+        // Arrange.
+        const { onCancel } = renderModal();
+
+        // Act: el foco arranca en Cancelar, dentro del diálogo.
+        fireEvent.keyDown(document.activeElement, { key: "Escape" });
+
+        // Assert.
+        expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    it("mientras confirma, ni Escape ni el fondo la cierran", () => {
         // Arrange.
         const { onCancel } = renderModal({ busy: true });
 
         // Act.
-        fireEvent.keyDown(document, { key: "Escape" });
+        fireEvent.keyDown(screen.getByRole("alertdialog"), { key: "Escape" });
+        fireEvent.click(screen.getByRole("alertdialog").parentElement);
 
         // Assert.
         expect(onCancel).not.toHaveBeenCalled();

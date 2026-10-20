@@ -24259,22 +24259,17 @@ function ConfirmModal({
   (0,react.useEffect)(() => {
     cancelRef.current?.focus();
   }, []);
-  (0,react.useEffect)(() => {
-    const onKeyDown = e => {
-      if (e.key === "Escape" && !busy) onCancel();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onCancel, busy]);
   return (
     /*#__PURE__*/
-    // El fondo cierra con un click que cae en él mismo (no en el diálogo);
-    // con teclado se cierra con Escape (listener de arriba).
+    // El fondo cierra con un click que cae en él mismo (no en el diálogo) y
+    // con Escape: el foco arranca en "Cancelar", así que la tecla llega acá.
     (0,jsx_runtime.jsx)("div", {
       className: "nexusai-confirm-overlay",
-      role: "presentation",
       onClick: e => {
         if (e.target === e.currentTarget && !busy) onCancel();
+      },
+      onKeyDown: e => {
+        if (e.key === "Escape" && !busy) onCancel();
       },
       children: /*#__PURE__*/(0,jsx_runtime.jsxs)("div", {
         className: "nexusai-confirm",

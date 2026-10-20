@@ -145,6 +145,23 @@ describe("ChatApp — envío de pregunta y respuesta (flujo central)", () => {
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
+    it("Regenerar vuelve a pedir la última pregunta y reemplaza la respuesta", async () => {
+        // Arrange.
+        sendMessageStream.mockImplementation(streamImpl({ answer: "Primera respuesta." }));
+        const user = openChat();
+        await askQuestion(user, "¿Qué es una pila?");
+        await screen.findByText(/Primera respuesta\./);
+        sendMessageStream.mockImplementation(streamImpl({ answer: "Segunda respuesta." }));
+
+        // Act.
+        await user.click(screen.getByRole("button", { name: "Regenerar" }));
+
+        // Assert.
+        await waitFor(() => expect(screen.getByText(/Segunda respuesta\./)).toBeInTheDocument());
+        expect(screen.queryByText(/Primera respuesta\./)).not.toBeInTheDocument();
+        expect(sendMessageStream).toHaveBeenCalledTimes(2);
+    });
+
     it("al recibir un evento de error a mitad de stream (onError), saca el bubble parcial y muestra el error genérico", async () => {
         // A diferencia del test de arriba ("al fallar el envío"), acá el
         // fallo no es un rechazo de sendMessageStream antes de arrancar el

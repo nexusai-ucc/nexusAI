@@ -78,21 +78,13 @@ export default function ConfirmModal({
         cancelRef.current?.focus();
     }, []);
 
-    useEffect(() => {
-        const onKeyDown = (e) => {
-            if (e.key === "Escape" && !busy) onCancel();
-        };
-        document.addEventListener("keydown", onKeyDown);
-        return () => document.removeEventListener("keydown", onKeyDown);
-    }, [onCancel, busy]);
-
     return (
-        // El fondo cierra con un click que cae en él mismo (no en el diálogo);
-        // con teclado se cierra con Escape (listener de arriba).
+        // El fondo cierra con un click que cae en él mismo (no en el diálogo) y
+        // con Escape: el foco arranca en "Cancelar", así que la tecla llega acá.
         <div
             className="nexusai-confirm-overlay"
-            role="presentation"
             onClick={(e) => { if (e.target === e.currentTarget && !busy) onCancel(); }}
+            onKeyDown={(e) => { if (e.key === "Escape" && !busy) onCancel(); }}
         >
             <div
                 className="nexusai-confirm"
