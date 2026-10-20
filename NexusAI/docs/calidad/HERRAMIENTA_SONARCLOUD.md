@@ -129,3 +129,14 @@ Las herramientas de calidad que corre NexusAI y dónde entra SonarQube Cloud.
 | Gestión de trabajo y defectos | GitHub Issues + Project #5 (épicas, sprints, labels) | ← | ← | GitHub |
 
 Antes de TPC-02 no había nada en la fila de SonarQube Cloud: cada componente tenía sus linters, pero nadie medía duplicación ni complejidad, y ningún check bloqueaba el merge por la calidad del código nuevo.
+
+## Lo que aprendimos usándola (TPC-10)
+
+Ajustes y conclusiones que no estaban en la prueba de concepto y aparecieron con el uso diario:
+
+- **Ramas largas.** SonarCloud solo guarda historial de las ramas que coinciden con el patrón de *long-lived branches*. Se configuró `(main|master|development|(branch|release)-.*)` para que `development` tenga su propio historial; ahí se toman el "antes" y el "después" de [METRICAS.md](METRICAS.md).
+- **Código nuevo = 30 días.** Con la opción por defecto ("versión anterior") y sin versiones publicadas, el primer análisis de `development` daba el gate en ERROR, porque no había período de código nuevo contra el cual comparar. Se fijó *New code* en 30 días a nivel de proyecto.
+- **Sonar y el pipeline no dan la misma cobertura** (51,9 % contra 56,6 % al empezar; 78,4 % contra 83,6 % al cerrar). Sonar combina líneas y decisiones en un solo número, y el pipeline informa líneas ponderadas por componente. Los dos se movieron en paralelo, así que la tendencia es la misma.
+- **El gate no sube la calidad de lo heredado.** Solo mira el código nuevo: los 26 bugs y las 14 vulnerabilidades del 15/10 seguían iguales el 19/10, después de muchos PRs. Bajaron recién cuando se los atacó a propósito (#646).
+- **Una regla de Sonar contradice el estándar de Moodle.** `php:S6600` pide `require_once x;` sin paréntesis, y el phpcs de Moodle (`moodle.PHP.IncludingFile.BracketsRequired`) los exige. Se comprobó que sin paréntesis falla el CI del plugin en las 7 combinaciones. La regla se ignora solo para el PHP del plugin (`sonar.issue.ignore.multicriteria` en `sonar-project.properties`, con la justificación).
+- **Revisiones que necesitan una persona.** Un hallazgo que no corresponde corregir, como el `sha1` de `store_util::question_hash()`, se marca como revisado desde la UI de SonarCloud con su justificación: ni el CI ni un token de análisis pueden hacerlo.
