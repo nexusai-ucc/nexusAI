@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+import { randomFloat } from "../api/random";
+
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
@@ -92,7 +94,8 @@ async function callMoodle(methodname, args) {
     if (!fetchMany) {
         throw new Error("core/ajax not available (running outside Moodle)");
     }
-    const [response] = await fetchMany([{ methodname, args }]);
+    const [responsePromise] = fetchMany([{ methodname, args }]);
+    const response = await responsePromise;
     return response;
 }
 
@@ -448,10 +451,11 @@ export async function listGaps(courseId, days = 30, limit = 30, includeArchived 
         return { ...MOCK_GAPS, course_id: courseId, days };
     }
 
-    const [response] = await fetchMany([{
+    const [responsePromise] = fetchMany([{
         methodname: "local_nexusai_gaps_list",
         args: { courseid: courseId, days, limit, includearchived: includeArchived, offset },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -471,10 +475,11 @@ export async function archiveGap(courseId, questionIds, archived) {
         return { course_id: courseId, archived, affected: questionIds.length };
     }
 
-    const [response] = await fetchMany([{
+    const [responsePromise] = fetchMany([{
         methodname: "local_nexusai_gaps_archive",
         args: { courseid: courseId, questionids: questionIds, archived },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -523,10 +528,11 @@ export async function getFaqTopics(courseId, days = 30) {
         return { ...MOCK_FAQ_TOPICS, course_id: courseId, days };
     }
 
-    const [response] = await fetchMany([{
+    const [responsePromise] = fetchMany([{
         methodname: "local_nexusai_analytics_faq_topics",
         args: { courseid: courseId, days },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -545,7 +551,7 @@ const MOCK_ANALYTICS_DASHBOARD = {
         d.setDate(d.getDate() - (13 - i));
         return {
             date: d.toISOString().slice(0, 10),
-            message_count: Math.round(3 + Math.random() * 12),
+            message_count: Math.round(3 + randomFloat() * 12),
         };
     }),
     quiz_score_distribution: {
@@ -589,10 +595,11 @@ export async function getAnalyticsDashboard(courseId, days = 30) {
         return { ...MOCK_ANALYTICS_DASHBOARD, course_id: courseId, period_days: days };
     }
 
-    const [response] = await fetchMany([{
+    const [responsePromise] = fetchMany([{
         methodname: "local_nexusai_analytics_dashboard",
         args: { courseid: courseId, days },
     }]);
+    const response = await responsePromise;
 
     return response;
 }

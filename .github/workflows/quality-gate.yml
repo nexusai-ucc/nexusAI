@@ -1,0 +1,266 @@
+name: Quality Gate
+#
+# TPC-02 (issue #574): análisis estático + quality gate con SonarQube Cloud.
+#
+# A diferencia de backend-ci / frontend-ci / moodle-ci, corre en TODOS los PRs
+# (sin filtro de paths): el gate mira el código nuevo del PR entero, toque el
+# componente que toque. Los tres jobs de cobertura repiten los comandos de esos
+# workflows (no se pueden reusar sus artifacts porque solo corren cuando cambia
+# su carpeta) y el job `sonar` junta los reportes y espera el veredicto.
+#
+# Gate (TP Calidad de Software, igual para todos los niveles): bloquear ante
+# bugs críticos, duplicación > 5 % o cobertura de código nuevo < 80 %.
+# Configuración en sonar-project.properties y en SonarQube Cloud.
+
+on:
+  pull_request:
+  push:
+    branches: [development, main]
+
+concurrency:
+  group: quality-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ----------------------------------------------------------------
+  # Backend: igual que el job `test` de backend-ci.yml
+  # ----------------------------------------------------------------
+  backend-coverage:
+    name: Cobertura backend
+    runs-on: ubuntu-22.04
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          # Credenciales efímeras solo para CI — el container se destruye al final del job.
+          POSTGRES_USER: ci_test_user
+          POSTGRES_PASSWORD: ci_test_only_not_a_secret
+          POSTGRES_DB: ci_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_test_user"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      ENV: test
+      DATABASE_URL: postgresql://ci_test_user:ci_test_only_not_a_secret@localhost:5432/ci_test_db
+      REDIS_URL: redis://localhost:6379/0
+      # Valores dummy para que el código arranque. Los tests mockean los providers.
+      LLM_API_KEY: dummy-ci-value
+      LLM_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
+      LLM_MODEL: gemini-2.0-flash
+      EMBEDDING_API_KEY: dummy-ci-value
+      EMBEDDING_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
+      EMBEDDING_MODEL: models/text-embedding-004
+      EMBEDDING_DIMENSIONS: 768
+      NEXUSAI_SHARED_SECRET: dummy_ci_value_32_chars_long_xx_x
+      NEXUSAI_API_KEY: dummy_ci_value_32_chars_long_xx_x
+      HMAC_REPLAY_WINDOW_SEC: 300
+      RATE_LIMIT_PER_USER_DAILY: 50
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: NexusAI/services/api/requirements.txt
+
+      - name: Install deps
+        working-directory: NexusAI/services/api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
+
+      - name: Habilitar extensión pgvector
+        env:
+          PGPASSWORD: ci_test_only_not_a_secret
+        run: psql -h localhost -U ci_test_user -d ci_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+      - name: PyTest con cobertura de sentencia y decisión
+        working-directory: NexusAI/services/api
+        run: pytest --cov=app --cov-branch --cov-report=xml --junitxml=junit.xml -q
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qg-backend-coverage
+          path: |
+            NexusAI/services/api/coverage.xml
+            NexusAI/services/api/junit.xml
+          if-no-files-found: error
+          retention-days: 7
+
+  # ----------------------------------------------------------------
+  # Widget React: igual que frontend-ci.yml
+  # ----------------------------------------------------------------
+  frontend-coverage:
+    name: Cobertura frontend
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: NexusAI/plugin/local/nexusai/react
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: NexusAI/plugin/local/nexusai/react/package-lock.json
+
+      - run: npm ci
+
+      - name: Vitest con cobertura (v8)
+        run: npm run test:coverage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qg-frontend-coverage
+          path: NexusAI/plugin/local/nexusai/react/coverage/lcov.info
+          if-no-files-found: error
+          retention-days: 7
+
+  # ----------------------------------------------------------------
+  # Plugin PHP: la combinación con cobertura de moodle-ci.yml
+  # (Moodle 5.3 / PHP 8.3 / pgsql + pcov), sin los linters.
+  # ----------------------------------------------------------------
+  plugin-coverage:
+    name: Cobertura plugin
+    runs-on: ubuntu-22.04
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: 'postgres'
+          POSTGRES_HOST_AUTH_METHOD: 'trust'
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pgsql, mbstring, xml, intl, zip, gd, soap
+          coverage: pcov
+          ini-values: max_input_vars=5000
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Initialise moodle-plugin-ci
+        run: |
+          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^4
+          echo $(cd ci/bin; pwd) >> $GITHUB_PATH
+          echo $(cd ci/vendor/bin; pwd) >> $GITHUB_PATH
+          sudo locale-gen en_AU.UTF-8
+          echo "NVM_DIR=$HOME/.nvm" >> $GITHUB_ENV
+
+      - name: Install Moodle + plugin
+        run: moodle-plugin-ci install --plugin ./plugin/NexusAI/plugin/local/nexusai --db-host=127.0.0.1
+        env:
+          DB: pgsql
+          MOODLE_BRANCH: MOODLE_503_STABLE
+
+      - name: PHPUnit con cobertura
+        run: moodle-plugin-ci phpunit --fail-on-warning --coverage-pcov --coverage-clover
+
+      # El clover sale con las rutas de la copia del plugin dentro de Moodle
+      # (moodle/public/local/nexusai/… en 5.1+, moodle/local/nexusai/… antes).
+      # Se reescriben a la ruta del repo para que Sonar encuentre los archivos.
+      - name: Reescribir rutas del clover
+        run: |
+          sed -E "s#${GITHUB_WORKSPACE}/moodle/(public/)?local/nexusai/#${GITHUB_WORKSPACE}/NexusAI/plugin/local/nexusai/#g" \
+            coverage.xml > plugin-clover.xml
+          grep -c "NexusAI/plugin/local/nexusai/" plugin-clover.xml
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qg-plugin-coverage
+          path: plugin-clover.xml
+          if-no-files-found: error
+          retention-days: 7
+
+  # ----------------------------------------------------------------
+  # Análisis + quality gate
+  # ----------------------------------------------------------------
+  sonar:
+    name: SonarQube Cloud
+    runs-on: ubuntu-22.04
+    needs: [backend-coverage, frontend-coverage, plugin-coverage]
+    # Paso 5 del proceso de incorporación (despliegue incremental): la primera
+    # versión tenía continue-on-error (solo reporte, run 38745439275). Validado
+    # el análisis, el job es bloqueante: si el gate falla, falla el check.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Historia completa: Sonar la usa para el blame y para saber qué es
+          # código nuevo respecto de la rama base.
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: qg-backend-coverage
+          path: NexusAI/services/api
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: qg-frontend-coverage
+          path: NexusAI/plugin/local/nexusai/react/coverage
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: qg-plugin-coverage
+          path: coverage-reports
+
+      # Vitest escribe SF: relativo a react/; Sonar lo resuelve desde la raíz.
+      - name: Normalizar rutas de los reportes
+        run: |
+          sed -i -E "s#^SF:([^/])#SF:NexusAI/plugin/local/nexusai/react/\1#" \
+            NexusAI/plugin/local/nexusai/react/coverage/lcov.info
+          ls -l NexusAI/services/api/coverage.xml NexusAI/plugin/local/nexusai/react/coverage/lcov.info coverage-reports/
+
+      - name: SonarQube Cloud scan + quality gate
+        # v8.3.0, fijada por hash (regla githubactions:S7637).
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          # Espera el veredicto del gate: si falla, falla el job.
+          args: >
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=300

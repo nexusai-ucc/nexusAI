@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+import { randomFloat } from "./random";
+
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
@@ -94,7 +96,7 @@ export async function generateQuiz({ courseId, topic = "", numQuestions = 5, que
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
-        await new Promise((r) => setTimeout(r, 800 + Math.random() * 800));
+        await new Promise((r) => setTimeout(r, 800 + randomFloat() * 800));
         // Filter mock questions by requested type (or return mix)
         let mockQuestions = MOCK_QUIZ.questions;
         if (questionType !== "mix") {
@@ -112,10 +114,11 @@ export async function generateQuiz({ courseId, topic = "", numQuestions = 5, que
         difficulty,
     };
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_generate",
         args,
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -142,7 +145,7 @@ export async function generateExam({ courseId, documentIds, topic = "", numQuest
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
-        await new Promise((r) => setTimeout(r, 800 + Math.random() * 800));
+        await new Promise((r) => setTimeout(r, 800 + randomFloat() * 800));
         let mockQuestions = MOCK_QUIZ.questions.filter((q) => q.question_type !== "flashcard");
         if (questionType !== "mix") {
             const filtered = mockQuestions.filter((q) => q.question_type === questionType);
@@ -154,7 +157,7 @@ export async function generateExam({ courseId, documentIds, topic = "", numQuest
         return { course_id: courseId, topic: topic || null, questions: mockQuestions };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_exam_generate",
         args: {
             courseid:     courseId,
@@ -166,6 +169,7 @@ export async function generateExam({ courseId, documentIds, topic = "", numQuest
             topics:       focusTopics,
         },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -184,7 +188,7 @@ export async function evaluateOpenAnswer({ courseId, question, modelAnswer, user
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
-        await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
+        await new Promise((r) => setTimeout(r, 600 + randomFloat() * 400));
         const isCorrect = userAnswer.trim().length > 15;
         return {
             correct:  isCorrect,
@@ -195,7 +199,7 @@ export async function evaluateOpenAnswer({ courseId, question, modelAnswer, user
         };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_evaluate",
         args: {
             courseid:    courseId,
@@ -204,6 +208,7 @@ export async function evaluateOpenAnswer({ courseId, question, modelAnswer, user
             useranswer:  userAnswer,
         },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -223,7 +228,7 @@ export async function recordQuizErrors({ courseId, errors }) {
     const ajax = await getMoodleAjax();
     if (!ajax) return { stored: 0 };
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_errors_record",
         args: {
             courseid: courseId,
@@ -242,6 +247,7 @@ export async function recordQuizErrors({ courseId, errors }) {
             })),
         },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -259,10 +265,11 @@ export async function listQuizErrors(courseId, days = 90, limit = 100, offset = 
     const ajax = await getMoodleAjax();
     if (!ajax) return { course_id: courseId, total: 0, items: [] };
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_errors_list",
         args: { courseid: courseId, days, limit, offset },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -277,10 +284,11 @@ export async function clearQuizErrors(courseId) {
     const ajax = await getMoodleAjax();
     if (!ajax) return { deleted: 0 };
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_errors_clear",
         args: { courseid: courseId },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -302,7 +310,7 @@ export async function saveQuizAttempt({ courseId, questionType, difficulty = "me
     const ajax = await getMoodleAjax();
     if (!ajax) return { id: "mock", created_at: new Date().toISOString() };
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_attempt_save",
         args: {
             courseid:       courseId,
@@ -313,6 +321,7 @@ export async function saveQuizAttempt({ courseId, questionType, difficulty = "me
             correctcount:   correctCount,
         },
     }]);
+    const response = await responsePromise;
     return response;
 }
 
@@ -337,10 +346,11 @@ export async function listQuizAttempts(courseId, days = 90, limit = 20) {
         };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_attempt_list",
         args: { courseid: courseId, days, limit },
     }]);
+    const response = await responsePromise;
     return response;
 }
 
@@ -355,10 +365,11 @@ export async function getReviewSuggestions(courseId, days = 90) {
     const ajax = await getMoodleAjax();
     if (!ajax) return { course_id: courseId, total_errors: 0, suggestions: [] };
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_review_suggestions",
         args: { courseid: courseId, days },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -389,10 +400,11 @@ export async function getStudyPlan(courseId, days = 30) {
         };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_study_plan",
         args: { courseid: courseId, days },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -416,7 +428,7 @@ export async function dismissStudyPlanTopic(courseId, quizErrorIds = [], gapQues
         return { affected: quizErrorIds.length + gapQuestionIds.length };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_study_plan_dismiss",
         args: {
             courseid: courseId,
@@ -424,6 +436,7 @@ export async function dismissStudyPlanTopic(courseId, quizErrorIds = [], gapQues
             gapquestionids: gapQuestionIds,
         },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -444,10 +457,11 @@ export async function suggestDifficulty(courseId, topic = "") {
         return { difficulty: null, reason: null, based_on_attempts: 0, accuracy_pct: null };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_suggest_difficulty",
         args: { courseid: courseId, topic },
     }]);
+    const response = await responsePromise;
 
     return {
         difficulty: response.difficulty ?? null,
@@ -475,10 +489,11 @@ export async function getFlashcardsSummary(courseId, topic = "") {
         return { due_count: 0, total_count: 0 };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_flashcards_summary",
         args: { courseid: courseId, topic },
     }]);
+    const response = await responsePromise;
 
     return {
         due_count: response.duecount ?? 0,
@@ -499,10 +514,11 @@ export async function getDueFlashcards(courseId, topic = "", limit = 10) {
     const ajax = await getMoodleAjax();
     if (!ajax) return { course_id: courseId, questions: [] };
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_flashcards_due",
         args: { courseid: courseId, topic, limit },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -521,13 +537,14 @@ export async function submitFlashcardReviews(courseId, reviews) {
     const ajax = await getMoodleAjax();
     if (!ajax) return { updated: 0 };
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_flashcards_review_batch",
         args: {
             courseid: courseId,
             reviews: reviews.map((r) => ({ flashcardid: r.flashcardId, knewit: r.knewIt })),
         },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -543,10 +560,11 @@ export async function getStudyStreak(courseId) {
     const ajax = await getMoodleAjax();
     if (!ajax) return { current_streak: 0, practiced_today: false };
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_quiz_streak",
         args: { courseid: courseId },
     }]);
+    const response = await responsePromise;
 
     return {
         current_streak: response.currentstreak ?? 0,

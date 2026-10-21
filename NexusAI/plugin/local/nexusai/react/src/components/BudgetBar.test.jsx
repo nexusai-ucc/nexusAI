@@ -64,4 +64,16 @@ describe("BudgetBar (DATA-05)", () => {
         rerender(<BudgetBar courseId={3} refreshKey={1} fetchStatus={fetch} />);
         await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
     });
+
+    it("hides itself without an unhandled error when the status request fails", async () => {
+        // Arrange: el pedido del presupuesto falla (SonarCloud javascript:S9383).
+        const fetch = vi.fn().mockRejectedValue(new Error("backend caído"));
+
+        // Act.
+        const { container } = render(<BudgetBar courseId={3} fetchStatus={fetch} />);
+
+        // Assert.
+        await waitFor(() => expect(fetch).toHaveBeenCalled());
+        expect(container).toBeEmptyDOMElement();
+    });
 });

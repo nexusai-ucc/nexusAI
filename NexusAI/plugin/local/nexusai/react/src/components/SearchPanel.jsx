@@ -223,7 +223,7 @@ export default function SearchPanel({
 
     const selectRecentSearch = (q) => {
         setQuery(q);
-        performSearch(q);
+        void performSearch(q); // maneja sus errores adentro
     };
 
     const switchScope = (toGlobal) => {

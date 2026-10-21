@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+import { randomFloat } from "./random";
+
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
@@ -99,7 +101,7 @@ export async function searchMaterial({
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
-        await new Promise((r) => setTimeout(r, 600 + Math.random() * 400));
+        await new Promise((r) => setTimeout(r, 600 + randomFloat() * 400));
         let filtered = materialType
             ? MOCK_RESULTS.filter((r) => r.mime_type === materialType)
             : MOCK_RESULTS;
@@ -111,7 +113,7 @@ export async function searchMaterial({
         return { query, total: filtered.length, results: filtered };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_search_query",
         args: {
             query: query.trim(),
@@ -123,6 +125,7 @@ export async function searchMaterial({
             sectionunassigned: sectionUnassigned,
         },
     }]);
+    const response = await responsePromise;
 
     return response;
 }

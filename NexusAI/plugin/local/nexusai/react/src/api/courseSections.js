@@ -58,10 +58,11 @@ export async function listCourseSections(courseId) {
         ];
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_course_sections_list",
         args: { courseid: courseId },
     }]);
+    const response = await responsePromise;
 
     return response;
 }

@@ -2,7 +2,7 @@
 name: 📋 Tarea técnica
 about: Tarea de tooling, CI, refactor, deuda técnica, investigación o documentación
 title: '<type>(<scope>): <descripción corta>'
-labels: ['p2']
+labels: ['prio:media']
 assignees: ''
 ---
 

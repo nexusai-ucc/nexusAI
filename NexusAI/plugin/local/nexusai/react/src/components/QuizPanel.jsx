@@ -49,6 +49,7 @@ import {
 } from "../api/quiz.js";
 import { IconBook, IconCheck, IconChevronRight, IconClock, IconDownload, IconFile, IconThumbsUp, IconTrophy, IconX } from "./icons.jsx";
 import { getFriendlyErrorMessage } from "./errors.js";
+import { randomId } from "../api/random";
 
 // SP-17 (#363): "Export to PDF" — client-side, same approach as gift.js
 // (no round-trip to the backend). Unlike GIFT (plain text, Blob +
@@ -363,7 +364,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
             setScore((s) => s + 1);
         } else {
             wrongAnswersRef.current.push({
-                id: `${Date.now()}-${Math.random()}`,
+                id: randomId(),
                 timestamp: new Date().toISOString(),
                 question_type: q.question_type || "multiple_choice",
                 question:            q.question,
@@ -401,7 +402,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
             setScore((s) => s + 1);
         } else {
             wrongAnswersRef.current.push({
-                id: `${Date.now()}-${Math.random()}`,
+                id: randomId(),
                 timestamp: new Date().toISOString(),
                 question_type:       "flashcard",
                 question:            q.question,
@@ -442,7 +443,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                 setScore((s) => s + 1);
             } else {
                 wrongAnswersRef.current.push({
-                    id: `${Date.now()}-${Math.random()}`,
+                    id: randomId(),
                     timestamp: new Date().toISOString(),
                     question_type:      q.question_type,
                     question:           q.question,
@@ -851,7 +852,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                             value={openAnswer}
                             onChange={(e) => setOpenAnswer(e.target.value)}
                             disabled={reveal || evaluating}
-                            onKeyDown={(e) => { if (e.key === "Enter" && openAnswer.trim() && !reveal && !evaluating) verifyOpen(); }}
+                            onKeyDown={(e) => { if (e.key === "Enter" && openAnswer.trim() && !reveal && !evaluating) void verifyOpen(); }}
                         />
                     </div>
                 )}

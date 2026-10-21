@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+import { randomFloat } from "./random";
+
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
@@ -54,7 +56,7 @@ export async function summarizeDocument({ documentId, courseId }) {
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
-        await new Promise(r => setTimeout(r, 1200 + Math.random() * 600));
+        await new Promise(r => setTimeout(r, 1200 + randomFloat() * 600));
         return {
             document_id:       documentId,
             document_filename: "documento.pdf",
@@ -64,10 +66,11 @@ export async function summarizeDocument({ documentId, courseId }) {
         };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_document_summarize",
         args: { documentid: documentId, courseid: courseId },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
@@ -85,7 +88,7 @@ export async function getPreExamSummary(courseId, section = null) {
     const ajax = await getMoodleAjax();
 
     if (!ajax) {
-        await new Promise(r => setTimeout(r, 1200 + Math.random() * 600));
+        await new Promise(r => setTimeout(r, 1200 + randomFloat() * 600));
         return {
             summary:          _MOCK_PRE_EXAM_SUMMARY,
             documents_used:   [{ document_id: "mock-1", filename: "apuntes.pdf" }],
@@ -93,10 +96,11 @@ export async function getPreExamSummary(courseId, section = null) {
         };
     }
 
-    const [response] = await ajax.call([{
+    const [responsePromise] = ajax.call([{
         methodname: "local_nexusai_document_pre_exam_summary",
         args: { courseid: courseId, section },
     }]);
+    const response = await responsePromise;
 
     return response;
 }
