@@ -144,6 +144,18 @@ def _history_for_llm(payload: ChatRequest) -> list[dict[str, str]]:
     return [{"role": m.role, "content": m.content} for m in payload.history or []][-10:]
 
 
+def _require_session(
+    session: Optional[ChatSession], user_message: Optional[Message]
+) -> tuple[ChatSession, Message]:
+    """En el chat con historial en el backend, la sesión y el mensaje del
+    usuario ya existen. Es una verificación explícita y no un assert: dentro
+    del stream, el except general se tragaría el AssertionError (SonarCloud
+    python:S5779)."""
+    if session is None or user_message is None:
+        raise RuntimeError("chat con historial en el backend sin sesión")
+    return session, user_message
+
+
 async def _stateless_extras(
     *,
     payload: ChatRequest,
@@ -485,6 +497,12 @@ async def messages(
     llm_messages = with_language_directive(
         llm_messages, payload.question, fallback=ui_language(request)
     )
+
+    # DEF-09: cerrar la transacción de lectura (retrieval/historial) antes del
+    # LLM. Si no, la conexión queda "idle in transaction" los segundos que tarda
+    # el modelo y, con varios chats en vuelo, el pool se agota. No escribe nada:
+    # lo pendiente ya se comiteó arriba, y lo de después toma otra conexión.
+    await db.commit()
 
     # ----- BACK-11: Llamada al LLM (con retry interno en LLMProvider) -----
     llm_start = time.perf_counter()
@@ -916,7 +934,7 @@ async def messages_stream(
                 if stateless:
                     llm_messages.extend(_history_for_llm(payload))
                 else:
-                    assert session is not None and user_message is not None
+                    session, user_message = _require_session(session, user_message)
                     history_result = await db.execute(
                         select(Message)
                         .where(Message.session_id == session.id)
@@ -934,6 +952,10 @@ async def messages_stream(
                 llm_messages = with_language_directive(
                     llm_messages, payload.question, fallback=ui_language(request)
                 )
+
+                # DEF-09: no retener la conexión mientras el LLM escribe
+                # (ver /messages).
+                await db.commit()
 
                 # Stream del LLM.
                 full_text_parts: list[str] = []
@@ -1066,7 +1088,7 @@ async def messages_stream(
                     )
                     return
 
-                assert session is not None and user_message is not None
+                session, user_message = _require_session(session, user_message)
                 # Persistir el mensaje completo del asistente.
                 assistant_message = Message(
                     session_id=session.id,

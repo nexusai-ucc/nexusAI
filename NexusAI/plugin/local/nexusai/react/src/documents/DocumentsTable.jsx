@@ -487,7 +487,7 @@ export function ErrorModal({ message, onClose, lang = "es" }) {
         >
             <div className="nexusai-modal">
                 <h2 className="nexusai-modal__title nexusai-modal__title--error" id="nexusai-error-title">
-                    {lang === "es" ? "Error" : "Error"}
+                    Error
                 </h2>
                 <p className="nexusai-modal__body nexusai-modal__body--error">
                     {message}

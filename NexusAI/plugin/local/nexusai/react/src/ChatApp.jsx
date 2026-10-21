@@ -385,7 +385,8 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         }
     };
 
-    const retry = () => { if (lastQuestion) send(lastQuestion); };
+    // `void`: send maneja sus errores adentro (try/catch y setError).
+    const retry = () => { if (lastQuestion) void send(lastQuestion); };
 
     // ASIST-03 (#359): resends the last question, replacing the last visible
     // user+assistant pair instead of adding a duplicate one.
@@ -400,7 +401,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
             const cut = prev[idx - 1]?.role === "user" ? idx - 1 : idx;
             return prev.slice(0, cut);
         });
-        send(lastQuestion);
+        void send(lastQuestion);
     };
 
     const clearChat = () => {

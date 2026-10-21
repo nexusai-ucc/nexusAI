@@ -216,7 +216,7 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId, lan
         if (voiceState === "recording") {
             stopRecording();
         } else if (voiceState !== "transcribing") {
-            startRecording();
+            void startRecording(); // maneja sus errores adentro
         }
     };
 
@@ -268,8 +268,16 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId, lan
                             <span
                                 className="nexusai-input__paste-chip-remove"
                                 role="button"
+                                tabIndex={0}
                                 aria-label={L.removePaste(p.id)}
                                 onClick={(e) => { e.stopPropagation(); removePaste(p.id); }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        removePaste(p.id);
+                                    }
+                                }}
                             >
                                 <IconX size={11} />
                             </span>

@@ -140,6 +140,26 @@ describe("QuizPanel", () => {
         });
     });
 
+    it("completar el espacio: Enter envía la respuesta a evaluar", async () => {
+        // Arrange.
+        const user = userEvent.setup();
+        generateQuiz.mockResolvedValue({
+            course_id: 4,
+            questions: [{ question_type: "fill_blank", question: "Una pila es una estructura ___.", options: [], correct_index: -1, explanation: "LIFO" }],
+        });
+        evaluateOpenAnswer.mockResolvedValue({ correct: true, score: 1, feedback: "Muy bien." });
+        render(<QuizPanel courseId={4} />);
+        await user.click(screen.getByRole("button", { name: "Completar espacios" }));
+        await user.click(screen.getByRole("button", { name: "Generar quiz" }));
+
+        // Act.
+        await user.type(await screen.findByPlaceholderText("Escribí la palabra aquí..."), "LIFO{Enter}");
+
+        // Assert.
+        await waitFor(() => expect(evaluateOpenAnswer).toHaveBeenCalledTimes(1));
+        expect(evaluateOpenAnswer.mock.calls[0][0].userAnswer).toBe("LIFO");
+    });
+
     it("si falla la evaluación de la IA lo informa sin trabar el quiz", async () => {
         // Arrange.
         const user = userEvent.setup();

@@ -803,22 +803,38 @@ fragmento utilizado con su porcentaje de similitud, e historial de conversacione
 por sesión, todo dentro del mismo panel. En dispositivos móviles el panel se
 comporta como una hoja a pantalla completa (*bottom-sheet*).
 
-![Figura 2a](img/chat-widget.png){width=48%} ![Figura 2b](img/search-widget.png){width=48%}
+![Figura 2a](img/chat-widget.png){width=40%}
 
-> **Figura 2a/2b.** Widget de chat (izquierda) respondiendo con cita a la fuente, y
-> buscador semántico (derecha) mostrando resultados resaltados. *Fuente:* elaboración
-> propia, capturas del MVP desplegado localmente. *Texto alternativo:* a la izquierda,
-> una conversación donde el asistente responde qué es el *clustering* citando el PDF
-> de origen; a la derecha, el buscador semántico devolviendo un resultado con el
-> término de búsqueda resaltado.
+> **Figura 2a.** Widget de chat respondiendo a una pregunta sobre K-means con
+> cita a la fuente. *Fuente:* elaboración propia, captura de la versión actual
+> desplegada localmente (panel lateral post-rediseño de agosto). *Texto
+> alternativo:* una conversación donde el asistente explica el algoritmo
+> K-means en pasos numerados, con un chip "Fuentes: clustering.md" debajo de
+> la respuesta.
 
-![Figura 2c](img/docente-panel.png){width=48%} ![Figura 2d](img/docente-gaps.png){width=48%}
+![Figura 2b](img/search-widget.png){width=70%}
 
-> **Figura 2c/2d.** Panel del docente: gestión de material indexado (izquierda) y
-> reporte de vacíos de contenido (derecha). *Fuente:* elaboración propia, capturas del
-> MVP desplegado localmente. *Texto alternativo:* a la izquierda, la tabla de
-> materiales subidos con su estado de indexación; a la derecha, una pregunta de un
-> alumno que el material no pudo responder bien, con su similitud promedio.
+> **Figura 2b.** Buscador semántico del panel docente, con el término "K-means"
+> resaltado dentro del resultado. *Fuente:* elaboración propia, captura de la
+> versión actual desplegada localmente. *Texto alternativo:* un campo de
+> búsqueda con filtros por tipo de archivo y unidad, devolviendo un
+> fragmento de texto con dos coincidencias del término buscado resaltadas.
+
+![Figura 2c](img/docente-panel.png){width=70%}
+
+> **Figura 2c.** Panel del docente: gestión de material indexado. *Fuente:*
+> elaboración propia, captura de la versión actual desplegada localmente.
+> *Texto alternativo:* la tabla de materiales subidos, con la unidad del
+> curso asignada, el estado de indexación y si el material está visible
+> para los alumnos.
+
+![Figura 2d](img/docente-gaps.png){width=70%}
+
+> **Figura 2d.** Panel del docente: preguntas de alumnos sin responder
+> (vacíos de contenido). *Fuente:* elaboración propia, captura de la versión
+> actual desplegada localmente. *Texto alternativo:* una pregunta real de
+> alumno ("¿Qué es el clustering?") marcada como "sin match", es decir, sin
+> una respuesta bien respaldada por el material indexado en ese momento.
 
 ### Proceso de diseño de la interfaz
 
@@ -876,8 +892,8 @@ panel que fijan estos *prompts* —400×600 píxeles en escritorio,
 describe esta misma subsección. Otras seis pantallas quedaron en una
 lista de pendientes, todavía sin *prompt* escrito.
 
-Las Figuras 2a a 2d de esta sección son capturas del MVP, anteriores al
-rediseño de agosto recién descrito.
+Las Figuras 2a a 2d de esta sección son capturas de la versión actual del
+*widget*, posterior al rediseño de agosto recién descrito.
 
 ## Implementación
 
@@ -985,6 +1001,86 @@ flowchart TB
 > docente sube un documento hasta que queda indexado como chunks vectoriales,
 > pasando por extracción de texto, limpieza, fragmentación y generación de
 > *embeddings*.
+
+### Funcionalidades post-MVP
+
+Los seis módulos descritos arriba son los que entregó el MVP de junio de
+2026. El desarrollo siguió después, organizado en epopeyas
+(`docs/presentaciones/NexusAI_Avances_2026-08-06.md`) que ya se nombran
+como alcance en "Alcance funcional", pero sin mostrar nunca cómo se ven
+realmente en uso. Esta sección cierra ese vacío con capturas del entorno
+desplegado localmente.
+
+![Figura 5a](img/studymode-plan.png){width=48%} ![Figura 5b](img/studymode-quiz.png){width=48%}
+
+> **Figura 5a/5b.** Modo Estudio: plan de repaso (izquierda) y *quiz* de
+> práctica (derecha). *Fuente:* elaboración propia, capturas de la versión
+> actual desplegada localmente. *Texto alternativo:* a la izquierda, una
+> recomendación de repaso generada a partir de un vacío de contenido
+> detectado, con botones "Practicar este tema" y "Ya lo entendí"; a la
+> derecha, una pregunta de opción múltiple de un *quiz* de práctica, con
+> cuatro alternativas y un botón "Verificar".
+
+El plan de repaso cruza dos fuentes que ya existen en el backend: los
+vacíos de contenido del módulo de *gaps* ya descrito, y los errores
+cometidos en *quizzes* anteriores. Sobre ese mismo *quiz* de práctica se
+agregaron después *flashcards* con repetición espaciada (algoritmo SM-2,
+SP-11/#315, 07/09/2026), que no se capturan acá por no tener una pantalla
+propia distinta del *quiz*.
+
+![Figura 6a](img/calendario.png){width=48%} ![Figura 6b](img/resumen-foro.png){width=48%}
+
+> **Figura 6a/6b.** Calendario de próximas entregas (izquierda) y resumen
+> semanal del foro (derecha). *Fuente:* elaboración propia, capturas de la
+> versión actual desplegada localmente. *Texto alternativo:* a la
+> izquierda, un estado sin exámenes ni entregas próximas, con opciones de
+> suscribirse al calendario o exportarlo como `.ics`; a la derecha, un
+> resumen sin actividad nueva en el foro esa semana, con un campo para
+> notificar también a un *webhook* externo.
+
+El calendario (CAL-02) expone las fechas del curso como *feed* `.ics`
+suscribible; un *bug* posterior de ese mismo *feed* —incluía usuarios
+suspendidos o eliminados— ya está contado en "Correcciones de la primera
+ronda" de la publicación en el Moodle Marketplace, sin repetirlo acá. El
+resumen del foro nació junto con los foros con asistencia de IA del MVP
+extendido, y sumó después la opción de reenviar el mismo resumen semanal
+a un *webhook* de Slack, Discord o Teams (FOR-07/#378, 08/09/2026), para
+que el docente no tenga que entrar a Moodle a leerlo.
+
+![Figura 7](img/preguntas-frecuentes.png){width=70%}
+
+> **Figura 7.** Panel docente: preguntas de alumnos agrupadas por tema.
+> *Fuente:* elaboración propia, captura de la versión actual desplegada
+> localmente. *Texto alternativo:* dos temas detectados a partir de
+> preguntas reales de alumnos, cada uno con la cantidad de veces
+> consultado y un ejemplo de la pregunta original.
+
+![Figura 8](img/analytics-docente.png){width=70%}
+
+> **Figura 8.** Panel docente: *Analytics*. *Fuente:* elaboración propia,
+> captura de la versión actual desplegada localmente. *Texto
+> alternativo:* métricas de uso del curso —*quizzes* de práctica, vacíos
+> de contenido, preguntas al asistente, temas consultados—, un indicador
+> de "salud del contenido" y la lista de preguntas más frecuentes.
+
+![Figura 9](img/generar-examen.png){width=70%}
+
+> **Figura 9.** Panel docente: generador de exámenes. *Fuente:*
+> elaboración propia, captura de la versión actual desplegada localmente.
+> *Texto alternativo:* una pregunta de opción múltiple generada a partir
+> del material del curso, con la fuente citada debajo y un botón para
+> exportar el banco completo en formato GIFT de Moodle.
+
+Las preguntas frecuentes de la Figura 7 comparten el mismo backend de
+analítica que la Figura 8 (DOC-D01): el texto de cada pregunta se
+normaliza y se agrupa primero, y recién después un LLM le pone nombre al
+tema resultante — pero el conteo de cuántas veces se preguntó cada tema
+siempre se recalcula en Python, nunca se le confía al LLM, el mismo
+criterio de no inventar que ya gobierna el resto del asistente. El
+generador de exámenes (EVAL-01/#235) pide que el docente elija a mano los
+archivos de origen en vez de usar todo el material del curso
+automáticamente, y resuelve la exportación al formato GIFT del lado del
+*frontend*, no del backend.
 
 ## Arquitectura técnica del backend
 
@@ -1461,12 +1557,10 @@ explícita: *backups* previos, un ensayo completo sobre una copia de
 producción en *staging*, verificación de conteos y consumo por curso/mes
 antes de dar la migración por buena, y las tablas viejas del backend se
 archivaron durante 60 días antes de borrarlas definitivamente, en lugar
-de eliminarlas de inmediato. Vale la pena notar que **RNF-14** del Anexo
-A ("el plugin declara su Privacy API según la versión de Moodle,
-`null_provider` en MVP") quedó desactualizado por este mismo cambio de
-arquitectura — la estrategia vigente ya no es `null_provider` sino el
-modelo híbrido de ADR-014; la corrección de esa fila de la tabla excede
-el alcance de este capítulo.
+de eliminarlas de inmediato. **RNF-14** del Anexo A quedó desactualizado
+por este mismo cambio de arquitectura — ya no describía la estrategia
+vigente, sino `null_provider`, la del MVP previo a ADR-014; esa fila ya
+se corrigió en el Anexo A como parte del ensamblado final del informe.
 
 ## Prácticas de seguridad del plugin
 
@@ -1554,7 +1648,7 @@ flowchart TB
     style POSTGRES_UCC fill:#e1f5fe,color:#000,stroke:#0277bd
 ```
 
-> **Figura 6.** Arquitectura de despliegue originalmente planificada en mayo
+> **Figura 10.** Arquitectura de despliegue originalmente planificada en mayo
 > de 2026, sobre infraestructura propia de la UCC (Railway/Hetzner,
 > PostgreSQL de la universidad). *Fuente:* elaboración propia
 > (`docs/diagrams/deployment.md`). **No vigente**: se conserva tal cual,
@@ -1609,7 +1703,7 @@ flowchart TB
     style API_P fill:#e8f5e9,color:#000,stroke:#388e3c
 ```
 
-> **Figura 7.** Topología real del despliegue, vigente desde agosto de
+> **Figura 11.** Topología real del despliegue, vigente desde agosto de
 > 2026. *Fuente:* elaboración propia (`docs/DEPLOY_ORACLE.md`). *Texto
 > alternativo:* dos VMs *Always Free* de Oracle Cloud (Oracle, s.f.), una
 > por ambiente, cada una siguiendo su propia rama de Git y corriendo los
@@ -1850,11 +1944,22 @@ que se renueve.
 
 ## Estado actual
 
-Al cierre de este informe, el plugin está en versión `0.19.0`
-(`MATURITY_BETA`), con las correcciones de los 16 puntos de MMR-301 y de
-los dos hallazgos adicionales ya sincronizadas al repositorio público
-(`nexusai-ucc/moodle-local_nexusai`), a la espera de la próxima devolución
-del revisor de Moodle HQ.
+El plugin fue **aprobado y publicado** en el Moodle Plugins Directory,
+en la misma versión `0.19.0` (`MATURITY_BETA`) que incorporó las
+correcciones de los 16 puntos de MMR-301 y de los dos hallazgos
+adicionales descritos arriba. El *listing* público confirma un último
+*release* del 15 de octubre de 2026 — un día después de la fecha de esa
+misma versión en el `CHANGELOG` del repositorio, consistente con el
+tiempo que toma la publicación una vez aprobada la revisión.
+
+![Figura 12](img/moodle-marketplace-listing.png){width=80%}
+
+> **Figura 12.** Ficha pública de NexusAI en el Moodle Plugins Directory.
+> *Fuente:* `https://marketplace.moodle.com/plugins/4243`, capturado el
+> 21/10/2026. *Texto alternativo:* la ficha del plugin "NexusAI" en el
+> Moodle Marketplace, con etiqueta "Free", botón de descarga, soporte
+> para Moodle 4.1 a 5.3, fecha del último *release* y tres capturas de
+> la interfaz real (calendario, chat en un curso, panel docente).
 
 \newpage
 
@@ -1890,7 +1995,7 @@ La Fase 1 (9 al 22 de abril de 2026) cerró con sus entregables técnicos
 100% completados y en plazo, con un **sobre-cumplimiento deliberado** en
 investigación y formalización: 47 documentos en `investigacion/` contra
 los ~20 esperados originalmente, y 6 ADRs aceptados contra los 4
-planificados (se sumaron HMAC PHP↔Python y la estrategia de Privacidad,
+planificados (se sumaron HMAC PHP-Python y la estrategia de Privacidad,
 ambos necesarios antes de lo previsto por decisiones técnicas tempranas).
 
 Las métricas de valor ganado al cierre de la fase fueron **SPI = 1,00**
@@ -2310,7 +2415,7 @@ prioridad en el contexto del MVP y el sprint donde se implementó.
 | RNF-11 | El widget funciona en Chrome, Firefox, Safari y Edge en versiones actuales. | Compatibilidad |
 | RNF-12 | El backend corre sobre Python 3.11+, PostgreSQL 16+ y pgvector 0.3.5+. | Compatibilidad |
 | RNF-13 | Los datos académicos viven en una base de datos controlada por la institución. | Privacidad |
-| RNF-14 | El plugin declara su Privacy API según la versión de Moodle (`null_provider` en MVP). | Privacidad |
+| RNF-14 | El plugin declara su Privacy API según el modelo híbrido de ADR-014 (datos del alumno en tablas nativas de Moodle, con retención/eliminación acorde). | Privacidad |
 | RNF-15 | El proveedor del LLM se cambia sin modificar código (variable de entorno). | Privacidad |
 | RNF-16 | Cobertura de tests automatizados del backend de al menos 70%. | Mantenibilidad |
 | RNF-17 | CI/CD en GitHub Actions para backend, frontend y plugin PHP. | Mantenibilidad |
@@ -2327,7 +2432,6 @@ embeddings vectoriales y los datos relacionales viven en la misma instancia.
 ```mermaid
 erDiagram
     DOCUMENTS ||--o{ CHUNKS : "compone"
-    CHAT_SESSIONS ||--o{ MESSAGES : "contiene"
 
     DOCUMENTS {
         uuid id PK
@@ -2347,46 +2451,30 @@ erDiagram
         int token_count
         vector embedding "Vector 768 MVP, 1536 prod"
     }
-
-    CHAT_SESSIONS {
-        uuid id PK
-        int user_id "ID del alumno Moodle"
-        int course_id "0 = multi-curso"
-    }
-
-    MESSAGES {
-        uuid id PK
-        uuid session_id FK
-        string role "user, assistant, system"
-        text content
-        int token_count_prompt
-        int token_count_completion
-    }
-
-    UNANSWERED_QUESTIONS {
-        uuid id PK
-        int course_id
-        int user_id
-        text question
-        float max_similarity
-        int chunks_retrieved
-    }
 ```
 
-> **Figura 5.** Diagrama entidad-relación de NexusAI. *Fuente:* elaboración propia
-> (`entrega-final/15_modelo_datos.md`). *Texto alternativo:* cinco tablas — documents,
-> chunks, chat_sessions, messages y unanswered_questions — con `documents` componiendo
-> `chunks` y `chat_sessions` conteniendo `messages`.
+> **Figura 13.** Diagrama entidad-relación de NexusAI. *Fuente:* elaboración propia
+> (`entrega-final/15_modelo_datos.md`). *Texto alternativo:* dos tablas — documents y
+> chunks — con `documents` componiendo `chunks`, único par que hoy vive en el backend.
+> Las tablas de datos del alumno (sesiones de chat, mensajes, vacíos de contenido,
+> entre otras) se quitaron de este diagrama porque ya no viven en PostgreSQL — ver la
+> nota debajo.
 
 **Notas de implementación:** `chunks.embedding` usa un índice **HNSW** con distancia
 coseno (`m=16`, `ef_construction=200`) para búsqueda aproximada en tiempo casi
 constante. `documents` tiene un índice único parcial sobre
 `(course_id, filename, file_hash)` que evita reindexar el mismo archivo dos veces. El
 esquema evolucionó en 5 migraciones Alembic (001 a 004, con dos migraciones `004_*`
-desarrolladas en paralelo por integrantes distintos y luego encadenadas). Del lado del
-plugin Moodle, hoy solo existe `local_nexusai_placeholder` (vacía); las tablas
-`local_nexusai_usage`, `local_nexusai_cache` y `local_nexusai_course_settings` quedan
-planificadas para post-MVP.
+desarrolladas en paralelo por integrantes distintos y luego encadenadas). Por ADR-014
+(Anexo E), las tablas `CHAT_SESSIONS`, `MESSAGES` y `UNANSWERED_QUESTIONS` que figuraban
+antes en este diagrama ya no viven en PostgreSQL: los datos del alumno se movieron a
+dieciséis tablas nativas `local_nexusai_*` del lado del plugin de Moodle
+(`chat_sessions` → `local_nexusai_chat_sessions`, `messages` → `local_nexusai_messages`,
+`unanswered_questions` → `local_nexusai_gaps` —esta última cambió de nombre, no es la
+misma tabla solo renombrada—, además de intentos y errores de *quiz*, *flashcards* y
+alertas de calendario, entre otras). El backend conserva únicamente el índice vectorial
+del material de curso (`documents`/`chunks`, sin cambios) y las cachés de contenido, sin
+ningún dato personal del alumno.
 
 ## Anexo C — Métricas del proyecto
 
@@ -2433,13 +2521,16 @@ planificadas para post-MVP.
   [github.com/nexusai-ucc/nexusAI/actions](https://github.com/nexusai-ucc/nexusAI/actions)
 - **Release del MVP:** `v0.8.0-mvp`
   ([github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp](https://github.com/nexusai-ucc/nexusAI/releases/tag/v0.8.0-mvp)).
-  El plugin siguió evolucionando después del MVP (versión actual `0.14.2` según
-  `plugin/local/nexusai/version.php`) sin un *tag* formal más reciente en el
-  repositorio — pendiente etiquetar el próximo *release* (RNF-21).
+  El plugin siguió evolucionando después del MVP (versión actual `0.19.0`,
+  `MATURITY_BETA`, según `plugin/local/nexusai/version.php`) sin un *tag* formal
+  más reciente en el repositorio — pendiente etiquetar el próximo *release*
+  (RNF-21). Esa versión es la que está en curso de revisión en el Moodle
+  Plugins Directory (ver "Publicación en Moodle Marketplace" → "Estado
+  actual").
 
 > **Nota:** el backend está desplegado de forma permanente en dos ambientes sobre
 > Oracle Cloud (*Always Free*): *staging*, para pruebas del día a día
-> (`https://api-staging.146.181.62.67.nip.io`), y producción, solo para
+> (`https://api.146.181.62.67.nip.io`), y producción, solo para
 > funcionalidad ya validada (`https://api.159.112.139.166.nip.io`). Moodle no se
 > despliega junto al backend — cada integrante lo sigue corriendo localmente,
 > apuntando el plugin al ambiente correspondiente. El deploy a ambas VMs es

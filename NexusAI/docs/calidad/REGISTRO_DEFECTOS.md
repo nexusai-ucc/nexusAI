@@ -1,6 +1,6 @@
 # Registro de defectos (TPC-06)
 
-> Issue [#578](https://github.com/nexusai-ucc/nexusAI/issues/578) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.2, 19/10/2026
+> Issue [#578](https://github.com/nexusai-ucc/nexusAI/issues/578) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.4, 21/10/2026
 
 El registro de defectos de NexusAI vive en **GitHub Issues**, con el formulario **🐞 Defecto** (`.github/ISSUE_TEMPLATE/defecto.yml`) y las labels `bug`, `tipo:defecto` y `severidad:*`. Este documento es la vista consolidada para el TP: lista cada defecto con su origen, su fix, su test de regresión y las corridas de CI que lo muestran.
 
@@ -37,6 +37,8 @@ Abierto ──► En curso ──► Test de regresión en ROJO ──► Fix �
 | [DEF-06](#def-06) | Tests: un mock de `curl` sobrevivía entre tests y rompía `sync_forum_post_test` | — (proceso) | Tests del plugin | Baja | **Pipeline** (PR #603) | Corregido | `df38ed9` | `tests/external/external_testcase.php::tearDown` |
 | [DEF-07](#def-07) | `embed_many` rompe con `TypeError` cuando el proveedor devuelve los embeddings sin `index` (Gemini) | HU-010 | Backend (proveedor de embeddings) | Media | **Prueba contra el proveedor real** (TPC-07, 19/10) | Corregido | [#628](https://github.com/nexusai-ucc/nexusAI/pull/628) | `tests/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index`, `tests/integration/test_llm_real.py` |
 | [DEF-08](#def-08) | El quiz con un tema sin material responde siempre en español cuando la similitud es baja (no sigue el idioma de la interfaz) | HU-031 | Backend (quiz) | Baja | **Tabla de decisión** de HU-031 (TPC-04, 19/10) | Corregido | [#632](https://github.com/nexusai-ucc/nexusAI/pull/632) | `tests/test_quiz_router.py::test_cp_quiz_19_tema_sin_material_responde_en_el_idioma_de_la_interfaz` |
+| [DEF-09](#def-09) | Con ~40 alumnos simultáneos el chat colapsa (p95 de 60 s, 32 % de chats sin respuesta) y se pierden registros de consumo: el request retiene su conexión durante el LLM y el registro pide otra del mismo pool | HU-001 · objetivo de rendimiento | Backend (base de datos / registro de consumo) | Alta | **Prueba de stress** (TPC-09, 19/10) | Corregido | [#644](https://github.com/nexusai-ucc/nexusAI/pull/644) | `tests/test_db_pool_contention.py` (Postgres real) · `tests/test_chat_stateless.py::test_messages_releases_the_db_connection_before_calling_the_llm`, `test_stream_releases_the_db_connection_before_streaming` |
+| [DEF-10](#def-10) | Dependencias con vulnerabilidades publicadas el 21/10: Pillow 12.3.0 (8 CVE, backend en producción) y vite 8.2.2 (`launch-editor`, solo desarrollo) | — (dependencias) | Backend + widget | Media | **Pipeline** (auditoría de dependencias) | Corregido | [#654](https://github.com/nexusai-ucc/nexusAI/pull/654) | `pip-audit` y `npm audit` en `backend-ci` / `frontend-ci` |
 
 ### DEF-01
 
@@ -125,6 +127,67 @@ El segundo mensaje y el 404 de "curso sin material" siguen el idioma de la inter
 | Test de regresión, sin fix (local) | `pytest -k cp_quiz_19` | 🔴 el detalle en inglés no contiene "couldn't find material" |
 | Fix | `pytest tests/test_quiz_router.py` | 🟢 87 tests pasan |
 
+### DEF-09
+
+Lo encontró la **prueba de stress** de TPC-09 ([PRUEBAS_DE_CARGA.md](PRUEBAS_DE_CARGA.md)). Con el LLM simulado a 1,5 s, el chat respondía perfecto hasta 40 usuarios virtuales (VUs): 5,1 pedidos/s y p95 de 2,45 s. Al llegar a 40, **colapsó**:
+- el throughput cayó a 0,7 pedidos/s;
+- el p95 llegó a 30–60 s;
+- solo el 68 % de los chats salió OK;
+- los logs mostraron 522 `No se pudo registrar el consumo … QueuePool limit of size 5 overflow 10 reached`;
+- al final quedaron las 15 conexiones de Postgres en *idle in transaction*.
+
+**Aislamiento.** El mismo stress con el registro de consumo apagado llegó a 100 VUs con 99,96 % OK y 12,3 pedidos/s ([corrida 39296300477](https://github.com/nexusai-ucc/nexusAI/actions/runs/39296300477)). Eso confirma que el disparador era el registro.
+
+**Causa: retener y esperar.**
+1. Cada chat abre una transacción en el retrieval y la **retiene durante toda la llamada al LLM**: la conexión queda *idle in transaction* esos segundos.
+2. La capa de proveedores registra el consumo **dentro de ese mismo request**: `await record_usage(...)` en `providers/llm.py` y en `providers/embeddings.py`.
+3. `usage_ledger._persist` abría su sesión con el **mismo pool** (5 + 10 conexiones).
+
+Con unos 15 chats en vuelo, todas las conexiones estaban retenidas y cada request esperaba una más, que nadie soltaba. Cada espera vencía a los 30 s (`pool_timeout`): el registro se perdía (*fail-open*) y el chat sumaba 30 s por cada llamada al proveedor.
+
+**Por qué no lo vio nadie (5 porqués):**
+1. *¿Por qué colapsó?* Porque los requests se quedaron sin conexiones.
+2. *¿Por qué se quedaron sin conexiones?* Porque cada chat necesitaba **dos** al mismo tiempo: la propia, retenida durante el LLM, y la del registro.
+3. *¿Por qué retenía la propia?* Porque el retrieval abre una transacción y nada la cerraba antes del LLM: el patrón por defecto de "una sesión por request".
+4. *¿Por qué no apareció en los tests?* Porque todos los tests de la API usan dobles de la base. Con un pool real hacen falta ~15 chats simultáneos para llenarlo.
+5. *¿Por qué no apareció en uso real?* Porque hasta ahora el uso fue de pocos alumnos a la vez. Con el LLM real, más lento, el quiebre llegaría **antes**, porque cada conexión queda retenida más tiempo.
+
+**Fix ([#644](https://github.com/nexusai-ucc/nexusAI/pull/644)):**
+- **Pool propio para el registro de consumo** (`get_ledger_session_factory` en `app/db/session.py`): 2 + 3 conexiones y un timeout de 5 s, configurables. El registro ya no compite con los requests.
+- **El chat cierra la transacción antes de llamar al LLM**, en `/messages` y en el stream. No retiene la conexión mientras el modelo responde.
+- Otros endpoints que llaman al LLM con una sesión abierta (quiz, resumen) ya no pueden interbloquearse, gracias al pool propio. Les queda retener la conexión durante el LLM, anotado como mejora.
+
+| Paso | Corrida | Resultado |
+|---|---|---|
+| Stress que lo encontró | Pruebas de carga [39292517339](https://github.com/nexusai-ucc/nexusAI/actions/runs/39292517339) | 🔴 colapso a 40 VUs |
+| Tests de regresión, sin fix | Backend CI [39325281433](https://github.com/nexusai-ucc/nexusAI/actions/runs/39325281433) (`b07770f`) | 🔴 con Postgres real y el pool de los requests agotado, `record_usage` espera hasta el `TimeoutError`; el chat no libera la conexión antes del LLM |
+| Fix | Backend CI [39325531204](https://github.com/nexusai-ucc/nexusAI/actions/runs/39325531204) | 🟢 620 tests pasan; el registro termina en ~0,5 s con el pool agotado |
+| Stress con el fix (registro prendido) | Pruebas de carga [39325730633](https://github.com/nexusai-ucc/nexusAI/actions/runs/39325730633) | 🟢 **sin quiebre hasta 100 VUs**: 6.196 chats, 99,98 % OK, p95 de 2,49 s plano en todos los escalones, ~20 pedidos/s, **0 registros perdidos** y 0 conexiones *idle in transaction* al final |
+
+**Acción preventiva:** `test_db_pool_contention.py` es el primer test del backend contra **Postgres real** (lo provee backend-ci). Si alguien vuelve a abrir sesiones del registro con el pool de los requests, falla.
+
+### DEF-10
+
+El 21/10, el PR que lleva `development` a `staging` (#647) dio **rojo en las dos auditorías de dependencias**, sin que hubiera cambiado una sola línea de nuestro código. Se habían publicado vulnerabilidades nuevas en dos dependencias:
+
+| Auditoría | Dependencia | Vulnerabilidades | Dónde se usa | Corrección |
+|---|---|---|---|---|
+| `pip-audit` (backend) | **Pillow 12.3.0** | 8 CVE (CVE-2026-112395 a 112899) | En producción: el OCR de `extractor.py::_ocr_image` y, por dentro, `pdfplumber` y `pdf2image` | **13.0.0** (requiere Python ≥ 3.11, que es lo que usa la imagen) |
+| `npm audit` (widget) | **vite 8.2.2** (trae `launch-editor`) | 3 *high* (GHSA-698v-4r3x-3vcv, GHSA-r825-w8mm-5pxw, GHSA-587h-7wmj-h5pm) | Solo en desarrollo: es dependencia de vitest. No entra en el bundle del plugin | **8.3.5** (`npm audit fix`, sin `--force`) |
+
+**Verificación:**
+- con Pillow 13 pasan los 621 tests del backend (incluidos los de extracción e indexación) y el OCR abre imágenes;
+- `pip-audit` queda limpio, con las 10 excepciones ya justificadas en #317;
+- `npm audit` da 0 vulnerabilidades, y los 273 tests del widget pasan;
+- el build no cambia ningún archivo de `amd/`.
+
+**Por qué importa.** Es una ejecución fallida que detectó un problema real, de una clase distinta a DEF-05. Un pipeline que estaba en verde ayer puede ponerse rojo hoy sin que nadie toque el código, porque **las dependencias también cambian**: cada día se publican vulnerabilidades nuevas. Las auditorías corren en cada PR, así que lo detectaron antes de que la versión vulnerable llegara a staging.
+
+| Paso | Corrida | Resultado |
+|---|---|---|
+| Auditorías en el PR #647 | Backend CI [39604642181](https://github.com/nexusai-ucc/nexusAI/actions/runs/39604642181) · Frontend CI [39604642306](https://github.com/nexusai-ucc/nexusAI/actions/runs/39604642306) | 🔴 Pillow (8 CVE) y vite/`launch-editor` (3 high) |
+| Fix | __CORRIDAS__ | 🟢 |
+
 ## Ejecución fallida que detectó un problema real
 
 **DEF-05. "Sync derived repos"** publica el plugin y el backend en sus repos derivados (`moodle-local_nexusai`, `nexusai-backend`) en cada push a `development`.
@@ -138,7 +201,7 @@ El segundo mensaje y el 404 de "curso sin material" siguen el idioma de la inter
 - **Corrección:** se renovó el secret. Desde [38640827145](https://github.com/nexusai-ucc/nexusAI/actions/runs/38640827145) (14/10, 21:30) el workflow vuelve a verde en cada push.
 - **Lección:** los tokens con vencimiento son una dependencia que falla en silencio hasta que se usan. Queda como riesgo en el plan de pruebas: renovarlo antes de vencer, o pasar a una GitHub App con token de corta duración.
 
-También DEF-06 es una ejecución fallida que detectó un problema real (la fuga entre tests), y DEF-01 tiene su corrida en rojo.
+También DEF-10 (vulnerabilidades nuevas en dependencias, detectadas por las auditorías del pipeline) y DEF-06 son ejecuciones fallidas que detectaron un problema real (la fuga entre tests), y DEF-01 tiene su corrida en rojo.
 
 ## Observaciones de riesgo (no son defectos)
 
@@ -155,3 +218,5 @@ También DEF-06 es una ejecución fallida que detectó un problema real (la fuga
 | 1.0 | 16/10/2026 | Formulario de defecto, severidades, ciclo de vida, DEF-01 a DEF-06, ejecución fallida real |
 | 1.1 | 19/10/2026 | DEF-07 (detectado por la prueba contra el proveedor real) y riesgo del modelo de producción |
 | 1.2 | 19/10/2026 | DEF-08 (detectado por una tabla de decisión) y columna de requisito, enlazada con [TRAZABILIDAD.md](TRAZABILIDAD.md) |
+| 1.3 | 19/10/2026 | DEF-09 (detectado por la prueba de stress) |
+| 1.4 | 21/10/2026 | DEF-10 (vulnerabilidades nuevas en dependencias, detectadas por el pipeline) |

@@ -228,7 +228,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             if (existing) {
                 existing.style.display = '';
             } else {
-                showPanel(cachedResult);
+                showPanel(cachedResult).catch(Notification.exception);
             }
             return;
         }
