@@ -1011,9 +1011,9 @@ como alcance en "Alcance funcional", pero sin mostrar nunca cómo se ven
 realmente en uso. Esta sección cierra ese vacío con capturas del entorno
 desplegado localmente.
 
-![Figura 8a](img/studymode-plan.png){width=48%} ![Figura 8b](img/studymode-quiz.png){width=48%}
+![Figura 5a](img/studymode-plan.png){width=48%} ![Figura 5b](img/studymode-quiz.png){width=48%}
 
-> **Figura 8a/8b.** Modo Estudio: plan de repaso (izquierda) y *quiz* de
+> **Figura 5a/5b.** Modo Estudio: plan de repaso (izquierda) y *quiz* de
 > práctica (derecha). *Fuente:* elaboración propia, capturas de la versión
 > actual desplegada localmente. *Texto alternativo:* a la izquierda, una
 > recomendación de repaso generada a partir de un vacío de contenido
@@ -1028,9 +1028,9 @@ agregaron después *flashcards* con repetición espaciada (algoritmo SM-2,
 SP-11/#315, 07/09/2026), que no se capturan acá por no tener una pantalla
 propia distinta del *quiz*.
 
-![Figura 9a](img/calendario.png){width=48%} ![Figura 9b](img/resumen-foro.png){width=48%}
+![Figura 6a](img/calendario.png){width=48%} ![Figura 6b](img/resumen-foro.png){width=48%}
 
-> **Figura 9a/9b.** Calendario de próximas entregas (izquierda) y resumen
+> **Figura 6a/6b.** Calendario de próximas entregas (izquierda) y resumen
 > semanal del foro (derecha). *Fuente:* elaboración propia, capturas de la
 > versión actual desplegada localmente. *Texto alternativo:* a la
 > izquierda, un estado sin exámenes ni entregas próximas, con opciones de
@@ -1047,32 +1047,32 @@ extendido, y sumó después la opción de reenviar el mismo resumen semanal
 a un *webhook* de Slack, Discord o Teams (FOR-07/#378, 08/09/2026), para
 que el docente no tenga que entrar a Moodle a leerlo.
 
-![Figura 10](img/preguntas-frecuentes.png){width=70%}
+![Figura 7](img/preguntas-frecuentes.png){width=70%}
 
-> **Figura 10.** Panel docente: preguntas de alumnos agrupadas por tema.
+> **Figura 7.** Panel docente: preguntas de alumnos agrupadas por tema.
 > *Fuente:* elaboración propia, captura de la versión actual desplegada
 > localmente. *Texto alternativo:* dos temas detectados a partir de
 > preguntas reales de alumnos, cada uno con la cantidad de veces
 > consultado y un ejemplo de la pregunta original.
 
-![Figura 11](img/analytics-docente.png){width=70%}
+![Figura 8](img/analytics-docente.png){width=70%}
 
-> **Figura 11.** Panel docente: *Analytics*. *Fuente:* elaboración propia,
+> **Figura 8.** Panel docente: *Analytics*. *Fuente:* elaboración propia,
 > captura de la versión actual desplegada localmente. *Texto
 > alternativo:* métricas de uso del curso —*quizzes* de práctica, vacíos
 > de contenido, preguntas al asistente, temas consultados—, un indicador
 > de "salud del contenido" y la lista de preguntas más frecuentes.
 
-![Figura 12](img/generar-examen.png){width=70%}
+![Figura 9](img/generar-examen.png){width=70%}
 
-> **Figura 12.** Panel docente: generador de exámenes. *Fuente:*
+> **Figura 9.** Panel docente: generador de exámenes. *Fuente:*
 > elaboración propia, captura de la versión actual desplegada localmente.
 > *Texto alternativo:* una pregunta de opción múltiple generada a partir
 > del material del curso, con la fuente citada debajo y un botón para
 > exportar el banco completo en formato GIFT de Moodle.
 
-Las preguntas frecuentes de la Figura 10 comparten el mismo backend de
-analítica que la Figura 11 (DOC-D01): el texto de cada pregunta se
+Las preguntas frecuentes de la Figura 7 comparten el mismo backend de
+analítica que la Figura 8 (DOC-D01): el texto de cada pregunta se
 normaliza y se agrupa primero, y recién después un LLM le pone nombre al
 tema resultante — pero el conteo de cuántas veces se preguntó cada tema
 siempre se recalcula en Python, nunca se le confía al LLM, el mismo
@@ -1557,12 +1557,10 @@ explícita: *backups* previos, un ensayo completo sobre una copia de
 producción en *staging*, verificación de conteos y consumo por curso/mes
 antes de dar la migración por buena, y las tablas viejas del backend se
 archivaron durante 60 días antes de borrarlas definitivamente, en lugar
-de eliminarlas de inmediato. Vale la pena notar que **RNF-14** del Anexo
-A ("el plugin declara su Privacy API según la versión de Moodle,
-`null_provider` en MVP") quedó desactualizado por este mismo cambio de
-arquitectura — la estrategia vigente ya no es `null_provider` sino el
-modelo híbrido de ADR-014; la corrección de esa fila de la tabla excede
-el alcance de este capítulo.
+de eliminarlas de inmediato. **RNF-14** del Anexo A quedó desactualizado
+por este mismo cambio de arquitectura — ya no describía la estrategia
+vigente, sino `null_provider`, la del MVP previo a ADR-014; esa fila ya
+se corrigió en el Anexo A como parte del ensamblado final del informe.
 
 ## Prácticas de seguridad del plugin
 
@@ -1650,7 +1648,7 @@ flowchart TB
     style POSTGRES_UCC fill:#e1f5fe,color:#000,stroke:#0277bd
 ```
 
-> **Figura 6.** Arquitectura de despliegue originalmente planificada en mayo
+> **Figura 10.** Arquitectura de despliegue originalmente planificada en mayo
 > de 2026, sobre infraestructura propia de la UCC (Railway/Hetzner,
 > PostgreSQL de la universidad). *Fuente:* elaboración propia
 > (`docs/diagrams/deployment.md`). **No vigente**: se conserva tal cual,
@@ -1705,7 +1703,7 @@ flowchart TB
     style API_P fill:#e8f5e9,color:#000,stroke:#388e3c
 ```
 
-> **Figura 7.** Topología real del despliegue, vigente desde agosto de
+> **Figura 11.** Topología real del despliegue, vigente desde agosto de
 > 2026. *Fuente:* elaboración propia (`docs/DEPLOY_ORACLE.md`). *Texto
 > alternativo:* dos VMs *Always Free* de Oracle Cloud (Oracle, s.f.), una
 > por ambiente, cada una siguiendo su propia rama de Git y corriendo los
@@ -1954,9 +1952,9 @@ adicionales descritos arriba. El *listing* público confirma un último
 misma versión en el `CHANGELOG` del repositorio, consistente con el
 tiempo que toma la publicación una vez aprobada la revisión.
 
-![Figura 13](img/moodle-marketplace-listing.png){width=80%}
+![Figura 12](img/moodle-marketplace-listing.png){width=80%}
 
-> **Figura 13.** Ficha pública de NexusAI en el Moodle Plugins Directory.
+> **Figura 12.** Ficha pública de NexusAI en el Moodle Plugins Directory.
 > *Fuente:* `https://marketplace.moodle.com/plugins/4243`, capturado el
 > 21/10/2026. *Texto alternativo:* la ficha del plugin "NexusAI" en el
 > Moodle Marketplace, con etiqueta "Free", botón de descarga, soporte
@@ -1997,7 +1995,7 @@ La Fase 1 (9 al 22 de abril de 2026) cerró con sus entregables técnicos
 100% completados y en plazo, con un **sobre-cumplimiento deliberado** en
 investigación y formalización: 47 documentos en `investigacion/` contra
 los ~20 esperados originalmente, y 6 ADRs aceptados contra los 4
-planificados (se sumaron HMAC PHP↔Python y la estrategia de Privacidad,
+planificados (se sumaron HMAC PHP-Python y la estrategia de Privacidad,
 ambos necesarios antes de lo previsto por decisiones técnicas tempranas).
 
 Las métricas de valor ganado al cierre de la fase fueron **SPI = 1,00**
@@ -2417,7 +2415,7 @@ prioridad en el contexto del MVP y el sprint donde se implementó.
 | RNF-11 | El widget funciona en Chrome, Firefox, Safari y Edge en versiones actuales. | Compatibilidad |
 | RNF-12 | El backend corre sobre Python 3.11+, PostgreSQL 16+ y pgvector 0.3.5+. | Compatibilidad |
 | RNF-13 | Los datos académicos viven en una base de datos controlada por la institución. | Privacidad |
-| RNF-14 | El plugin declara su Privacy API según la versión de Moodle (`null_provider` en MVP). | Privacidad |
+| RNF-14 | El plugin declara su Privacy API según el modelo híbrido de ADR-014 (datos del alumno en tablas nativas de Moodle, con retención/eliminación acorde). | Privacidad |
 | RNF-15 | El proveedor del LLM se cambia sin modificar código (variable de entorno). | Privacidad |
 | RNF-16 | Cobertura de tests automatizados del backend de al menos 70%. | Mantenibilidad |
 | RNF-17 | CI/CD en GitHub Actions para backend, frontend y plugin PHP. | Mantenibilidad |
@@ -2455,7 +2453,7 @@ erDiagram
     }
 ```
 
-> **Figura 5.** Diagrama entidad-relación de NexusAI. *Fuente:* elaboración propia
+> **Figura 13.** Diagrama entidad-relación de NexusAI. *Fuente:* elaboración propia
 > (`entrega-final/15_modelo_datos.md`). *Texto alternativo:* dos tablas — documents y
 > chunks — con `documents` componiendo `chunks`, único par que hoy vive en el backend.
 > Las tablas de datos del alumno (sesiones de chat, mensajes, vacíos de contenido,
@@ -2532,7 +2530,7 @@ ningún dato personal del alumno.
 
 > **Nota:** el backend está desplegado de forma permanente en dos ambientes sobre
 > Oracle Cloud (*Always Free*): *staging*, para pruebas del día a día
-> (`https://api-staging.146.181.62.67.nip.io`), y producción, solo para
+> (`https://api.146.181.62.67.nip.io`), y producción, solo para
 > funcionalidad ya validada (`https://api.159.112.139.166.nip.io`). Moodle no se
 > despliega junto al backend — cada integrante lo sigue corriendo localmente,
 > apuntando el plugin al ambiente correspondiente. El deploy a ambas VMs es
