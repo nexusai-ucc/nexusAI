@@ -47,7 +47,7 @@ El enunciado pide una *"demostración con un despliegue nuevo, con las integraci
 - **Hacer:** abrir SonarCloud en `development` (A/A/A) y el historial de actividad.
 - **Decir:**
   - "Del 15/10 a hoy: 26 bugs a 0 y 14 vulnerabilidades a 0, y la cobertura de 56,6 a 83,6 %. El gate solo mira el código nuevo: lo heredado bajó porque lo atacamos a propósito."
-  - Cerrar con los 9 defectos y la técnica que encontró cada uno (informe, sección 6).
+  - Cerrar con los 10 defectos y la técnica que encontró cada uno (informe, sección 6).
 
 ## Si alguien pregunta
 

@@ -1,6 +1,6 @@
 # Métricas interpretadas y mejora medida (TPC-10)
 
-> Issue [#582](https://github.com/nexusai-ucc/nexusAI/issues/582) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.1, 20/10/2026
+> Issue [#582](https://github.com/nexusai-ucc/nexusAI/issues/582) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.2, 21/10/2026
 
 Este documento reúne las métricas de NexusAI al cierre del TP, las compara con el punto de partida e interpreta qué dicen. **Ningún número está escrito a mano**: cada uno sale de una corrida del pipeline, de la API de SonarCloud o de la API de GitHub, y la columna "Fuente" dice de cuál.
 
@@ -138,18 +138,18 @@ Fuente: issues #573–#583 (story points y fechas del plan en cada issue; cierre
 
 ## 5. Efectividad de las pruebas: defectos por técnica
 
-Fuente: [REGISTRO_DEFECTOS.md](REGISTRO_DEFECTOS.md).
+Fuente: [REGISTRO_DEFECTOS.md](REGISTRO_DEFECTOS.md). DEF-10 se sumó el 21/10.
 
 | Técnica o fuente | Defectos | Cuáles |
 |---|---|---|
 | Tests unitarios / de componentes | 1 | DEF-01 |
 | PHPUnit (primera corrida) | 1 | DEF-03 |
-| Pipeline (ejecuciones fallidas) | 2 | DEF-05, DEF-06 |
+| Pipeline (ejecuciones fallidas y auditorías de dependencias) | 3 | DEF-05, DEF-06, DEF-10 |
 | Prueba contra el proveedor real | 1 | DEF-07 |
 | Caja negra (tabla de decisión) | 1 | DEF-08 |
 | Prueba de stress | 1 | DEF-09 |
 | Fuera de las pruebas (uso real, auditoría) | 2 | DEF-02, DEF-04 |
-| **Total** | **9** | 7 por pruebas automatizadas, 2 por otras vías |
+| **Total** | **10** | 8 por pruebas o el pipeline, 2 por otras vías |
 
 **Interpretación.** Ninguna técnica sola habría encontrado todo. Cada nivel encontró lo suyo:
 - la integración real encontró lo que los dobles no podían mostrar;
@@ -172,3 +172,4 @@ Es el principio de "las pruebas exhaustivas son imposibles", llevado a la práct
 |---|---|---|
 | 1.0 | 20/10/2026 | Métricas de producto antes/después, tres mejoras medidas, lead time, tasa de fallos, avance de la épica y defectos por técnica |
 | 1.1 | 20/10/2026 | Seguridad D → A: el `sha1` se revisó y se aceptó en SonarCloud (0 vulnerabilidades) |
+| 1.2 | 21/10/2026 | DEF-10 en la tabla de defectos por técnica |

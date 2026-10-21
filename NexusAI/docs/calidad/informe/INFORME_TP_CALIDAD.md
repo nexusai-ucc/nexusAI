@@ -25,7 +25,7 @@ Durante el TP, entre el 13 y el 26/10/2026, aplicamos un proceso de calidad comp
 
 SonarCloud pasó de **D/D/A a A/A/A** (confiabilidad, seguridad, mantenibilidad), con **26 → 0 bugs** y **14 → 0 vulnerabilidades**.
 
-El proceso encontró **9 defectos reales**, cada uno corregido con su prueba de regresión. El más importante lo encontró la prueba de stress: con 40 alumnos simultáneos el chat **colapsaba**, por un interbloqueo en el pool de conexiones a la base. Después del fix, el sistema atiende **100 alumnos simultáneos con un p95 de 2,5 s**.
+El proceso encontró **10 defectos reales**, cada uno corregido con su prueba de regresión. El más importante lo encontró la prueba de stress: con 40 alumnos simultáneos el chat **colapsaba**, por un interbloqueo en el pool de conexiones a la base. Después del fix, el sistema atiende **100 alumnos simultáneos con un p95 de 2,5 s**.
 
 Lo que no cumplimos o quedó parcial se detalla en la sección 3.2: Behat sin escenarios, tres brechas de trazabilidad y la prueba diaria contra el proveedor, que recién corre desde `main`. Todos los números de este informe salen de corridas del pipeline o de la API de SonarCloud; cada uno tiene su link.
 
@@ -267,8 +267,12 @@ La velocidad usa nuestra propia estimación, así que también mide qué tan bie
 | DEF-07 | La indexación en lote con Gemini fallaba | Media | **Proveedor real** | `test_providers.py` |
 | DEF-08 | Un rechazo del quiz salía siempre en español | Baja | **Tabla de decisión** | `test_quiz_router.py` |
 | DEF-09 | El chat colapsaba con 40 alumnos simultáneos | Alta | **Prueba de stress** | `test_db_pool_contention.py` |
+| DEF-10 | Vulnerabilidades nuevas en dos dependencias (Pillow, vite) | Media | **Pipeline** (auditorías) | `pip-audit`, `npm audit` en cada PR |
 
-**Ejecución fallida que detectó un problema real:** el workflow que publica los repos derivados falló 13 veces el 14/10 por un token vencido (DEF-05). Sin el pipeline, el repo del Marketplace se habría quedado desactualizado sin que nadie lo notara.
+**Ejecuciones fallidas que detectaron un problema real:**
+
+- **DEF-05:** el workflow que publica los repos derivados falló 13 veces el 14/10 por un token vencido. Sin el pipeline, el repo del Marketplace se habría quedado desactualizado sin que nadie lo notara.
+- **DEF-10:** el 21/10, el PR que llevaba `development` a `staging` dio rojo en las auditorías de dependencias ([backend](https://github.com/nexusai-ucc/nexusAI/actions/runs/39604642181), [widget](https://github.com/nexusai-ucc/nexusAI/actions/runs/39604642306)) sin que cambiara nuestro código. Se habían publicado 8 CVE de Pillow y 3 vulnerabilidades *high* de vite. Se corrigió antes de llegar a staging.
 
 Cada defecto tiene sus pasos, esperado, obtenido, la causa raíz (con los 5 porqués en DEF-01 y DEF-09) y las corridas del rojo y el verde en [REGISTRO_DEFECTOS.md](https://github.com/nexusai-ucc/nexusAI/blob/development/NexusAI/docs/calidad/REGISTRO_DEFECTOS.md).
 
@@ -291,6 +295,7 @@ Cada defecto tiene sus pasos, esperado, obtenido, la causa raíz (con los 5 porq
 - **Los verdes que no prueban nada.** Behat con 0 escenarios, un umbral de k6 sin muestras y una prueba diaria que nunca se programó. Las tres cosas daban la impresión de que se estaba probando algo que no se probaba. Ahora el k6 exige que haya chats enviados, pero Behat sigue pendiente.
 - **Errores de configuración que parecen caídas.** Reportamos staging como caído cuando el problema era una URL copiada de documentación desactualizada. Desde entonces, la URL vive en una variable del pipeline.
 - **El proveedor gratuito no es confiable en latencia.** Picos de 20 s y de 112 s en el plan gratis de Gemini. Además, Google retiró el modelo de producción para proyectos nuevos sin avisar. La integración real tiene que probarse seguido justamente por eso.
+- **Un pipeline verde puede ponerse rojo sin tocar el código.** El 21/10 las auditorías frenaron el deploy de la demo por vulnerabilidades publicadas ese día (DEF-10). Las dependencias también cambian, y por eso las auditorías tienen que correr en cada PR y no solo al principio.
 - **Las métricas necesitan contexto.** La tasa de fallos del pipeline "empeoró" porque el pipeline detectó más problemas reales. La velocidad del proyecto "mejoró" en parte porque sobreestimamos algunas tareas.
 
 ## Riesgos que quedan abiertos
@@ -313,7 +318,7 @@ Cada defecto tiene sus pasos, esperado, obtenido, la causa raíz (con los 5 porq
 
 El proceso de calidad dejó de ser una lista de herramientas y pasó a ser parte de cómo trabajamos: hoy cada cambio de NexusAI pasa por pruebas en tres lenguajes, análisis estático con un gate que bloquea, despliegue automático a staging y una prueba de punta a punta contra el proveedor real. Las metas del nivel 3 se cumplen, y los números lo muestran: 83,6 % de cobertura, A/A/A en SonarCloud y capacidad para 100 alumnos simultáneos dentro del SLA.
 
-Lo más valioso del TP no fueron las métricas, sino los **9 defectos reales** que encontró. Varios eran graves y ninguno se había detectado antes:
+Lo más valioso del TP no fueron las métricas, sino los **10 defectos reales** que encontró. Varios eran graves y ninguno se había detectado antes:
 
 - el pedido de datos personales que no hacía nada;
 - el colapso bajo carga;
@@ -327,7 +332,7 @@ Armado con la evidencia del repositorio (commits, PRs e issues). *A confirmar po
 
 | Integrante | Aporte en el TP |
 |---|---|
-| **Delfina Salinas** | Coordinación de la épica TPC. Línea base, SonarCloud y quality gate, plan de pruebas, casos de caja negra y trazabilidad, tests unitarios y cobertura, registro de defectos y corrección de DEF-01 y DEF-06 a DEF-09, integración externa, CD a staging, pruebas de carga y métricas (TPC-01 a TPC-10) |
+| **Delfina Salinas** | Coordinación de la épica TPC. Línea base, SonarCloud y quality gate, plan de pruebas, casos de caja negra y trazabilidad, tests unitarios y cobertura, registro de defectos y corrección de DEF-01 y DEF-06 a DEF-10, integración externa, CD a staging, pruebas de carga y métricas (TPC-01 a TPC-10) |
 | **Santiago Tricherri** | Administración del despliegue en Oracle. Configuración del CD (clave restringida, environment `staging`, bootstrap), corrección de DEF-02 (preguntas por voz, [#591](https://github.com/nexusai-ucc/nexusAI/pull/591)), release 0.19.0 y build de los módulos AMD, modelo de producción |
 | **Marcos Bugliotti** | Corrección de DEF-04 (purga de posts de foro al borrar un curso, [#589](https://github.com/nexusai-ucc/nexusAI/pull/589)), paso Grunt estricto en el CI del plugin ([#593](https://github.com/nexusai-ucc/nexusAI/pull/593), [#594](https://github.com/nexusai-ucc/nexusAI/pull/594)), arreglos del feed de calendario y de la subida de archivos |
 
@@ -348,7 +353,7 @@ Usamos **Claude Code** (Anthropic) como asistente durante el TP, para escribir c
 |---|---|
 | Plan de pruebas versionado, con matriz ISO 25010 y trazabilidad | `docs/calidad/PLAN_DE_PRUEBAS.md`, `TRAZABILIDAD.md` |
 | Código de las pruebas (unitarias, integración, smoke, stress, esfuerzo), ejecutables con un comando | `services/api/tests` (`pytest`), `plugin/local/nexusai/tests` (`moodle-plugin-ci phpunit`), `react/src/**/*.test.*` (`npx vitest run`), `scripts/e2e_deployed.py`, `scripts/load/run_load.sh` |
-| Pipeline de CI como archivo, con una corrida completa en verde y una fallida que detectó un problema real | `.github/workflows/`. Verde: cualquier PR del TP, por ejemplo #646 (18/18). Fallida real: DEF-05 |
+| Pipeline de CI como archivo, con una corrida completa en verde y una fallida que detectó un problema real | `.github/workflows/`. Verde: cualquier PR del TP, por ejemplo #646 (18/18). Fallidas reales: DEF-05 y DEF-10 |
 | Reportes automáticos de cobertura, análisis estático y stress | Cobertura y SonarCloud en cada PR (`quality-gate.yml`); stress en el artifact de `load-test.yml` |
 | Documentación de la integración externa | `docs/calidad/INTEGRACION_EXTERNA.md`, `NexusAI/contracts/` |
 | Registro de defectos completo | GitHub Issues (label `tipo:defecto`) y `docs/calidad/REGISTRO_DEFECTOS.md` |
