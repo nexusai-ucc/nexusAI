@@ -1,6 +1,6 @@
 # Registro de defectos (TPC-06)
 
-> Issue [#578](https://github.com/nexusai-ucc/nexusAI/issues/578) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.3, 19/10/2026
+> Issue [#578](https://github.com/nexusai-ucc/nexusAI/issues/578) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.4, 21/10/2026
 
 El registro de defectos de NexusAI vive en **GitHub Issues**, con el formulario **🐞 Defecto** (`.github/ISSUE_TEMPLATE/defecto.yml`) y las labels `bug`, `tipo:defecto` y `severidad:*`. Este documento es la vista consolidada para el TP: lista cada defecto con su origen, su fix, su test de regresión y las corridas de CI que lo muestran.
 
@@ -38,6 +38,7 @@ Abierto ──► En curso ──► Test de regresión en ROJO ──► Fix �
 | [DEF-07](#def-07) | `embed_many` rompe con `TypeError` cuando el proveedor devuelve los embeddings sin `index` (Gemini) | HU-010 | Backend (proveedor de embeddings) | Media | **Prueba contra el proveedor real** (TPC-07, 19/10) | Corregido | [#628](https://github.com/nexusai-ucc/nexusAI/pull/628) | `tests/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index`, `tests/integration/test_llm_real.py` |
 | [DEF-08](#def-08) | El quiz con un tema sin material responde siempre en español cuando la similitud es baja (no sigue el idioma de la interfaz) | HU-031 | Backend (quiz) | Baja | **Tabla de decisión** de HU-031 (TPC-04, 19/10) | Corregido | [#632](https://github.com/nexusai-ucc/nexusAI/pull/632) | `tests/test_quiz_router.py::test_cp_quiz_19_tema_sin_material_responde_en_el_idioma_de_la_interfaz` |
 | [DEF-09](#def-09) | Con ~40 alumnos simultáneos el chat colapsa (p95 de 60 s, 32 % de chats sin respuesta) y se pierden registros de consumo: el request retiene su conexión durante el LLM y el registro pide otra del mismo pool | HU-001 · objetivo de rendimiento | Backend (base de datos / registro de consumo) | Alta | **Prueba de stress** (TPC-09, 19/10) | Corregido | [#644](https://github.com/nexusai-ucc/nexusAI/pull/644) | `tests/test_db_pool_contention.py` (Postgres real) · `tests/test_chat_stateless.py::test_messages_releases_the_db_connection_before_calling_the_llm`, `test_stream_releases_the_db_connection_before_streaming` |
+| [DEF-10](#def-10) | Dependencias con vulnerabilidades publicadas el 21/10: Pillow 12.3.0 (8 CVE, backend en producción) y vite 8.2.2 (`launch-editor`, solo desarrollo) | — (dependencias) | Backend + widget | Media | **Pipeline** (auditoría de dependencias) | Corregido | __PR__ | `pip-audit` y `npm audit` en `backend-ci` / `frontend-ci` |
 
 ### DEF-01
 
@@ -165,6 +166,28 @@ Con unos 15 chats en vuelo, todas las conexiones estaban retenidas y cada reques
 
 **Acción preventiva:** `test_db_pool_contention.py` es el primer test del backend contra **Postgres real** (lo provee backend-ci). Si alguien vuelve a abrir sesiones del registro con el pool de los requests, falla.
 
+### DEF-10
+
+El 21/10, el PR que lleva `development` a `staging` (#647) dio **rojo en las dos auditorías de dependencias**, sin que hubiera cambiado una sola línea de nuestro código. Se habían publicado vulnerabilidades nuevas en dos dependencias:
+
+| Auditoría | Dependencia | Vulnerabilidades | Dónde se usa | Corrección |
+|---|---|---|---|---|
+| `pip-audit` (backend) | **Pillow 12.3.0** | 8 CVE (CVE-2026-112395 a 112899) | En producción: el OCR de `extractor.py::_ocr_image` y, por dentro, `pdfplumber` y `pdf2image` | **13.0.0** (requiere Python ≥ 3.11, que es lo que usa la imagen) |
+| `npm audit` (widget) | **vite 8.2.2** (trae `launch-editor`) | 3 *high* (GHSA-698v-4r3x-3vcv, GHSA-r825-w8mm-5pxw, GHSA-587h-7wmj-h5pm) | Solo en desarrollo: es dependencia de vitest. No entra en el bundle del plugin | **8.3.5** (`npm audit fix`, sin `--force`) |
+
+**Verificación:**
+- con Pillow 13 pasan los 621 tests del backend (incluidos los de extracción e indexación) y el OCR abre imágenes;
+- `pip-audit` queda limpio, con las 10 excepciones ya justificadas en #317;
+- `npm audit` da 0 vulnerabilidades, y los 273 tests del widget pasan;
+- el build no cambia ningún archivo de `amd/`.
+
+**Por qué importa.** Es una ejecución fallida que detectó un problema real, de una clase distinta a DEF-05. Un pipeline que estaba en verde ayer puede ponerse rojo hoy sin que nadie toque el código, porque **las dependencias también cambian**: cada día se publican vulnerabilidades nuevas. Las auditorías corren en cada PR, así que lo detectaron antes de que la versión vulnerable llegara a staging.
+
+| Paso | Corrida | Resultado |
+|---|---|---|
+| Auditorías en el PR #647 | Backend CI [39604642181](https://github.com/nexusai-ucc/nexusAI/actions/runs/39604642181) · Frontend CI [39604642306](https://github.com/nexusai-ucc/nexusAI/actions/runs/39604642306) | 🔴 Pillow (8 CVE) y vite/`launch-editor` (3 high) |
+| Fix | __CORRIDAS__ | 🟢 |
+
 ## Ejecución fallida que detectó un problema real
 
 **DEF-05. "Sync derived repos"** publica el plugin y el backend en sus repos derivados (`moodle-local_nexusai`, `nexusai-backend`) en cada push a `development`.
@@ -178,7 +201,7 @@ Con unos 15 chats en vuelo, todas las conexiones estaban retenidas y cada reques
 - **Corrección:** se renovó el secret. Desde [38640827145](https://github.com/nexusai-ucc/nexusAI/actions/runs/38640827145) (14/10, 21:30) el workflow vuelve a verde en cada push.
 - **Lección:** los tokens con vencimiento son una dependencia que falla en silencio hasta que se usan. Queda como riesgo en el plan de pruebas: renovarlo antes de vencer, o pasar a una GitHub App con token de corta duración.
 
-También DEF-06 es una ejecución fallida que detectó un problema real (la fuga entre tests), y DEF-01 tiene su corrida en rojo.
+También DEF-10 (vulnerabilidades nuevas en dependencias, detectadas por las auditorías del pipeline) y DEF-06 son ejecuciones fallidas que detectaron un problema real (la fuga entre tests), y DEF-01 tiene su corrida en rojo.
 
 ## Observaciones de riesgo (no son defectos)
 
@@ -196,3 +219,4 @@ También DEF-06 es una ejecución fallida que detectó un problema real (la fuga
 | 1.1 | 19/10/2026 | DEF-07 (detectado por la prueba contra el proveedor real) y riesgo del modelo de producción |
 | 1.2 | 19/10/2026 | DEF-08 (detectado por una tabla de decisión) y columna de requisito, enlazada con [TRAZABILIDAD.md](TRAZABILIDAD.md) |
 | 1.3 | 19/10/2026 | DEF-09 (detectado por la prueba de stress) |
+| 1.4 | 21/10/2026 | DEF-10 (vulnerabilidades nuevas en dependencias, detectadas por el pipeline) |

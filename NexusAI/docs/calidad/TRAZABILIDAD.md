@@ -1,6 +1,6 @@
 # Matriz de trazabilidad: requisito → caso → test → defecto (TPC-04)
 
-> Issue [#576](https://github.com/nexusai-ucc/nexusAI/issues/576) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.1, 19/10/2026
+> Issue [#576](https://github.com/nexusai-ucc/nexusAI/issues/576) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.2, 21/10/2026
 
 La matriz responde dos preguntas:
 - **hacia adelante:** ¿qué prueba verifica cada requisito?
@@ -49,8 +49,9 @@ Sirve también para encontrar **brechas**: requisitos o criterios de aceptación
 | [DEF-07](REGISTRO_DEFECTOS.md#def-07) | HU-010 (indexación) | Prueba contra el proveedor real (TPC-07) | `api/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index` |
 | [DEF-08](REGISTRO_DEFECTOS.md#def-08) | HU-031 | **Tabla de decisión** de HU-031 (CP-QUIZ-19) | `api/test_quiz_router.py::test_cp_quiz_19_tema_sin_material_responde_en_el_idioma_de_la_interfaz` |
 | [DEF-09](REGISTRO_DEFECTOS.md#def-09) | HU-001 y el objetivo de rendimiento del plan | **Prueba de stress** (TPC-09) | `api/test_db_pool_contention.py` · `api/test_chat_stateless.py::test_messages_releases_the_db_connection_before_calling_the_llm` |
+| [DEF-10](REGISTRO_DEFECTOS.md#def-10) | — (dependencias de terceros) | Pipeline: auditorías `pip-audit` y `npm audit` | las mismas auditorías, en cada PR |
 
-DEF-05 y DEF-06 no salen de un requisito del producto: son defectos del proceso (CI y tests). Se listan para que la vista hacia atrás esté completa.
+DEF-05, DEF-06 y DEF-10 no salen de un requisito del producto: son defectos del proceso (CI y tests) o de las dependencias. Se listan para que la vista hacia atrás esté completa.
 
 ## 3. Brechas y discrepancias
 
@@ -61,7 +62,7 @@ DEF-05 y DEF-06 no salen de un requisito del producto: son defectos del proceso 
 | 🟡 Parcial | HU-060, criterio 3 | Que la ventana de días filtre | Test de `/gaps/list` con filas de distintas fechas y `days` 7 contra 365 |
 | ⚠️ Discrepancia | HU-031, criterio 1 | El criterio dice "similaridad < 0.4 o menos de 3 matches"; el código usa similitud < 0,5 más verificación con el LLM ([CASOS_DE_PRUEBA.md](CASOS_DE_PRUEBA.md) §4.3) | Actualizar el criterio en `05_historias_usuario.md`. El cambio fue deliberado: 0,4 dejaba pasar coincidencias espurias entre idiomas |
 
-**Resumen:** de 14 requisitos, 11 están cubiertos, 2 parcialmente y 1 tiene una brecha. Hay una discrepancia entre requisito y código, y los 9 defectos registrados quedan trazados.
+**Resumen:** de 14 requisitos, 11 están cubiertos, 2 parcialmente y 1 tiene una brecha. Hay una discrepancia entre requisito y código, y los 10 defectos registrados quedan trazados.
 
 ## Historial de versiones
 
@@ -69,3 +70,4 @@ DEF-05 y DEF-06 no salen de un requisito del producto: son defectos del proceso 
 |---|---|---|
 | 1.0 | 19/10/2026 | Matriz de 14 requisitos, vista hacia atrás de DEF-01 a DEF-08, brechas y discrepancias |
 | 1.1 | 19/10/2026 | DEF-09 (encontrado por la prueba de stress) |
+| 1.2 | 21/10/2026 | DEF-10 (dependencias) |
