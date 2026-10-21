@@ -1946,11 +1946,22 @@ que se renueve.
 
 ## Estado actual
 
-Al cierre de este informe, el plugin está en versión `0.19.0`
-(`MATURITY_BETA`), con las correcciones de los 16 puntos de MMR-301 y de
-los dos hallazgos adicionales ya sincronizadas al repositorio público
-(`nexusai-ucc/moodle-local_nexusai`), a la espera de la próxima devolución
-del revisor de Moodle HQ.
+El plugin fue **aprobado y publicado** en el Moodle Plugins Directory,
+en la misma versión `0.19.0` (`MATURITY_BETA`) que incorporó las
+correcciones de los 16 puntos de MMR-301 y de los dos hallazgos
+adicionales descritos arriba. El *listing* público confirma un último
+*release* del 15 de octubre de 2026 — un día después de la fecha de esa
+misma versión en el `CHANGELOG` del repositorio, consistente con el
+tiempo que toma la publicación una vez aprobada la revisión.
+
+![Figura 13](img/moodle-marketplace-listing.png){width=80%}
+
+> **Figura 13.** Ficha pública de NexusAI en el Moodle Plugins Directory.
+> *Fuente:* `https://marketplace.moodle.com/plugins/4243`, capturado el
+> 21/10/2026. *Texto alternativo:* la ficha del plugin "NexusAI" en el
+> Moodle Marketplace, con etiqueta "Free", botón de descarga, soporte
+> para Moodle 4.1 a 5.3, fecha del último *release* y tres capturas de
+> la interfaz real (calendario, chat en un curso, panel docente).
 
 \newpage
 
