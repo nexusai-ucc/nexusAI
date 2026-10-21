@@ -1,6 +1,6 @@
 # Despliegue continuo a staging y smoke test (TPC-08)
 
-> Issue [#580](https://github.com/nexusai-ucc/nexusAI/issues/580) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.1, 19/10/2026
+> Issue [#580](https://github.com/nexusai-ucc/nexusAI/issues/580) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.2, 21/10/2026
 
 Hasta TPC-08, el deploy del backend era 100 % manual: el admin de deploy entraba por SSH a la VM y traía el código a mano ([DEPLOY_ORACLE.md](../DEPLOY_ORACLE.md) §3). Nada verificaba después que el ambiente funcionara.
 
@@ -84,10 +84,14 @@ La URL es una **variable** y no está escrita en el workflow. En TPC-07 se repor
 |---|---|---|---|
 | 19/10/2026 | [39322298675](https://github.com/nexusai-ucc/nexusAI/actions/runs/39322298675) | **Deploy + verificación del commit + smoke completo** sobre `staging` @ `6dc94a0` (primer `workflow_dispatch` después del bootstrap manual) | 🟢 Deploy: rama OK, fast-forward, `nexusai-api` healthy; **DEPLOYED_SHA = commit pusheado**. Smoke: health 0,48 s · chat firmado HTTP 200 con `gpt-4o-mini` en **11,61 s** · anti-replay HTTP 401 |
 | 19/10/2026 | [39322438708](https://github.com/nexusai-ucc/nexusAI/actions/runs/39322438708) | **Smoke contra una URL que no responde**: `base_url=https://api.146.181.62.67.nip.io` (el dominio equivocado de la falsa alarma de TPC-07), sin deploy | 🔴 12 reintentos del health durante 2 min con `TLSV1_ALERT_INTERNAL_ERROR`, `FAIL` y **pipeline en rojo** (exit 1) |
+| 21/10/2026 | [39665714741](https://github.com/nexusai-ucc/nexusAI/actions/runs/39665714741), intento 1 | **Deploy real** del merge `development` → `staging` (#647) @ `8a06089`, con DEF-09 y DEF-10 | 🔴 La imagen se construyó, pero compose no pudo recrear `nexusai-api`: el nombre temporal del recreate lo tenía un contenedor viejo de un recreate anterior que no había terminado (`Conflict. The container name ... is already in use`). `deploy_vm.sh` cortó sin imprimir `DEPLOYED_SHA`, la verificación del commit falló y el smoke no corrió. Staging siguió atendiendo con la versión anterior |
+| 21/10/2026 | [39665714741](https://github.com/nexusai-ucc/nexusAI/actions/runs/39665714741), intento 2 | Re-ejecución del mismo commit después de que el admin borrara el contenedor viejo en la VM | 🟢 **DEPLOYED_SHA = `8a06089`** y smoke completo en verde |
 
 **Con eso se cumplen los tres criterios de la issue:** el workflow de CD está en el repo, hay una ejecución con deploy y smoke en verde, y el smoke pone el pipeline en rojo si staging no responde.
 
 **Observación de la primera corrida.** El chat firmado contra staging, con el LLM real, tardó **11,61 s**, por encima del SLA de 8 s de `TESTING.md` §6. Es una sola muestra: incluye la moderación por LLM, el embedding y la respuesta, y es la primera pregunta después del deploy, así que podría ser *cold start* (el SLA de *cold start* es < 15 s). El smoke no evalúa latencia a propósito, porque su trabajo es decir si el ambiente anda. La latencia con el proveedor real se mide en la corrida chica de [PRUEBAS_DE_CARGA.md](PRUEBAS_DE_CARGA.md) (TPC-09), con varias muestras y un umbral de p95.
+
+**El primer rojo no provocado (21/10).** La corrida roja del 19/10 la provocamos a propósito; la del 21/10 fue real y de una clase que ningún test de código podía ver: estado sucio en el Docker de la VM. La atajó la verificación del commit, que compara lo que quedó en la VM con lo pusheado. Sin ese paso, el pipeline podría haber dado verde con el smoke corriendo contra la versión vieja, que seguía respondiendo. Se resolvió como dice §4: el admin limpió la VM y se re-ejecutó el mismo commit, sin revertir nada.
 
 **Verificado en local antes del primer deploy** (19/10/2026):
 - `deploy_vm.sh` contra un repo de prueba con `sudo` y `docker` simulados:
@@ -102,3 +106,4 @@ La URL es una **variable** y no está escrita en el workflow. En TPC-07 se repor
 |---|---|---|
 | 1.0 | 19/10/2026 | Workflow de CD, script de deploy restringido, smoke con guarda de ambiente, configuración y plan de primeras corridas |
 | 1.1 | 19/10/2026 | Primeras corridas reales: verde (deploy + commit verificado + smoke) y roja provocada; observación de latencia |
+| 1.2 | 21/10/2026 | Primer rojo real (contenedor viejo en la VM) y su re-ejecución en verde |

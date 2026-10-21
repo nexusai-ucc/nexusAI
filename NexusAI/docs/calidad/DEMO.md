@@ -1,6 +1,6 @@
 # Guion de la demo (TPC-11)
 
-> Issue [#583](https://github.com/nexusai-ucc/nexusAI/issues/583) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.0, 20/10/2026
+> Issue [#583](https://github.com/nexusai-ucc/nexusAI/issues/583) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.1, 21/10/2026
 
 El enunciado pide una *"demostración con un despliegue nuevo, con las integraciones, pruebas y cargas exigidas"*. La demo dura unos **12 minutos**. Cada paso dice qué hacer, qué se ve y qué decir. Si algo falla en vivo, hay un plan B con una corrida ya hecha, porque el TP también se trata de mostrar que el pipeline detecta los problemas.
 
@@ -33,6 +33,7 @@ El enunciado pide una *"demostración con un despliegue nuevo, con las integraci
 - **Hacer:** *Actions* → *Integración externa (LLM real)* → *Run workflow*. Mientras corre, mostrar `NexusAI/contracts/` y [INTEGRACION_EXTERNA.md](INTEGRACION_EXTERNA.md) §2.
 - **Se ve:** los 3 tests contra Gemini (chat dentro del SLA, el fallback ante un 404 real y los embeddings de 768 dimensiones) y la tabla de latencias.
 - **Decir:** "Los dobles de prueba no podían mostrar que Gemini devuelve los embeddings sin `index` (DEF-07), ni que Google retira modelos sin aviso. Esta prueba sí."
+- **Ojo:** en el ensayo del 21/10 volvió a pasar ([33 s](https://github.com/nexusai-ucc/nexusAI/actions/runs/39681910580)). Si sale rojo en vivo, no es una falla de la demo: es el hallazgo que la prueba existe para mostrar.
 - **Plan B:** si Gemini tarda (ya pasó: [112 s](https://github.com/nexusai-ucc/nexusAI/actions/runs/39260816477)), es justamente lo que la prueba tiene que detectar. Mostrar la [corrida verde](https://github.com/nexusai-ucc/nexusAI/actions/runs/39257509226) como referencia.
 
 ### 4. Carga (3 min)
@@ -64,12 +65,16 @@ El enunciado pide una *"demostración con un despliegue nuevo, con las integraci
 
 | Fecha | Paso | Corrida | Resultado |
 |---|---|---|---|
-| _pendiente_ | 2 · Deploy + smoke | | |
-| _pendiente_ | 3 · Integración externa | | |
-| _pendiente_ | 4 · Carga contra staging | | |
+| 21/10/2026 | 2 · Deploy + smoke | [39665714741](https://github.com/nexusai-ucc/nexusAI/actions/runs/39665714741), intento 1 | 🔴 Un contenedor viejo en la VM impidió el recreate de compose; la verificación del commit lo detectó (`DEPLOYED_SHA` vacío) y el smoke no corrió |
+| 21/10/2026 | 2 · Deploy + smoke | [39665714741](https://github.com/nexusai-ucc/nexusAI/actions/runs/39665714741), intento 2 | 🟢 Después de que el admin limpiara la VM: `8a06089` desplegado y verificado, smoke OK |
+| 21/10/2026 | 3 · Integración externa | [39681910580](https://github.com/nexusai-ucc/nexusAI/actions/runs/39681910580) | 🔴 Chat contra Gemini en 33,15 s (SLA 8 s); fallback y embeddings 🟢 |
+| 21/10/2026 | 4 · Carga contra staging | [39681914662](https://github.com/nexusai-ucc/nexusAI/actions/runs/39681914662) | 🟢 Chat p50 3,27 s · p95 5,03 s · máx. 5,41 s; los 3 umbrales en verde |
+
+**Qué dejó el ensayo.** El deploy y la carga están listos para la demo. El paso 3 depende de la latencia de Gemini, que está fuera de nuestro control; por eso tiene el plan B preparado.
 
 ## Historial de versiones
 
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 20/10/2026 | Guion, preparación, plan B por paso y preguntas frecuentes |
+| 1.1 | 21/10/2026 | Ensayo de los pasos 2 a 4 después de promover `staging` a `main` |
