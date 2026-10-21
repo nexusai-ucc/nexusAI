@@ -1002,6 +1002,86 @@ flowchart TB
 > pasando por extracción de texto, limpieza, fragmentación y generación de
 > *embeddings*.
 
+### Funcionalidades post-MVP
+
+Los seis módulos descritos arriba son los que entregó el MVP de junio de
+2026. El desarrollo siguió después, organizado en epopeyas
+(`docs/presentaciones/NexusAI_Avances_2026-08-06.md`) que ya se nombran
+como alcance en "Alcance funcional", pero sin mostrar nunca cómo se ven
+realmente en uso. Esta sección cierra ese vacío con capturas del entorno
+desplegado localmente.
+
+![Figura 8a](img/studymode-plan.png){width=48%} ![Figura 8b](img/studymode-quiz.png){width=48%}
+
+> **Figura 8a/8b.** Modo Estudio: plan de repaso (izquierda) y *quiz* de
+> práctica (derecha). *Fuente:* elaboración propia, capturas de la versión
+> actual desplegada localmente. *Texto alternativo:* a la izquierda, una
+> recomendación de repaso generada a partir de un vacío de contenido
+> detectado, con botones "Practicar este tema" y "Ya lo entendí"; a la
+> derecha, una pregunta de opción múltiple de un *quiz* de práctica, con
+> cuatro alternativas y un botón "Verificar".
+
+El plan de repaso cruza dos fuentes que ya existen en el backend: los
+vacíos de contenido del módulo de *gaps* ya descrito, y los errores
+cometidos en *quizzes* anteriores. Sobre ese mismo *quiz* de práctica se
+agregaron después *flashcards* con repetición espaciada (algoritmo SM-2,
+SP-11/#315, 07/09/2026), que no se capturan acá por no tener una pantalla
+propia distinta del *quiz*.
+
+![Figura 9a](img/calendario.png){width=48%} ![Figura 9b](img/resumen-foro.png){width=48%}
+
+> **Figura 9a/9b.** Calendario de próximas entregas (izquierda) y resumen
+> semanal del foro (derecha). *Fuente:* elaboración propia, capturas de la
+> versión actual desplegada localmente. *Texto alternativo:* a la
+> izquierda, un estado sin exámenes ni entregas próximas, con opciones de
+> suscribirse al calendario o exportarlo como `.ics`; a la derecha, un
+> resumen sin actividad nueva en el foro esa semana, con un campo para
+> notificar también a un *webhook* externo.
+
+El calendario (CAL-02) expone las fechas del curso como *feed* `.ics`
+suscribible; un *bug* posterior de ese mismo *feed* —incluía usuarios
+suspendidos o eliminados— ya está contado en "Correcciones de la primera
+ronda" de la publicación en el Moodle Marketplace, sin repetirlo acá. El
+resumen del foro nació junto con los foros con asistencia de IA del MVP
+extendido, y sumó después la opción de reenviar el mismo resumen semanal
+a un *webhook* de Slack, Discord o Teams (FOR-07/#378, 08/09/2026), para
+que el docente no tenga que entrar a Moodle a leerlo.
+
+![Figura 10](img/preguntas-frecuentes.png){width=70%}
+
+> **Figura 10.** Panel docente: preguntas de alumnos agrupadas por tema.
+> *Fuente:* elaboración propia, captura de la versión actual desplegada
+> localmente. *Texto alternativo:* dos temas detectados a partir de
+> preguntas reales de alumnos, cada uno con la cantidad de veces
+> consultado y un ejemplo de la pregunta original.
+
+![Figura 11](img/analytics-docente.png){width=70%}
+
+> **Figura 11.** Panel docente: *Analytics*. *Fuente:* elaboración propia,
+> captura de la versión actual desplegada localmente. *Texto
+> alternativo:* métricas de uso del curso —*quizzes* de práctica, vacíos
+> de contenido, preguntas al asistente, temas consultados—, un indicador
+> de "salud del contenido" y la lista de preguntas más frecuentes.
+
+![Figura 12](img/generar-examen.png){width=70%}
+
+> **Figura 12.** Panel docente: generador de exámenes. *Fuente:*
+> elaboración propia, captura de la versión actual desplegada localmente.
+> *Texto alternativo:* una pregunta de opción múltiple generada a partir
+> del material del curso, con la fuente citada debajo y un botón para
+> exportar el banco completo en formato GIFT de Moodle.
+
+Las preguntas frecuentes de la Figura 10 comparten el mismo backend de
+analítica que la Figura 11 (DOC-D01): el texto de cada pregunta se
+normaliza y se agrupa primero, y recién después un LLM le pone nombre al
+tema resultante — pero el conteo de cuántas veces se preguntó cada tema
+siempre se recalcula en Python, nunca se le confía al LLM, el mismo
+criterio de no inventar que ya gobierna el resto del asistente. El
+generador de exámenes (EVAL-01/#235) pide que el docente elija a mano los
+archivos de origen en vez de usar todo el material del curso
+automáticamente, y resuelve la exportación al formato GIFT del lado del
+*frontend*, no del backend.
+
 ## Arquitectura técnica del backend
 
 Las Figuras 1 y 3 muestran la arquitectura y el flujo de una consulta a
