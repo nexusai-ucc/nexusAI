@@ -341,7 +341,7 @@ Cada uno quedó corregido con una prueba que impide que vuelva. Y lo que no cump
 
 # Aporte individual
 
-Armado con la evidencia del repositorio (commits, PRs e issues). *A confirmar por el equipo antes de la entrega.*
+Armado con la evidencia del repositorio (commits, PRs e issues) y confirmado por el equipo.
 
 | Integrante | Aporte en el TP |
 |---|---|
