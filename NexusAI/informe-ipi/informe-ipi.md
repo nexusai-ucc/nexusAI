@@ -803,22 +803,38 @@ fragmento utilizado con su porcentaje de similitud, e historial de conversacione
 por sesión, todo dentro del mismo panel. En dispositivos móviles el panel se
 comporta como una hoja a pantalla completa (*bottom-sheet*).
 
-![Figura 2a](img/chat-widget.png){width=48%} ![Figura 2b](img/search-widget.png){width=48%}
+![Figura 2a](img/chat-widget.png){width=40%}
 
-> **Figura 2a/2b.** Widget de chat (izquierda) respondiendo con cita a la fuente, y
-> buscador semántico (derecha) mostrando resultados resaltados. *Fuente:* elaboración
-> propia, capturas del MVP desplegado localmente. *Texto alternativo:* a la izquierda,
-> una conversación donde el asistente responde qué es el *clustering* citando el PDF
-> de origen; a la derecha, el buscador semántico devolviendo un resultado con el
-> término de búsqueda resaltado.
+> **Figura 2a.** Widget de chat respondiendo a una pregunta sobre K-means con
+> cita a la fuente. *Fuente:* elaboración propia, captura de la versión actual
+> desplegada localmente (panel lateral post-rediseño de agosto). *Texto
+> alternativo:* una conversación donde el asistente explica el algoritmo
+> K-means en pasos numerados, con un chip "Fuentes: clustering.md" debajo de
+> la respuesta.
 
-![Figura 2c](img/docente-panel.png){width=48%} ![Figura 2d](img/docente-gaps.png){width=48%}
+![Figura 2b](img/search-widget.png){width=70%}
 
-> **Figura 2c/2d.** Panel del docente: gestión de material indexado (izquierda) y
-> reporte de vacíos de contenido (derecha). *Fuente:* elaboración propia, capturas del
-> MVP desplegado localmente. *Texto alternativo:* a la izquierda, la tabla de
-> materiales subidos con su estado de indexación; a la derecha, una pregunta de un
-> alumno que el material no pudo responder bien, con su similitud promedio.
+> **Figura 2b.** Buscador semántico del panel docente, con el término "K-means"
+> resaltado dentro del resultado. *Fuente:* elaboración propia, captura de la
+> versión actual desplegada localmente. *Texto alternativo:* un campo de
+> búsqueda con filtros por tipo de archivo y unidad, devolviendo un
+> fragmento de texto con dos coincidencias del término buscado resaltadas.
+
+![Figura 2c](img/docente-panel.png){width=70%}
+
+> **Figura 2c.** Panel del docente: gestión de material indexado. *Fuente:*
+> elaboración propia, captura de la versión actual desplegada localmente.
+> *Texto alternativo:* la tabla de materiales subidos, con la unidad del
+> curso asignada, el estado de indexación y si el material está visible
+> para los alumnos.
+
+![Figura 2d](img/docente-gaps.png){width=70%}
+
+> **Figura 2d.** Panel del docente: preguntas de alumnos sin responder
+> (vacíos de contenido). *Fuente:* elaboración propia, captura de la versión
+> actual desplegada localmente. *Texto alternativo:* una pregunta real de
+> alumno ("¿Qué es el clustering?") marcada como "sin match", es decir, sin
+> una respuesta bien respaldada por el material indexado en ese momento.
 
 ### Proceso de diseño de la interfaz
 
@@ -876,8 +892,8 @@ panel que fijan estos *prompts* —400×600 píxeles en escritorio,
 describe esta misma subsección. Otras seis pantallas quedaron en una
 lista de pendientes, todavía sin *prompt* escrito.
 
-Las Figuras 2a a 2d de esta sección son capturas del MVP, anteriores al
-rediseño de agosto recién descrito.
+Las Figuras 2a a 2d de esta sección son capturas de la versión actual del
+*widget*, posterior al rediseño de agosto recién descrito.
 
 ## Implementación
 
