@@ -592,6 +592,18 @@ y rotar certificados en ambos extremos, una carga operativa comparable a la
 de los microservicios discutida arriba para un equipo y una infraestructura
 de este tamaño.
 
+Más allá de qué esquema de autenticación usar entre dos servicios propios,
+hay una pregunta previa: si el navegador del usuario final debe hablar
+directamente con el backend que orquesta el modelo de lenguaje, o si un
+intermediario ya autenticado por la plataforma —que actúa como *proxy*— es
+quien reenvía esa comunicación. Exponer el backend directo al navegador
+requiere resolver CORS y, sobre todo, decidir dónde vive la clave del
+proveedor de IA: si viaja al cliente, cualquier vulnerabilidad de *scripting*
+del lado del navegador puede filtrarla; un *proxy* autenticado evita ese
+riesgo porque la clave nunca sale del lado servidor, a costa de un salto de
+red adicional y de que el intermediario quede en el camino crítico de cada
+solicitud.
+
 ### Transporte de respuestas en tiempo real
 
 Para entregar la respuesta de un modelo de lenguaje token por token, en lugar
@@ -622,6 +634,20 @@ investigación* → *Contexto institucional relevado*), lo que convirtió a una
 infraestructura autogestionada, independiente de esa aprobación, en la
 alternativa con menor riesgo de bloqueo para sostener una demo funcionando
 durante todo el desarrollo.
+
+### Validación de datos en los límites del sistema
+
+Para los datos que llegan a una API desde un cliente externo existen, en
+términos generales, dos posturas. Una validación permisiva acepta y procesa
+la solicitud aunque lleguen campos no declarados en el contrato —el
+comportamiento por defecto de buena parte de las herramientas de
+validación—, lo que la hace más tolerante a cambios del lado del cliente,
+pero deja pasar en silencio parámetros inesperados, sea por un error de
+integración o por un intento deliberado de colar un campo no previsto. Una
+validación estricta, en cambio, rechaza con un error cualquier campo fuera
+del esquema declarado: sacrifica algo de flexibilidad a cambio de que
+cualquier desvío del contrato se note de inmediato, en el momento en que
+ocurre, en lugar de ejecutarse sin aviso.
 
 ## Opciones similares en el mercado
 
