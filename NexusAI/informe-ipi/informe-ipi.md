@@ -74,21 +74,20 @@ Compilar con ./build.sh
 
 El presente informe documenta el desarrollo de **NexusAI**, un asistente académico
 basado en inteligencia artificial integrado como plugin en la plataforma Moodle.
-**(Introducción)**
 
 Las plataformas de gestión del aprendizaje (LMS) como Moodle se utilizan
 mayoritariamente como repositorios documentales estáticos, mientras que los
 estudiantes recurren a asistentes de IA generales —ajenos al material de cada
 materia— para resolver sus dudas. Esto produce respuestas genéricas, dispersión
 de la información y pérdida de visibilidad del docente sobre las consultas del
-alumnado. **(Problema)**
+alumnado.
 
 Para abordar esta situación se diseñó e implementó un plugin de tipo `local` para
 Moodle, acompañado de un backend que aplica la técnica de *Retrieval-Augmented
 Generation* (RAG) sobre el material indexado de cada curso, almacenado en una base
 de datos vectorial. La solución recupera los fragmentos más relevantes del
 material y los provee como contexto a un modelo de lenguaje de gran escala, que
-responde citando explícitamente la fuente. **(Metodología)**
+responde citando explícitamente la fuente.
 
 El producto mínimo viable (MVP), entregado en junio de 2026, alcanzó siete
 funcionalidades en producción —buscador semántico, chat conversacional
@@ -99,7 +98,7 @@ desarrollo continuó de forma sostenida, incorporando foros con detección de
 posts similares y asistencia de IA, un panel de analítica para el docente,
 generación de exámenes exportables al formato nativo de Moodle, un plan de
 estudio personalizado que combina errores de práctica y vacíos detectados, y
-soporte para formatos de material adicionales al PDF. **(Resultado)**
+soporte para formatos de material adicionales al PDF.
 
 Los resultados muestran que es posible ofrecer asistencia académica contextualizada
 y auditable dentro del LMS institucional, preservando la soberanía de los datos y
@@ -2199,16 +2198,16 @@ estimado para 500 estudiantes activos, el costo se mantiene reducido.
 | Concepto | Escenario MVP (actual) | Escenario producción (anual, 500 alumnos) |
 |---|---|---|
 | Infraestructura (hosting, base de datos, *cache*, dominio) | ~$36 / año | ~$170 |
-| Servicios de IA (LLM + *embeddings*) | $0 (nivel gratuito) | ~$1.200 |
+| Servicios de IA (LLM + *embeddings*) | $0 (nivel gratuito) | ~$1.296 |
 | Mantenimiento (10 h/mes) | — | ~$1.440 |
-| **Total** | **~$36 / año** | **~$2.810** |
+| **Total** | **~$36 / año** | **~$2.906** |
 
-El costo de producción equivale a aproximadamente **$5,62 por estudiante por año**, un
+El costo de producción equivale a aproximadamente **$5,81 por estudiante por año**, un
 orden de magnitud por debajo de soluciones comerciales comparables.
 
 ## Costos de personal (valoración teórica)
 
-El equipo está compuesto por dos estudiantes de Ingeniería en Sistemas. Valorado a
+El equipo está compuesto por tres estudiantes de Ingeniería en Sistemas. Valorado a
 tarifa de mercado junior (~$12 por hora), el desarrollo del MVP representó
 aproximadamente **840 horas-persona**, equivalentes a una valoración teórica de
 **~$10.080**. Este monto **no constituye un costo real** para la institución —el trabajo
@@ -2289,8 +2288,10 @@ mediante una arquitectura autohospedada.
 
 Entre las **limitaciones** actuales se reconocen la ausencia de un esquema
 multi-institución nativo, la dependencia de la calidad del modelo de lenguaje en el
-generador de cuestionarios, y la cobertura manual de pruebas en el frontend y el
-plugin.
+generador de cuestionarios, la cobertura manual de pruebas en el frontend y el
+plugin, y la evaluación con usuarios reales (RNF-06 a RNF-09), que quedó pendiente de
+consolidar con métricas de latencia y un *golden set* de calidad de respuesta más allá
+de las pruebas internas del equipo.
 
 Como **trabajo futuro** se plantean la publicación del plugin en el directorio oficial de
 Moodle, la incorporación de pruebas automatizadas de frontend, y el agrupamiento
@@ -2388,6 +2389,8 @@ sección, y toda referencia listada fue utilizada en el informe.
   Systems, 33*, 9459–9474.
 - Microsoft. (s.f.). *Microsoft Copilot for Education*. Recuperado 2026, de
   https://www.microsoft.com/en-us/education/products/copilot
+- Moodle. (s.f.). *NexusAI — Moodle Plugins Directory*. Recuperado el 21 de octubre de
+  2026, de https://marketplace.moodle.com/plugins/4243
 - Moodle HQ. (2024). *Moodle Developer Documentation — Plugin types: local*.
   https://moodledev.io/docs/apis/plugintypes/local
 - Moodle HQ. (s.f.-a). *Moodle Developer Documentation — Access API*. Recuperado 2026,
