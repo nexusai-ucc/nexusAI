@@ -103,7 +103,7 @@ soporte para formatos de material adicionales al PDF.
 Los resultados muestran que es posible ofrecer asistencia académica contextualizada
 y auditable dentro del LMS institucional, preservando la soberanía de los datos y
 mitigando la alucinación de los modelos de lenguaje mediante la trazabilidad de las
-respuestas. **(Conclusión)**
+respuestas.
 
 **Palabras clave:** Moodle, inteligencia artificial, RAG, asistente académico,
 educación, soberanía de datos.
@@ -111,19 +111,18 @@ educación, soberanía de datos.
 ## Abstract
 
 This report documents the development of **NexusAI**, an artificial-intelligence
-academic assistant integrated as a plugin into the Moodle platform. **(Introduction)**
+academic assistant integrated as a plugin into the Moodle platform.
 
 Learning Management Systems (LMS) such as Moodle are mostly used as static document
 repositories, while students rely on general-purpose AI assistants —unaware of each
 subject's material— to solve their doubts. This leads to generic answers,
 information dispersion, and a loss of teacher visibility over student queries.
-**(Problem)**
 
 To address this, a Moodle `local` plugin was designed and implemented, together
 with a backend that applies Retrieval-Augmented Generation (RAG) over each course's
 indexed material, stored in a vector database. The solution retrieves the most
 relevant fragments and provides them as context to a large language model, which
-answers by explicitly citing its source. **(Methodology)**
+answers by explicitly citing its source.
 
 The minimum viable product (MVP), delivered in June 2026, reached seven production
 features —semantic search, multi-course conversational chat, response streaming,
@@ -132,11 +131,11 @@ automated test coverage close to 80% in the backend. Development continued
 steadily in the following months, adding forums with similar-post detection and
 AI assistance, a teacher analytics panel, exam generation exportable to Moodle's
 native format, a personalized study plan combining practice errors and detected
-gaps, and support for additional material formats beyond PDF. **(Result)**
+gaps, and support for additional material formats beyond PDF.
 
 Results show that contextualized and auditable academic assistance can be delivered
 within the institutional LMS while preserving data sovereignty and mitigating large
-language model hallucination through answer traceability. **(Conclusion)**
+language model hallucination through answer traceability.
 
 **Keywords:** Moodle, artificial intelligence, RAG, academic assistant, education,
 data sovereignty.
