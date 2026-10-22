@@ -899,7 +899,9 @@ ancho fijo y alto completo, en lugar del *dropdown* flotante de las primeras
 versiones. Presenta la respuesta en *streaming*, citas clickeables que expanden el
 fragmento utilizado con su porcentaje de similitud, e historial de conversaciones
 por sesión, todo dentro del mismo panel. En dispositivos móviles el panel se
-comporta como una hoja a pantalla completa (*bottom-sheet*).
+comporta como una hoja a pantalla completa (*bottom-sheet*). Como se observa en
+la Figura 2a, el panel responde con el texto en *streaming* y la cita a la
+fuente debajo de la respuesta.
 
 ![Figura 2a](img/chat-widget.png){width=40%}
 
