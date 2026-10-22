@@ -2,10 +2,23 @@
 
 Informe final del Proyecto Integrador siguiendo la **plantilla oficial UCC v2.1 - 2026**.
 
+> **Versión vigente: `informe-ipi.docx` (22/10/2026).** Incluye correcciones técnicas
+> verificadas contra el código, tablas y diagramas nuevos, fórmulas y formato A4 con
+> interlineado 1,5. `informe-ipi.pdf` se genera desde ese `.docx`:
+>
+> ```bash
+> soffice --headless --convert-to pdf informe-ipi.docx
+> ```
+>
+> `informe-ipi.md` quedó **desactualizado** respecto del `.docx` y se conserva como
+> versión anterior. No correr `build.sh` sin actualizar antes el `.md`: sobrescribe el PDF.
+
 ## Archivos
 
-- `informe-ipi.md` — documento único, autocontenido. Es el archivo que se edita.
-- `build.sh` — compila el `.md` a `informe-ipi.pdf` (pandoc + tectonic/xelatex).
+- `informe-ipi.docx` — versión vigente del informe. Es el archivo que se edita.
+- `informe-ipi.pdf` — exportación del `.docx`.
+- `informe-ipi.md` — versión anterior en Markdown (desactualizada).
+- `build.sh` — compila el `.md` a PDF (pandoc + tectonic/xelatex).
 
 ## Cómo compilar el PDF
 
