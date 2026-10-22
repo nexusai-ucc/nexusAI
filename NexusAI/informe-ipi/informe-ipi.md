@@ -510,11 +510,11 @@ decidir cada componente.
 
 ### Base de datos vectorial
 
-| Alternativa | Decisión | Motivo |
+| Alternativa | Características | Encaje con la escala del proyecto |
 |---|---|---|
-| **pgvector** (extensión de PostgreSQL) | Elegida | Un solo sistema para datos relacionales y vectoriales; permite combinar filtros SQL y búsqueda vectorial en una sola consulta. |
-| ChromaDB (ChromaDB, s.f.) | Descartada | Sistema separado de PostgreSQL: las consultas relacionales y vectoriales requieren dos llamadas y lógica de coordinación adicional. |
-| Pinecone / Weaviate / Qdrant | Descartadas | Se justifican a partir de decenas de millones de vectores con alta concurrencia; la escala proyectada de NexusAI (~240.000 vectores para toda la UCC, hasta ~4,8 millones en una expansión multi-institución) queda muy por debajo de ese umbral. |
+| **pgvector** (extensión de PostgreSQL) | Un solo sistema para datos relacionales y vectoriales; permite combinar filtros SQL y búsqueda vectorial en una sola consulta. | Pensado para integrarse a un backend que de todas formas necesita una base relacional, sin sumar una pieza de infraestructura más. |
+| ChromaDB (ChromaDB, s.f.) | Sistema separado de PostgreSQL: las consultas relacionales y vectoriales requieren dos llamadas y lógica de coordinación adicional. | Agrega un segundo sistema a operar y mantener disponible. |
+| Pinecone / Weaviate / Qdrant | Se justifican a partir de decenas de millones de vectores con alta concurrencia. | La escala proyectada de NexusAI (~240.000 vectores para toda la UCC, hasta ~4,8 millones en una expansión multi-institución) queda muy por debajo de ese umbral. |
 
 ### Modelos de lenguaje y *embeddings*
 
@@ -522,42 +522,106 @@ Se comparó el costo y las prestaciones de los modelos de lenguaje candidatos:
 Gemini 2.5 Flash ofrece una capa gratuita suficiente para un MVP sin costo
 operativo, pero sin garantías de nivel de servicio para producción (Google,
 s.f.-a); GPT-4o-mini resulta significativamente más económico que GPT-4o y es
-la referencia de facto del mercado para este tipo de tareas, por lo que se lo
-eligió como modelo de producción, reservando GPT-4o para casos de razonamiento
-más complejo (OpenAI, s.f.-b). Dado que prácticamente todos los proveedores
+la referencia de facto del mercado para este tipo de tareas, reservando GPT-4o
+para casos de razonamiento más complejo (OpenAI, s.f.-b). Un punto a favor de
+cualquiera de las dos opciones es que prácticamente todos los proveedores
 relevantes exponen una interfaz compatible con el SDK de OpenAI —incluido
-Gemini (Google, s.f.-a)— se diseñó una abstracción propia (`LLMProvider` /
-`EmbeddingProvider`) que permite cambiar de proveedor modificando únicamente
-una variable de entorno, en lugar de adoptar un *framework* de orquestación
-como LangChain, descartado por su peso y la inestabilidad de su API entre
+Gemini (Google, s.f.-a)—, lo que habilita una abstracción común sobre ambos sin
+atarse a un proveedor específico, en lugar de adoptar un *framework* de
+orquestación como LangChain, cuya API ha mostrado inestabilidad entre
 versiones.
 
 ### Arquitectura de plugin Moodle
 
 Moodle admite varios tipos de plugin (`local`, `block`, `mod`, `filter`,
-`auth`, entre otros). Se descartó `block` porque, con el tema Boost de Moodle
-4.x, los bloques quedan ocultos en un panel lateral y cada docente debería
-agregarlo curso por curso manualmente. Se evaluó también el **subsistema de IA
-nativo de Moodle 4.5+**, y se descartó por carecer de un estado de memoria
-conversacional persistente a lo largo del cuatrimestre —limitación funcional
-del núcleo que motiva, en gran medida, el desarrollo de un plugin propio en
-lugar de adoptar la funcionalidad ya incorporada a la plataforma. Se eligió
-finalmente un plugin de tipo `local`, que permite definir *web services*,
-tareas programadas y *hooks* propios sin depender de que el docente lo agregue
-manualmente a cada curso.
+`auth`, entre otros), cada uno con su propio ciclo de vida y nivel de
+integración con el núcleo. Un `block` queda descartado para este caso de uso
+porque, con el tema Boost de Moodle 4.x, los bloques quedan ocultos en un
+panel lateral y cada docente debería agregarlo curso por curso manualmente.
+El **subsistema de IA nativo de Moodle 4.5+** tampoco cubre el caso de uso:
+carece de un estado de memoria conversacional persistente a lo largo del
+cuatrimestre, limitación funcional del núcleo que condiciona cualquier
+asistente que necesite recordar el contexto de una conversación entre
+sesiones. Un plugin de tipo `local`, en cambio, permite definir *web
+services*, tareas programadas y *hooks* propios sin depender de que el
+docente lo agregue manualmente a cada curso.
 
 ### Extracción y fragmentación de documentos
 
-Para la extracción de texto de los materiales subidos por el docente se evaluó
-pdfplumber frente a PyPDF2/pypdf (extracción deficiente en PDFs con diseño
-complejo), pdfminer.six (interfaz más compleja de integrar) y PyMuPDF
-(descartado por su licencia AGPL, incompatible con la distribución del
-plugin); pdfplumber (pdfplumber, s.f.) se eligió por su manejo nativo de
-tablas y diseño de página. Para la fragmentación (*chunking*) se adoptaron
-fragmentos de aproximadamente 500 tokens con 10% de superposición entre
-fragmentos consecutivos: los fragmentos pequeños mejoran la precisión de la
-recuperación semántica, mientras que la superposición mitiga la pérdida de
-contexto cuando un fragmento corta una oración o una idea a la mitad.
+Para la extracción de texto de los materiales subidos por el docente se
+compararon PyPDF2/pypdf (extracción deficiente en PDFs con diseño complejo),
+pdfminer.six (interfaz más compleja de integrar), PyMuPDF (licencia AGPL,
+incompatible con la distribución de un plugin que se publica en un directorio
+de terceros) y pdfplumber (pdfplumber, s.f.), con mejor manejo nativo de
+tablas y diseño de página que las anteriores. Para la fragmentación
+(*chunking*), el tamaño del fragmento es en sí mismo un *trade-off*: los
+fragmentos pequeños mejoran la precisión de la recuperación semántica,
+mientras que cierto grado de superposición entre fragmentos consecutivos
+mitiga la pérdida de contexto cuando uno de ellos corta una oración o una idea
+a la mitad.
+
+### Estilos de arquitectura del backend
+
+Para un backend que debe ejecutar varias responsabilidades (conversación,
+indexación de material, *analytics*) existen, en términos generales, dos
+estilos: un **monolito** organizado internamente por dominios, o una
+**arquitectura de microservicios** con un proceso independiente por
+responsabilidad. Microservicios ofrecen escalado y despliegue independiente
+por componente, a costa de una complejidad operativa considerable: cada
+servicio necesita su propio *pipeline* de CI/CD, descubrimiento de servicios y
+manejo de fallas de red entre procesos que antes eran simples llamadas de
+función. Para un equipo reducido —en este caso, de tres personas— y una
+infraestructura con recursos acotados, esa complejidad adicional compite
+directamente con el tiempo disponible para desarrollar funcionalidad; un
+monolito organizado por dominios internos ofrece gran parte del orden que
+los microservicios buscan imponer, sin la sobrecarga operativa de
+coordinar múltiples procesos desplegados por separado.
+
+### Autenticación servicio-a-servicio
+
+Cuando dos servicios propios —no un usuario y un servicio— necesitan
+autenticarse entre sí sin mantener estado, las alternativas más comunes son
+HMAC con *timestamp* y *nonce*, JWT, y mTLS. JWT está pensado sobre todo para
+delegar la identidad de un usuario entre sistemas (por ejemplo, para que un
+*frontend* pruebe ante un backend quién es el usuario logueado), un problema
+distinto al de dos servicios propios que ya confían en el canal que los
+conecta; HMAC resuelve integridad y autenticidad del mensaje con un secreto
+compartido, sin necesidad de un token con información de identidad. mTLS
+ofrece una garantía más fuerte a nivel de transporte, pero implica distribuir
+y rotar certificados en ambos extremos, una carga operativa comparable a la
+de los microservicios discutida arriba para un equipo y una infraestructura
+de este tamaño.
+
+### Transporte de respuestas en tiempo real
+
+Para entregar la respuesta de un modelo de lenguaje token por token, en lugar
+de esperar a que esté completa, las opciones principales son *Server-Sent
+Events* (SSE) y WebSockets (el *long-polling* queda descartado de entrada por
+la latencia que agrega). WebSockets ofrece un canal bidireccional persistente,
+pero requiere un *upgrade* de protocolo HTTP que varios *proxies* y
+*firewalls* corporativos o universitarios bloquean o manejan de forma
+inconsistente. SSE, en cambio, es unidireccional (servidor → cliente) y corre
+sobre HTTP puro, sin *upgrade* de protocolo — suficiente para un caso de uso
+donde el cliente solo necesita recibir texto a medida que se genera, sin
+enviar datos por el mismo canal mientras la respuesta está en curso.
+
+### Infraestructura de despliegue
+
+Para alojar el backend se compararon tres categorías de infraestructura: un
+PaaS gestionado (por ejemplo Railway o Fly.io), que simplifica el despliegue
+a cambio de un costo recurrente y menos control sobre el entorno; una IaaS
+con nivel gratuito permanente (por ejemplo Oracle Cloud *Always Free*), que
+exige administrar el sistema operativo y el *stack* de contenedores a mano,
+pero sin costo mientras el proyecto se mantenga dentro de los límites del
+nivel gratuito; e infraestructura propia de la institución, que eliminaría
+el costo de hosting pero depende de un proceso de aprobación administrado por
+un tercero, con plazos fuera del control del equipo. Esta última opción es
+justamente la que el relevamiento institucional de la UCC dejó sin resolver
+dentro del plazo del proyecto (ver *Relevamiento y metodología de
+investigación* → *Contexto institucional relevado*), lo que convirtió a una
+infraestructura autogestionada, independiente de esa aprobación, en la
+alternativa con menor riesgo de bloqueo para sostener una demo funcionando
+durante todo el desarrollo.
 
 ## Opciones similares en el mercado
 
@@ -650,12 +714,12 @@ introdujo un subsistema de IA con arquitectura *Placement → Manager → Provid
 APIs externas y el *Manager* media entre ambos, gestionando límites de uso, registro y
 aceptación de políticas. Su limitación central para este proyecto es que solo expone
 tres acciones —`generate_text`, `generate_image` y `summarise_text`— sin ninguna acción
-nativa de conversación con historial persistente, que es el requisito central de
-NexusAI (RF-01, RF-06). A eso se suma que el subsistema no existe antes de Moodle 4.5,
-mientras que el proyecto necesitaba compatibilidad desde 4.1 al momento de diseñarse.
-Por ambos motivos se optó por un plugin `local` autocontenido en lugar de construir
-sobre el subsistema nativo, decisión coherente con la elección de tipo de plugin
-descrita en la sección anterior.
+nativa de conversación con historial persistente, el tipo de interacción que motiva
+este proyecto. A eso se suma que el subsistema no existe antes de Moodle 4.5, mientras
+que el proyecto necesitaba compatibilidad desde 4.1 al momento de diseñarse. Ambas
+limitaciones apuntan en la misma dirección que la comparación de tipos de plugin de
+la sección anterior: un plugin autocontenido, que no dependa de la maduración de un
+subsistema todavía incompleto, resulta más adecuado para este caso de uso.
 
 El principal riesgo competitivo identificado es que Moodle HQ madure este subsistema
 nativo y agregue una acción de chat con historial en una versión futura; la mitigación
