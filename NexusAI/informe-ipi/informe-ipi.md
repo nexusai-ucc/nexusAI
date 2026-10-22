@@ -161,7 +161,15 @@ entorno donde reside el material académico validado.
 
 El problema que motiva el proyecto se desarrolla en detalle en la sección
 *Diagnóstico*, y constituye el eje central sobre el cual se articula el resto del
-informe.
+informe. El relevamiento formal realizado para este proyecto (166 estudiantes y
+17 docentes de la UCC) confirma la brecha: el 100% de quienes respondieron ya usa
+un asistente de IA generalista para estudiar, y el 80,7% de los estudiantes
+percibe dispersión de la información entre el material del curso y esas
+herramientas externas. NexusAI responde a esa brecha con tres capacidades
+concretas dentro del propio Moodle: un asistente conversacional que cita la
+fuente exacta del material, un generador de ejercicios de práctica a partir de
+ese mismo material, y la detección automática de los vacíos de contenido que
+quedan sin responder.
 
 \newpage
 
@@ -824,7 +832,9 @@ directamente con el backend: toda llamada pasa por el plugin de Moodle, que act�
 proxy autenticado (patrón *Hybrid PHP Proxy*). Este diseño resuelve tres cuestiones de
 manera simultánea: la clave de la API del LLM nunca llega al navegador, la protección
 ante CSRF queda cubierta por el mecanismo nativo de Moodle, y se evitan los problemas
-de CORS al existir una única comunicación servidor-a-servidor.
+de CORS al existir una única comunicación servidor-a-servidor. Como se observa en la
+Figura 1, el navegador solo habla con el plugin PHP, que es quien reenvía cada
+solicitud al backend y a los proveedores de LLM y *embeddings*.
 
 ```mermaid
 flowchart TB
@@ -900,6 +910,9 @@ comporta como una hoja a pantalla completa (*bottom-sheet*).
 > K-means en pasos numerados, con un chip "Fuentes: clustering.md" debajo de
 > la respuesta.
 
+El panel docente ofrece, además, un buscador semántico sobre el mismo material
+indexado, como se observa en la Figura 2b.
+
 ![Figura 2b](img/search-widget.png){width=70%}
 
 > **Figura 2b.** Buscador semántico del panel docente, con el término "K-means"
@@ -908,6 +921,9 @@ comporta como una hoja a pantalla completa (*bottom-sheet*).
 > búsqueda con filtros por tipo de archivo y unidad, devolviendo un
 > fragmento de texto con dos coincidencias del término buscado resaltadas.
 
+Desde el mismo panel, el docente gestiona el material indexado y su estado, según
+se muestra en la Figura 2c.
+
 ![Figura 2c](img/docente-panel.png){width=70%}
 
 > **Figura 2c.** Panel del docente: gestión de material indexado. *Fuente:*
@@ -915,6 +931,9 @@ comporta como una hoja a pantalla completa (*bottom-sheet*).
 > *Texto alternativo:* la tabla de materiales subidos, con la unidad del
 > curso asignada, el estado de indexación y si el material está visible
 > para los alumnos.
+
+El panel también expone las preguntas de alumnos sin responder, es decir los vacíos
+de contenido detectados, como se observa en la Figura 2d.
 
 ![Figura 2d](img/docente-gaps.png){width=70%}
 
@@ -1004,6 +1023,10 @@ lo divide en fragmentos de aproximadamente 512 tokens con solapamiento, genera l
 **pgvector** (pgvector, s.f.), actualizando el estado del
 documento (`pending → indexing → indexed | error`).
 
+Como se observa en la Figura 3, la secuencia completa de una consulta del
+estudiante atraviesa autenticación, limitación de tasa, búsqueda vectorial y
+generación de la respuesta en *streaming*:
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -1066,6 +1089,10 @@ sequenceDiagram
 > en streaming, pasando por autenticación, rate limiting, embedding de la pregunta,
 > búsqueda vectorial y generación con el LLM.
 
+El pipeline de indexación corre en paralelo, de forma asíncrona y previa a cualquier
+consulta: la Figura 4 muestra el flujo completo, desde que el docente sube un
+documento hasta que queda disponible para la búsqueda vectorial.
+
 ```mermaid
 flowchart TB
     A[PDFs/DOCX/TXT<br/>en mdl_files] -->|cron o trigger docente| B[Plugin PHP<br/>extrae binario]
@@ -1097,7 +1124,7 @@ Los seis módulos descritos arriba son los que entregó el MVP de junio de
 (`docs/presentaciones/NexusAI_Avances_2026-08-06.md`) que ya se nombran
 como alcance en "Alcance funcional", pero sin mostrar nunca cómo se ven
 realmente en uso. Esta sección cierra ese vacío con capturas del entorno
-desplegado localmente.
+desplegado localmente, como se observa en las Figuras 5a y 5b.
 
 ![Figura 5a](img/studymode-plan.png){width=48%} ![Figura 5b](img/studymode-quiz.png){width=48%}
 
@@ -1114,7 +1141,9 @@ vacíos de contenido del módulo de *gaps* ya descrito, y los errores
 cometidos en *quizzes* anteriores. Sobre ese mismo *quiz* de práctica se
 agregaron después *flashcards* con repetición espaciada (algoritmo SM-2,
 SP-11/#315, 07/09/2026), que no se capturan acá por no tener una pantalla
-propia distinta del *quiz*.
+propia distinta del *quiz*. El calendario y el resumen semanal del foro,
+en cambio, sí tienen pantalla propia, como se observa en las Figuras 6a
+y 6b.
 
 ![Figura 6a](img/calendario.png){width=48%} ![Figura 6b](img/resumen-foro.png){width=48%}
 
@@ -1135,6 +1164,9 @@ extendido, y sumó después la opción de reenviar el mismo resumen semanal
 a un *webhook* de Slack, Discord o Teams (FOR-07/#378, 08/09/2026), para
 que el docente no tenga que entrar a Moodle a leerlo.
 
+El mismo panel docente agrupa automáticamente las preguntas de los alumnos por
+tema, como se observa en la Figura 7.
+
 ![Figura 7](img/preguntas-frecuentes.png){width=70%}
 
 > **Figura 7.** Panel docente: preguntas de alumnos agrupadas por tema.
@@ -1143,6 +1175,9 @@ que el docente no tenga que entrar a Moodle a leerlo.
 > preguntas reales de alumnos, cada uno con la cantidad de veces
 > consultado y un ejemplo de la pregunta original.
 
+El panel de *Analytics* reúne estas y otras métricas de uso del curso en una sola
+vista, como se observa en la Figura 8.
+
 ![Figura 8](img/analytics-docente.png){width=70%}
 
 > **Figura 8.** Panel docente: *Analytics*. *Fuente:* elaboración propia,
@@ -1150,6 +1185,9 @@ que el docente no tenga que entrar a Moodle a leerlo.
 > alternativo:* métricas de uso del curso —*quizzes* de práctica, vacíos
 > de contenido, preguntas al asistente, temas consultados—, un indicador
 > de "salud del contenido" y la lista de preguntas más frecuentes.
+
+El generador de exámenes completa el panel docente, como se observa en la
+Figura 9.
 
 ![Figura 9](img/generar-examen.png){width=70%}
 
@@ -1701,7 +1739,8 @@ contenido del curso no puede sobreescribir.
 El ADR-011 (Anexo E) ya cuenta por qué el backend pasó por tres destinos
 de despliegue distintos a lo largo del proyecto hasta quedar en Oracle
 Cloud. Esta sección documenta cómo es ese despliegue en la práctica, no
-por qué cambió.
+por qué cambió. Como se observa en la Figura 10, el plan original ubicaba el
+backend sobre infraestructura propia de la UCC.
 
 ```mermaid
 flowchart TB
@@ -1745,6 +1784,9 @@ flowchart TB
 > Railway/Hetzner y el PostgreSQL de la UCC por infraestructura
 > autogestionada en Oracle Cloud, y nunca llegó a correr Moodle junto al
 > resto del *stack*.
+
+La Figura 11, en cambio, muestra la topología real, vigente desde agosto de
+2026:
 
 ```mermaid
 flowchart TB
@@ -2038,7 +2080,8 @@ correcciones de los 16 puntos de MMR-301 y de los dos hallazgos
 adicionales descritos arriba. El *listing* público confirma un último
 *release* del 15 de octubre de 2026 — un día después de la fecha de esa
 misma versión en el `CHANGELOG` del repositorio, consistente con el
-tiempo que toma la publicación una vez aprobada la revisión.
+tiempo que toma la publicación una vez aprobada la revisión. Como se observa en
+la Figura 12, la ficha pública ya refleja esa versión.
 
 ![Figura 12](img/moodle-marketplace-listing.png){width=80%}
 
@@ -2170,15 +2213,22 @@ Tras la implementación del proyecto se esperan los siguientes beneficios, tanto
 tangibles como intangibles:
 
 - **Acceso a asistencia académica disponible de forma permanente (24/7)** sobre el
-  material real del curso, sin necesidad de incorporar personal de tutoría adicional.
+  material real del curso, sin necesidad de incorporar personal de tutoría adicional
+  — con siete funcionalidades ya en producción y una cobertura de pruebas
+  automatizadas cercana al 80% en el backend (ver Diagnóstico y Propuesta de
+  Solución).
 - **Reducción de la dispersión de la información**, al concentrar las consultas dentro
-  del campus virtual donde reside el material validado.
+  del campus virtual donde reside el material validado: el relevamiento propio mostró
+  que el 80,7% de los estudiantes percibía esa dispersión antes de la implementación.
 - **Mejora en la toma de decisiones del docente**, mediante el reporte de vacíos de
   contenido que evidencia qué temas no quedan cubiertos por el material.
 - **Mitigación del riesgo de respuestas incorrectas**, gracias a la trazabilidad de
   cada respuesta hacia su fragmento de origen.
 - **Preservación de la soberanía de los datos académicos**, al mantenerlos en la
   infraestructura controlada por la institución.
+- **Costo operativo bajo**: ~$5,81 por estudiante al año en el escenario de
+  producción estimado (ver Impacto Económico), un orden de magnitud por debajo de
+  soluciones comerciales comparables.
 
 \newpage
 
@@ -2260,8 +2310,10 @@ de recursos de cómputo:
 - **Uso eficiente de la energía:** la arquitectura de un único servicio (monolito
   modular) y el uso de una sola base de datos reducen la huella de cómputo frente a
   arquitecturas distribuidas más complejas.
-- **Aprovechamiento de niveles gratuitos y recursos compartidos:** el despliegue del MVP
-  utiliza infraestructura compartida, evitando el aprovisionamiento de hardware dedicado.
+- **Aprovechamiento de niveles gratuitos y recursos compartidos:** el despliegue real
+  corre sobre dos VMs `VM.Standard.E2.1.Micro` (1 OCPU / 1 GB RAM cada una) del nivel
+  *Always Free* de Oracle Cloud —una de *staging* y otra de producción—, sin
+  aprovisionar hardware dedicado adicional.
 - **Sostenibilidad a largo plazo:** la abstracción multi-proveedor permite migrar a
   modelos de IA más eficientes a medida que estén disponibles, sin rediseñar el sistema.
 
@@ -2519,7 +2571,8 @@ prioridad en el contexto del MVP y el sprint donde se implementó.
 ## Anexo B — Modelo de datos
 
 NexusAI usa una sola base de datos PostgreSQL con la extensión pgvector activada; los
-embeddings vectoriales y los datos relacionales viven en la misma instancia.
+embeddings vectoriales y los datos relacionales viven en la misma instancia. Como se
+observa en la Figura 13, el modelo vigente solo tiene dos tablas.
 
 ```mermaid
 erDiagram
