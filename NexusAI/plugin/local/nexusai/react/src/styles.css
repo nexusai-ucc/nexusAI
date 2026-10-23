@@ -53,7 +53,7 @@
     /* Texto */
     --nexusai-fg:             #0f172a;
     --nexusai-fg-muted:       #5b687c;
-    --nexusai-fg-subtle:      #64748b;
+    --nexusai-fg-subtle:      #5f6b7e;
 
     /* Code blocks (dark background in light mode too) */
     --nexusai-code-bg:        #1e293b;
@@ -113,6 +113,9 @@
    has its own equivalent block.
 ============================================================ */
 @media (prefers-color-scheme: dark) {
+    /* #818cf8 on its own translucent tint is 4.22:1 */
+    .nexusai-widget .nexusai-calendar-item__badge { color: var(--nexusai-primary-hover); }
+
     .nexusai-widget {
         --nexusai-primary:        #818cf8;
         --nexusai-primary-hover:  #a5b4fc;
@@ -133,7 +136,7 @@
 
         --nexusai-fg:             #e2e8f0;
         --nexusai-fg-muted:       #94a3b8;
-        --nexusai-fg-subtle:      #8b9ab0;
+        --nexusai-fg-subtle:      #94a3b8;
 
         --nexusai-code-bg:        #020617;
         --nexusai-code-fg:        #e2e8f0;
@@ -3793,8 +3796,8 @@
     padding: 1px 8px;
     border-radius: var(--nexusai-radius-full);
 }
-.nexusai-onb__status--done    { background: rgba(34, 197, 94, 0.15); color: #15803d; }
-.nexusai-onb__status--pending { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+.nexusai-onb__status--done    { background: rgba(34, 197, 94, 0.15); color: var(--nexusai-success-fg, #166534); }
+.nexusai-onb__status--pending { background: rgba(245, 158, 11, 0.15); color: var(--nexusai-warning-fg, #92400e); }
 .nexusai-onb__status--skipped { background: var(--nexusai-bg-subtle); color: var(--nexusai-fg-subtle); }
 
 .nexusai-onb__step-why {
@@ -3959,8 +3962,8 @@
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: #f7f8fc;
-    border: 1px solid #e8edf5;
+    background: var(--nexusai-surface, #f7f8fc);
+    border: 1px solid var(--nexusai-border, #e8edf5);
     border-radius: 8px;
 }
 .nexusai-forumdigest__item--urgent {
@@ -4007,7 +4010,7 @@
     padding: 2px 7px;
     font-size: 10.5px;
     font-weight: 600;
-    color: #b91c1c;
+    color: var(--nexusai-danger-fg, #991b1b);
     background: rgba(220, 38, 38, 0.1);
     border-radius: var(--nexusai-radius-full, 9999px);
 }
@@ -4080,4 +4083,28 @@
     .nexusai-budget__fill {
         transition: none;
     }
+}
+
+/* WCAG 2.3.3: with "reduce motion" on, no animations or transitions —
+   neither the panel opening nor the messages or the typing dots. */
+@media (prefers-reduced-motion: reduce) {
+    .nexusai-widget *,
+    .nexusai-widget *::before,
+    .nexusai-widget *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+.nexusai-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
 }

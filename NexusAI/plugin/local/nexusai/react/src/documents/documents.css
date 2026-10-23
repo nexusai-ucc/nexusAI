@@ -50,7 +50,7 @@
     --nexusai-border-hover:   #c6d4f0;
     --nexusai-fg:             #0f172a;
     --nexusai-fg-muted:       #5b687c;
-    --nexusai-fg-subtle:      #64748b;
+    --nexusai-fg-subtle:      #5f6b7e;
     --nexusai-success-bg:     #f0fdf4;
     --nexusai-success-fg:     #166534;
     --nexusai-success-border: #bbf7d0;
@@ -409,6 +409,7 @@
    Tabla
 ============================================================ */
 .nexusai-table-wrap {
+    position: relative; /* keeps the absolute .nexusai-sr-only header inside the scroll box */
     border: 1px solid var(--nexusai-border, #e2e8f0);
     border-radius: var(--nexusai-radius, 8px);
     overflow-x: auto;
@@ -1775,7 +1776,7 @@
 
         --nexusai-fg:             #e2e8f0;
         --nexusai-fg-muted:       #94a3b8;
-        --nexusai-fg-subtle:      #8b9ab0;
+        --nexusai-fg-subtle:      #94a3b8;
 
         --nexusai-success-bg:     #0f2a1c;
         --nexusai-success-fg:     #4ade80;
@@ -2114,4 +2115,33 @@
     margin: 0 0 12px;
     font-size: 0.85em;
     color: var(--nexusai-fg-muted, #64748b);
+}
+
+/* WCAG 1.4.10 (reflow): below 720px — 1280px at 175% zoom or more — the
+   sidebar goes above the content instead of squeezing it into a page that
+   scrolls sideways. */
+@media (max-width: 720px) {
+    .nexusai-documents {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .nexusai-doc-sidebar {
+        width: auto;
+        position: static;
+    }
+    .nexusai-dropzone {
+        padding: 24px 16px;
+    }
+}
+
+/* WCAG 2.3.3: with "reduce motion" on, no animations or transitions —
+   neither the panel opening nor the messages or the typing dots. */
+@media (prefers-reduced-motion: reduce) {
+    .nexusai-documents *,
+    .nexusai-documents *::before,
+    .nexusai-documents *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
 }

@@ -13,6 +13,19 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   in light mode and lighter in dark mode. In dark mode the teacher panel now has
   its own dark background, since its sidebar and intro sat on Moodle's white page.
 - Fixed: the actions column of the materials table has a header for screen readers.
+- Fixed: more accessibility issues found by a full audit (axe-core on every tab,
+  keyboard, 320px reflow, 200% zoom, text spacing, reduced motion):
+  - "Reduce motion" now stops every animation and transition (it only affected
+    the usage bar); the chat auto-scroll is no longer smooth in that mode.
+  - Opening the chat moves focus to the question box; closing it (Escape or the
+    close button) gives focus back to the icon that opened it.
+  - A finished answer is read out by screen readers (`aria-live` region).
+  - Calendar events take their accessible name from the visible text.
+  - Contrast fixes in Calendar, Course review and Forum digest.
+  - The teacher panel no longer scrolls sideways at 320px or 200% zoom: the
+    sidebar goes above the content below 720px.
+  - The active teacher panel tab has `aria-current`; the chat panel title is an
+    `h2`.
 - Security: DOMPurify 3.4.17 (fixes GHSA-cg2g-xh64-v4q7, GHSA-mrv2-3pqr-j5jr and
   GHSA-c6gr-qvv4-5v3f) and Vitest 4.1.12 for the tests (GHSA-qxg6-89mg-rqv8).
 

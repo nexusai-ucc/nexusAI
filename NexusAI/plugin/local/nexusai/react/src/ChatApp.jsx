@@ -188,6 +188,9 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [multiCourse, setMultiCourse] = useState(false);
     // DATA-05: increased with each answer to refresh the limit bar.
     const [budgetTick, setBudgetTick] = useState(0);
+    // WCAG 4.1.3: finished answer read out by screen readers (the stream
+    // itself is not in a live region — it would announce every token).
+    const [announcement, setAnnouncement] = useState("");
     // UX-14 (#373): active tab stored in sessionStorage, per course —
     // not lost when navigating to another course page and coming back in the
     // same browser session. Only the 4 "destination" tabs (not history/review,
@@ -220,8 +223,36 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     useEffect(() => {
         if (!open) return;
         const el = messagesEndRef.current;
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "end" });
+        if (!el) return;
+        const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "end" });
     }, [messages, loading, open]);
+
+    // WCAG 2.4.3: on open, focus moves into the panel (the question box, or
+    // the panel itself on other tabs); on close it goes back to whatever had
+    // it before — usually the navbar icon — instead of being lost on <body>.
+    // The in-panel rail button that opened it unmounts while open, so in that
+    // case focus goes to the rail button rendered again.
+    const returnFocusRef = useRef(null);
+    const wasOpenRef = useRef(false);
+    useEffect(() => {
+        if (open) {
+            wasOpenRef.current = true;
+            const prev = document.activeElement;
+            returnFocusRef.current = prev && prev !== document.body ? prev : null;
+            const panel = panelRef.current;
+            if (panel && !panel.contains(document.activeElement)) {
+                const target = panel.querySelector("textarea") || panel;
+                target.focus({ preventScroll: true });
+            }
+        } else if (wasOpenRef.current) {
+            wasOpenRef.current = false;
+            const prev = returnFocusRef.current;
+            returnFocusRef.current = null;
+            const target = prev?.isConnected ? prev : widgetRef.current?.querySelector(".nexusai-rail");
+            target?.focus({ preventScroll: true });
+        }
+    }, [open]);
 
     // Sync with the navbar icon (outside React) — see
     // amd/src/nav-trigger.js, which fires this event on every click.
@@ -291,6 +322,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         };
         setMessages((prev) => [...prev, optimisticUserMsg, initialAssistant]);
         setLoading(true);
+        setAnnouncement("");
 
         // Local accumulator — SSE callbacks run in bursts and we want to
         // avoid batch races. We use a ref through a closure.
@@ -362,6 +394,10 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
             // Apply the backend's grounded signal after the stream closes.
             // If grounded===false the LLM could not answer with the material →
             // hide the sources even if retrieval returned chunks.
+            const plain = acc.replace(/[#*_`>|~[\]]/g, "").replace(/\s+/g, " ").trim();
+            if (plain) {
+                setAnnouncement(`${lang === "es" ? "Respuesta del asistente" : "Assistant answer"}: ${plain}`);
+            }
             if (bufferedGrounded === false) {
                 setMessages((prev) =>
                     prev.map((m) =>
@@ -455,8 +491,12 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     className="nexusai-panel"
                     ref={panelRef}
                     role="dialog"
+                    tabIndex={-1}
                     aria-labelledby="nexusai-title"
                 >
+                    <div className="nexusai-sr-only" role="status" aria-live="polite">
+                        {announcement}
+                    </div>
                     {/* Header */}
                     <header className="nexusai-panel__header">
                         {activeTab === "chat" ? (
@@ -465,9 +505,9 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                     <IconSparkle />
                                 </div>
                                 <div className="nexusai-panel__title-group">
-                                    <h3 id="nexusai-title" className="nexusai-panel__title">
+                                    <h2 id="nexusai-title" className="nexusai-panel__title">
                                         {t.title}
-                                    </h3>
+                                    </h2>
                                     <div className="nexusai-panel__status">
                                         <span className="nexusai-panel__status-dot" />
                                         {!isInsideMoodle()
@@ -494,9 +534,9 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                         <IconBack />
                                     </button>
                                 </Tooltip>
-                                <h3 id="nexusai-title" className="nexusai-panel__title">
+                                <h2 id="nexusai-title" className="nexusai-panel__title">
                                     {SECTION_TITLES[activeTab]?.[lang === "es" ? "es" : "en"]}
-                                </h3>
+                                </h2>
                             </div>
                         )}
 

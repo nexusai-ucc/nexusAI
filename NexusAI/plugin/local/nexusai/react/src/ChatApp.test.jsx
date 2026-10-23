@@ -42,6 +42,10 @@ vi.mock("./api/history.js", () => ({
 
 import { sendMessageStream } from "./api/chat.js";
 
+// The finished answer is repeated in the screen-reader announcement
+// (.nexusai-sr-only); text queries look only at the visible bubbles.
+const VISIBLE = { ignore: "script, style, .nexusai-sr-only" };
+
 const BASE_PROPS = { courseid: 5, userid: 1, sesskey: "sk", wwwroot: "http://moodle.local", lang: "es" };
 
 function openChat() {
@@ -84,7 +88,7 @@ describe("ChatApp — envío de pregunta y respuesta (flujo central)", () => {
 
         expect(await screen.findByText("¿Qué es una derivada?")).toBeInTheDocument();
         await waitFor(() =>
-            expect(screen.getByText(/Esta es la respuesta del asistente\./)).toBeInTheDocument()
+            expect(screen.getByText(/Esta es la respuesta del asistente\./, VISIBLE)).toBeInTheDocument()
         );
         expect(sendMessageStream).toHaveBeenCalledWith(
             expect.objectContaining({ question: "¿Qué es una derivada?", courseId: 5 }),
@@ -122,7 +126,7 @@ describe("ChatApp — envío de pregunta y respuesta (flujo central)", () => {
         await askQuestion(user, "¿Cuál es la capital de la Luna?");
 
         await waitFor(() =>
-            expect(screen.getByText(/No encontré información sobre eso/)).toBeInTheDocument()
+            expect(screen.getByText(/No encontré información sobre eso/, VISIBLE)).toBeInTheDocument()
         );
         expect(screen.queryByRole("button", { name: /apunte1\.pdf/ })).not.toBeInTheDocument();
     });
@@ -141,7 +145,7 @@ describe("ChatApp — envío de pregunta y respuesta (flujo central)", () => {
         sendMessageStream.mockImplementation(streamImpl({ answer: "Ahora sí funciona." }));
         await user.click(screen.getByRole("button", { name: "Reintentar" }));
 
-        await waitFor(() => expect(screen.getByText(/Ahora sí funciona\./)).toBeInTheDocument());
+        await waitFor(() => expect(screen.getByText(/Ahora sí funciona\./, VISIBLE)).toBeInTheDocument());
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
@@ -150,15 +154,15 @@ describe("ChatApp — envío de pregunta y respuesta (flujo central)", () => {
         sendMessageStream.mockImplementation(streamImpl({ answer: "Primera respuesta." }));
         const user = openChat();
         await askQuestion(user, "¿Qué es una pila?");
-        await screen.findByText(/Primera respuesta\./);
+        await screen.findByText(/Primera respuesta\./, VISIBLE);
         sendMessageStream.mockImplementation(streamImpl({ answer: "Segunda respuesta." }));
 
         // Act.
         await user.click(screen.getByRole("button", { name: "Regenerar" }));
 
         // Assert.
-        expect(await screen.findByText(/Segunda respuesta\./)).toBeInTheDocument();
-        expect(screen.queryByText(/Primera respuesta\./)).not.toBeInTheDocument();
+        expect(await screen.findByText(/Segunda respuesta\./, VISIBLE)).toBeInTheDocument();
+        expect(screen.queryByText(/Primera respuesta\./, VISIBLE)).not.toBeInTheDocument();
         expect(sendMessageStream).toHaveBeenCalledTimes(2);
     });
 
@@ -184,7 +188,7 @@ describe("ChatApp — envío de pregunta y respuesta (flujo central)", () => {
         // La burbuja parcial ("Esto es lo que alcanzó ") no debe quedar
         // colgada en pantalla — se saca junto con el mensaje optimista.
         await waitFor(() =>
-            expect(screen.queryByText(/Esto es lo que alcanzó/)).not.toBeInTheDocument()
+            expect(screen.queryByText(/Esto es lo que alcanzó/, VISIBLE)).not.toBeInTheDocument()
         );
         expect(screen.queryByText("¿Qué es una integral?")).not.toBeInTheDocument();
         expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -200,6 +204,30 @@ describe("ChatApp — envío de pregunta y respuesta (flujo central)", () => {
 
         expect(await screen.findByRole("alert")).toHaveTextContent(
             "Se alcanzó el límite de uso por ahora. Probá de nuevo en unos minutos."
+        );
+    });
+});
+
+describe("ChatApp — accesibilidad (WCAG 2.4.3 y 4.1.3)", () => {
+    it("al abrir lleva el foco a la caja de pregunta y al cerrar con Escape lo devuelve al botón", async () => {
+        const user = openChat();
+
+        await user.click(screen.getByLabelText("Abrir chat"));
+        expect(screen.getByLabelText("Tu pregunta")).toHaveFocus();
+
+        await user.keyboard("{Escape}");
+        expect(screen.getByLabelText("Abrir chat")).toHaveFocus();
+    });
+
+    it("anuncia la respuesta terminada en una región aria-live", async () => {
+        sendMessageStream.mockImplementation(streamImpl({ answer: "Una **integral** mide el área." }));
+        const user = openChat();
+
+        await askQuestion(user, "¿Qué es una integral?");
+
+        await waitFor(() =>
+            expect(screen.getByText(/^Respuesta del asistente: Una integral mide el área\.$/))
+                .toHaveAttribute("aria-live", "polite")
         );
     });
 });
