@@ -1,0 +1,92 @@
+widget/light/alumno/Chat: 42 reglas OK, 0 con fallos
+widget/light/alumno/Modo Estudio: 39 reglas OK, 0 con fallos
+widget/light/alumno/Buscar: 40 reglas OK, 0 con fallos
+widget/light/alumno/Calendario: 39 reglas OK, 0 con fallos
+widget/light/docente/Chat: 42 reglas OK, 0 con fallos
+widget/light/docente/Modo Estudio: 39 reglas OK, 0 con fallos
+widget/light/docente/Calendario: 39 reglas OK, 0 con fallos
+widget/light/docente/Revisión del curso: 39 reglas OK, 0 con fallos
+widget/light/docente/Resumen del foro: 39 reglas OK, 0 con fallos
+widget/dark/alumno/Chat: 42 reglas OK, 0 con fallos
+widget/dark/alumno/Modo Estudio: 39 reglas OK, 0 con fallos
+widget/dark/alumno/Buscar: 40 reglas OK, 0 con fallos
+widget/dark/alumno/Calendario: 39 reglas OK, 0 con fallos
+widget/dark/docente/Chat: 42 reglas OK, 0 con fallos
+widget/dark/docente/Modo Estudio: 39 reglas OK, 0 con fallos
+widget/dark/docente/Calendario: 39 reglas OK, 0 con fallos
+widget/dark/docente/Revisión del curso: 39 reglas OK, 0 con fallos
+widget/dark/docente/Resumen del foro: 39 reglas OK, 0 con fallos
+panel-docente/light/Material: 39 reglas OK, 0 con fallos
+panel-docente/light/Preguntas de alumnos: 30 reglas OK, 0 con fallos
+panel-docente/light/Analytics: 32 reglas OK, 0 con fallos
+panel-docente/light/Generar examen: 29 reglas OK, 0 con fallos
+panel-docente/light/Buscar: 28 reglas OK, 0 con fallos
+panel-docente/light/Ayuda: 24 reglas OK, 0 con fallos
+panel-docente/dark/Material: 39 reglas OK, 0 con fallos
+panel-docente/dark/Preguntas de alumnos: 30 reglas OK, 0 con fallos
+panel-docente/dark/Analytics: 32 reglas OK, 0 con fallos
+panel-docente/dark/Generar examen: 29 reglas OK, 0 con fallos
+panel-docente/dark/Buscar: 28 reglas OK, 0 con fallos
+panel-docente/dark/Ayuda: 24 reglas OK, 0 con fallos
+
+KEYBOARD {"afterOpen":{"el":"textarea.nexusai-input__textarea","name":"Tu pregunta","inPanel":true,"focusVisible":true,"indicator":true},"dialog":{"role":"dialog","modal":null,"labelledby":"nexusai-title"},"enterSends":true,"live":["nexusai-sr-only:polite \"Respuesta del asistente: Esta es una respuesta de prueba del\""],"ctrlK":"Buscar","escapeCloses":true,"focusAfterEscape":{"el":"a","name":"Asistente NexusAI","inPanel":false,"focusVisible":true,"indicator":true}}
+TAB SEQ
+ 1. button.nexusai-input__mic "Grabar pregunta por voz" panel=true indicador=true
+ 2. body "undefined" panel=undefined indicador=undefined
+ 3. a "Asistente NexusAI" panel=false indicador=true
+ 4. button.nexusai-icon-btn "Navegación" panel=true indicador=true
+ 5. button.nexusai-icon-btn "Historial" panel=true indicador=true
+ 6. button.nexusai-icon-btn "Buscar en todos tus cursos" panel=true indicador=true
+ 7. button.nexusai-icon-btn "Cerrar" panel=true indicador=true
+ 8. button.nexusai-chip "¿Qué temas entran en el parcial?" panel=true indicador=true
+ 9. button.nexusai-chip "Resumí los conceptos clave del último te" panel=true indicador=true
+ 10. button.nexusai-chip "Haceme un quiz de práctica" panel=true indicador=true
+ 11. textarea.nexusai-input__textarea "Tu pregunta" panel=true indicador=true
+ 12. button.nexusai-input__mic "Grabar pregunta por voz" panel=true indicador=true
+ 13. body "undefined" panel=undefined indicador=undefined
+ 14. a "Asistente NexusAI" panel=false indicador=true
+ 15. button.nexusai-icon-btn "Navegación" panel=true indicador=true
+ 16. button.nexusai-icon-btn "Historial" panel=true indicador=true
+ 17. button.nexusai-icon-btn "Buscar en todos tus cursos" panel=true indicador=true
+ 18. button.nexusai-icon-btn "Cerrar" panel=true indicador=true
+ 19. button.nexusai-chip "¿Qué temas entran en el parcial?" panel=true indicador=true
+ 20. button.nexusai-chip "Resumí los conceptos clave del último te" panel=true indicador=true
+ 21. button.nexusai-chip "Haceme un quiz de práctica" panel=true indicador=true
+ 22. textarea.nexusai-input__textarea "Tu pregunta" panel=true indicador=true
+ 23. button.nexusai-input__mic "Grabar pregunta por voz" panel=true indicador=true
+ 24. body "undefined" panel=undefined indicador=undefined
+ 25. a "Asistente NexusAI" panel=false indicador=true
+ 26. button.nexusai-icon-btn "Navegación" panel=true indicador=true
+ 27. button.nexusai-icon-btn "Historial" panel=true indicador=true
+ 28. button.nexusai-icon-btn "Buscar en todos tus cursos" panel=true indicador=true
+ 29. button.nexusai-icon-btn "Cerrar" panel=true indicador=true
+ 30. button.nexusai-chip "¿Qué temas entran en el parcial?" panel=true indicador=true
+DOCS {"enter":true,"ariaCurrent":"page"}
+ 1. button "Material3" indicador=true
+ 2. button "Preguntas de alumnos" indicador=true
+ 3. button "Analytics" indicador=true
+ 4. button "Generar examen" indicador=true
+ 5. button "Buscar" indicador=true
+ 6. button "Ayuda" indicador=true
+ 7. select "Elegí una unidadGeneralUnidad 1Unidad 2" indicador=true
+ 8. input "" indicador=true
+ 9. div "Primero elegí una unidad del cursoCada a" indicador=true
+ 10. input "Seleccionar todos los documentos" indicador=true
+ 11. input "Seleccionar apunte-derivadas.pdf" indicador=true
+ 12. button "Ver texto extraído" indicador=true
+ 13. button "Reemplazar" indicador=true
+ 14. button "Quitar de NexusAI" indicador=true
+ 15. input "Seleccionar teorema-fundamental.pdf" indicador=true
+ 16. button "Ver texto extraído" indicador=true
+ 17. button "Reemplazar" indicador=true
+ 18. button "Quitar de NexusAI" indicador=true
+ 19. input "Seleccionar scan-clase-3.pdf" indicador=true
+ 20. button "Reemplazar" indicador=true
+ 21. button "Quitar de NexusAI" indicador=true
+ 22. body "Curso de pruebaNexusAI · MaterialesCurso" indicador=false
+ 23. button "Material3" indicador=true
+ 24. button "Preguntas de alumnos" indicador=true
+ 25. button "Analytics" indicador=true
+REFLOW [{"ctx":"widget 320px (400 %)","vw":320,"docScroll":320,"panel":[0,320],"outside":[]},{"ctx":"panel docente 320px (400 %)","vw":320,"docScroll":320,"panel":[8,304],"outside":["nexusai-table","THEAD","TR","TH","TH"]},{"ctx":"widget 200 %","vw":640,"docScroll":640,"panel":[0,640],"outside":[]},{"ctx":"panel docente 200 %","vw":640,"docScroll":640,"panel":[8,624],"outside":[]}]
+SPACING [{"ctx":"widget","clipped":[]},{"ctx":"panel docente","clipped":[]}]
+MOTION [{"motion":"no-preference","animated":["nexusai-panel","nexusai-msg","nexusai-typing__dot"]},{"motion":"reduce","animated":[]}]
