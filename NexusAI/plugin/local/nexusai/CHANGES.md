@@ -13,6 +13,8 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   in light mode and lighter in dark mode. In dark mode the teacher panel now has
   its own dark background, since its sidebar and intro sat on Moodle's white page.
 - Fixed: the actions column of the materials table has a header for screen readers.
+- Security: DOMPurify 3.4.17 (fixes GHSA-cg2g-xh64-v4q7, GHSA-mrv2-3pqr-j5jr and
+  GHSA-c6gr-qvv4-5v3f) and Vitest 4.1.12 for the tests (GHSA-qxg6-89mg-rqv8).
 
 ## [0.19.0] — 2026-10-14
 
