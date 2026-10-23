@@ -3,6 +3,17 @@
 All notable changes to the NexusAI Moodle plugin are documented in this
 file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+- Fixed: text contrast now meets WCAG 2.2 AA (4.5:1) in the chat widget and the
+  teacher panel, in light and dark mode (checked with axe-core). The primary
+  indigo goes from `#6366f1` to `#4f46e5` (white text on it was 4.47:1); filled
+  controls with white text use a new `--nexusai-primary-solid` token, because the
+  dark-mode `#818cf8` only reached 2.98:1; the muted and subtle grays are darker
+  in light mode and lighter in dark mode. In dark mode the teacher panel now has
+  its own dark background, since its sidebar and intro sat on Moodle's white page.
+- Fixed: the actions column of the materials table has a header for screen readers.
+
 ## [0.19.0] — 2026-10-14
 
 - Fixed: the calendar feed (`calendar_feed.php`) failed on Moodle 5.0 and later
