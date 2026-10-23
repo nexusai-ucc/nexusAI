@@ -1,0 +1,1442 @@
+{
+ "axe": [
+  {
+   "ctx": "widget/light/alumno/Chat",
+   "passes": 41,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-badge → Element has insufficient color contrast of 3.94 (foreground color: #6366f1, background color: #eff0fe, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-msg--user > .nexusai-msg__bubble → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-msg--user > .nexusai-msg__meta → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-msg--assistant > .nexusai-msg__meta → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "footer > span → Element has insufficient color contrast of 2.45 (foreground color: #94a3b8, background color: #f8fafc, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/light/alumno/Modo Estudio",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-study__modebtn--active → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-study__modebtn:nth-child(2) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-study__modebtn:nth-child(3) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__banner > span → Element has insufficient color contrast of 3.94 (foreground color: #6366f1, background color: #eff0fe, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__review-btn → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__card-meta > span:nth-child(1) → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__card-meta > span:nth-child(2) → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__card-btn:nth-child(1) → Element has insufficient color contrast of 3.94 (foreground color: #6366f1, background color: #eff0fe, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/light/alumno/Buscar",
+   "passes": 39,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-search__typebtn--active → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(2) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(3) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(4) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(5) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(6) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(7) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(8) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(9) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__empty → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/light/alumno/Calendario",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-calendar__rangebtns > .nexusai-calendar__rangebtn--active.nexusai-calendar__rangebtn → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__rangebtn:nth-child(3) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__viewbtns > .nexusai-calendar__rangebtn--active.nexusai-calendar__rangebtn → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__viewbtns > .nexusai-calendar__rangebtn:nth-child(2) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(1) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 3.71 (foreground color: #6366f1, background color: #e8e9fb, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(1) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__date → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 8.6pt (11.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(2) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 3.71 (foreground color: #6366f1, background color: #e8e9fb, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(2) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__date → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 8.6pt (11.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(3) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 3.71 (foreground color: #6366f1, background color: #e8e9fb, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(3) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__date → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 8.6pt (11.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__feed-toggle → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__export-btn → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    },
+    {
+     "id": "label-content-name-mismatch",
+     "impact": "serious",
+     "tags": [
+      "wcag21a",
+      "wcag253"
+     ],
+     "help": "Elements must have their visible text as part of their accessible name",
+     "nodes": [
+      ".nexusai-calendar-item-wrapper:nth-child(1) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name",
+      ".nexusai-calendar-item-wrapper:nth-child(2) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name",
+      ".nexusai-calendar-item-wrapper:nth-child(3) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/light/docente/Chat",
+   "passes": 41,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-badge → Element has insufficient color contrast of 3.94 (foreground color: #6366f1, background color: #eff0fe, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-msg--user > .nexusai-msg__bubble → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-msg--user > .nexusai-msg__meta → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-msg--assistant > .nexusai-msg__meta → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "footer > span → Element has insufficient color contrast of 2.45 (foreground color: #94a3b8, background color: #f8fafc, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/light/docente/Modo Estudio",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-study__modebtn--active → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-study__modebtn:nth-child(2) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-study__modebtn:nth-child(3) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__banner > span → Element has insufficient color contrast of 3.94 (foreground color: #6366f1, background color: #eff0fe, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__review-btn → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__card-meta > span:nth-child(1) → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__card-meta > span:nth-child(2) → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__card-btn:nth-child(1) → Element has insufficient color contrast of 3.94 (foreground color: #6366f1, background color: #eff0fe, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/light/docente/Calendario",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-calendar__rangebtns > .nexusai-calendar__rangebtn--active.nexusai-calendar__rangebtn → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__rangebtn:nth-child(3) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__viewbtns > .nexusai-calendar__rangebtn--active.nexusai-calendar__rangebtn → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__viewbtns > .nexusai-calendar__rangebtn:nth-child(2) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(1) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 3.71 (foreground color: #6366f1, background color: #e8e9fb, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(1) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__date → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 8.6pt (11.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(2) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 3.71 (foreground color: #6366f1, background color: #e8e9fb, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(2) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__date → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 8.6pt (11.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(3) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 3.71 (foreground color: #6366f1, background color: #e8e9fb, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(3) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__date → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 8.6pt (11.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__feed-toggle → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__export-btn → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    },
+    {
+     "id": "label-content-name-mismatch",
+     "impact": "serious",
+     "tags": [
+      "wcag21a",
+      "wcag253"
+     ],
+     "help": "Elements must have their visible text as part of their accessible name",
+     "nodes": [
+      ".nexusai-calendar-item-wrapper:nth-child(1) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name",
+      ".nexusai-calendar-item-wrapper:nth-child(2) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name",
+      ".nexusai-calendar-item-wrapper:nth-child(3) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/light/docente/Revisión del curso",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-onb__step--done:nth-child(1) > .nexusai-onb__step-body > .nexusai-onb__step-head > .nexusai-onb__status--done.nexusai-onb__status → Element has insufficient color contrast of 4.23 (foreground color: #15803d, background color: #d8f2e4, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-onb__step--done:nth-child(2) > .nexusai-onb__step-body > .nexusai-onb__step-head > .nexusai-onb__status--done.nexusai-onb__status → Element has insufficient color contrast of 4.23 (foreground color: #15803d, background color: #d8f2e4, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-onb__step--done:nth-child(3) > .nexusai-onb__step-body > .nexusai-onb__step-head > .nexusai-onb__status--done.nexusai-onb__status → Element has insufficient color contrast of 4.23 (foreground color: #15803d, background color: #d8f2e4, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-onb__step--done:nth-child(4) > .nexusai-onb__step-body > .nexusai-onb__step-head > .nexusai-onb__status--done.nexusai-onb__status → Element has insufficient color contrast of 4.23 (foreground color: #15803d, background color: #d8f2e4, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-onb__badge → Element has insufficient color contrast of 2.34 (foreground color: #94a3b8, background color: #f1f5f9, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-onb__step--pending:nth-child(5) > .nexusai-onb__step-body > .nexusai-onb__step-head > .nexusai-onb__status--pending.nexusai-onb__status → Element has insufficient color contrast of 4.46 (foreground color: #b45309, background color: #fef0da, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-onb__step--pending:nth-child(5) > .nexusai-onb__step-body > .nexusai-onb__step-link[target=\"_blank\"][rel=\"noopener noreferrer\"] → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-onb__step-skip → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-onb__step--pending:nth-child(6) > .nexusai-onb__step-body > .nexusai-onb__step-head > .nexusai-onb__status--pending.nexusai-onb__status → Element has insufficient color contrast of 4.46 (foreground color: #b45309, background color: #fef0da, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-onb__step--pending:nth-child(6) > .nexusai-onb__step-body > .nexusai-onb__step-link[target=\"_blank\"][rel=\"noopener noreferrer\"] → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/light/docente/Resumen del foro",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      "label → Element has insufficient color contrast of 4.34 (foreground color: #64748b, background color: #f1f5f9, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-forumdigest__item--urgent > .nexusai-forumdigest__item-body > .nexusai-forumdigest__item-meta → Element has insufficient color contrast of 4.4 (foreground color: #64748b, background color: #fdf4f4, font size: 8.6pt (11.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-forumdigest__item--urgent > .nexusai-forumdigest__item-link[target=\"_blank\"][rel=\"noopener noreferrer\"] → Element has insufficient color contrast of 4.13 (foreground color: #6366f1, background color: #fdf4f4, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-forumdigest__item:nth-child(2) > .nexusai-forumdigest__item-body > .nexusai-forumdigest__item-meta → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 8.6pt (11.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-forumdigest__item:nth-child(2) > .nexusai-forumdigest__item-link[target=\"_blank\"][rel=\"noopener noreferrer\"] → Element has insufficient color contrast of 4.2 (foreground color: #6366f1, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/dark/alumno/Chat",
+   "passes": 41,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-msg--user > .nexusai-msg__bubble → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-msg--user > .nexusai-msg__meta → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-msg--assistant > .nexusai-msg__meta → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "footer > span → Element has insufficient color contrast of 3.07 (foreground color: #64748b, background color: #1e293b, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/dark/alumno/Modo Estudio",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-study__modebtn--active → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__review-btn → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__card-meta > span:nth-child(1) → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__card-meta > span:nth-child(2) → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/dark/alumno/Buscar",
+   "passes": 39,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-search__typebtn--active → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__empty → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/dark/alumno/Calendario",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-calendar__rangebtns > .nexusai-calendar__rangebtn--active.nexusai-calendar__rangebtn → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__viewbtns > .nexusai-calendar__rangebtn--active.nexusai-calendar__rangebtn → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(1) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 4.22 (foreground color: #818cf8, background color: #283251, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(2) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 4.22 (foreground color: #818cf8, background color: #283251, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(3) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 4.22 (foreground color: #818cf8, background color: #283251, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    },
+    {
+     "id": "label-content-name-mismatch",
+     "impact": "serious",
+     "tags": [
+      "wcag21a",
+      "wcag253"
+     ],
+     "help": "Elements must have their visible text as part of their accessible name",
+     "nodes": [
+      ".nexusai-calendar-item-wrapper:nth-child(1) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name",
+      ".nexusai-calendar-item-wrapper:nth-child(2) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name",
+      ".nexusai-calendar-item-wrapper:nth-child(3) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/dark/docente/Chat",
+   "passes": 41,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-msg--user > .nexusai-msg__bubble → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-msg--user > .nexusai-msg__meta → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-msg--assistant > .nexusai-msg__meta → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "footer > span → Element has insufficient color contrast of 3.07 (foreground color: #64748b, background color: #1e293b, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/dark/docente/Modo Estudio",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-study__modebtn--active → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__review-btn → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__card-meta > span:nth-child(1) → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-studyplan__card-meta > span:nth-child(2) → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/dark/docente/Calendario",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-calendar__rangebtns > .nexusai-calendar__rangebtn--active.nexusai-calendar__rangebtn → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar__viewbtns > .nexusai-calendar__rangebtn--active.nexusai-calendar__rangebtn → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(1) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 4.22 (foreground color: #818cf8, background color: #283251, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(2) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 4.22 (foreground color: #818cf8, background color: #283251, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-calendar-item-wrapper:nth-child(3) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] > .nexusai-calendar-item__body > .nexusai-calendar-item__row > .nexusai-calendar-item__badge → Element has insufficient color contrast of 4.22 (foreground color: #818cf8, background color: #283251, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    },
+    {
+     "id": "label-content-name-mismatch",
+     "impact": "serious",
+     "tags": [
+      "wcag21a",
+      "wcag253"
+     ],
+     "help": "Elements must have their visible text as part of their accessible name",
+     "nodes": [
+      ".nexusai-calendar-item-wrapper:nth-child(1) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name",
+      ".nexusai-calendar-item-wrapper:nth-child(2) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name",
+      ".nexusai-calendar-item-wrapper:nth-child(3) > .nexusai-calendar-item[target=\"_blank\"][rel=\"noopener noreferrer\"] → Text inside the element is not included in the accessible name"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/dark/docente/Revisión del curso",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-onb__badge → Element has insufficient color contrast of 2.6 (foreground color: #64748b, background color: #283548, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-onb__step-skip → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "widget/dark/docente/Resumen del foro",
+   "passes": 38,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-forumdigest__urgent-badge → Element has insufficient color contrast of 2.53 (foreground color: #b91c1c, background color: #2d1929, font size: 7.9pt (10.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-forumdigest__item:nth-child(2) > .nexusai-forumdigest__item-body > .nexusai-forumdigest__item-row > .nexusai-forumdigest__item-name → Element has insufficient color contrast of 1.16 (foreground color: #e2e8f0, background color: #f7f8fc, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-forumdigest__item:nth-child(2) > .nexusai-forumdigest__item-body > .nexusai-forumdigest__item-meta → Element has insufficient color contrast of 2.41 (foreground color: #94a3b8, background color: #f7f8fc, font size: 8.6pt (11.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-forumdigest__item:nth-child(2) > .nexusai-forumdigest__item-link[target=\"_blank\"][rel=\"noopener noreferrer\"] → Element has insufficient color contrast of 2.81 (foreground color: #818cf8, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "heading-order",
+     "impact": "moderate",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Heading levels should only increase by one",
+     "nodes": [
+      "#nexusai-title → Heading order invalid"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/light/Material",
+   "passes": 39,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-doc-nav__item--active > span:nth-child(2) → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-documents__intro → Element has insufficient color contrast of 4.2 (foreground color: #64748b, background color: #eff0fe, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-table__row--indexed.nexusai-table__row:nth-child(1) > .nexusai-table__actions > .nexusai-link-btn:nth-child(1) → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-table__row--indexed.nexusai-table__row:nth-child(1) > .nexusai-table__actions > .nexusai-link-btn:nth-child(2) → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-table__row--indexed.nexusai-table__row:nth-child(2) > .nexusai-table__actions > .nexusai-link-btn:nth-child(1) → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-table__row--indexed.nexusai-table__row:nth-child(2) > .nexusai-table__actions > .nexusai-link-btn:nth-child(2) → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-table__row--error > .nexusai-table__actions > .nexusai-link-btn:nth-child(1) → Element has insufficient color contrast of 4.29 (foreground color: #6366f1, background color: #fff9f9, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "empty-table-header",
+     "impact": "minor",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Table header text should not be empty",
+     "nodes": [
+      "th:nth-child(6) → Element does not have text that is visible to screen readers"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/light/Preguntas de alumnos",
+   "passes": 30,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-doc-nav__item--active > span → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-questions__modebtn--active → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "p → Element has insufficient color contrast of 4.2 (foreground color: #64748b, background color: #eff0fe, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-btn:nth-child(2) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-btn--active → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-btn:nth-child(4) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-btn:nth-child(5) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-faq-card:nth-child(1) > .nexusai-faq-card__row > .nexusai-faq-card__count → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+      ".nexusai-faq-card:nth-child(2) > .nexusai-faq-card__row > .nexusai-faq-card__count → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+      ".nexusai-faq-card:nth-child(3) > .nexusai-faq-card__row > .nexusai-faq-card__count → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/light/Analytics",
+   "passes": 32,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-doc-nav__item--active > span → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "p → Element has insufficient color contrast of 4.2 (foreground color: #64748b, background color: #eff0fe, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-btn:nth-child(2) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-btn--active → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-btn:nth-child(4) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-btn:nth-child(5) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "li:nth-child(1) > .nexusai-faq-topic__row > .nexusai-faq-topic__count → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+      "li:nth-child(2) > .nexusai-faq-topic__row > .nexusai-faq-topic__count → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+      "li:nth-child(3) > .nexusai-faq-topic__row > .nexusai-faq-topic__count → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+      "li:nth-child(4) > .nexusai-faq-topic__row > .nexusai-faq-topic__count → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/light/Generar examen",
+   "passes": 24,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-doc-nav__item--active > span → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "p → Element has insufficient color contrast of 4.2 (foreground color: #64748b, background color: #eff0fe, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-exam__step--active → Element has insufficient color contrast of 4.46 (foreground color: #6366f1, background color: #ffffff, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-exam__step:nth-child(3) → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/light/Buscar",
+   "passes": 28,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-doc-nav__item--active > span → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn--active → Element has insufficient color contrast of 4.46 (foreground color: #ffffff, background color: #6366f1, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(2) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(3) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(4) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(5) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(6) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(7) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(8) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn[type=\"button\"]:nth-child(9) → Element has insufficient color contrast of 4.48 (foreground color: #64748b, background color: #f7f8fc, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "p → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/light/Ayuda",
+   "passes": 19,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-doc-nav__item--active > span → Element has insufficient color contrast of 3.8 (foreground color: #6366f1, background color: #e6edfb, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-documents__intro → Element has insufficient color contrast of 4.2 (foreground color: #64748b, background color: #eff0fe, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/dark/Material",
+   "passes": 39,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-doc-nav__item--active > span:nth-child(2) → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(2) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(3) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(4) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(5) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(6) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-documents__intro → Element has insufficient color contrast of 2.2 (foreground color: #94a3b8, background color: #ebedfe, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-visibility-toggle > span → Element has insufficient color contrast of 1.17 (foreground color: #000000, background color: #0f172a, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-table__row--indexed.nexusai-table__row:nth-child(1) > .nexusai-table__activity > .nexusai-activity > .nexusai-activity__state.nexusai-activity__state--none → Element has insufficient color contrast of 2.75 (foreground color: #b91c1c, background color: #0f172a, font size: 8.6pt (11.475px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-table__row--indexed.nexusai-table__row:nth-child(2) > .nexusai-table__activity > .nexusai-activity > .nexusai-activity__state.nexusai-activity__state--none → Element has insufficient color contrast of 2.75 (foreground color: #b91c1c, background color: #0f172a, font size: 8.6pt (11.475px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-table__row--error > .nexusai-table__activity > .nexusai-activity > .nexusai-activity__state.nexusai-activity__state--none → Element has insufficient color contrast of 2.58 (foreground color: #b91c1c, background color: #211b2c, font size: 8.6pt (11.475px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-table__row--error > .nexusai-table__actions > .nexusai-link-btn--danger.nexusai-link-btn → Element has insufficient color contrast of 4.43 (foreground color: #ef4444, background color: #211b2c, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    },
+    {
+     "id": "empty-table-header",
+     "impact": "minor",
+     "tags": [
+      "best-practice"
+     ],
+     "help": "Table header text should not be empty",
+     "nodes": [
+      "th:nth-child(6) → Element does not have text that is visible to screen readers"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/dark/Preguntas de alumnos",
+   "passes": 30,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-tooltip-wrap:nth-child(1) > .nexusai-doc-nav__item > span:nth-child(2) → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-doc-nav__item--active > span → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(3) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(4) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(5) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(6) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-questions__modebtn--active → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "p → Element has insufficient color contrast of 2.2 (foreground color: #94a3b8, background color: #ebedfe, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-label → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-btn--active → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "h3 → Element has insufficient color contrast of 1.23 (foreground color: #e2e8f0, background color: #ffffff, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-faq-card:nth-child(1) > .nexusai-faq-card__row > .nexusai-faq-card__count → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+      ".nexusai-faq-card:nth-child(2) > .nexusai-faq-card__row > .nexusai-faq-card__count → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+      ".nexusai-faq-card:nth-child(3) > .nexusai-faq-card__row > .nexusai-faq-card__count → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/dark/Analytics",
+   "passes": 32,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-tooltip-wrap:nth-child(1) > .nexusai-doc-nav__item > span:nth-child(2) → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(2) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-doc-nav__item--active > span → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(4) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(5) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(6) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "p → Element has insufficient color contrast of 2.2 (foreground color: #94a3b8, background color: #ebedfe, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-label → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-gaps__filter-btn--active → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "li:nth-child(1) > .nexusai-faq-topic__row > .nexusai-faq-topic__count → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+      "li:nth-child(2) > .nexusai-faq-topic__row > .nexusai-faq-topic__count → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+      "li:nth-child(3) > .nexusai-faq-topic__row > .nexusai-faq-topic__count → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1",
+      "li:nth-child(4) > .nexusai-faq-topic__row > .nexusai-faq-topic__count → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/dark/Generar examen",
+   "passes": 24,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-tooltip-wrap:nth-child(1) > .nexusai-doc-nav__item > span:nth-child(2) → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(2) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(3) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-doc-nav__item--active > span → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(5) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(6) > .nexusai-doc-nav__item > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      "p → Element has insufficient color contrast of 2.2 (foreground color: #94a3b8, background color: #ebedfe, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-exam__step:nth-child(3) → Element has insufficient color contrast of 3.75 (foreground color: #64748b, background color: #0f172a, font size: 9.4pt (12.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/dark/Buscar",
+   "passes": 28,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-tooltip-wrap:nth-child(1) > .nexusai-doc-nav__item[type=\"button\"] > span:nth-child(2) → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(2) > .nexusai-doc-nav__item[type=\"button\"] > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(3) > .nexusai-doc-nav__item[type=\"button\"] > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(4) > .nexusai-doc-nav__item[type=\"button\"] > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-doc-nav__item--active > span → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(6) > .nexusai-doc-nav__item[type=\"button\"] > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-search__typebtn--active → Element has insufficient color contrast of 2.98 (foreground color: #ffffff, background color: #818cf8, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    }
+   ]
+  },
+  {
+   "ctx": "panel-docente/dark/Ayuda",
+   "passes": 19,
+   "violations": [
+    {
+     "id": "color-contrast",
+     "impact": "serious",
+     "tags": [
+      "wcag2aa",
+      "wcag143"
+     ],
+     "help": "Elements must meet minimum color contrast ratio thresholds",
+     "nodes": [
+      ".nexusai-tooltip-wrap:nth-child(1) > button > span:nth-child(2) → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(2) > button > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(3) > button > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(4) > button > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-tooltip-wrap:nth-child(5) > button > span → Element has insufficient color contrast of 2.56 (foreground color: #94a3b8, background color: #ffffff, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-doc-nav__item--active > span → Element has insufficient color contrast of 4.38 (foreground color: #818cf8, background color: #24304d, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1",
+      ".nexusai-documents__intro → Element has insufficient color contrast of 2.2 (foreground color: #94a3b8, background color: #ebedfe, font size: 10.1pt (13.5px), font weight: normal). Expected contrast ratio of 4.5:1"
+     ]
+    }
+   ]
+  }
+ ],
+ "keyboard": {
+  "afterOpen": {
+   "el": "a",
+   "name": "Asistente NexusAI",
+   "inPanel": false,
+   "focusVisible": true,
+   "indicator": true
+  },
+  "dialog": {
+   "role": "dialog",
+   "modal": null,
+   "labelledby": "nexusai-title"
+  },
+  "tabSequence": [
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Navegación",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Historial",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Buscar en todos tus cursos",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Cerrar",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "¿Qué temas entran en el parcial?",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "Resumí los conceptos clave del último te",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "Haceme un quiz de práctica",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "textarea.nexusai-input__textarea",
+    "name": "Tu pregunta",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-input__mic",
+    "name": "Grabar pregunta por voz",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "body"
+   },
+   {
+    "el": "a",
+    "name": "Asistente NexusAI",
+    "inPanel": false,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Navegación",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Historial",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Buscar en todos tus cursos",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Cerrar",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "¿Qué temas entran en el parcial?",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "Resumí los conceptos clave del último te",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "Haceme un quiz de práctica",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "textarea.nexusai-input__textarea",
+    "name": "Tu pregunta",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-input__mic",
+    "name": "Grabar pregunta por voz",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "body"
+   },
+   {
+    "el": "a",
+    "name": "Asistente NexusAI",
+    "inPanel": false,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Navegación",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Historial",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Buscar en todos tus cursos",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Cerrar",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "¿Qué temas entran en el parcial?",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "Resumí los conceptos clave del último te",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "Haceme un quiz de práctica",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "textarea.nexusai-input__textarea",
+    "name": "Tu pregunta",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   }
+  ],
+  "enterSends": true,
+  "live": [],
+  "ctrlK": "Buscar",
+  "escapeCloses": true,
+  "focusAfterEscape": {
+   "el": "body"
+  }
+ },
+ "reflow": [
+  {
+   "ctx": "widget 320px (400 %)",
+   "vw": 320,
+   "docScroll": 320,
+   "panel": [
+    0,
+    320
+   ],
+   "outside": []
+  },
+  {
+   "ctx": "panel docente 320px (400 %)",
+   "vw": 320,
+   "docScroll": 378,
+   "panel": [
+    8,
+    304
+   ],
+   "outside": [
+    "SPAN",
+    "nexusai-dropzone",
+    "nexusai-dropzone__icon",
+    "svg",
+    "path"
+   ]
+  },
+  {
+   "ctx": "widget 200 %",
+   "vw": 640,
+   "docScroll": 640,
+   "panel": [
+    0,
+    640
+   ],
+   "outside": []
+  },
+  {
+   "ctx": "panel docente 200 %",
+   "vw": 640,
+   "docScroll": 640,
+   "panel": [
+    8,
+    624
+   ],
+   "outside": [
+    "nexusai-table",
+    "THEAD",
+    "TR",
+    "TH",
+    "TH"
+   ]
+  }
+ ],
+ "spacing": [
+  {
+   "ctx": "widget",
+   "clipped": []
+  },
+  {
+   "ctx": "panel docente",
+   "clipped": []
+  }
+ ],
+ "motion": [
+  {
+   "motion": "no-preference",
+   "animated": [
+    "nexusai-panel",
+    "nexusai-msg",
+    "nexusai-typing__dot"
+   ]
+  },
+  {
+   "motion": "reduce",
+   "animated": [
+    "nexusai-panel",
+    "nexusai-msg",
+    "nexusai-typing__dot"
+   ]
+  }
+ ],
+ "docsKeyboard": {
+  "tabSequence": [
+   {
+    "el": "button",
+    "name": "Material3",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Preguntas de alumnos",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Analytics",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Generar examen",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Buscar",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Ayuda",
+    "indicator": true
+   },
+   {
+    "el": "select",
+    "name": "Elegí una unidadGeneralUnidad 1Unidad 2",
+    "indicator": true
+   },
+   {
+    "el": "input",
+    "name": "",
+    "indicator": true
+   },
+   {
+    "el": "div",
+    "name": "Primero elegí una unidad del cursoCada a",
+    "indicator": true
+   },
+   {
+    "el": "input",
+    "name": "Seleccionar todos los documentos",
+    "indicator": true
+   },
+   {
+    "el": "input",
+    "name": "Seleccionar apunte-derivadas.pdf",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Ver texto extraído",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Reemplazar",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Quitar de NexusAI",
+    "indicator": true
+   },
+   {
+    "el": "input",
+    "name": "Seleccionar teorema-fundamental.pdf",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Ver texto extraído",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Reemplazar",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Quitar de NexusAI",
+    "indicator": true
+   },
+   {
+    "el": "input",
+    "name": "Seleccionar scan-clase-3.pdf",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Reemplazar",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Quitar de NexusAI",
+    "indicator": true
+   },
+   {
+    "el": "body",
+    "name": "Curso de pruebaNexusAI · MaterialesCurso",
+    "indicator": false
+   },
+   {
+    "el": "button",
+    "name": "Material3",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Preguntas de alumnos",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Analytics",
+    "indicator": true
+   }
+  ],
+  "enterActivates": true,
+  "ariaCurrent": null
+ }
+}

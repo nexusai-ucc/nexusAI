@@ -33,8 +33,10 @@
     /* Design tokens — mirrors .nexusai-widget in styles.css.
        Required because CSS variables are scoped to the element they're defined on,
        and the documents page root is .nexusai-documents, not .nexusai-widget. */
-    --nexusai-primary:        #6366f1;
-    --nexusai-primary-hover:  #4f46e5;
+    --nexusai-primary:        #4f46e5;
+    --nexusai-primary-hover:  #4338ca;
+    --nexusai-primary-solid:       #4f46e5;   /* fill behind white text */
+    --nexusai-primary-solid-hover: #4338ca;
     --nexusai-primary-dark:   #3b5bdb;
     --nexusai-primary-light:  rgba(99, 102, 241, 0.1);
     --nexusai-primary-ring:   rgba(99, 102, 241, 0.2);
@@ -47,8 +49,8 @@
     --nexusai-border-strong:  #cbd5e1;
     --nexusai-border-hover:   #c6d4f0;
     --nexusai-fg:             #0f172a;
-    --nexusai-fg-muted:       #64748b;
-    --nexusai-fg-subtle:      #94a3b8;
+    --nexusai-fg-muted:       #5b687c;
+    --nexusai-fg-subtle:      #5f6b7e;
     --nexusai-success-bg:     #f0fdf4;
     --nexusai-success-fg:     #166534;
     --nexusai-success-border: #bbf7d0;
@@ -132,7 +134,7 @@
 }
 .nexusai-doc-nav__item--active {
     background: var(--nexusai-primary-subtle);
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
 }
 .nexusai-doc-nav__item span:first-of-type {
     flex: 1;
@@ -147,7 +149,7 @@
 }
 .nexusai-doc-nav__item--active .nexusai-doc-nav__badge {
     background: rgba(99, 102, 241, 0.15);
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
 }
 .nexusai-doc-sidebar__status {
     display: flex;
@@ -188,7 +190,8 @@
     background: var(--nexusai-primary-light, rgba(99,102,241,0.07));
     border: 1px solid var(--nexusai-primary-ring, rgba(99,102,241,0.2));
     border-radius: var(--nexusai-radius, 8px);
-    color: var(--nexusai-fg-muted, #475569);
+    /* fg, not fg-muted: the old muted gray on this tinted background was 4.2:1 */
+    color: var(--nexusai-fg, #1e293b);
 }
 
 .nexusai-documents__heading {
@@ -228,7 +231,7 @@
     padding: 8px 10px;
     font-size: 12.5px;
     font-weight: 600;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-surface);
     border: 1px solid var(--nexusai-border);
     border-radius: 6px;
@@ -311,12 +314,12 @@
     user-select: none;
 }
 .nexusai-dropzone:hover:not(.nexusai-dropzone--disabled) {
-    border-color: var(--nexusai-primary, #6366f1);
+    border-color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-primary-light, rgba(99,102,241,0.07));
     box-shadow: 0 0 0 4px var(--nexusai-primary-ring, rgba(99,102,241,0.15));
 }
 .nexusai-dropzone--dragover {
-    border-color: var(--nexusai-primary, #6366f1);
+    border-color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-primary-light, rgba(99,102,241,0.07));
     box-shadow: 0 0 0 4px var(--nexusai-primary-ring, rgba(99,102,241,0.15));
     transform: scale(1.005);
@@ -334,13 +337,13 @@
     margin: 0 auto 12px;
     border-radius: var(--nexusai-radius-full, 9999px);
     background: var(--nexusai-primary-light, rgba(99,102,241,0.1));
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
 }
 .nexusai-dropzone__spinner {
     width: 26px;
     height: 26px;
     border: 3px solid var(--nexusai-primary-ring, rgba(99,102,241,0.2));
-    border-top-color: var(--nexusai-primary, #6366f1);
+    border-top-color: var(--nexusai-primary, #4f46e5);
     border-radius: 50%;
     animation: nexusai-dropzone-spin .8s linear infinite;
 }
@@ -406,6 +409,7 @@
    Tabla
 ============================================================ */
 .nexusai-table-wrap {
+    position: relative; /* keeps the absolute .nexusai-sr-only header inside the scroll box */
     border: 1px solid var(--nexusai-border, #e2e8f0);
     border-radius: var(--nexusai-radius, 8px);
     overflow-x: auto;
@@ -470,7 +474,7 @@
 }
 .nexusai-table__progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--nexusai-primary, #6366f1) 0%, #8b5cf6 100%);
+    background: linear-gradient(90deg, var(--nexusai-primary, #4f46e5) 0%, #8b5cf6 100%);
     width: 60%;
     animation: nexusai-progress-pulse 2s ease-in-out infinite;
 }
@@ -595,7 +599,7 @@
 .nexusai-link-btn {
     background: transparent;
     border: none;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     cursor: pointer;
     font-size: 13px;
     padding: 4px 6px;
@@ -606,7 +610,7 @@
 }
 .nexusai-link-btn:hover {
     background: var(--nexusai-primary-light, rgba(99,102,241,0.08));
-    color: var(--nexusai-primary-hover, #4f46e5);
+    color: var(--nexusai-primary-hover, #4338ca);
 }
 .nexusai-link-btn:disabled {
     color: var(--nexusai-fg-subtle, #94a3b8);
@@ -767,11 +771,11 @@
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
 }
 .nexusai-btn--confirm {
-    background: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
     color: #ffffff;
 }
 .nexusai-btn--confirm:hover {
-    background: var(--nexusai-primary-hover);
+    background: var(--nexusai-primary-solid-hover);
 }
 .nexusai-btn:disabled {
     opacity: 0.55;
@@ -814,7 +818,7 @@
     cursor: pointer;
 }
 .nexusai-documents__section-select:focus-visible {
-    outline: 2px solid var(--nexusai-primary, #6366f1);
+    outline: 2px solid var(--nexusai-primary, #4f46e5);
     outline-offset: 1px;
 }
 .nexusai-gaps__filter-btn {
@@ -829,11 +833,11 @@
 }
 .nexusai-gaps__filter-btn:hover {
     border-color: var(--nexusai-border-hover);
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
 }
 .nexusai-gaps__filter-btn--active {
-    background: var(--nexusai-primary, #6366f1);
-    border-color: var(--nexusai-primary, #6366f1);
+    background: var(--nexusai-primary-solid, #4f46e5);
+    border-color: var(--nexusai-primary-solid, #4f46e5);
     color: #fff;
 }
 
@@ -888,7 +892,7 @@
 .nexusai-gap-item {
     background: var(--nexusai-bg);
     border: 1px solid var(--nexusai-border);
-    border-left: 3px solid var(--nexusai-primary, #6366f1);
+    border-left: 3px solid var(--nexusai-primary, #4f46e5);
     border-radius: 6px;
     padding: 10px 14px;
 }
@@ -908,7 +912,7 @@
 .nexusai-gap-item__count {
     font-size: 12px;
     font-weight: 700;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-primary-subtle);
     padding: 2px 8px;
     border-radius: 12px;
@@ -969,7 +973,7 @@
     padding: 8px 10px;
     font-size: 12.5px;
     font-weight: 600;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-surface);
     border: 1px solid var(--nexusai-border);
     border-radius: 6px;
@@ -990,7 +994,7 @@
     gap: 4px;
     background: none;
     border: none;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     font-size: 11.5px;
     font-weight: 600;
     cursor: pointer;
@@ -1016,7 +1020,7 @@
 .nexusai-faq-topic {
     background: var(--nexusai-bg);
     border: 1px solid var(--nexusai-border);
-    border-left: 3px solid var(--nexusai-primary, #6366f1);
+    border-left: 3px solid var(--nexusai-primary, #4f46e5);
     border-radius: 6px;
     padding: 10px 14px;
 }
@@ -1036,7 +1040,7 @@
 .nexusai-faq-topic__count {
     font-size: 12px;
     font-weight: 700;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-primary-subtle);
     padding: 2px 8px;
     border-radius: 12px;
@@ -1075,7 +1079,7 @@
 .nexusai-faq-card__row svg {
     flex-shrink: 0;
     margin-top: 3px;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
 }
 .nexusai-faq-card__label {
     font-size: 14px;
@@ -1087,7 +1091,7 @@
 .nexusai-faq-card__count {
     font-size: 12px;
     font-weight: 700;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-primary-subtle);
     padding: 2px 8px;
     border-radius: var(--nexusai-radius-full, 9999px);
@@ -1192,7 +1196,7 @@
 
 .nexusai-search__btn {
     padding: 8px 18px;
-    background: var(--nexusai-primary, #4f6ef7);
+    background: var(--nexusai-primary-solid, #4f6ef7);
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -1291,7 +1295,7 @@
     position: relative;
     width: 100%;
     min-height: 3px;
-    background: var(--nexusai-primary, #6366f1);
+    background: var(--nexusai-primary, #4f46e5);
     border-radius: 3px 3px 0 0;
     opacity: 0.85;
     cursor: default;
@@ -1407,7 +1411,7 @@
     border: 1px solid var(--nexusai-border, #e2e8f0);
     border-radius: var(--nexusai-radius, 8px);
     padding: 12px 14px;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     /* UX-16: keeps the value from forcing the minimum width of the grid column */
     min-width: 0;
 }
@@ -1525,7 +1529,7 @@
     color: var(--nexusai-fg-subtle, #94a3b8);
 }
 .nexusai-exam__step--active {
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
 }
 .nexusai-exam__step-num {
     display: inline-flex;
@@ -1539,7 +1543,7 @@
     font-size: 11px;
 }
 .nexusai-exam__step--active .nexusai-exam__step-num {
-    background: var(--nexusai-primary, #6366f1);
+    background: var(--nexusai-primary-solid, #4f46e5);
     color: #fff;
 }
 .nexusai-exam__step-arrow {
@@ -1616,7 +1620,7 @@
     background: #dbeafe;
 }
 .nexusai-exam__source--topic {
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
 }
 
 .nexusai-exam__preview-header {
@@ -1708,12 +1712,12 @@
    (red, error/retry) — here we repaint it to the teacher panel's indigo,
    scoped to .nexusai-documents so the chat is not affected. */
 .nexusai-documents .nexusai-btn--primary {
-    background: var(--nexusai-primary, #6366f1);
-    border-color: var(--nexusai-primary, #6366f1);
+    background: var(--nexusai-primary-solid, #4f46e5);
+    border-color: var(--nexusai-primary-solid, #4f46e5);
 }
 .nexusai-documents .nexusai-btn--primary:hover {
-    background: var(--nexusai-primary-hover, #4f46e5);
-    border-color: var(--nexusai-primary-hover, #4f46e5);
+    background: var(--nexusai-primary-solid-hover, #4338ca);
+    border-color: var(--nexusai-primary-solid-hover, #4338ca);
 }
 
 /* ============================================================
@@ -1738,7 +1742,7 @@
 }
 .nexusai-questions__modebtn:hover { color: var(--nexusai-fg, #1e293b); }
 .nexusai-questions__modebtn--active {
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-primary-subtle);
     border-color: var(--nexusai-primary-ring, rgba(99,102,241,0.2));
 }
@@ -1754,10 +1758,12 @@
     .nexusai-documents {
         --nexusai-primary:        #818cf8;
         --nexusai-primary-hover:  #a5b4fc;
+        --nexusai-primary-solid:       #4f46e5;   /* #818cf8 is too light behind white text (2.98:1) */
+        --nexusai-primary-solid-hover: #4338ca;
         --nexusai-primary-dark:   #a5b4fc;
         --nexusai-primary-light:  rgba(129, 140, 248, 0.16);
         --nexusai-primary-ring:   rgba(129, 140, 248, 0.36);
-        --nexusai-primary-subtle: #24304d;
+        --nexusai-primary-subtle: #1f2942;
 
         --nexusai-bg:             #0f172a;
         --nexusai-bg-muted:       #1e293b;
@@ -1770,7 +1776,7 @@
 
         --nexusai-fg:             #e2e8f0;
         --nexusai-fg-muted:       #94a3b8;
-        --nexusai-fg-subtle:      #64748b;
+        --nexusai-fg-subtle:      #94a3b8;
 
         --nexusai-success-bg:     #0f2a1c;
         --nexusai-success-fg:     #4ade80;
@@ -1789,6 +1795,13 @@
         --nexusai-shadow-sm:      0 1px 2px 0 rgba(0,0,0,0.4);
         --nexusai-shadow:         0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.4);
         --nexusai-shadow-md:      0 10px 15px -3px rgba(0,0,0,0.55), 0 4px 6px -2px rgba(0,0,0,0.4);
+
+        /* Moodle's page stays light, so the panel brings its own dark surface:
+           the sidebar and the intro are transparent and light text on the
+           white page failed contrast (2.2–2.6:1). */
+        background: var(--nexusai-bg);
+        padding: 16px;
+        border-radius: var(--nexusai-radius-lg, 12px);
     }
 
     /* ---- Sidebar ---- */
@@ -1850,7 +1863,7 @@
     }
 
     /* ---- Botones link ---- */
-    .nexusai-documents .nexusai-link-btn--danger { color: var(--nexusai-danger-solid); }
+    .nexusai-documents .nexusai-link-btn--danger { color: var(--nexusai-danger-fg); }
     .nexusai-documents .nexusai-link-btn--danger:hover { background: var(--nexusai-danger-bg); color: var(--nexusai-danger-fg); }
 
     /* ---- Toast ---- */
@@ -1916,14 +1929,14 @@
 .nexusai-documents textarea:focus-visible,
 .nexusai-documents [tabindex]:focus-visible,
 .nexusai-documents summary:focus-visible {
-    outline: 2px solid var(--nexusai-primary, #6366f1);
+    outline: 2px solid var(--nexusai-primary, #4f46e5);
     outline-offset: 2px;
     box-shadow: 0 0 0 4px var(--nexusai-primary-ring, rgba(99,102,241,0.2));
 }
 
 /* Buttons on an indigo background: light inner halo + dark outline. */
 .nexusai-documents .nexusai-btn--primary:focus-visible {
-    outline: 2px solid var(--nexusai-primary-hover, #4f46e5);
+    outline: 2px solid var(--nexusai-primary-hover, #4338ca);
     outline-offset: 2px;
     box-shadow: inset 0 0 0 2px #fff, 0 0 0 4px var(--nexusai-primary-ring, rgba(99,102,241,0.2));
 }
@@ -2081,17 +2094,18 @@
     font-weight: 600;
 }
 .nexusai-activity__state--visible {
-    color: var(--nexusai-success, #15803d);
+    color: var(--nexusai-success-fg, #166534);
 }
 .nexusai-activity__state--hidden {
-    color: var(--nexusai-warning, #b45309);
+    color: var(--nexusai-warning-fg, #92400e);
 }
 .nexusai-activity__state--missing,
 .nexusai-activity__state--none {
-    color: var(--nexusai-danger, #b91c1c);
+    color: var(--nexusai-danger-fg, #991b1b);
 }
 .nexusai-visibility-toggle {
     display: flex;
+    color: var(--nexusai-fg, #1e293b);
     align-items: center;
     gap: 8px;
     margin: 10px 0;
@@ -2101,4 +2115,33 @@
     margin: 0 0 12px;
     font-size: 0.85em;
     color: var(--nexusai-fg-muted, #64748b);
+}
+
+/* WCAG 1.4.10 (reflow): below 720px — 1280px at 175% zoom or more — the
+   sidebar goes above the content instead of squeezing it into a page that
+   scrolls sideways. */
+@media (max-width: 720px) {
+    .nexusai-documents {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .nexusai-doc-sidebar {
+        width: auto;
+        position: static;
+    }
+    .nexusai-dropzone {
+        padding: 24px 16px;
+    }
+}
+
+/* WCAG 2.3.3: with "reduce motion" on, no animations or transitions —
+   neither the panel opening nor the messages or the typing dots. */
+@media (prefers-reduced-motion: reduce) {
+    .nexusai-documents *,
+    .nexusai-documents *::before,
+    .nexusai-documents *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
 }

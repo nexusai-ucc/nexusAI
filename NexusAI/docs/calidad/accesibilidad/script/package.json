@@ -1,0 +1,13 @@
+{
+  "name": "nexusai-auditoria-accesibilidad",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Auditoría de accesibilidad del widget y del panel docente (axe-core + Puppeteer)",
+  "scripts": {
+    "audit": "node full.mjs"
+  },
+  "dependencies": {
+    "axe-core": "^4.14.0",
+    "puppeteer-core": "^25.16.0"
+  }
+}
