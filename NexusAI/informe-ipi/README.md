@@ -2,7 +2,7 @@
 
 Informe final del Proyecto Integrador siguiendo la **plantilla oficial UCC v2.1 - 2026**.
 
-> **Versión vigente: `informe-ipi.docx` (22/10/2026).** Incluye correcciones técnicas
+> **Versión vigente: `informe-ipi.docx` (23/10/2026).** Incluye correcciones técnicas
 > verificadas contra el código, tablas y diagramas nuevos, fórmulas y formato A4 con
 > interlineado 1,5. `informe-ipi.pdf` se genera desde ese `.docx`:
 >
