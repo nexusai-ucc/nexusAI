@@ -32,7 +32,7 @@ Abierto ──► En curso ──► Test de regresión en ROJO ──► Fix �
 | [DEF-01](#def-01) | Racha, flashcards y webhook ignoran la respuesta de Moodle (`ajax.call` sin esperar) | HU-030 | Widget React | Media | Tests unitarios (TPC-05, 15/10) | Corregido | [#624](https://github.com/nexusai-ucc/nexusAI/pull/624) · issue [#623](https://github.com/nexusai-ucc/nexusAI/issues/623) | `react/src/api/quiz.test.js`, `react/src/api/services.test.js`, `react/src/api/ajaxUsage.test.js` |
 | [DEF-02](#def-02) | VOICE-02: toda pregunta por voz se rechaza (MIME con codec) y el error no se muestra | HU-001 | Plugin + backend + widget | Alta | Uso real | Corregido | [#591](https://github.com/nexusai-ucc/nexusAI/pull/591) · issue [#590](https://github.com/nexusai-ucc/nexusAI/issues/590) | `tests/chat_voice_transcribe_test.php`, `services/api/tests/test_voice_router.py`, `react/src/api/voice.test.js`, `ChatInput.test.jsx` |
 | [DEF-03](#def-03) | El Privacy provider no exportaba ni borraba nada: se ignoraba el contexto de curso (`add_from_sql`) | PRIV | Plugin (Privacy API) | Alta | Primera corrida de PHPUnit sobre el provider | Corregido | `d2d13fc` (13/09) · issue [#668](https://github.com/nexusai-ucc/nexusAI/issues/668) | `tests/privacy_provider_test.php`, `privacy_provider_tables_test.php` |
-| [DEF-04](#def-04) | MMR-301 ítem 4: al borrar un curso no se purgaban del backend los posts de foro indexados | PRIV | Plugin (privacidad) | Alta | Auditoría para Moodle Marketplace | Corregido | [#572](https://github.com/nexusai-ucc/nexusAI/pull/572) · issue [#669](https://github.com/nexusai-ucc/nexusAI/issues/669) | `tests/backend_tasks_test.php` |
+| [DEF-04](#def-04) | MMR-301 ítem 4: al borrar un curso no se purgaban del backend los posts de foro indexados | PRIV | Plugin (privacidad) | Alta | Auditoría para Moodle Marketplace | Corregido | [#589](https://github.com/nexusai-ucc/nexusAI/pull/589) (después de #572) · issue [#669](https://github.com/nexusai-ucc/nexusAI/issues/669) | `tests/backend_tasks_test.php` |
 | [DEF-05](#def-05) | CI: "Sync derived repos" falla por `SYNC_REPOS_TOKEN` vencido; los repos derivados dejan de actualizarse | — (proceso) | CI / despliegue | Media | **Pipeline** | Corregido | token renovado (14/10) · issue [#670](https://github.com/nexusai-ucc/nexusAI/issues/670) | la propia corrida del workflow |
 | [DEF-06](#def-06) | Tests: un mock de `curl` sobrevivía entre tests y rompía `sync_forum_post_test` | — (proceso) | Tests del plugin | Baja | **Pipeline** (PR #603) | Corregido | `df38ed9` · issue [#671](https://github.com/nexusai-ucc/nexusAI/issues/671) | `tests/external/external_testcase.php::tearDown` |
 | [DEF-07](#def-07) | `embed_many` rompe con `TypeError` cuando el proveedor devuelve los embeddings sin `index` (Gemini) | HU-010 | Backend (proveedor de embeddings) | Media | **Prueba contra el proveedor real** (TPC-07, 19/10) | Corregido | [#628](https://github.com/nexusai-ucc/nexusAI/pull/628) · issue [#672](https://github.com/nexusai-ucc/nexusAI/issues/672) | `tests/test_providers.py::test_embed_many_keeps_response_order_when_the_provider_omits_index`, `tests/integration/test_llm_real.py` |
@@ -78,7 +78,12 @@ Se detectó al correr PHPUnit por primera vez sobre el provider, que hasta ese m
 
 ### DEF-04
 
-MMR-301 (auditoría para publicar en el Moodle Marketplace), ítem 4. Al borrar un curso en Moodle, los posts de foro indexados en el backend no se encolaban para purgar. Corregido en #572 con un test en `backend_tasks_test.php`.
+MMR-301 (auditoría para publicar en el Moodle Marketplace), ítem 4. Al borrar un curso en Moodle, los posts de foro indexados en el backend no se encolaban para purgar.
+
+- **Primer intento, #572:** encolaba la purga en el evento `course_deleted`. El test pasaba porque llamaba a la limpieza sobre un curso que todavía tenía sus posts, pero en un borrado real Moodle borra los foros **antes** de ese evento, así que la purga no encontraba nada.
+- **Fix, #589:** un listener del hook `before_course_deleted` lista los posts mientras todavía existen y encola su purga. El test nuevo borra el curso con el `delete_course()` real de Moodle y verifica que la purga quede encolada.
+
+Es un ejemplo de por qué un test tiene que reproducir el orden real de los eventos: el de #572 daba verde sobre un escenario que nunca ocurre.
 
 ### DEF-05
 
@@ -221,4 +226,4 @@ También DEF-10 (vulnerabilidades nuevas en dependencias, detectadas por las aud
 | 1.3 | 19/10/2026 | DEF-09 (detectado por la prueba de stress) |
 | 1.4 | 21/10/2026 | DEF-10 (vulnerabilidades nuevas en dependencias, detectadas por el pipeline) |
 | 1.5 | 21/10/2026 | Corridas verdes del fix de DEF-10 |
-| 1.6 | 24/10/2026 | Los 10 defectos también como issues (`tipo:defecto`): DEF-03 a DEF-10 en #668–#675; DEF-02 es #590 |
+| 1.6 | 24/10/2026 | Los 10 defectos también como issues (`tipo:defecto`): DEF-03 a DEF-10 en #668–#675; DEF-02 es #590. DEF-04: el fix real es #589 (#572 no funcionaba en un borrado real) |
