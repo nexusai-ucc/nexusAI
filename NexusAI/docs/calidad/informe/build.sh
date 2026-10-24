@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Genera informe-tp-calidad.pdf desde INFORME_TP_CALIDAD.md (TPC-11, #583).
+# El PDF entregado (con portada, formato final y Anexo C de capturas) es
+# informe-final-entregado.pdf, exportado desde Google Docs; este script no lo toca.
 # Requiere pandoc y un motor LaTeX: tectonic (recomendado, `brew install
 # tectonic`) o xelatex.
 set -euo pipefail

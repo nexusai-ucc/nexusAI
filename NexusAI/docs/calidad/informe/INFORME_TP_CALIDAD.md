@@ -319,7 +319,7 @@ Cada defecto tiene sus pasos, esperado, obtenido, la causa raíz (con los 5 porq
 | La moderación usa una llamada al LLM por pregunta | Configurar `MODERATION_API_KEY` (gratis y más rápida) |
 | Quiz y resumen retienen la conexión a la base durante el LLM | Extender el patrón de DEF-09 |
 | Behat sin escenarios; HU-050 sin test del backend | Escenarios de aceptación y test del multicurso |
-| Gemini supera el SLA de 8 s de forma recurrente (11,6 s, 112 s y 33 s en corridas distintas) | Seguirlo con la corrida diaria; evaluar un timeout más corto con fallback a otro modelo |
+| Gemini supera el SLA de 8 s de forma recurrente (112 s, 33 s y 65 s en corridas distintas) | Seguirlo con la corrida diaria; evaluar un timeout más corto con fallback a otro modelo |
 
 ## Qué haríamos distinto
 
