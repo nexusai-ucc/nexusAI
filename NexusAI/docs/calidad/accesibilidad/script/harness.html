@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Prueba NexusAI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body>
+<nav><a href="#" id="trigger" aria-label="Asistente NexusAI">NexusAI</a></nav>
+<main><h1>Curso de prueba</h1><p>Página de prueba para auditar el widget.</p></main>
+<div id="local-nexusai-container"></div>
+<script src="require.min.js"></script>
+<script>
+  var b = new URLSearchParams(location.search).get('bundle') || 'new';
+  require([b], function(m){ (m.init || m.default.init)({courseid: 2, userid: 3, sesskey: 'x', wwwroot: location.origin + '/', lang: 'es', isteacher: +(new URLSearchParams(location.search).get('t')||0)}); window.__ready = true; });
+  document.getElementById("trigger").addEventListener("click", function(e){ e.preventDefault(); window.dispatchEvent(new CustomEvent("nexusai:toggle-panel")); });
+</script>
+</body></html>

@@ -58,6 +58,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
         colActivity:     "En el aula",
         colStatus:       "Estado",
         colDate:         "Fecha",
+        colActions:      "Acciones",
         emptyTitle:      "Todavía no subiste material a este curso.",
         emptyHint:       "Arrastrá un PDF, DOCX o TXT arriba y NexusAI lo indexa para que el asistente pueda responder sobre su contenido.",
         deleteTitle:     "Quitar de NexusAI",
@@ -97,6 +98,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
         colActivity:     "In the classroom",
         colStatus:       "Status",
         colDate:         "Date",
+        colActions:      "Actions",
         emptyTitle:      "You haven't uploaded any material to this course yet.",
         emptyHint:       "Drag a PDF, DOCX or TXT above and NexusAI indexes it so the assistant can answer about its content.",
         deleteTitle:     "Remove from NexusAI",
@@ -380,7 +382,7 @@ export default function DocumentsTable({ courseId, documents, onChange, lang = "
                             <th>{L.colActivity}</th>
                             <th>{L.colStatus}</th>
                             <th>{L.colDate}</th>
-                            <th></th>
+                            <th><span className="nexusai-sr-only">{L.colActions}</span></th>
                         </tr>
                     </thead>
                     <tbody>

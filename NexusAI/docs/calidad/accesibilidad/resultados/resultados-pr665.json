@@ -1,0 +1,584 @@
+{
+ "axe": [
+  {
+   "ctx": "widget/light/alumno/Chat",
+   "passes": 42,
+   "violations": []
+  },
+  {
+   "ctx": "widget/light/alumno/Modo Estudio",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/light/alumno/Buscar",
+   "passes": 40,
+   "violations": []
+  },
+  {
+   "ctx": "widget/light/alumno/Calendario",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/light/docente/Chat",
+   "passes": 42,
+   "violations": []
+  },
+  {
+   "ctx": "widget/light/docente/Modo Estudio",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/light/docente/Calendario",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/light/docente/Revisión del curso",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/light/docente/Resumen del foro",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/dark/alumno/Chat",
+   "passes": 42,
+   "violations": []
+  },
+  {
+   "ctx": "widget/dark/alumno/Modo Estudio",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/dark/alumno/Buscar",
+   "passes": 40,
+   "violations": []
+  },
+  {
+   "ctx": "widget/dark/alumno/Calendario",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/dark/docente/Chat",
+   "passes": 42,
+   "violations": []
+  },
+  {
+   "ctx": "widget/dark/docente/Modo Estudio",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/dark/docente/Calendario",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/dark/docente/Revisión del curso",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "widget/dark/docente/Resumen del foro",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/light/Material",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/light/Preguntas de alumnos",
+   "passes": 30,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/light/Analytics",
+   "passes": 32,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/light/Generar examen",
+   "passes": 29,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/light/Buscar",
+   "passes": 28,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/light/Ayuda",
+   "passes": 24,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/dark/Material",
+   "passes": 39,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/dark/Preguntas de alumnos",
+   "passes": 30,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/dark/Analytics",
+   "passes": 32,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/dark/Generar examen",
+   "passes": 29,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/dark/Buscar",
+   "passes": 28,
+   "violations": []
+  },
+  {
+   "ctx": "panel-docente/dark/Ayuda",
+   "passes": 24,
+   "violations": []
+  }
+ ],
+ "keyboard": {
+  "afterOpen": {
+   "el": "textarea.nexusai-input__textarea",
+   "name": "Tu pregunta",
+   "inPanel": true,
+   "focusVisible": true,
+   "indicator": true
+  },
+  "dialog": {
+   "role": "dialog",
+   "modal": null,
+   "labelledby": "nexusai-title"
+  },
+  "tabSequence": [
+   {
+    "el": "button.nexusai-input__mic",
+    "name": "Grabar pregunta por voz",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "body"
+   },
+   {
+    "el": "a",
+    "name": "Asistente NexusAI",
+    "inPanel": false,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Navegación",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Historial",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Buscar en todos tus cursos",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Cerrar",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "¿Qué temas entran en el parcial?",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "Resumí los conceptos clave del último te",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "Haceme un quiz de práctica",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "textarea.nexusai-input__textarea",
+    "name": "Tu pregunta",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-input__mic",
+    "name": "Grabar pregunta por voz",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "body"
+   },
+   {
+    "el": "a",
+    "name": "Asistente NexusAI",
+    "inPanel": false,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Navegación",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Historial",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Buscar en todos tus cursos",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Cerrar",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "¿Qué temas entran en el parcial?",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "Resumí los conceptos clave del último te",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "Haceme un quiz de práctica",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "textarea.nexusai-input__textarea",
+    "name": "Tu pregunta",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-input__mic",
+    "name": "Grabar pregunta por voz",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "body"
+   },
+   {
+    "el": "a",
+    "name": "Asistente NexusAI",
+    "inPanel": false,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Navegación",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Historial",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Buscar en todos tus cursos",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-icon-btn",
+    "name": "Cerrar",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   },
+   {
+    "el": "button.nexusai-chip",
+    "name": "¿Qué temas entran en el parcial?",
+    "inPanel": true,
+    "focusVisible": true,
+    "indicator": true
+   }
+  ],
+  "enterSends": true,
+  "live": [
+   "nexusai-sr-only:polite \"Respuesta del asistente: Esta es una respuesta de prueba del\""
+  ],
+  "ctrlK": "Buscar",
+  "escapeCloses": true,
+  "focusAfterEscape": {
+   "el": "a",
+   "name": "Asistente NexusAI",
+   "inPanel": false,
+   "focusVisible": true,
+   "indicator": true
+  }
+ },
+ "reflow": [
+  {
+   "ctx": "widget 320px (400 %)",
+   "vw": 320,
+   "docScroll": 320,
+   "panel": [
+    0,
+    320
+   ],
+   "outside": []
+  },
+  {
+   "ctx": "panel docente 320px (400 %)",
+   "vw": 320,
+   "docScroll": 320,
+   "panel": [
+    8,
+    304
+   ],
+   "outside": [
+    "nexusai-table",
+    "THEAD",
+    "TR",
+    "TH",
+    "TH"
+   ]
+  },
+  {
+   "ctx": "widget 200 %",
+   "vw": 640,
+   "docScroll": 640,
+   "panel": [
+    0,
+    640
+   ],
+   "outside": []
+  },
+  {
+   "ctx": "panel docente 200 %",
+   "vw": 640,
+   "docScroll": 640,
+   "panel": [
+    8,
+    624
+   ],
+   "outside": []
+  }
+ ],
+ "spacing": [
+  {
+   "ctx": "widget",
+   "clipped": []
+  },
+  {
+   "ctx": "panel docente",
+   "clipped": []
+  }
+ ],
+ "motion": [
+  {
+   "motion": "no-preference",
+   "animated": [
+    "nexusai-panel",
+    "nexusai-msg",
+    "nexusai-typing__dot"
+   ]
+  },
+  {
+   "motion": "reduce",
+   "animated": []
+  }
+ ],
+ "docsKeyboard": {
+  "tabSequence": [
+   {
+    "el": "button",
+    "name": "Material3",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Preguntas de alumnos",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Analytics",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Generar examen",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Buscar",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Ayuda",
+    "indicator": true
+   },
+   {
+    "el": "select",
+    "name": "Elegí una unidadGeneralUnidad 1Unidad 2",
+    "indicator": true
+   },
+   {
+    "el": "input",
+    "name": "",
+    "indicator": true
+   },
+   {
+    "el": "div",
+    "name": "Primero elegí una unidad del cursoCada a",
+    "indicator": true
+   },
+   {
+    "el": "input",
+    "name": "Seleccionar todos los documentos",
+    "indicator": true
+   },
+   {
+    "el": "input",
+    "name": "Seleccionar apunte-derivadas.pdf",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Ver texto extraído",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Reemplazar",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Quitar de NexusAI",
+    "indicator": true
+   },
+   {
+    "el": "input",
+    "name": "Seleccionar teorema-fundamental.pdf",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Ver texto extraído",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Reemplazar",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Quitar de NexusAI",
+    "indicator": true
+   },
+   {
+    "el": "input",
+    "name": "Seleccionar scan-clase-3.pdf",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Reemplazar",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Quitar de NexusAI",
+    "indicator": true
+   },
+   {
+    "el": "body",
+    "name": "Curso de pruebaNexusAI · MaterialesCurso",
+    "indicator": false
+   },
+   {
+    "el": "button",
+    "name": "Material3",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Preguntas de alumnos",
+    "indicator": true
+   },
+   {
+    "el": "button",
+    "name": "Analytics",
+    "indicator": true
+   }
+  ],
+  "enterActivates": true,
+  "ariaCurrent": "page"
+ }
+}

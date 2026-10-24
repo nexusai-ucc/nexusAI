@@ -144,7 +144,7 @@ export function printAnalyticsAsPdf(report, lang = "es") {
     li { margin-bottom: 4px; }
     .bars { display: flex; align-items: flex-end; gap: 4px; height: 90px; }
     .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; font-size: 9px; }
-    .bar { width: 100%; min-height: 2px; background: #6366f1; }
+    .bar { width: 100%; min-height: 2px; background: #4f46e5; }
     .bar-val { margin-top: 2px; }
     .bar-label { color: #64748b; white-space: nowrap; }
     .stat { font-size: 13px; margin: 4px 0; }

@@ -131,7 +131,7 @@ export default function OnboardingApp({
                         <div className="nexusai-panel__title-wrap">
                             <div className="nexusai-panel__avatar"><IconSparkle /></div>
                             <div className="nexusai-panel__title-group">
-                                <h3 id="nexusai-onb-title" className="nexusai-panel__title">{t.title}</h3>
+                                <h2 id="nexusai-onb-title" className="nexusai-panel__title">{t.title}</h2>
                                 <div className="nexusai-panel__status">
                                     <span className="nexusai-panel__status-dot" />
                                     NexusAI

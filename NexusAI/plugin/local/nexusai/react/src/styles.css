@@ -31,8 +31,10 @@
 ============================================================ */
 .nexusai-widget {
     /* Colores primarios */
-    --nexusai-primary:        #6366f1;
-    --nexusai-primary-hover:  #4f46e5;
+    --nexusai-primary:        #4f46e5;
+    --nexusai-primary-hover:  #4338ca;
+    --nexusai-primary-solid:       #4f46e5;   /* fill behind white text */
+    --nexusai-primary-solid-hover: #4338ca;
     --nexusai-primary-light:  rgba(99, 102, 241, 0.1);
     --nexusai-primary-ring:   rgba(99, 102, 241, 0.2);
     --nexusai-primary-subtle:  #e6edfb;   /* background tint for the active/selected state */
@@ -50,8 +52,8 @@
 
     /* Texto */
     --nexusai-fg:             #0f172a;
-    --nexusai-fg-muted:       #64748b;
-    --nexusai-fg-subtle:      #94a3b8;
+    --nexusai-fg-muted:       #5b687c;
+    --nexusai-fg-subtle:      #5f6b7e;
 
     /* Code blocks (dark background in light mode too) */
     --nexusai-code-bg:        #1e293b;
@@ -111,12 +113,17 @@
    has its own equivalent block.
 ============================================================ */
 @media (prefers-color-scheme: dark) {
+    /* #818cf8 on its own translucent tint is 4.22:1 */
+    .nexusai-widget .nexusai-calendar-item__badge { color: var(--nexusai-primary-hover); }
+
     .nexusai-widget {
         --nexusai-primary:        #818cf8;
         --nexusai-primary-hover:  #a5b4fc;
+        --nexusai-primary-solid:       #4f46e5;   /* #818cf8 is too light behind white text (2.98:1) */
+        --nexusai-primary-solid-hover: #4338ca;
         --nexusai-primary-light:  rgba(129, 140, 248, 0.16);
         --nexusai-primary-ring:   rgba(129, 140, 248, 0.36);
-        --nexusai-primary-subtle: #24304d;
+        --nexusai-primary-subtle: #1f2942;
 
         --nexusai-bg:             #0f172a;
         --nexusai-bg-muted:       #1e293b;
@@ -129,7 +136,7 @@
 
         --nexusai-fg:             #e2e8f0;
         --nexusai-fg-muted:       #94a3b8;
-        --nexusai-fg-subtle:      #64748b;
+        --nexusai-fg-subtle:      #94a3b8;
 
         --nexusai-code-bg:        #020617;
         --nexusai-code-fg:        #e2e8f0;
@@ -596,7 +603,7 @@
     white-space: pre-wrap;
 }
 .nexusai-msg--user .nexusai-msg__bubble {
-    background: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
     color: white;
     border-bottom-right-radius: var(--nexusai-radius-sm);
     white-space: pre-wrap;
@@ -710,7 +717,7 @@
     font-size: 12px;
     font-weight: 600;
     color: #fff;
-    background: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
     border: none;
     border-radius: var(--nexusai-radius-sm);
     padding: 6px 10px;
@@ -884,12 +891,12 @@
     border-color: var(--nexusai-primary);
 }
 .nexusai-msg__source-pill--active {
-    background: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
     color: #fff;
-    border-color: var(--nexusai-primary);
+    border-color: var(--nexusai-primary-solid);
 }
 .nexusai-msg__source-pill--active:hover {
-    background: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
 }
 .nexusai-msg__source-score {
     font-size: 9.5px;
@@ -1136,13 +1143,13 @@
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
 }
 .nexusai-btn--confirm {
-    background: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
     color: #ffffff;
-    border-color: var(--nexusai-primary);
+    border-color: var(--nexusai-primary-solid);
 }
 .nexusai-btn--confirm:hover {
-    background: var(--nexusai-primary-hover);
-    border-color: var(--nexusai-primary-hover);
+    background: var(--nexusai-primary-solid-hover);
+    border-color: var(--nexusai-primary-solid-hover);
 }
 
 /* ============================================================
@@ -1433,7 +1440,7 @@
     height: 36px;
     border-radius: var(--nexusai-radius);
     border: none;
-    background: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
     color: white;
     cursor: pointer;
     display: flex;
@@ -1442,7 +1449,7 @@
     transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 .nexusai-input__send:hover:not(:disabled) {
-    background: var(--nexusai-primary-hover);
+    background: var(--nexusai-primary-solid-hover);
     box-shadow: 0 0 0 3px var(--nexusai-primary-ring);
 }
 .nexusai-input__send:active:not(:disabled) {
@@ -1606,7 +1613,7 @@
 .nexusai-search__input:focus { border-color: var(--nexusai-primary); }
 .nexusai-search__btn {
     padding: 8px 14px;
-    background: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -1644,7 +1651,7 @@
     margin: 0 auto 10px;
     border-radius: var(--nexusai-radius-full, 9999px);
     background: var(--nexusai-primary-light, rgba(99,102,241,0.1));
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
 }
 .nexusai-search__empty-title {
     font-size: 13px;
@@ -1660,7 +1667,7 @@
 }
 .nexusai-search__empty-cta {
     padding: 7px 14px;
-    background: var(--nexusai-primary, #6366f1);
+    background: var(--nexusai-primary-solid, #4f46e5);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -1706,8 +1713,8 @@
     transition: border-color .12s, color .12s;
 }
 .nexusai-search__recent-item:hover {
-    border-color: var(--nexusai-primary, #6366f1);
-    color: var(--nexusai-primary, #6366f1);
+    border-color: var(--nexusai-primary, #4f46e5);
+    color: var(--nexusai-primary, #4f46e5);
 }
 .nexusai-search__result {
     background: var(--nexusai-surface);
@@ -1758,7 +1765,7 @@
 .nexusai-search__open-btn {
     font-size: 11px;
     font-weight: 600;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     background: none;
     border: none;
     cursor: pointer;
@@ -1769,7 +1776,7 @@
 .nexusai-search__summarize-btn {
     font-size: 10.5px;
     font-weight: 600;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-bg, #fff);
     border: 1px solid var(--nexusai-primary-ring, rgba(99,102,241,0.2));
     border-radius: var(--nexusai-radius-full, 9999px);
@@ -1843,8 +1850,8 @@
     color: var(--nexusai-primary);
 }
 .nexusai-search__typebtn--active {
-    background: var(--nexusai-primary);
-    border-color: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
+    border-color: var(--nexusai-primary-solid);
     color: #fff;
 }
 .nexusai-search__type-badge {
@@ -1899,8 +1906,8 @@
     color: var(--nexusai-primary);
 }
 .nexusai-calendar__rangebtn--active {
-    background: var(--nexusai-primary);
-    border-color: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
+    border-color: var(--nexusai-primary-solid);
     color: #fff;
 }
 .nexusai-calendar__empty {
@@ -2047,7 +2054,7 @@
 }
 .nexusai-calendar__grid-navbtn:hover {
     border-color: #c6d4f0;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
 }
 .nexusai-calendar__grid-monthlabel {
     font-size: 13px;
@@ -2066,7 +2073,7 @@
     text-align: center;
     font-size: 10.5px;
     font-weight: 600;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle, #64748b);
     text-transform: uppercase;
     padding-bottom: 4px;
 }
@@ -2086,7 +2093,7 @@
 }
 .nexusai-calendar__grid-cell--today {
     background: var(--nexusai-primary-light, rgba(99,102,241,0.1));
-    box-shadow: inset 0 0 0 1px var(--nexusai-primary, #6366f1);
+    box-shadow: inset 0 0 0 1px var(--nexusai-primary, #4f46e5);
 }
 .nexusai-calendar__grid-daynum {
     font-size: 12px;
@@ -2102,9 +2109,9 @@
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: var(--nexusai-primary, #6366f1);
+    background: var(--nexusai-primary, #4f46e5);
 }
-.nexusai-calendar__grid-dot--mod_assign { background: #6366f1; }
+.nexusai-calendar__grid-dot--mod_assign { background: #4f46e5; }
 .nexusai-calendar__grid-dot--mod_quiz { background: #dc2626; }
 .nexusai-calendar__grid-dot--course { background: #16a34a; }
 .nexusai-calendar__grid-more {
@@ -2131,7 +2138,7 @@
     font: inherit;
     font-size: 12.5px;
     font-weight: 500;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     cursor: pointer;
 }
 .nexusai-calendar__feed-toggle:hover { text-decoration: underline; }
@@ -2145,7 +2152,7 @@
     font: inherit;
     font-size: 12.5px;
     font-weight: 500;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     cursor: pointer;
 }
 .nexusai-calendar__export-btn:hover:not(:disabled) { text-decoration: underline; }
@@ -2372,7 +2379,7 @@
     padding: 8px 10px;
     font-size: 12.5px;
     font-weight: 600;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-surface);
     border: 1px solid var(--nexusai-border);
     border-radius: 6px;
@@ -2563,8 +2570,8 @@
     color: var(--nexusai-primary);
 }
 .nexusai-quiz__numbtn--active {
-    background: var(--nexusai-primary);
-    border-color: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
+    border-color: var(--nexusai-primary-solid);
     color: #fff;
 }
 
@@ -2574,7 +2581,7 @@
     padding: 6px 10px;
     font-size: 11.5px;
     line-height: 1.4;
-    color: var(--nexusai-primary-hover, #4f46e5);
+    color: var(--nexusai-primary-hover, #4338ca);
     background: var(--nexusai-primary-light, rgba(99,102,241,0.08));
     border-radius: 6px;
 }
@@ -2601,8 +2608,8 @@
     color: var(--nexusai-primary);
 }
 .nexusai-quiz__diffbtn--active {
-    background: var(--nexusai-primary);
-    border-color: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
+    border-color: var(--nexusai-primary-solid);
     color: #fff;
 }
 
@@ -2630,8 +2637,8 @@
     color: var(--nexusai-primary);
 }
 .nexusai-quiz__typebtn--active {
-    background: var(--nexusai-primary);
-    border-color: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
+    border-color: var(--nexusai-primary-solid);
     color: #fff;
 }
 
@@ -2691,7 +2698,7 @@
     justify-content: center;
     gap: 6px;
     padding: 9px 14px;
-    background: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
     color: #fff;
     border: none;
     border-radius: var(--nexusai-radius);
@@ -2700,7 +2707,7 @@
     cursor: pointer;
     transition: background .12s, opacity .12s;
 }
-.nexusai-quiz__primary:hover:not(:disabled) { background: var(--nexusai-primary-hover); }
+.nexusai-quiz__primary:hover:not(:disabled) { background: var(--nexusai-primary-solid-hover); }
 .nexusai-quiz__primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -3037,7 +3044,7 @@
     padding: 8px 10px;
     font-size: 12.5px;
     font-weight: 600;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     background: var(--nexusai-surface);
     border: 1px solid var(--nexusai-border);
     border-radius: 6px;
@@ -3493,7 +3500,7 @@
     font-size: 12px;
     font-weight: 500;
     color: #fff;
-    background: var(--nexusai-primary);
+    background: var(--nexusai-primary-solid);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -3501,7 +3508,7 @@
     transition: background .12s;
 }
 .nexusai-studyplan__review-btn:hover:not(:disabled) {
-    background: var(--nexusai-primary-hover);
+    background: var(--nexusai-primary-solid-hover);
 }
 .nexusai-studyplan__review-btn:disabled {
     opacity: .6;
@@ -3789,8 +3796,8 @@
     padding: 1px 8px;
     border-radius: var(--nexusai-radius-full);
 }
-.nexusai-onb__status--done    { background: rgba(34, 197, 94, 0.15); color: #15803d; }
-.nexusai-onb__status--pending { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+.nexusai-onb__status--done    { background: rgba(34, 197, 94, 0.15); color: var(--nexusai-success-fg, #166534); }
+.nexusai-onb__status--pending { background: rgba(245, 158, 11, 0.15); color: var(--nexusai-warning-fg, #92400e); }
 .nexusai-onb__status--skipped { background: var(--nexusai-bg-subtle); color: var(--nexusai-fg-subtle); }
 
 .nexusai-onb__step-why {
@@ -3888,7 +3895,7 @@
 }
 .nexusai-forumdigest__empty {
     font-size: 13px;
-    color: #94a3b8;
+    color: var(--nexusai-fg-subtle, #64748b);
     text-align: center;
     padding: 24px 16px;
 }
@@ -3955,8 +3962,8 @@
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: #f7f8fc;
-    border: 1px solid #e8edf5;
+    background: var(--nexusai-surface, #f7f8fc);
+    border: 1px solid var(--nexusai-border, #e8edf5);
     border-radius: 8px;
 }
 .nexusai-forumdigest__item--urgent {
@@ -3972,7 +3979,7 @@
     height: 28px;
     border-radius: 50%;
     background: var(--nexusai-primary-light, rgba(99,102,241,0.1));
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
 }
 .nexusai-forumdigest__item-body {
     flex: 1;
@@ -4003,7 +4010,7 @@
     padding: 2px 7px;
     font-size: 10.5px;
     font-weight: 600;
-    color: #b91c1c;
+    color: var(--nexusai-danger-fg, #991b1b);
     background: rgba(220, 38, 38, 0.1);
     border-radius: var(--nexusai-radius-full, 9999px);
 }
@@ -4011,7 +4018,7 @@
     flex-shrink: 0;
     font-size: 12px;
     font-weight: 500;
-    color: var(--nexusai-primary, #6366f1);
+    color: var(--nexusai-primary, #4f46e5);
     text-decoration: none;
 }
 .nexusai-forumdigest__item-link:hover { text-decoration: underline; }
@@ -4076,4 +4083,28 @@
     .nexusai-budget__fill {
         transition: none;
     }
+}
+
+/* WCAG 2.3.3: with "reduce motion" on, no animations or transitions —
+   neither the panel opening nor the messages or the typing dots. */
+@media (prefers-reduced-motion: reduce) {
+    .nexusai-widget *,
+    .nexusai-widget *::before,
+    .nexusai-widget *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+.nexusai-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
 }

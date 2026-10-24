@@ -73,7 +73,7 @@ Lo informamos sin maquillarlo:
 1. **Registro en Jira.** El enunciado dice "Jira u otra herramienta". Usamos **GitHub Issues + Projects**, que el equipo ya usaba para todo el desarrollo. Así evitamos tener los defectos en un sistema y el código en otro, y los PRs cierran sus issues automáticamente.
 2. **Behat sin escenarios.** El paso de pruebas de aceptación del plugin corre en el CI pero **no tiene escenarios**: da verde sin probar nada. Lo detectamos en la línea base y queda documentado como riesgo (R9 del plan), pero no lo resolvimos. Es el ejemplo más claro de un "falso verde".
 3. **Brechas de trazabilidad.** De 14 requisitos, 11 están cubiertos y 2 parcialmente (HU-040 y HU-060). **HU-050 (modo multicurso) no tiene test del backend.** Además, el criterio de aceptación de HU-031 quedó desactualizado respecto del código ([TRAZABILIDAD.md](https://github.com/nexusai-ucc/nexusAI/blob/development/NexusAI/docs/calidad/TRAZABILIDAD.md) §3).
-4. **Prueba diaria contra el proveedor.** El workflow `integration-external.yml` tiene un `schedule` diario que **nunca corrió**: GitHub solo ejecuta los `schedule` desde la rama por defecto (`main`). Empieza a correr cuando se promueva `staging` a `main`, como parte de la preparación de la demo ([DEMO.md](https://github.com/nexusai-ucc/nexusAI/blob/development/NexusAI/docs/calidad/DEMO.md)).
+4. **Prueba diaria contra el proveedor.** El workflow `integration-external.yml` tiene un `schedule` diario que recién quedó activo el 21/10, cuando promovimos `staging` a `main`: GitHub solo ejecuta los `schedule` desde la rama por defecto. Hasta la entrega acumula pocas corridas diarias.
 5. **Carga contra staging.** El plan de la épica decía que la carga iba contra staging. La carga pura se hizo en un backend efímero del pipeline y contra staging solo una corrida chica con el LLM real. Justificación en [PRUEBAS_DE_CARGA.md](https://github.com/nexusai-ucc/nexusAI/blob/development/NexusAI/docs/calidad/PRUEBAS_DE_CARGA.md) §1.1: medir NexusAI y no al proveedor, no romper el staging que usa el smoke y no gastar dinero.
 
 # Los ejes del trabajo
@@ -254,6 +254,18 @@ La velocidad usa nuestra propia estimación, así que también mide qué tan bie
 | Re-subida duplicada, p95 | < 1 s | 0,03 s | Cumplido |
 | Arranque en frío | < 15 s | 11,61 s | Cumplido |
 
+## Ensayo de la demo (21/10)
+
+Después de promover `staging` a `main` ensayamos los pasos de la demo contra el ambiente real:
+
+| Paso | Corrida | Resultado |
+|---|---|---|
+| Deploy + smoke | [39665714741](https://github.com/nexusai-ucc/nexusAI/actions/runs/39665714741) | Intento 1 rojo: un contenedor viejo en la VM impidió el recreate y la verificación del commit lo detectó. Intento 2 verde, con el commit verificado y el smoke OK |
+| Integración externa | [39681910580](https://github.com/nexusai-ucc/nexusAI/actions/runs/39681910580) | Rojo: el chat contra Gemini tardó 33,15 s (SLA 8 s). Fallback y embeddings en verde |
+| Carga contra staging | [39681914662](https://github.com/nexusai-ucc/nexusAI/actions/runs/39681914662) | Verde: p95 de 5,03 s con el LLM real |
+
+Las dos corridas rojas son el pipeline haciendo su trabajo: una detectó estado sucio en la infraestructura y la otra, que el proveedor no cumple nuestro SLA.
+
 # Defectos
 
 | ID | Defecto | Severidad | Lo encontró | Prueba de regresión |
@@ -307,6 +319,7 @@ Cada defecto tiene sus pasos, esperado, obtenido, la causa raíz (con los 5 porq
 | La moderación usa una llamada al LLM por pregunta | Configurar `MODERATION_API_KEY` (gratis y más rápida) |
 | Quiz y resumen retienen la conexión a la base durante el LLM | Extender el patrón de DEF-09 |
 | Behat sin escenarios; HU-050 sin test del backend | Escenarios de aceptación y test del multicurso |
+| Gemini supera el SLA de 8 s de forma recurrente (11,6 s, 112 s y 33 s en corridas distintas) | Seguirlo con la corrida diaria; evaluar un timeout más corto con fallback a otro modelo |
 
 ## Qué haríamos distinto
 
@@ -328,7 +341,7 @@ Cada uno quedó corregido con una prueba que impide que vuelva. Y lo que no cump
 
 # Aporte individual
 
-Armado con la evidencia del repositorio (commits, PRs e issues). *A confirmar por el equipo antes de la entrega.*
+Armado con la evidencia del repositorio (commits, PRs e issues) y confirmado por el equipo.
 
 | Integrante | Aporte en el TP |
 |---|---|

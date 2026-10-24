@@ -1,6 +1,6 @@
 # Registro de defectos (TPC-06)
 
-> Issue [#578](https://github.com/nexusai-ucc/nexusAI/issues/578) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.4, 21/10/2026
+> Issue [#578](https://github.com/nexusai-ucc/nexusAI/issues/578) · Épica [#584](https://github.com/nexusai-ucc/nexusAI/issues/584) · Versión 1.5, 21/10/2026
 
 El registro de defectos de NexusAI vive en **GitHub Issues**, con el formulario **🐞 Defecto** (`.github/ISSUE_TEMPLATE/defecto.yml`) y las labels `bug`, `tipo:defecto` y `severidad:*`. Este documento es la vista consolidada para el TP: lista cada defecto con su origen, su fix, su test de regresión y las corridas de CI que lo muestran.
 
@@ -186,7 +186,7 @@ El 21/10, el PR que lleva `development` a `staging` (#647) dio **rojo en las dos
 | Paso | Corrida | Resultado |
 |---|---|---|
 | Auditorías en el PR #647 | Backend CI [39604642181](https://github.com/nexusai-ucc/nexusAI/actions/runs/39604642181) · Frontend CI [39604642306](https://github.com/nexusai-ucc/nexusAI/actions/runs/39604642306) | 🔴 Pillow (8 CVE) y vite/`launch-editor` (3 high) |
-| Fix | __CORRIDAS__ | 🟢 |
+| Fix (PR #654) | Backend CI [39607129446](https://github.com/nexusai-ucc/nexusAI/actions/runs/39607129446) · Frontend CI [39607129306](https://github.com/nexusai-ucc/nexusAI/actions/runs/39607129306) | 🟢 Pillow 13.0.0 y vite 8.3.5; auditorías limpias |
 
 ## Ejecución fallida que detectó un problema real
 
@@ -220,3 +220,4 @@ También DEF-10 (vulnerabilidades nuevas en dependencias, detectadas por las aud
 | 1.2 | 19/10/2026 | DEF-08 (detectado por una tabla de decisión) y columna de requisito, enlazada con [TRAZABILIDAD.md](TRAZABILIDAD.md) |
 | 1.3 | 19/10/2026 | DEF-09 (detectado por la prueba de stress) |
 | 1.4 | 21/10/2026 | DEF-10 (vulnerabilidades nuevas en dependencias, detectadas por el pipeline) |
+| 1.5 | 21/10/2026 | Corridas verdes del fix de DEF-10 |
