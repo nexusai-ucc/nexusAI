@@ -74,21 +74,20 @@ Compilar con ./build.sh
 
 El presente informe documenta el desarrollo de **NexusAI**, un asistente académico
 basado en inteligencia artificial integrado como plugin en la plataforma Moodle.
-**(Introducción)**
 
 Las plataformas de gestión del aprendizaje (LMS) como Moodle se utilizan
 mayoritariamente como repositorios documentales estáticos, mientras que los
 estudiantes recurren a asistentes de IA generales —ajenos al material de cada
 materia— para resolver sus dudas. Esto produce respuestas genéricas, dispersión
 de la información y pérdida de visibilidad del docente sobre las consultas del
-alumnado. **(Problema)**
+alumnado.
 
 Para abordar esta situación se diseñó e implementó un plugin de tipo `local` para
 Moodle, acompañado de un backend que aplica la técnica de *Retrieval-Augmented
 Generation* (RAG) sobre el material indexado de cada curso, almacenado en una base
 de datos vectorial. La solución recupera los fragmentos más relevantes del
 material y los provee como contexto a un modelo de lenguaje de gran escala, que
-responde citando explícitamente la fuente. **(Metodología)**
+responde citando explícitamente la fuente.
 
 El producto mínimo viable (MVP), entregado en junio de 2026, alcanzó siete
 funcionalidades en producción —buscador semántico, chat conversacional
@@ -99,12 +98,12 @@ desarrollo continuó de forma sostenida, incorporando foros con detección de
 posts similares y asistencia de IA, un panel de analítica para el docente,
 generación de exámenes exportables al formato nativo de Moodle, un plan de
 estudio personalizado que combina errores de práctica y vacíos detectados, y
-soporte para formatos de material adicionales al PDF. **(Resultado)**
+soporte para formatos de material adicionales al PDF.
 
 Los resultados muestran que es posible ofrecer asistencia académica contextualizada
 y auditable dentro del LMS institucional, preservando la soberanía de los datos y
 mitigando la alucinación de los modelos de lenguaje mediante la trazabilidad de las
-respuestas. **(Conclusión)**
+respuestas.
 
 **Palabras clave:** Moodle, inteligencia artificial, RAG, asistente académico,
 educación, soberanía de datos.
@@ -112,19 +111,18 @@ educación, soberanía de datos.
 ## Abstract
 
 This report documents the development of **NexusAI**, an artificial-intelligence
-academic assistant integrated as a plugin into the Moodle platform. **(Introduction)**
+academic assistant integrated as a plugin into the Moodle platform.
 
 Learning Management Systems (LMS) such as Moodle are mostly used as static document
 repositories, while students rely on general-purpose AI assistants —unaware of each
 subject's material— to solve their doubts. This leads to generic answers,
 information dispersion, and a loss of teacher visibility over student queries.
-**(Problem)**
 
 To address this, a Moodle `local` plugin was designed and implemented, together
 with a backend that applies Retrieval-Augmented Generation (RAG) over each course's
 indexed material, stored in a vector database. The solution retrieves the most
 relevant fragments and provides them as context to a large language model, which
-answers by explicitly citing its source. **(Methodology)**
+answers by explicitly citing its source.
 
 The minimum viable product (MVP), delivered in June 2026, reached seven production
 features —semantic search, multi-course conversational chat, response streaming,
@@ -133,11 +131,11 @@ automated test coverage close to 80% in the backend. Development continued
 steadily in the following months, adding forums with similar-post detection and
 AI assistance, a teacher analytics panel, exam generation exportable to Moodle's
 native format, a personalized study plan combining practice errors and detected
-gaps, and support for additional material formats beyond PDF. **(Result)**
+gaps, and support for additional material formats beyond PDF.
 
 Results show that contextualized and auditable academic assistance can be delivered
 within the institutional LMS while preserving data sovereignty and mitigating large
-language model hallucination through answer traceability. **(Conclusion)**
+language model hallucination through answer traceability.
 
 **Keywords:** Moodle, artificial intelligence, RAG, academic assistant, education,
 data sovereignty.
@@ -163,7 +161,15 @@ entorno donde reside el material académico validado.
 
 El problema que motiva el proyecto se desarrolla en detalle en la sección
 *Diagnóstico*, y constituye el eje central sobre el cual se articula el resto del
-informe.
+informe. El relevamiento formal realizado para este proyecto (166 estudiantes y
+17 docentes de la UCC) confirma la brecha: el 100% de quienes respondieron ya usa
+un asistente de IA generalista para estudiar, y el 80,7% de los estudiantes
+percibe dispersión de la información entre el material del curso y esas
+herramientas externas. NexusAI responde a esa brecha con tres capacidades
+concretas dentro del propio Moodle: un asistente conversacional que cita la
+fuente exacta del material, un generador de ejercicios de práctica a partir de
+ese mismo material, y la detección automática de los vacíos de contenido que
+quedan sin responder.
 
 \newpage
 
@@ -510,11 +516,11 @@ decidir cada componente.
 
 ### Base de datos vectorial
 
-| Alternativa | Decisión | Motivo |
+| Alternativa | Características | Encaje con la escala del proyecto |
 |---|---|---|
-| **pgvector** (extensión de PostgreSQL) | Elegida | Un solo sistema para datos relacionales y vectoriales; permite combinar filtros SQL y búsqueda vectorial en una sola consulta. |
-| ChromaDB (ChromaDB, s.f.) | Descartada | Sistema separado de PostgreSQL: las consultas relacionales y vectoriales requieren dos llamadas y lógica de coordinación adicional. |
-| Pinecone / Weaviate / Qdrant | Descartadas | Se justifican a partir de decenas de millones de vectores con alta concurrencia; la escala proyectada de NexusAI (~240.000 vectores para toda la UCC, hasta ~4,8 millones en una expansión multi-institución) queda muy por debajo de ese umbral. |
+| **pgvector** (extensión de PostgreSQL) | Un solo sistema para datos relacionales y vectoriales; permite combinar filtros SQL y búsqueda vectorial en una sola consulta. | Pensado para integrarse a un backend que de todas formas necesita una base relacional, sin sumar una pieza de infraestructura más. |
+| ChromaDB (ChromaDB, s.f.) | Sistema separado de PostgreSQL: las consultas relacionales y vectoriales requieren dos llamadas y lógica de coordinación adicional. | Agrega un segundo sistema a operar y mantener disponible. |
+| Pinecone / Weaviate / Qdrant | Se justifican a partir de decenas de millones de vectores con alta concurrencia. | La escala proyectada de NexusAI (~240.000 vectores para toda la UCC, hasta ~4,8 millones en una expansión multi-institución) queda muy por debajo de ese umbral. |
 
 ### Modelos de lenguaje y *embeddings*
 
@@ -522,42 +528,132 @@ Se comparó el costo y las prestaciones de los modelos de lenguaje candidatos:
 Gemini 2.5 Flash ofrece una capa gratuita suficiente para un MVP sin costo
 operativo, pero sin garantías de nivel de servicio para producción (Google,
 s.f.-a); GPT-4o-mini resulta significativamente más económico que GPT-4o y es
-la referencia de facto del mercado para este tipo de tareas, por lo que se lo
-eligió como modelo de producción, reservando GPT-4o para casos de razonamiento
-más complejo (OpenAI, s.f.-b). Dado que prácticamente todos los proveedores
+la referencia de facto del mercado para este tipo de tareas, reservando GPT-4o
+para casos de razonamiento más complejo (OpenAI, s.f.-b). Un punto a favor de
+cualquiera de las dos opciones es que prácticamente todos los proveedores
 relevantes exponen una interfaz compatible con el SDK de OpenAI —incluido
-Gemini (Google, s.f.-a)— se diseñó una abstracción propia (`LLMProvider` /
-`EmbeddingProvider`) que permite cambiar de proveedor modificando únicamente
-una variable de entorno, en lugar de adoptar un *framework* de orquestación
-como LangChain, descartado por su peso y la inestabilidad de su API entre
+Gemini (Google, s.f.-a)—, lo que habilita una abstracción común sobre ambos sin
+atarse a un proveedor específico, en lugar de adoptar un *framework* de
+orquestación como LangChain, cuya API ha mostrado inestabilidad entre
 versiones.
 
 ### Arquitectura de plugin Moodle
 
 Moodle admite varios tipos de plugin (`local`, `block`, `mod`, `filter`,
-`auth`, entre otros). Se descartó `block` porque, con el tema Boost de Moodle
-4.x, los bloques quedan ocultos en un panel lateral y cada docente debería
-agregarlo curso por curso manualmente. Se evaluó también el **subsistema de IA
-nativo de Moodle 4.5+**, y se descartó por carecer de un estado de memoria
-conversacional persistente a lo largo del cuatrimestre —limitación funcional
-del núcleo que motiva, en gran medida, el desarrollo de un plugin propio en
-lugar de adoptar la funcionalidad ya incorporada a la plataforma. Se eligió
-finalmente un plugin de tipo `local`, que permite definir *web services*,
-tareas programadas y *hooks* propios sin depender de que el docente lo agregue
-manualmente a cada curso.
+`auth`, entre otros), cada uno con su propio ciclo de vida y nivel de
+integración con el núcleo. Un `block` queda descartado para este caso de uso
+porque, con el tema Boost de Moodle 4.x, los bloques quedan ocultos en un
+panel lateral y cada docente debería agregarlo curso por curso manualmente.
+El **subsistema de IA nativo de Moodle 4.5+** tampoco cubre el caso de uso:
+carece de un estado de memoria conversacional persistente a lo largo del
+cuatrimestre, limitación funcional del núcleo que condiciona cualquier
+asistente que necesite recordar el contexto de una conversación entre
+sesiones. Un plugin de tipo `local`, en cambio, permite definir *web
+services*, tareas programadas y *hooks* propios sin depender de que el
+docente lo agregue manualmente a cada curso.
 
 ### Extracción y fragmentación de documentos
 
-Para la extracción de texto de los materiales subidos por el docente se evaluó
-pdfplumber frente a PyPDF2/pypdf (extracción deficiente en PDFs con diseño
-complejo), pdfminer.six (interfaz más compleja de integrar) y PyMuPDF
-(descartado por su licencia AGPL, incompatible con la distribución del
-plugin); pdfplumber (pdfplumber, s.f.) se eligió por su manejo nativo de
-tablas y diseño de página. Para la fragmentación (*chunking*) se adoptaron
-fragmentos de aproximadamente 500 tokens con 10% de superposición entre
-fragmentos consecutivos: los fragmentos pequeños mejoran la precisión de la
-recuperación semántica, mientras que la superposición mitiga la pérdida de
-contexto cuando un fragmento corta una oración o una idea a la mitad.
+Para la extracción de texto de los materiales subidos por el docente se
+compararon PyPDF2/pypdf (extracción deficiente en PDFs con diseño complejo),
+pdfminer.six (interfaz más compleja de integrar), PyMuPDF (licencia AGPL,
+incompatible con la distribución de un plugin que se publica en un directorio
+de terceros) y pdfplumber (pdfplumber, s.f.), con mejor manejo nativo de
+tablas y diseño de página que las anteriores. Para la fragmentación
+(*chunking*), el tamaño del fragmento es en sí mismo un *trade-off*: los
+fragmentos pequeños mejoran la precisión de la recuperación semántica,
+mientras que cierto grado de superposición entre fragmentos consecutivos
+mitiga la pérdida de contexto cuando uno de ellos corta una oración o una idea
+a la mitad.
+
+### Estilos de arquitectura del backend
+
+Para un backend que debe ejecutar varias responsabilidades (conversación,
+indexación de material, *analytics*) existen, en términos generales, dos
+estilos: un **monolito** organizado internamente por dominios, o una
+**arquitectura de microservicios** con un proceso independiente por
+responsabilidad. Microservicios ofrecen escalado y despliegue independiente
+por componente, a costa de una complejidad operativa considerable: cada
+servicio necesita su propio *pipeline* de CI/CD, descubrimiento de servicios y
+manejo de fallas de red entre procesos que antes eran simples llamadas de
+función. Para un equipo reducido —en este caso, de tres personas— y una
+infraestructura con recursos acotados, esa complejidad adicional compite
+directamente con el tiempo disponible para desarrollar funcionalidad; un
+monolito organizado por dominios internos ofrece gran parte del orden que
+los microservicios buscan imponer, sin la sobrecarga operativa de
+coordinar múltiples procesos desplegados por separado.
+
+### Autenticación servicio-a-servicio
+
+Cuando dos servicios propios —no un usuario y un servicio— necesitan
+autenticarse entre sí sin mantener estado, las alternativas más comunes son
+HMAC con *timestamp* y *nonce*, JWT, y mTLS. JWT está pensado sobre todo para
+delegar la identidad de un usuario entre sistemas (por ejemplo, para que un
+*frontend* pruebe ante un backend quién es el usuario logueado), un problema
+distinto al de dos servicios propios que ya confían en el canal que los
+conecta; HMAC resuelve integridad y autenticidad del mensaje con un secreto
+compartido, sin necesidad de un token con información de identidad. mTLS
+ofrece una garantía más fuerte a nivel de transporte, pero implica distribuir
+y rotar certificados en ambos extremos, una carga operativa comparable a la
+de los microservicios discutida arriba para un equipo y una infraestructura
+de este tamaño.
+
+Más allá de qué esquema de autenticación usar entre dos servicios propios,
+hay una pregunta previa: si el navegador del usuario final debe hablar
+directamente con el backend que orquesta el modelo de lenguaje, o si un
+intermediario ya autenticado por la plataforma —que actúa como *proxy*— es
+quien reenvía esa comunicación. Exponer el backend directo al navegador
+requiere resolver CORS y, sobre todo, decidir dónde vive la clave del
+proveedor de IA: si viaja al cliente, cualquier vulnerabilidad de *scripting*
+del lado del navegador puede filtrarla; un *proxy* autenticado evita ese
+riesgo porque la clave nunca sale del lado servidor, a costa de un salto de
+red adicional y de que el intermediario quede en el camino crítico de cada
+solicitud.
+
+### Transporte de respuestas en tiempo real
+
+Para entregar la respuesta de un modelo de lenguaje token por token, en lugar
+de esperar a que esté completa, las opciones principales son *Server-Sent
+Events* (SSE) y WebSockets (el *long-polling* queda descartado de entrada por
+la latencia que agrega). WebSockets ofrece un canal bidireccional persistente,
+pero requiere un *upgrade* de protocolo HTTP que varios *proxies* y
+*firewalls* corporativos o universitarios bloquean o manejan de forma
+inconsistente. SSE, en cambio, es unidireccional (servidor → cliente) y corre
+sobre HTTP puro, sin *upgrade* de protocolo — suficiente para un caso de uso
+donde el cliente solo necesita recibir texto a medida que se genera, sin
+enviar datos por el mismo canal mientras la respuesta está en curso.
+
+### Infraestructura de despliegue
+
+Para alojar el backend se compararon tres categorías de infraestructura: un
+PaaS gestionado (por ejemplo Railway o Fly.io), que simplifica el despliegue
+a cambio de un costo recurrente y menos control sobre el entorno; una IaaS
+con nivel gratuito permanente (por ejemplo Oracle Cloud *Always Free*), que
+exige administrar el sistema operativo y el *stack* de contenedores a mano,
+pero sin costo mientras el proyecto se mantenga dentro de los límites del
+nivel gratuito; e infraestructura propia de la institución, que eliminaría
+el costo de hosting pero depende de un proceso de aprobación administrado por
+un tercero, con plazos fuera del control del equipo. Esta última opción es
+justamente la que el relevamiento institucional de la UCC dejó sin resolver
+dentro del plazo del proyecto (ver *Relevamiento y metodología de
+investigación* → *Contexto institucional relevado*), lo que convirtió a una
+infraestructura autogestionada, independiente de esa aprobación, en la
+alternativa con menor riesgo de bloqueo para sostener una demo funcionando
+durante todo el desarrollo.
+
+### Validación de datos en los límites del sistema
+
+Para los datos que llegan a una API desde un cliente externo existen, en
+términos generales, dos posturas. Una validación permisiva acepta y procesa
+la solicitud aunque lleguen campos no declarados en el contrato —el
+comportamiento por defecto de buena parte de las herramientas de
+validación—, lo que la hace más tolerante a cambios del lado del cliente,
+pero deja pasar en silencio parámetros inesperados, sea por un error de
+integración o por un intento deliberado de colar un campo no previsto. Una
+validación estricta, en cambio, rechaza con un error cualquier campo fuera
+del esquema declarado: sacrifica algo de flexibilidad a cambio de que
+cualquier desvío del contrato se note de inmediato, en el momento en que
+ocurre, en lugar de ejecutarse sin aviso.
 
 ## Opciones similares en el mercado
 
@@ -650,12 +746,12 @@ introdujo un subsistema de IA con arquitectura *Placement → Manager → Provid
 APIs externas y el *Manager* media entre ambos, gestionando límites de uso, registro y
 aceptación de políticas. Su limitación central para este proyecto es que solo expone
 tres acciones —`generate_text`, `generate_image` y `summarise_text`— sin ninguna acción
-nativa de conversación con historial persistente, que es el requisito central de
-NexusAI (RF-01, RF-06). A eso se suma que el subsistema no existe antes de Moodle 4.5,
-mientras que el proyecto necesitaba compatibilidad desde 4.1 al momento de diseñarse.
-Por ambos motivos se optó por un plugin `local` autocontenido en lugar de construir
-sobre el subsistema nativo, decisión coherente con la elección de tipo de plugin
-descrita en la sección anterior.
+nativa de conversación con historial persistente, el tipo de interacción que motiva
+este proyecto. A eso se suma que el subsistema no existe antes de Moodle 4.5, mientras
+que el proyecto necesitaba compatibilidad desde 4.1 al momento de diseñarse. Ambas
+limitaciones apuntan en la misma dirección que la comparación de tipos de plugin de
+la sección anterior: un plugin autocontenido, que no dependa de la maduración de un
+subsistema todavía incompleto, resulta más adecuado para este caso de uso.
 
 El principal riesgo competitivo identificado es que Moodle HQ madure este subsistema
 nativo y agregue una acción de chat con historial en una versión futura; la mitigación
@@ -736,7 +832,9 @@ directamente con el backend: toda llamada pasa por el plugin de Moodle, que act�
 proxy autenticado (patrón *Hybrid PHP Proxy*). Este diseño resuelve tres cuestiones de
 manera simultánea: la clave de la API del LLM nunca llega al navegador, la protección
 ante CSRF queda cubierta por el mecanismo nativo de Moodle, y se evitan los problemas
-de CORS al existir una única comunicación servidor-a-servidor.
+de CORS al existir una única comunicación servidor-a-servidor. Como se observa en la
+Figura 1, el navegador solo habla con el plugin PHP, que es quien reenvía cada
+solicitud al backend y a los proveedores de LLM y *embeddings*.
 
 ```mermaid
 flowchart TB
@@ -812,6 +910,9 @@ comporta como una hoja a pantalla completa (*bottom-sheet*).
 > K-means en pasos numerados, con un chip "Fuentes: clustering.md" debajo de
 > la respuesta.
 
+El panel docente ofrece, además, un buscador semántico sobre el mismo material
+indexado, como se observa en la Figura 2b.
+
 ![Figura 2b](img/search-widget.png){width=70%}
 
 > **Figura 2b.** Buscador semántico del panel docente, con el término "K-means"
@@ -820,6 +921,9 @@ comporta como una hoja a pantalla completa (*bottom-sheet*).
 > búsqueda con filtros por tipo de archivo y unidad, devolviendo un
 > fragmento de texto con dos coincidencias del término buscado resaltadas.
 
+Desde el mismo panel, el docente gestiona el material indexado y su estado, según
+se muestra en la Figura 2c.
+
 ![Figura 2c](img/docente-panel.png){width=70%}
 
 > **Figura 2c.** Panel del docente: gestión de material indexado. *Fuente:*
@@ -827,6 +931,9 @@ comporta como una hoja a pantalla completa (*bottom-sheet*).
 > *Texto alternativo:* la tabla de materiales subidos, con la unidad del
 > curso asignada, el estado de indexación y si el material está visible
 > para los alumnos.
+
+El panel también expone las preguntas de alumnos sin responder, es decir los vacíos
+de contenido detectados, como se observa en la Figura 2d.
 
 ![Figura 2d](img/docente-gaps.png){width=70%}
 
@@ -916,6 +1023,10 @@ lo divide en fragmentos de aproximadamente 512 tokens con solapamiento, genera l
 **pgvector** (pgvector, s.f.), actualizando el estado del
 documento (`pending → indexing → indexed | error`).
 
+Como se observa en la Figura 3, la secuencia completa de una consulta del
+estudiante atraviesa autenticación, limitación de tasa, búsqueda vectorial y
+generación de la respuesta en *streaming*:
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -978,6 +1089,10 @@ sequenceDiagram
 > en streaming, pasando por autenticación, rate limiting, embedding de la pregunta,
 > búsqueda vectorial y generación con el LLM.
 
+El pipeline de indexación corre en paralelo, de forma asíncrona y previa a cualquier
+consulta: la Figura 4 muestra el flujo completo, desde que el docente sube un
+documento hasta que queda disponible para la búsqueda vectorial.
+
 ```mermaid
 flowchart TB
     A[PDFs/DOCX/TXT<br/>en mdl_files] -->|cron o trigger docente| B[Plugin PHP<br/>extrae binario]
@@ -1009,7 +1124,7 @@ Los seis módulos descritos arriba son los que entregó el MVP de junio de
 (`docs/presentaciones/NexusAI_Avances_2026-08-06.md`) que ya se nombran
 como alcance en "Alcance funcional", pero sin mostrar nunca cómo se ven
 realmente en uso. Esta sección cierra ese vacío con capturas del entorno
-desplegado localmente.
+desplegado localmente, como se observa en las Figuras 5a y 5b.
 
 ![Figura 5a](img/studymode-plan.png){width=48%} ![Figura 5b](img/studymode-quiz.png){width=48%}
 
@@ -1026,7 +1141,9 @@ vacíos de contenido del módulo de *gaps* ya descrito, y los errores
 cometidos en *quizzes* anteriores. Sobre ese mismo *quiz* de práctica se
 agregaron después *flashcards* con repetición espaciada (algoritmo SM-2,
 SP-11/#315, 07/09/2026), que no se capturan acá por no tener una pantalla
-propia distinta del *quiz*.
+propia distinta del *quiz*. El calendario y el resumen semanal del foro,
+en cambio, sí tienen pantalla propia, como se observa en las Figuras 6a
+y 6b.
 
 ![Figura 6a](img/calendario.png){width=48%} ![Figura 6b](img/resumen-foro.png){width=48%}
 
@@ -1047,6 +1164,9 @@ extendido, y sumó después la opción de reenviar el mismo resumen semanal
 a un *webhook* de Slack, Discord o Teams (FOR-07/#378, 08/09/2026), para
 que el docente no tenga que entrar a Moodle a leerlo.
 
+El mismo panel docente agrupa automáticamente las preguntas de los alumnos por
+tema, como se observa en la Figura 7.
+
 ![Figura 7](img/preguntas-frecuentes.png){width=70%}
 
 > **Figura 7.** Panel docente: preguntas de alumnos agrupadas por tema.
@@ -1055,6 +1175,9 @@ que el docente no tenga que entrar a Moodle a leerlo.
 > preguntas reales de alumnos, cada uno con la cantidad de veces
 > consultado y un ejemplo de la pregunta original.
 
+El panel de *Analytics* reúne estas y otras métricas de uso del curso en una sola
+vista, como se observa en la Figura 8.
+
 ![Figura 8](img/analytics-docente.png){width=70%}
 
 > **Figura 8.** Panel docente: *Analytics*. *Fuente:* elaboración propia,
@@ -1062,6 +1185,9 @@ que el docente no tenga que entrar a Moodle a leerlo.
 > alternativo:* métricas de uso del curso —*quizzes* de práctica, vacíos
 > de contenido, preguntas al asistente, temas consultados—, un indicador
 > de "salud del contenido" y la lista de preguntas más frecuentes.
+
+El generador de exámenes completa el panel docente, como se observa en la
+Figura 9.
 
 ![Figura 9](img/generar-examen.png){width=70%}
 
@@ -1613,7 +1739,8 @@ contenido del curso no puede sobreescribir.
 El ADR-011 (Anexo E) ya cuenta por qué el backend pasó por tres destinos
 de despliegue distintos a lo largo del proyecto hasta quedar en Oracle
 Cloud. Esta sección documenta cómo es ese despliegue en la práctica, no
-por qué cambió.
+por qué cambió. Como se observa en la Figura 10, el plan original ubicaba el
+backend sobre infraestructura propia de la UCC.
 
 ```mermaid
 flowchart TB
@@ -1657,6 +1784,9 @@ flowchart TB
 > Railway/Hetzner y el PostgreSQL de la UCC por infraestructura
 > autogestionada en Oracle Cloud, y nunca llegó a correr Moodle junto al
 > resto del *stack*.
+
+La Figura 11, en cambio, muestra la topología real, vigente desde agosto de
+2026:
 
 ```mermaid
 flowchart TB
@@ -1950,7 +2080,8 @@ correcciones de los 16 puntos de MMR-301 y de los dos hallazgos
 adicionales descritos arriba. El *listing* público confirma un último
 *release* del 15 de octubre de 2026 — un día después de la fecha de esa
 misma versión en el `CHANGELOG` del repositorio, consistente con el
-tiempo que toma la publicación una vez aprobada la revisión.
+tiempo que toma la publicación una vez aprobada la revisión. Como se observa en
+la Figura 12, la ficha pública ya refleja esa versión.
 
 ![Figura 12](img/moodle-marketplace-listing.png){width=80%}
 
@@ -2082,15 +2213,22 @@ Tras la implementación del proyecto se esperan los siguientes beneficios, tanto
 tangibles como intangibles:
 
 - **Acceso a asistencia académica disponible de forma permanente (24/7)** sobre el
-  material real del curso, sin necesidad de incorporar personal de tutoría adicional.
+  material real del curso, sin necesidad de incorporar personal de tutoría adicional
+  — con siete funcionalidades ya en producción y una cobertura de pruebas
+  automatizadas cercana al 80% en el backend (ver Diagnóstico y Propuesta de
+  Solución).
 - **Reducción de la dispersión de la información**, al concentrar las consultas dentro
-  del campus virtual donde reside el material validado.
+  del campus virtual donde reside el material validado: el relevamiento propio mostró
+  que el 80,7% de los estudiantes percibía esa dispersión antes de la implementación.
 - **Mejora en la toma de decisiones del docente**, mediante el reporte de vacíos de
   contenido que evidencia qué temas no quedan cubiertos por el material.
 - **Mitigación del riesgo de respuestas incorrectas**, gracias a la trazabilidad de
   cada respuesta hacia su fragmento de origen.
 - **Preservación de la soberanía de los datos académicos**, al mantenerlos en la
   infraestructura controlada por la institución.
+- **Costo operativo bajo**: ~$5,81 por estudiante al año en el escenario de
+  producción estimado (ver Impacto Económico), un orden de magnitud por debajo de
+  soluciones comerciales comparables.
 
 \newpage
 
@@ -2109,16 +2247,16 @@ estimado para 500 estudiantes activos, el costo se mantiene reducido.
 | Concepto | Escenario MVP (actual) | Escenario producción (anual, 500 alumnos) |
 |---|---|---|
 | Infraestructura (hosting, base de datos, *cache*, dominio) | ~$36 / año | ~$170 |
-| Servicios de IA (LLM + *embeddings*) | $0 (nivel gratuito) | ~$1.200 |
+| Servicios de IA (LLM + *embeddings*) | $0 (nivel gratuito) | ~$1.296 |
 | Mantenimiento (10 h/mes) | — | ~$1.440 |
-| **Total** | **~$36 / año** | **~$2.810** |
+| **Total** | **~$36 / año** | **~$2.906** |
 
-El costo de producción equivale a aproximadamente **$5,62 por estudiante por año**, un
+El costo de producción equivale a aproximadamente **$5,81 por estudiante por año**, un
 orden de magnitud por debajo de soluciones comerciales comparables.
 
 ## Costos de personal (valoración teórica)
 
-El equipo está compuesto por dos estudiantes de Ingeniería en Sistemas. Valorado a
+El equipo está compuesto por tres estudiantes de Ingeniería en Sistemas. Valorado a
 tarifa de mercado junior (~$12 por hora), el desarrollo del MVP representó
 aproximadamente **840 horas-persona**, equivalentes a una valoración teórica de
 **~$10.080**. Este monto **no constituye un costo real** para la institución —el trabajo
@@ -2172,8 +2310,10 @@ de recursos de cómputo:
 - **Uso eficiente de la energía:** la arquitectura de un único servicio (monolito
   modular) y el uso de una sola base de datos reducen la huella de cómputo frente a
   arquitecturas distribuidas más complejas.
-- **Aprovechamiento de niveles gratuitos y recursos compartidos:** el despliegue del MVP
-  utiliza infraestructura compartida, evitando el aprovisionamiento de hardware dedicado.
+- **Aprovechamiento de niveles gratuitos y recursos compartidos:** el despliegue real
+  corre sobre dos VMs `VM.Standard.E2.1.Micro` (1 OCPU / 1 GB RAM cada una) del nivel
+  *Always Free* de Oracle Cloud —una de *staging* y otra de producción—, sin
+  aprovisionar hardware dedicado adicional.
 - **Sostenibilidad a largo plazo:** la abstracción multi-proveedor permite migrar a
   modelos de IA más eficientes a medida que estén disponibles, sin rediseñar el sistema.
 
@@ -2199,8 +2339,10 @@ mediante una arquitectura autohospedada.
 
 Entre las **limitaciones** actuales se reconocen la ausencia de un esquema
 multi-institución nativo, la dependencia de la calidad del modelo de lenguaje en el
-generador de cuestionarios, y la cobertura manual de pruebas en el frontend y el
-plugin.
+generador de cuestionarios, la cobertura manual de pruebas en el frontend y el
+plugin, y la evaluación con usuarios reales (RNF-06 a RNF-09), que quedó pendiente de
+consolidar con métricas de latencia y un *golden set* de calidad de respuesta más allá
+de las pruebas internas del equipo.
 
 Como **trabajo futuro** se plantean la publicación del plugin en el directorio oficial de
 Moodle, la incorporación de pruebas automatizadas de frontend, y el agrupamiento
@@ -2298,6 +2440,8 @@ sección, y toda referencia listada fue utilizada en el informe.
   Systems, 33*, 9459–9474.
 - Microsoft. (s.f.). *Microsoft Copilot for Education*. Recuperado 2026, de
   https://www.microsoft.com/en-us/education/products/copilot
+- Moodle. (s.f.). *NexusAI — Moodle Plugins Directory*. Recuperado el 21 de octubre de
+  2026, de https://marketplace.moodle.com/plugins/4243
 - Moodle HQ. (2024). *Moodle Developer Documentation — Plugin types: local*.
   https://moodledev.io/docs/apis/plugintypes/local
 - Moodle HQ. (s.f.-a). *Moodle Developer Documentation — Access API*. Recuperado 2026,
@@ -2427,7 +2571,8 @@ prioridad en el contexto del MVP y el sprint donde se implementó.
 ## Anexo B — Modelo de datos
 
 NexusAI usa una sola base de datos PostgreSQL con la extensión pgvector activada; los
-embeddings vectoriales y los datos relacionales viven en la misma instancia.
+embeddings vectoriales y los datos relacionales viven en la misma instancia. Como se
+observa en la Figura 13, el modelo vigente solo tiene dos tablas.
 
 ```mermaid
 erDiagram

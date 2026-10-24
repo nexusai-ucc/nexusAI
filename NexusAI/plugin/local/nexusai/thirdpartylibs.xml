@@ -53,7 +53,7 @@ with its versions in react/package.json.
     <library>
         <name>dompurify</name>
         <location>amd/src/chatwidget-lazy.js</location>
-        <version>3.4.16</version>
+        <version>3.4.17</version>
         <license>Apache-2.0</license>
         <licenseversion>2.0</licenseversion>
     </library>

@@ -352,6 +352,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
                                 type="button"
                                 className={`nexusai-doc-nav__item ${activeTab === key ? "nexusai-doc-nav__item--active" : ""}`}
                                 onClick={() => setActiveTab(key)}
+                                aria-current={activeTab === key ? "page" : undefined}
                             >
                                 <Icon size={15} />
                                 <span>{label}</span>

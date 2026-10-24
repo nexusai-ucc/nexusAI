@@ -420,7 +420,6 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title={L.openInMoodle}
-                                aria-label={`${e.name} — ${eventTypeLabel(e.component, lang)}, ${formatDate(e.timesort)}. ${L.openInMoodle}`}
                             >
                                 <div className="nexusai-calendar-item__icon">
                                     <IconCalendar size={16} />
@@ -433,6 +432,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
                                         </span>
                                     </div>
                                     <span className="nexusai-calendar-item__date">{formatDate(e.timesort)}</span>
+                                    <span className="nexusai-sr-only">{L.openInMoodle}</span>
                                 </div>
                             </a>
                             <div className="nexusai-calendar__alert-row">
