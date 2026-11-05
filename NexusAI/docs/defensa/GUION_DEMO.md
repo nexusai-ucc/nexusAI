@@ -1,78 +1,90 @@
-# Guion de la demo en vivo
+# Guion de la demo con el público
 
-> Borrador v0.1, 05/11/2026. **Todavía no se ensayó.** Los pasos se validaron contra el código de `development` (d1298aa), no en un Moodle corriendo. Los tiempos son estimados y se corrigen en el primer ensayo.
+> v0.2, 05/11/2026. **No se ensayó.** Los pasos se revisaron contra el código de `development`, pero la prueba con público y la de carga a través de Moodle quedan para enero. Los tiempos son estimados.
 
-**Duración:** 6 minutos. **Pantalla:** Delfina. **Narración:** Marcos. **Plan B:** Santiago (reparto a confirmar).
+**Duración:** 9 minutos, del minuto 8 al 17 de la exposición. **Pantalla:** Delfina. **Narración:** Marcos. **Control** (panel en otra pantalla, plan B y alertas): Santiago. Todo el reparto está a confirmar.
 
 ## La idea
 
-Una sola historia en lugar de recorrer las épicas: una pregunta que el material no responde llega al docente, el docente lo resuelve y el alumno recibe la respuesta. Muestra los tres diferenciales de NexusAI en un mismo recorrido: cita la fuente, admite lo que no sabe y le avisa al docente.
+El público usa NexusAI desde su celular, sobre **la propia tesis**. Lo que pregunta aparece en el panel del docente. Una pregunta que el material no cubre se resuelve en vivo: el docente sube un PDF y todos vuelven a preguntar y reciben la respuesta con la cita.
 
-Queda afuera y se nombra en una diapositiva: voz, foros, calendario, flashcards, webhook y buscador.
+Cada momento prueba algo: que cita la fuente, que no inventa, que el docente se entera y que el material se actualiza en el momento.
 
-## Preparación
+## El curso
 
-### Corpus
-- Reutilizar el curso "Sistemas Inteligentes (Demo)" y sus usuarios (`docs/presentaciones/NexusAI_Demo_Script_2026-08-06.md`) o rearmarlo con la versión congelada.
-- **Un PDF de 1 o 2 páginas** sobre un tema que el resto del material no toque. Sale de ese mismo curso.
-- **El nombre del archivo no puede tener espacios ni acentos:** la píldora de fuentes reconoce el nombre con `[\w\-]+\.(pdf|docx|txt)` (`MessageBubble.jsx`). Por ejemplo, `refuerzo-q-learning.pdf`.
-- **Tres preguntas probadas** para el paso 2 y una distinta para el paso 1. El tribunal puede elegir entre las tres del paso 2.
-- Las preguntas tienen que dar similitud máxima menor a 0,4, o que el modelo diga que no encontró información. Ese es el criterio de `gaps/recorder.py`, y hay que comprobarlo con el modelo definitivo.
+- **Nombre:** "NexusAI: la tesis". El material es el informe en PDF (`informe-ipi/informe-ipi.pdf`). Ya se revisó que no contenga credenciales.
+- **El PDF sembrado:** una página con un dato que el informe no tiene y al que el público pueda responder: "¿Quién del equipo hizo más commits?". **El dato y su redacción los define el equipo:** hay commits con más de un nombre por persona y hay que unificarlos. El nombre del archivo, sin espacios ni acentos, por ejemplo `datos-del-equipo.pdf`: la píldora de fuentes solo reconoce `[\w\-]+\.(pdf|docx|txt)`.
+- **Historial previo:** 6 alumnos de ensayo con preguntas y errores de quiz, así el panel docente no arranca vacío.
 
-### Antes de cada ensayo
-- Borrar de "Preguntas de alumnos" los gaps de ensayos anteriores y sacar el PDF del paso 4.
-- Dos ventanas: alumno a la izquierda y docente a la derecha, con sesiones separadas (perfiles distintos del navegador).
-- Las credenciales no se escriben en vivo: las dos sesiones quedan abiertas.
-- Zoom del navegador para que se lea desde el fondo de la sala.
-- `/health` del backend abierto en una pestaña, para que Santiago lo vigile.
+## Acceso del público
 
-## Los pasos
+- **QR** a la URL del Moodle de la demo, con un dominio corto y HTTPS. Se muestra en la diapositiva del minuto 6, antes de hablar de él, con una frase: "Escaneen, entren con la tarjeta que tienen en el asiento".
+- **Tarjetas** en cada asiento con usuario y contraseña propios (`invitado01` … `invitado70`), así cada uno tiene su propio límite. Las contraseñas no se proyectan.
+- **Cuentas** con rol alumno en ese único curso, sin datos personales, sin mensajería, sin edición de perfil y sin acceso a otros cursos. Se borran después de la defensa.
+- **Datos del celular:** el Moodle es público, así que no se depende del wifi de la sala.
+- **Aviso en pantalla:** "Lo que pregunten puede aparecer en la pantalla. No escriban datos personales".
 
-| # | Tiempo | Quién actúa | Qué se hace | Qué tiene que verse |
+## Los momentos
+
+| Min | Qué pasa | Pantalla | Qué tiene que verse | Qué dice el narrador |
 |---|---|---|---|---|
-| 1 | 0:50 | Alumno | En el widget ✧, una pregunta que el material responde | Respuesta en streaming, píldoras de fuentes. Clic: se abre la actividad en Moodle |
-| 2 | 0:40 | Alumno | Una pregunta que el material no responde | Admite que no tiene la información |
-| 3 | 0:30 | Docente | Panel de materiales → **Preguntas de alumnos** → gaps | Aparece la pregunta del paso 2 |
-| 4 | 1:00 | Docente | **Material** → subir el PDF | Pasa por En cola → Indexando → Indexado. Queda como actividad Archivo en una unidad del curso |
-| 5 | 0:50 | Alumno | Repite la pregunta del paso 2 | **Ahora responde y cita el PDF nuevo** |
-| 6 | 1:10 | Alumno | **Modo Estudio** → Practicar, quiz de ese tema. Responder mal una. Después → Plan | El error alimenta el plan de repaso |
-| 7 | 0:20 | Docente | **Analytics** | Métricas del curso. Si sobra tiempo, nombrar el generador de exámenes |
+| 0–1 | El público entra desde el celular | Diapositiva con QR | El widget ✧ dentro del curso, en versión celular | "Esto es Moodle, el mismo campus de siempre. El asistente vive adentro" |
+| 1–3 | **Preguntan lo que quieran sobre la tesis** | Moodle con la sesión de Delfina | Respuestas en streaming con fuentes | "Pregúntenle lo que quieran de nuestra tesis. Fíjense en la fuente de cada respuesta" |
+| 3–4 | Una pregunta para todos, dictada por alguien del tribunal si quiere | Delfina la escribe y hace clic en la fuente | Se abre el informe en el lugar citado | "Cada respuesta se puede verificar" |
+| 4–5 | "Esto es lo que preguntaron ustedes" | Panel docente → **Preguntas de alumnos** (recargar) | Temas frecuentes y vacíos con las preguntas del público | "El docente no tiene que leer cada chat: ve qué preguntaron y qué no pudo responder el material" |
+| 5–6 | Pregunta sembrada: "¿Quién del equipo hizo más commits?" | Todos la escriben | El sistema admite que no tiene esa información | "No inventa. Y esa pregunta no se pierde" |
+| 6–7 | El docente sube el PDF | Panel → **Material** → subir | En cola → Indexando → Indexado | "El docente completa el material en un minuto, sin tocar nada de IA" |
+| 7–8 | **Todos repiten la pregunta** | Cualquier celular | Responde y cita `datos-del-equipo.pdf` | "La misma pregunta de hace dos minutos. Ahora sí, y citando lo que se acaba de subir" |
+| 8–9 | Quiz en pantalla | **Modo Estudio** → Practicar, sobre un tema del informe | El público vota a mano alzada; Delfina marca la opción más votada y se ve la corrección. Cierre en **Analytics** | "Con esto el alumno practica. Lo que le sale mal vuelve en su plan de repaso" |
 
-Suma 5:20. Quedan 40 segundos de margen.
+El quiz se hace en la pantalla y no en 60 celulares porque cada quiz lo genera el LLM: con 60 a la vez sería lento y caro, y no agrega nada a lo que se prueba.
 
-### Lo que dice el narrador
+## Reglas para el equipo
 
-1. "Cada respuesta sale del material del curso, y se puede ir a la fuente: Moodle aplica sus permisos al abrirla."
-2. "Esto es lo que no hace un chat general: si no está en el material, lo dice, no inventa."
-3. "Y esa pregunta no se pierde. El docente ve qué falta cubrir, sin leer cada conversación."
-4. "El docente sube el apunte. Se procesa en segundo plano y queda como una actividad normal de Moodle."
-5. "La misma pregunta de hace dos minutos. Ahora sí, y citando lo que el docente acaba de subir."
-6. "Con eso practica. Lo que le sale mal vuelve en su plan de repaso."
-7. "Y el docente tiene la foto del curso completo."
-
-## Para comprobar en el primer ensayo
-
-- [ ] Si el clic en la fuente abre la actividad (VIS-05, #546). No lo pude confirmar leyendo `MessageBubble.jsx`.
-- [ ] Cuánto tarda indexar el PDF. Si tarda más de 1 minuto, achicarlo o mostrar uno ya indexado.
-- [ ] Si el quiz acepta el tema del PDF nuevo: el umbral de similitud es 0,5 (`QUIZ_TOPIC_MIN_SIMILARITY`).
-- [ ] Si un solo error hace aparecer el tema en el Plan. En agosto, el curso de demo mostraba un tema con 2 errores cargados: si hace falta, usar un alumno con historial.
-- [ ] Si el gap aparece enseguida en el panel y cómo se ve cuando hay varios agrupados.
-- [ ] Si el flujo funciona con los datos del alumno en tablas de Moodle (DATA-05 y DATA-06, `docs/CORTE_DATOS_MOODLE.md`).
-- [ ] Latencia del paso 1 con el modelo elegido, medida 10 veces seguidas.
+- **Santiago controla lo que se proyecta.** Mira el panel docente en otra pantalla antes de proyectarlo. Si hay algo ofensivo o una broma, se muestra **Analytics** en su lugar.
+- **15 segundos sin respuesta** en la pantalla: Santiago avisa y se pasa al nivel siguiente del plan B. No se depura frente al tribunal.
+- Si no responde el celular de alguien del público, no se lo ayuda en ese momento: la demo sigue en la pantalla.
+- **Inyección de prompts:** alguien va a intentar "ignorá tus instrucciones". Lo ensayamos antes. Si pasa, Marcos lo aprovecha: "El asistente solo responde sobre el material del curso".
 
 ## Plan B
 
-**Regla:** si en un paso del LLM pasan más de 15 segundos sin que empiece la respuesta, Santiago avisa y se pasa al nivel siguiente. No se depura frente al tribunal. El narrador lo dice sin dramatizar: "Es un servicio externo; pasamos a la otra máquina".
+| Nivel | Si falla | Qué se usa |
+|---|---|---|
+| 1 | Los celulares del público (red o carga) | La demo sigue igual en la pantalla: el público dicta las preguntas y Delfina las escribe |
+| 2 | El Moodle público | Notebook con el stack completo en Docker, solo para la pantalla |
+| 3 | El LLM está lento o caído | Segundo proveedor ya configurado en la cadena de fallback (`LLM_FALLBACK_*`) |
+| 4 | Todo | Video de los mismos 9 minutos grabado en un ensayo con público, con narración en vivo |
 
-| Nivel | Cuándo | Qué se usa | Falta preparar |
-|---|---|---|---|
-| 0 | Normal | Notebook principal + backend de demo por internet | Definir backend y modelo |
-| 1 | Falla el wifi de la sala | Hotspot de un celular | Probarlo: necesita datos y señal en la sala |
-| 2 | Falla el backend o el LLM está lento | Segunda notebook con el stack en Docker | Armarla. El LLM sigue siendo externo, así que usa otro proveedor u otra key |
-| 3 | Falla todo | Video de los mismos 7 pasos, con el narrador en vivo | Grabarlo con la versión congelada, en local, sin depender de internet |
+## Infraestructura
 
-Si falla un solo paso del final, se sigue: lo importante está en los pasos 2 a 5. Si fallan los pasos 2 a 5, se va directo al nivel 3.
+| Pieza | Propuesta | Estado |
+|---|---|---|
+| Servidor exclusivo con Moodle 4.5, backend, PostgreSQL y Redis | Empezar con 4 vCPU y 8 GB, y ajustar con la prueba de carga | A contratar. Lo más cercano a Córdoba es mejor, pero la latencia del LLM pesa más que la del servidor |
+| Dominio y HTTPS | Corto para el QR. Caddy ya está en el repo | A contratar |
+| Modelo | `gpt-4o-mini` con embeddings de OpenAI, indexando el material con ese mismo modelo | A configurar |
+| Cuota del proveedor | Con 60 preguntas por minuto serían ~200 k tokens/min, el límite de Tier 1 según la documentación de OpenAI (a confirmar en el panel) | Subir de tier y poner tope de gasto en el proyecto |
+| Moderación | `MODERATION_API_KEY` con la API de moderación de OpenAI | A configurar |
+| Límites por usuario | 20 por minuto y 50 por día (`rate_limit_per_user_*`), más presupuesto de tokens. Con una cuenta por persona alcanzan | Ya existe |
 
-## Ronda de preguntas
+**Costos orientativos** (precios de sitios de terceros; confirmar en cada proveedor): servidor de 4 vCPU y 8 GB entre ~US$ 10 y 72 por mes según proveedor y región; dominio ~US$ 12 por año. Del modelo estimo menos de US$ 1 por demo: 60 personas × 5 preguntas × ~4 k tokens a US$ 0,15 por millón de entrada. Con US$ 50 alcanza para ensayos y margen.
 
-Si el tribunal quiere probar una pregunta libre, se hace en este momento y no durante la demo. Si responde mal, se aprovecha: "Mirá la fuente que usó; por eso citamos, para que se pueda verificar".
+## Riesgos encontrados en el código
+
+1. **Nunca se probó la carga pasando por Moodle.** La prueba de k6 le pega directo al backend con la firma HMAC (`scripts/load/nexus_load.js`). Cada chat en streaming ocupa un proceso PHP durante toda la respuesta, y `chat_stream.php` no libera la sesión antes del stream. → Prueba de carga en enero con 60 navegadores reales (por ejemplo Playwright) que entren a Moodle y pregunten, y ajustar los procesos de PHP-FPM o Apache.
+2. **Los 100 usuarios de la prueba de carga fueron con el LLM simulado.** Con el modelo real solo se probaron 2. → Esa misma prueba de enero, con el modelo real.
+3. **Los paneles docentes no se actualizan solos:** hay que recargar. Está contemplado en el guion.
+4. **La moderación deja pasar los mensajes si ella misma falla** (`MODERATION_FAIL_OPEN=true` por defecto). → Para la demo se puede poner en `false`, y además Santiago revisa antes de proyectar.
+
+## Decisión de avance (31/01)
+
+Si la prueba con 60 navegadores no da al menos 95 % de respuestas correctas con p95 por debajo de 8 s (el mismo umbral de `PRUEBAS_DE_CARGA.md`), la participación del público se limita a dictar preguntas (nivel 1) y la demo se hace desde la pantalla.
+
+## Para comprobar en el primer ensayo
+
+- [ ] Login y widget en Android y en iPhone, con datos móviles.
+- [ ] Que el clic en la fuente abra el informe (VIS-05, #546).
+- [ ] Cuánto tarda en indexarse el PDF sembrado. Si pasa de 1 minuto, achicarlo.
+- [ ] Que la pregunta sembrada caiga en vacíos: similitud menor a 0,4 o el modelo dice que no sabe (`gaps/recorder.py`).
+- [ ] Que el quiz acepte un tema del informe (umbral de 0,5, `QUIZ_TOPIC_MIN_SIMILARITY`).
+- [ ] Que el flujo funcione con los datos del alumno en tablas de Moodle (DATA-05 y DATA-06).
+- [ ] Respuesta ensayada a la inyección de prompts.

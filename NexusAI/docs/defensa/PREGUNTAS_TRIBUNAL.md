@@ -1,6 +1,6 @@
 # Preguntas probables del tribunal
 
-> Borrador v0.1, 05/11/2026. Complementa `docs/contexto-demo-preguntas.md`, que explica cómo está hecha cada función y sigue vigente. Esto cubre las preguntas difíciles que ese documento no toca. Las marcadas con **[completar]** dependen de algo que todavía no pasó.
+> Borrador v0.2, 05/11/2026. Complementa `docs/contexto-demo-preguntas.md`, que explica cómo está hecha cada función y sigue vigente. Esto cubre las preguntas difíciles que ese documento no toca. Las marcadas con **[completar]** dependen de algo que todavía no pasó.
 
 **Regla general:** si algo no se hizo, se dice. Una limitación explicada suma; un número que no se sostiene ante una repregunta resta.
 
@@ -24,7 +24,7 @@ Sí, hay que reconocerlo. Son los 88 que vieron esa pregunta, y el formulario no
 ## Escala y rendimiento
 
 **¿Cuántos alumnos aguanta?**
-Con el modelo simulado, en un backend efímero de CI: 100 usuarios simultáneos, 99,95 % de éxito, p95 de 2,52 s. Esa prueba mide nuestro código. Con el modelo real en staging se probó poco volumen: 2 usuarios, p95 de 4 a 5 s. **No decir que producción soporta 100 alumnos:** la VM tiene 1 GB de RAM y la cuota del proveedor también limita.
+Con el modelo simulado, en un backend efímero de CI: 100 usuarios simultáneos, 99,95 % de éxito, p95 de 2,52 s. Esa prueba mide nuestro código. Con el modelo real en staging se probó poco volumen: 2 usuarios, p95 de 4 a 5 s. **No decir que producción soporta 100 alumnos:** la VM tiene 1 GB de RAM y la cuota del proveedor también limita. **[completar con la prueba de enero: 60 navegadores a través de Moodle, con el modelo real]** Lo que vieron en la demo es lo más cercano a uso real que tenemos.
 
 **¿Y si se cae el proveedor de IA?**
 Hay una cadena de fallback configurable y el proveedor se cambia por variable de entorno. La prueba diaria contra Gemini falló casi siempre desde octubre, por alta demanda y timeouts. Esa prueba existe para detectar esto. Por eso, una institución debería usar un modelo pago con SLA. Si hay que cambiar el modelo de embeddings por otro de distinta dimensión, hay que reindexar el material.
@@ -82,7 +82,13 @@ CURSO-01 (activar por curso), caché y banco de preguntas para bajar costos (COS
 ## En la demo
 
 **¿Esto es producción?**
-Decir exactamente qué se está viendo: Moodle en la notebook, porque no hay uno desplegado, y el backend que se defina. El plugin es la versión publicada en el directorio de Moodle **[verificar que coincida]**.
+Hay que decir exactamente qué están viendo. Es un servidor exclusivo para la demo, con Moodle 4.5, el plugin publicado en el directorio de Moodle y el backend, configurado con un modelo pago. **[verificar que la versión coincida con la publicada]** El ambiente de producción del proyecto es otro (Oracle).
 
-**¿Puedo hacerle una pregunta yo?**
-Sí, en la ronda final. Ver [GUION_DEMO.md](GUION_DEMO.md).
+**¿Qué pasa con lo que escribimos recién?**
+Las cuentas no tienen datos personales y se borran después de la defensa, junto con el servidor de la demo. Las preguntas se enviaron al proveedor del modelo, igual que en el uso normal.
+
+**Alguien intentó romperlo con una inyección de prompts. ¿Qué pasó?**
+Hay moderación de entrada y un guardrail en el prompt del sistema (`_meta_guard` en `chat/router.py`): responde solo sobre el material. Ningún guardrail es perfecto, y por eso las respuestas citan la fuente: se pueden verificar.
+
+**¿Por qué el quiz no lo hicimos todos?**
+Cada quiz lo genera el modelo. Con 60 a la vez, la demo dependería de la cuota del proveedor sin probar nada nuevo. En uso real, cada alumno genera el suyo cuando lo necesita.
