@@ -23,6 +23,9 @@
 | [GUION_DEMO.md](GUION_DEMO.md) | La demo con el público, infraestructura, riesgos y plan B |
 | [SERVIDOR_DEMO.md](SERVIDOR_DEMO.md) | Paso a paso de las cuentas a crear: DigitalOcean, OpenAI y dominio |
 | [PREGUNTAS_TRIBUNAL.md](PREGUNTAS_TRIBUNAL.md) | Preguntas difíciles y cómo responderlas |
+| [PRE_ENTREGA.md](PRE_ENTREGA.md) | La pre-entrega con 3 profes (30/11–2/12): versiones de 20 y de 15 minutos, la demo con roles, el reparto y qué les vamos a preguntar |
+| [novedades-check2/](novedades-check2/) | El PDF que el docente sube en vivo en la pre-entrega (borrador; la versión final se cierra el 20/11) |
+| [ORDEN_REPO.md](ORDEN_REPO.md) | Propuesta para ordenar issues, PRs, README y CHANGELOG antes de la pre-entrega |
 
 ## Lo que falta averiguar con la cátedra
 
