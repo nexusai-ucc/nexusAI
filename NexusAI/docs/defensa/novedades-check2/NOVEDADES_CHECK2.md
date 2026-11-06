@@ -84,7 +84,7 @@ Desde el Check 2 empezamos a preparar la defensa de febrero de 2027. Para eso:
 - **Armamos una parte técnica de 10 minutos.** Sigue una pregunta real del público desde el celular hasta la respuesta: arquitectura, indexación, búsqueda, detección de vacíos, seguridad, resiliencia, el defecto de concurrencia DEF-09 y el proceso de calidad.
 - **Diseñamos una demostración** en la que el público usa NexusAI sobre la tesis y ve en vivo cómo el docente detecta un vacío del material y lo completa.
 
-Esta pre-entrega es una versión corta de esa defensa.
+Esta pre-entrega es un ensayo general de esa defensa: tiene la misma duración y la misma parte técnica.
 
 # Novedad 4: correcciones del informe y orden del repositorio
 
