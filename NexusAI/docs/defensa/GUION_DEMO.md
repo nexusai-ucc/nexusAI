@@ -1,8 +1,8 @@
 # Guion de la demo con el público
 
-> v0.2, 05/11/2026. **No se ensayó.** Los pasos se revisaron contra el código de `development`, pero la prueba con público y la de carga a través de Moodle quedan para enero. Los tiempos son estimados.
+> v0.3, 05/11/2026. **No se ensayó.** Los pasos se revisaron contra el código de `development`, pero la prueba con público y la de carga a través de Moodle quedan para enero. Los tiempos son estimados.
 
-**Duración:** 9 minutos, del minuto 8 al 17 de la exposición. **Pantalla:** Delfina. **Narración:** Marcos. **Control** (panel en otra pantalla, plan B y alertas): Santiago. Todo el reparto está a confirmar.
+**Duración:** 8 minutos, del minuto 8 al 16 de la exposición (la parte técnica pasó a 10). **Pantalla:** Delfina. **Narración:** Marcos. **Control** (panel en otra pantalla, plan B y alertas): Santiago. Todo el reparto está a confirmar.
 
 ## La idea
 
@@ -29,13 +29,13 @@ Cada momento prueba algo: que cita la fuente, que no inventa, que el docente se 
 | Min | Qué pasa | Pantalla | Qué tiene que verse | Qué dice el narrador |
 |---|---|---|---|---|
 | 0–1 | El público entra desde el celular | Diapositiva con QR | El widget ✧ dentro del curso, en versión celular | "Esto es Moodle, el mismo campus de siempre. El asistente vive adentro" |
-| 1–3 | **Preguntan lo que quieran sobre la tesis** | Moodle con la sesión de Delfina | Respuestas en streaming con fuentes | "Pregúntenle lo que quieran de nuestra tesis. Fíjense en la fuente de cada respuesta" |
-| 3–4 | Una pregunta para todos, dictada por alguien del tribunal si quiere | Delfina la escribe y hace clic en la fuente | Se abre el informe en el lugar citado | "Cada respuesta se puede verificar" |
-| 4–5 | "Esto es lo que preguntaron ustedes" | Panel docente → **Preguntas de alumnos** (recargar) | Temas frecuentes y vacíos con las preguntas del público | "El docente no tiene que leer cada chat: ve qué preguntaron y qué no pudo responder el material" |
-| 5–6 | Pregunta sembrada: "¿Quién del equipo hizo más commits?" | Todos la escriben | El sistema admite que no tiene esa información | "No inventa. Y esa pregunta no se pierde" |
-| 6–7 | El docente sube el PDF | Panel → **Material** → subir | En cola → Indexando → Indexado | "El docente completa el material en un minuto, sin tocar nada de IA" |
-| 7–8 | **Todos repiten la pregunta** | Cualquier celular | Responde y cita `datos-del-equipo.pdf` | "La misma pregunta de hace dos minutos. Ahora sí, y citando lo que se acaba de subir" |
-| 8–9 | Quiz en pantalla | **Modo Estudio** → Practicar, sobre un tema del informe | El público vota a mano alzada; Delfina marca la opción más votada y se ve la corrección. Cierre en **Analytics** | "Con esto el alumno practica. Lo que le sale mal vuelve en su plan de repaso" |
+| 1–2:30 | **Preguntan lo que quieran sobre la tesis** | Moodle con la sesión de Delfina | Respuestas en streaming con fuentes | "Pregúntenle lo que quieran de nuestra tesis. Fíjense en la fuente de cada respuesta" |
+| 2:30–3:15 | Una pregunta para todos, dictada por alguien del tribunal si quiere | Delfina la escribe y hace clic en la fuente | Se abre el informe en el lugar citado | "Cada respuesta se puede verificar" |
+| 3:15–4:15 | "Esto es lo que preguntaron ustedes" | Panel docente → **Preguntas de alumnos** (recargar) | Temas frecuentes y vacíos con las preguntas del público | "El docente no tiene que leer cada chat: ve qué preguntaron y qué no pudo responder el material" |
+| 4:15–5 | Pregunta sembrada: "¿Quién del equipo hizo más commits?" | Todos la escriben | El sistema admite que no tiene esa información | "No inventa. Y esa pregunta no se pierde" |
+| 5–6 | El docente sube el PDF | Panel → **Material** → subir | En cola → Indexando → Indexado | "El docente completa el material en un minuto, sin tocar nada de IA" |
+| 6–7:15 | **Todos repiten la pregunta** | Cualquier celular | Responde y cita `datos-del-equipo.pdf` | "La misma pregunta de hace dos minutos. Ahora sí, y citando lo que se acaba de subir" |
+| 7:15–8 | Una pregunta de quiz en pantalla | **Modo Estudio** → Practicar, sobre un tema del informe | El público vota a mano alzada una sola pregunta y se ve la corrección. Cierre en **Analytics** | "Con esto el alumno practica. Lo que le sale mal vuelve en su plan de repaso" |
 
 El quiz se hace en la pantalla y no en 60 celulares porque cada quiz lo genera el LLM: con 60 a la vez sería lento y caro, y no agrega nada a lo que se prueba.
 
@@ -53,20 +53,22 @@ El quiz se hace en la pantalla y no en 60 celulares porque cada quiz lo genera e
 | 1 | Los celulares del público (red o carga) | La demo sigue igual en la pantalla: el público dicta las preguntas y Delfina las escribe |
 | 2 | El Moodle público | Notebook con el stack completo en Docker, solo para la pantalla |
 | 3 | El LLM está lento o caído | Segundo proveedor ya configurado en la cadena de fallback (`LLM_FALLBACK_*`) |
-| 4 | Todo | Video de los mismos 9 minutos grabado en un ensayo con público, con narración en vivo |
+| 4 | Todo | Video de los mismos 8 minutos grabado en un ensayo con público, con narración en vivo |
 
 ## Infraestructura
 
-| Pieza | Propuesta | Estado |
-|---|---|---|
-| Servidor exclusivo con Moodle 4.5, backend, PostgreSQL y Redis | Empezar con 4 vCPU y 8 GB, y ajustar con la prueba de carga | A contratar. Lo más cercano a Córdoba es mejor, pero la latencia del LLM pesa más que la del servidor |
-| Dominio y HTTPS | Corto para el QR. Caddy ya está en el repo | A contratar |
-| Modelo | `gpt-4o-mini` con embeddings de OpenAI, indexando el material con ese mismo modelo | A configurar |
-| Cuota del proveedor | Con 60 preguntas por minuto serían ~200 k tokens/min, el límite de Tier 1 según la documentación de OpenAI (a confirmar en el panel) | Subir de tier y poner tope de gasto en el proyecto |
-| Moderación | `MODERATION_API_KEY` con la API de moderación de OpenAI | A configurar |
-| Límites por usuario | 20 por minuto y 50 por día (`rate_limit_per_user_*`), más presupuesto de tokens. Con una cuenta por persona alcanzan | Ya existe |
+Todo está en el repo, en `NexusAI/deploy/demo/`: un solo servidor con Moodle 4.5, el plugin, el backend, PostgreSQL, Redis y Caddy con HTTPS. Se levanta con `provision.sh` y `setup.sh`, y las tarjetas salen de `generar_cuentas.py`. Las cuentas que hay que crear están en [SERVIDOR_DEMO.md](SERVIDOR_DEMO.md).
 
-**Costos orientativos** (precios de sitios de terceros; confirmar en cada proveedor): servidor de 4 vCPU y 8 GB entre ~US$ 10 y 72 por mes según proveedor y región; dominio ~US$ 12 por año. Del modelo estimo menos de US$ 1 por demo: 60 personas × 5 preguntas × ~4 k tokens a US$ 0,15 por millón de entrada. Con US$ 50 alcanza para ensayos y margen.
+| Pieza | Decisión |
+|---|---|
+| Servidor | DigitalOcean: 2 vCPU y 4 GB mientras se arma; 4 vCPU y 8 GB para la prueba de carga y la defensa |
+| Dominio | Corto, para el QR. Caddy saca el certificado solo |
+| Modelo | OpenAI `gpt-4o-mini` para el chat; `text-embedding-3-small` **pedido en 768 dimensiones**, porque las migraciones 009 y 017 fijan `vector(768)` |
+| Moderación | API de moderación de OpenAI, con `MODERATION_FAIL_OPEN=false`: si la moderación falla, el mensaje no pasa |
+| Backend | Solo accesible por la red interna (`http://api:8000`): el único puerto público es el de Caddy |
+| Límites por usuario | 20 por minuto, y 200 por día en la demo para los ensayos (en producción son 50). Cada persona tiene su cuenta |
+
+**Costos:** el droplet de 4 vCPU y 8 GB anda por US$ 48 por mes en los precios de terceros que revisé (a confirmar en DigitalOcean, y puede haber crédito del Student Pack). Del modelo, menos de US$ 1 por demo: 60 personas × 5 preguntas × ~4 k tokens a US$ 0,15 por millón de entrada. Con US$ 50 alcanza para ensayos y margen.
 
 ## Riesgos encontrados en el código
 

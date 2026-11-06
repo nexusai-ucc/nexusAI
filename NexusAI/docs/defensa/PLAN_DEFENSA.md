@@ -1,6 +1,6 @@
 # Plan de la defensa oral de la tesis
 
-> Borrador v0.2, 05/11/2026. Propuesta para discutir en equipo.
+> Borrador v0.3, 05/11/2026. Propuesta para discutir en equipo.
 > Issues: [PI-06 #249](https://github.com/nexusai-ucc/nexusAI/issues/249) (presentación) · [PI-07 #250](https://github.com/nexusai-ucc/nexusAI/issues/250) (last check) · [TEST-01 #264](https://github.com/nexusai-ucc/nexusAI/issues/264) y [TEST-02 #265](https://github.com/nexusai-ucc/nexusAI/issues/265) (usuarios reales).
 
 ## Lo definido
@@ -10,6 +10,8 @@
 - **Demo en vivo con el público**, que la usa desde el celular. Se espera que la usen entre 30 y 60 personas a la vez.
 - **Material del curso de la demo:** la propia tesis.
 - **Presentación:** la arma Delfina en Canva. Se puede pagar lo que haga falta para la demo.
+- **Parte técnica:** 10 minutos (16–26), bien técnica, con los parámetros reales del código. La demo queda en 8.
+- **Servidor:** DigitalOcean. **Modelo:** OpenAI `gpt-4o-mini`.
 
 ## Documentos
 
@@ -17,8 +19,9 @@
 |---|---|
 | [INVESTIGACION_DEFENSA.md](INVESTIGACION_DEFENSA.md) | Qué recomiendan guías y rúbricas universitarias, con fuentes y límites |
 | [GUION_PRESENTACION.md](GUION_PRESENTACION.md) | Los 30 minutos, bloque por bloque, con el texto |
-| [BRIEF_CANVA.md](BRIEF_CANVA.md) | 25 diapositivas + 9 de respaldo, con visual, tiempo, orador y fuente |
+| [BRIEF_CANVA.md](BRIEF_CANVA.md) | 27 diapositivas + 9 de respaldo, con visual, tiempo, orador y fuente |
 | [GUION_DEMO.md](GUION_DEMO.md) | La demo con el público, infraestructura, riesgos y plan B |
+| [SERVIDOR_DEMO.md](SERVIDOR_DEMO.md) | Paso a paso de las cuentas a crear: DigitalOcean, OpenAI y dominio |
 | [PREGUNTAS_TRIBUNAL.md](PREGUNTAS_TRIBUNAL.md) | Preguntas difíciles y cómo responderlas |
 
 ## Lo que falta averiguar con la cátedra
@@ -53,12 +56,12 @@ Los tres hablan: así lo pide, por ejemplo, el reglamento de la UNT, y lo más p
 
 | Concepto | Estimado | Cuándo |
 |---|---|---|
-| Servidor exclusivo para la demo: 4 vCPU y 8 GB, de diciembre a febrero | ~US$ 30 a 220 en total, según proveedor | Desde el 20/12 |
+| Droplet de DigitalOcean: 2 vCPU / 4 GB en diciembre, 4 vCPU / 8 GB en enero y febrero | ~US$ 24 + 2 × 48 ≈ US$ 120 (o crédito del Student Pack, a confirmar) | Desde el 14/12 |
 | Dominio | ~US$ 12 | Diciembre |
 | Créditos del modelo (ensayos, prueba de carga y demo) con tope de gasto | US$ 50 | Diciembre |
 | Tarjetas impresas para el público | Poco | Febrero |
 
-Los precios del servidor salen de sitios de terceros; los del modelo, de la documentación de OpenAI. Hay que confirmarlos antes de contratar.
+Los precios del servidor salen de sitios de terceros; los del modelo, de la documentación de OpenAI. Hay que confirmarlos antes de contratar. El entorno ya está automatizado en `NexusAI/deploy/demo/` (PR aparte). En local, con el LLM simulado, se comprobó la instalación, las 71 cuentas, el informe indexado y el chat de un invitado a través de Caddy hasta el evento `done`. Falta ver el texto en streaming con el modelo real: el simulado no hace streaming.
 
 ## Riesgos
 
