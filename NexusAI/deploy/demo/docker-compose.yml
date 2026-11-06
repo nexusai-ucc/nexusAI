@@ -1,0 +1,136 @@
+# NexusAI — entorno de la demo de la defensa (Moodle + backend en un solo servidor)
+#
+# Un Moodle público con el plugin, para que el público use NexusAI desde el
+# celular. Todo corre en el mismo servidor; solo Caddy queda expuesto.
+# El plugin llama al backend por la red interna (http://api:8000), así que la
+# API no se publica.
+#
+# Uso (desde NexusAI/deploy/demo/):
+#   ./setup.sh               # la primera vez: Moodle, instalación y curso
+#   docker compose up -d     # las siguientes
+#
+# Con el LLM simulado (pruebas sin gastar cuota):
+#   docker compose --profile mock up -d    y en .env LLM_BASE_URL=http://mock-llm:9000/v1/
+#
+# Ver README.md.
+
+name: nexusai-demo
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nexusai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: nexusai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Crea las bases `nexusai` y `moodle` y activa pgvector (los mismos scripts que dev).
+      - ../../scripts/init-postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexusai}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # El volumen de uploads se crea como root; la API corre como uid 1001.
+  uploads-perms:
+    image: busybox:1.36
+    command: ["sh", "-c", "chown -R 1001:1001 /uploads"]
+    volumes:
+      - api_uploads:/uploads
+
+  api:
+    build:
+      context: ../../services/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nexusai}:${POSTGRES_PASSWORD}@postgres:5432/nexusai
+      REDIS_URL: redis://redis:6379/0
+    command: ["./entrypoint.sh"]
+    volumes:
+      - api_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      uploads-perms:
+        condition: service_completed_successfully
+
+  moodle:
+    image: moodlehq/moodle-php-apache:8.1
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Código de Moodle 4.5 (lo clona setup.sh) + el plugin del repo, de solo lectura.
+      - ${MOODLE_SRC:-./moodle}:/var/www/html
+      - ../../plugin/local/nexusai:/var/www/html/local/nexusai:ro
+      - moodle_data:/var/moodledata
+      # Scripts de la demo (curso, cuentas, configuración).
+      - ./cli:/opt/demo:ro
+      - ./outputs:/opt/demo-outputs:ro
+      # Más procesos de Apache: cada chat en streaming ocupa uno mientras dura.
+      - ./apache-demo.conf:/etc/apache2/conf-enabled/zz-demo.conf:ro
+
+  # Cron de Moodle cada minuto (tareas, caches, eventos).
+  moodle-cron:
+    image: moodlehq/moodle-php-apache:8.1
+    restart: unless-stopped
+    user: www-data
+    depends_on:
+      - moodle
+    entrypoint: ["sh", "-c", "while true; do php /var/www/html/admin/cli/cron.php > /dev/null 2>&1; sleep 60; done"]
+    volumes:
+      - ${MOODLE_SRC:-./moodle}:/var/www/html
+      - ../../plugin/local/nexusai:/var/www/html/local/nexusai:ro
+      - moodle_data:/var/moodledata
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - moodle
+    environment:
+      DEMO_SITE_ADDRESS: ${DEMO_SITE_ADDRESS:?Falta DEMO_SITE_ADDRESS en .env}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # LLM simulado (solo con --profile mock): el mismo de las pruebas de carga.
+  mock-llm:
+    profiles: [mock]
+    build:
+      context: ../../services/api
+      dockerfile: Dockerfile
+    command: ["uvicorn", "mock_llm:app", "--app-dir", "/mock", "--host", "0.0.0.0", "--port", "9000"]
+    volumes:
+      - ../../scripts/load/mock_llm.py:/mock/mock_llm.py:ro
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_uploads:
+  moodle_data:
+  caddy_data:
+  caddy_config:
