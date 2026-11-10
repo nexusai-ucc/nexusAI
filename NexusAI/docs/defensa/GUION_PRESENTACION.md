@@ -8,16 +8,16 @@
 
 | Min | Bloque | Quién |
 |---|---|---|
-| 0–3 | Apertura | Delfina |
-| 3–6 | Problema | Delfina |
+| 0–3 | Apertura | Santiago |
+| 3–6 | Problema | Santiago |
 | 6–8 | Objetivo y aportes | Santiago |
 | 8–16 | Demo con el público | Delfina, Marcos y Santiago |
-| **16–26** | **Parte técnica** | Santiago (16–21:30) y Marcos (21:30–26) |
+| **16–26** | **Parte técnica** | Delfina (16–21:30) y Marcos (21:30–26) |
 | 26–27 | Proceso | Santiago |
 | 27–29 | Resultados | Santiago |
 | 29–30 | Aportes | Delfina |
 
-## 0–3 · Apertura · Delfina
+## 0–3 · Apertura · Santiago
 
 Sin índice y sin "buenas tardes, somos el grupo…". Arranca con la escena.
 
@@ -29,7 +29,7 @@ Sin índice y sin "buenas tardes, somos el grupo…". Arranca con la escena.
 
 Mientras la diapositiva muestra las dos respuestas: "Somos Delfina, Santiago y Marcos, y esto es NexusAI".
 
-## 3–6 · Problema · Delfina
+## 3–6 · Problema · Santiago
 
 > No lo supusimos: lo medimos. Encuestamos a 166 estudiantes y 17 docentes de la UCC.
 >
@@ -61,7 +61,7 @@ Ver [GUION_DEMO.md](GUION_DEMO.md).
 
 La parte técnica se cuenta siguiendo **una pregunta real que hizo el público en la demo**. Cada tema muestra la decisión, la alternativa descartada y el número que la respalda. Todos los parámetros salen del código de `development`; las rutas van entre paréntesis para responder si el tribunal repregunta.
 
-### 16–17:30 · Arquitectura · Santiago
+### 16–17:30 · Arquitectura · Delfina
 
 > Su pregunta salió del celular hacia Moodle, no hacia nuestro servidor. Son tres capas: un widget en React dentro de Moodle; el plugin, de tipo `local`, en PHP; y el backend en FastAPI con PostgreSQL y pgvector.
 
@@ -71,7 +71,7 @@ La parte técnica se cuenta siguiendo **una pregunta real que hizo el público e
 
 *Diapositiva:* diagrama de 3 capas (`docs/diagrams/architecture.md`).
 
-### 17:30–19 · Indexación · Santiago
+### 17:30–19 · Indexación · Delfina
 
 > Para poder responder, el informe tuvo que convertirse en vectores. Esto pasó cuando el docente lo subió.
 
@@ -84,7 +84,7 @@ La parte técnica se cuenta siguiendo **una pregunta real que hizo el público e
 
 *Diapositiva:* flujo de indexación (`docs/diagrams/rag-flow.md`).
 
-### 19–20:30 · Retrieval y generación · Santiago
+### 19–20:30 · Retrieval y generación · Delfina
 
 > Con su pregunta pasó esto:
 
@@ -103,7 +103,7 @@ La parte técnica se cuenta siguiendo **una pregunta real que hizo el público e
 
 En vivo, si alcanza el tiempo: panel docente → **Buscar** con la misma pregunta. Muestra los fragmentos encontrados. Esa búsqueda es **híbrida**: 0,6 de similitud semántica más 0,4 de coincidencia léxica (`ts_rank` de PostgreSQL), así que también encuentra términos exactos como siglas (`search/router.py`).
 
-### 20:30–21:30 · Detección de vacíos · Santiago
+### 20:30–21:30 · Detección de vacíos · Delfina
 
 > La pregunta de los commits no tenía respuesta. ¿Cómo lo supo el sistema?
 

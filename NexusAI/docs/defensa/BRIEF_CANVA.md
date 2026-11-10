@@ -17,21 +17,21 @@
 
 | # | Min | Quién | Título (afirmación) | Visual | Fuente del dato |
 |---|---|---|---|---|---|
-| 1 | 0:00 | Delfina | La misma pregunta, dos respuestas | Dos columnas: chat general / NexusAI con su fuente | Captura del ensayo |
-| 2 | 1:30 | Delfina | Y si el material no lo cubre, el profesor se entera | Captura del panel de vacíos | `img/docente-gaps.png` |
-| 3 | 2:30 | Delfina | NexusAI · Delfina, Santiago, Marcos · UCC 2026 | Portada sobria | — |
-| 4 | 3:00 | Delfina | 166 estudiantes y 17 docentes nos contaron cómo estudian | Íconos con los dos números | Informe, Relevamiento |
-| 5 | 4:00 | Delfina | El 80,7 % encuentra la información dispersa | Una barra grande, con campus, WhatsApp y Drive alrededor | Informe, Encuesta a estudiantes |
-| 6 | 5:00 | Delfina | Los docentes quieren IA, pero revisando antes | 88,2 % delegaría · 47,1 % con revisión previa | Informe, Encuesta a docentes |
+| 1 | 0:00 | Santiago | La misma pregunta, dos respuestas | Dos columnas: chat general / NexusAI con su fuente | Captura del ensayo |
+| 2 | 1:30 | Santiago | Y si el material no lo cubre, el profesor se entera | Captura del panel de vacíos | `img/docente-gaps.png` |
+| 3 | 2:30 | Santiago | NexusAI · Delfina, Santiago, Marcos · UCC 2026 | Portada sobria | — |
+| 4 | 3:00 | Santiago | 166 estudiantes y 17 docentes nos contaron cómo estudian | Íconos con los dos números | Informe, Relevamiento |
+| 5 | 4:00 | Santiago | El 80,7 % encuentra la información dispersa | Una barra grande, con campus, WhatsApp y Drive alrededor | Informe, Encuesta a estudiantes |
+| 6 | 5:00 | Santiago | Los docentes quieren IA, pero revisando antes | 88,2 % delegaría · 47,1 % con revisión previa | Informe, Encuesta a docentes |
 | 7 | 6:00 | Santiago | Una IA que responde con tu material y le avisa al docente lo que falta | La idea clave sola, en grande | — |
 | 8 | 7:00 | Santiago | Cuatro aportes | Los 4 aportes y **el QR grande** con "Saquen el celular" | — |
 | 9 | 8:00 | Demo | (Pantalla de Moodle) | QR en una esquina + "No escriban datos personales" | — |
-| 10 | 16:00 | Santiago | Su pregunta nunca tocó nuestro servidor directamente | 3 capas: celular → plugin `local` (PHP) → FastAPI + PostgreSQL/pgvector. Marcadas: proxy, `require_sesskey`, sin CORS | `docs/diagrams/architecture.md` |
-| 11 | 17:30 | Santiago | De PDF a vectores en un minuto | Pipeline: pdfplumber → 512 tokens / 64 de solapamiento (`cl100k_base`) → embedding de 768 dimensiones → HNSW (`m=16`, `ef_construction=64`). Estados `pending → indexing → indexed` | `docs/diagrams/rag-flow.md`, `chunker.py`, migración 002 |
-| 12 | 18:30 | Santiago | Una sola base para datos y vectores | PostgreSQL + pgvector vs. una base vectorial aparte: lo que se ahorra | ADR-002 |
-| 13 | 19:00 | Santiago | Top 5, similitud ≥ 0,3 y tres filtros | La consulta: `<=>` coseno + `WHERE curso AND status='indexed' AND cmid IN visibles` → prompt con citas → SSE `meta / token / done` | `retriever.py`, `chat/router.py`, `docs/diagrams/sequence-chat.md` |
-| 14 | 20:00 | Santiago | RAG y no reentrenar | Comparación en 3 filas: costo por materia, material nuevo, citas | Guion |
-| 15 | 20:30 | Santiago | Cómo sabe que no sabe | Dos señales (similitud < 0,4 · el modelo lo dice) → agrupamiento por embeddings con umbral 0,75 → panel docente | `gaps/recorder.py`, `gaps/router.py` |
+| 10 | 16:00 | Delfina | Su pregunta nunca tocó nuestro servidor directamente | 3 capas: celular → plugin `local` (PHP) → FastAPI + PostgreSQL/pgvector. Marcadas: proxy, `require_sesskey`, sin CORS | `docs/diagrams/architecture.md` |
+| 11 | 17:30 | Delfina | De PDF a vectores en un minuto | Pipeline: pdfplumber → 512 tokens / 64 de solapamiento (`cl100k_base`) → embedding de 768 dimensiones → HNSW (`m=16`, `ef_construction=64`). Estados `pending → indexing → indexed` | `docs/diagrams/rag-flow.md`, `chunker.py`, migración 002 |
+| 12 | 18:30 | Delfina | Una sola base para datos y vectores | PostgreSQL + pgvector vs. una base vectorial aparte: lo que se ahorra | ADR-002 |
+| 13 | 19:00 | Delfina | Top 5, similitud ≥ 0,3 y tres filtros | La consulta: `<=>` coseno + `WHERE curso AND status='indexed' AND cmid IN visibles` → prompt con citas → SSE `meta / token / done` | `retriever.py`, `chat/router.py`, `docs/diagrams/sequence-chat.md` |
+| 14 | 20:00 | Delfina | RAG y no reentrenar | Comparación en 3 filas: costo por materia, material nuevo, citas | Guion |
+| 15 | 20:30 | Delfina | Cómo sabe que no sabe | Dos señales (similitud < 0,4 · el modelo lo dice) → agrupamiento por embeddings con umbral 0,75 → panel docente | `gaps/recorder.py`, `gaps/router.py` |
 | 16 | 21:30 | Marcos | Dos capas en cada pedido | Header Bearer + `X-Signature = HMAC-SHA256(timestamp + nonce + body)` · ventana 300 s · nonce en Redis → replay = 401 | ADR-005, `auth/hmac.py` |
 | 17 | 22:15 | Marcos | Límites que cuidan el costo | 20/min · 50/día · presupuesto de tokens con `INCRBY` atómico · moderación previa | `token_budget.py`, `rate_limit.py`, `moderation.py` |
 | 18 | 22:45 | Marcos | Los datos del alumno viven en Moodle | Antes y después: backend con estado / tablas `local_nexusai_*` + Privacy API | ADR-014 |

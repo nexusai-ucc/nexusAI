@@ -18,11 +18,11 @@
 
 | Min | Bloque | Quién |
 |---|---|---|
-| 0–3 | Apertura (la escena de la alumna) | Delfina |
-| 3–5 | Problema (encuesta) | Delfina |
+| 0–3 | Apertura (la escena de la alumna) | Santiago |
+| 3–5 | Problema (encuesta) | Santiago |
 | 5–7 | Objetivo y aportes | Santiago |
 | **7–13** | **Demo con los profes** | Delfina en la pantalla, Marcos narra |
-| **13–23** | **Parte técnica** | Santiago (13–18:30) y Marcos (18:30–23) |
+| **13–23** | **Parte técnica** | Delfina (13–18:30) y Marcos (18:30–23) |
 | 23–24 | Proceso | Santiago |
 | 24–26 | Resultados contra los objetivos | Santiago |
 | 26–28 | Estado y lo que falta hasta febrero | Marcos |
@@ -70,9 +70,9 @@ Los roles son:
 
 Los minutos de la tabla son relativos: el minuto 0 de la demo es el minuto 7 de la presentación.
 
-**Si vamos atrasados,** se saca el paso de Buscar. Santiago lo cuenta igual en la parte técnica, cuando explica la búsqueda híbrida.
+**Si vamos atrasados,** se saca el paso de Buscar. Delfina lo cuenta igual en la parte técnica, cuando explica la búsqueda híbrida.
 
-**La frase puente a la parte técnica** la dice Santiago: "Ahora vamos a ver qué pasó por dentro con la pregunta de recién, desde que salió de su celular".
+**La frase puente a la parte técnica** la dice Delfina, que arranca la parte técnica: "Ahora vamos a ver qué pasó por dentro con la pregunta de recién, desde que salió de su celular".
 
 **Qué se deja afuera:** el quiz y Analytics. En febrero el quiz se hace a mano alzada; con 3 personas no agrega nada y come un minuto.
 
@@ -82,10 +82,10 @@ Son los 10 minutos completos de [GUION_PRESENTACION.md](GUION_PRESENTACION.md) �
 
 | Min | Tema | Quién |
 |---|---|---|
-| 13–14:30 | Arquitectura: 3 capas, el plugin como proxy, por qué `local` | Santiago |
-| 14:30–16 | Indexación: chunking de 512/64, 768 dimensiones, HNSW | Santiago |
-| 16–17:30 | Retrieval y generación: top 5, umbral de 0,3, los 3 filtros, SSE, búsqueda híbrida | Santiago |
-| 17:30–18:30 | Detección de vacíos: las 2 señales, agrupamiento con 0,75 | Santiago |
+| 13–14:30 | Arquitectura: 3 capas, el plugin como proxy, por qué `local` | Delfina |
+| 14:30–16 | Indexación: chunking de 512/64, 768 dimensiones, HNSW | Delfina |
+| 16–17:30 | Retrieval y generación: top 5, umbral de 0,3, los 3 filtros, SSE, búsqueda híbrida | Delfina |
+| 17:30–18:30 | Detección de vacíos: las 2 señales, agrupamiento con 0,75 | Delfina |
 | 18:30–20 | Seguridad: HMAC con anti-replay, presupuesto de tokens atómico, privacidad | Marcos |
 | 20–21 | Resiliencia: cadena de fallback, DEF-07 | Marcos |
 | 21–22 | Concurrencia: DEF-09 | Marcos |
