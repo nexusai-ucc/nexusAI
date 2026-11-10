@@ -5,9 +5,10 @@
 **Plugin para Moodle con asistente académico basado en inteligencia artificial.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Status: Post-MVP en desarrollo](https://img.shields.io/badge/status-Post--MVP%20en%20desarrollo-orange)]()
-[![Version: 0.17.8](https://img.shields.io/badge/version-0.17.8-blue)]()
-[![Moodle: 4.1–4.5](https://img.shields.io/badge/Moodle-4.1--4.5-blue)]()
+[![Status: preparación de la defensa](https://img.shields.io/badge/status-preparaci%C3%B3n%20de%20la%20defensa-orange)]()
+[![Version: 0.19.0](https://img.shields.io/badge/version-0.19.0-blue)](CHANGELOG.md)
+[![Moodle: 4.5–5.3](https://img.shields.io/badge/Moodle-4.5--5.3-blue)]()
+[![Moodle Plugins Directory: aprobado](https://img.shields.io/badge/Moodle%20Plugins%20Directory-aprobado-green)](https://marketplace.moodle.com/plugins/local_nexusai)
 [![Python: 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)]()
 [![React: 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)]()
 
@@ -27,7 +28,7 @@ A diferencia de otros plugins de IA para Moodle, **NexusAI implementa RAG autén
 - **Integración nativa** en Moodle vía `before_footer()` — widget flotante en todas las páginas del curso.
 - **API key del proveedor LLM nunca llega al navegador.** Patrón Hybrid PHP Proxy con HMAC PHP↔Python.
 - **Self-hosted.** Una sola base de datos (PostgreSQL + pgvector) — los datos académicos nunca salen del servidor de la institución.
-- **Agnóstico de proveedor LLM.** Gemini en MVP (gratuito), GPT-4o-mini en producción. Cambio de proveedor solo con variables de entorno.
+- **Agnóstico de proveedor LLM.** Gemini 2.5 Flash en staging y producción; OpenAI `gpt-4o-mini` en el entorno de la demo de la defensa. Cambio de proveedor solo con variables de entorno.
 - **Open source.** Backend bajo licencia MIT; el plugin de Moodle, bajo GPL v3 (requerido para publicación en moodle.org).
 - **Fallback honesto.** Si la pregunta no se puede responder con el material, lo admite.
 
@@ -37,18 +38,21 @@ A diferencia de otros plugins de IA para Moodle, **NexusAI implementa RAG autén
 
 | | |
 |---|---|
-| **Fase actual** | Post-MVP Sprint D (hasta 14 Dic 2026) |
+| **Fase actual** | Preparación de la defensa |
 | **MVP entregado** | 1 Jun 2026 — [v0.8.0-mvp](CHANGELOG.md) |
-| **Próximo hito** | Check 2 PI — informe parcial (antes del 3 Nov 2026) |
-| **Roadmap completo** | Hasta defensa final 26 Feb 2027 |
+| **Plugin publicado** | v0.19.0 aprobada en el [Moodle Plugins Directory](https://marketplace.moodle.com/plugins/local_nexusai) |
+| **Próximo hito** | Pre-entrega ante la cátedra (30 Nov – 2 Dic 2026) |
+| **Defensa final** | 20–27 Feb 2027 |
 
 El MVP (entregado el 1° de junio) cubrió el asistente conversacional, el
 buscador semántico y la generación básica de quizzes. Todo el desarrollo
 post-MVP (Study Planner ampliado, Herramientas Docentes, Calendario, Foros
-con IA) ya está implementado y mergeado a `main` — el foco actual son
-confiabilidad, privacidad, testing automatizado y el deploy propio.
+con IA) ya está implementado y mergeado a `development`. Después se sumaron
+la visibilidad por actividad, los datos del alumno en tablas de Moodle, la
+publicación del plugin, el TP de Calidad de Software y la auditoría de
+accesibilidad. El foco actual es la pre-entrega y la defensa.
 
-Ver [`investigacion/`](investigacion/) para el detalle técnico y de gestión, y [`docs/architecture.md`](docs/architecture.md) para la síntesis de arquitectura.
+Ver [`investigacion/`](NexusAI/investigacion/) para el detalle técnico y de gestión, y [`docs/architecture.md`](NexusAI/docs/architecture.md) para la síntesis de arquitectura.
 
 ---
 
@@ -74,12 +78,12 @@ Ver [`investigacion/`](investigacion/) para el detalle técnico y de gestión, y
 | **Frontend** | React 18 + Webpack (bundles AMD embebidos en Moodle, uno por widget) |
 | **Plugin Moodle** | PHP 8.1 — plugin tipo `local`, `require_login()`, `has_capability()`, proxy HMAC vía cURL |
 | **Backend IA** | Python 3.11 + FastAPI (async), SQLAlchemy 2.0 + Alembic |
-| **IA generativa** | Multi-provider (SDK de OpenAI usado genéricamente) — Gemini 2.5 Flash (MVP, gratuito) / GPT-4o-mini (producción) |
-| **Embeddings** | Mismo abstracto multi-provider — Gemini Embedding 768d (MVP) / text-embedding-3-small 1536d (producción) |
+| **IA generativa** | Multi-provider (SDK de OpenAI usado genéricamente) — Gemini 2.5 Flash (staging y producción) / GPT-4o-mini (demo de la defensa) |
+| **Embeddings** | Mismo abstracto multi-provider, siempre de **768 dimensiones** (las migraciones 009 y 017 fijan `vector(768)`) — Gemini Embedding o `text-embedding-3-small` pedido con `EMBEDDING_DIMENSIONS=768` |
 | **Base vectorial** | **PostgreSQL + pgvector**, sin base vectorial separada (ver ADR-002) — índice HNSW, distancia coseno |
 | **Cache / seguridad** | Redis — nonce anti-repetición del HMAC y rate limiting |
 | **Base de datos** | PostgreSQL 16 (única DB del backend; Moodle usa su propia base separada) |
-| **Compatibilidad Moodle** | 4.1 LTS – 4.5 LTS |
+| **Compatibilidad Moodle** | 4.5 LTS – 5.3 (CI en 7 combinaciones de versión y base de datos) |
 
 ### Flujo de una consulta
 
@@ -88,11 +92,11 @@ Alumno → React (AMD)
        → Moodle PHP (External Function + cURL)
        → FastAPI (HMAC verify + RAG)
        → PostgreSQL/pgvector (top-5 chunks por similitud coseno, SQL+vector)
-       → LLM activo (Gemini Flash en MVP / GPT-4o-mini en prod, streaming SSE)
+       → LLM activo (Gemini 2.5 Flash o GPT-4o-mini, streaming SSE)
        → respuesta contextualizada al alumno
 ```
 
-Más detalle en [`docs/architecture.md`](docs/architecture.md).
+Más detalle en [`docs/architecture.md`](NexusAI/docs/architecture.md).
 
 ---
 
@@ -169,9 +173,9 @@ Guía completa (con troubleshooting) en [`docs/CORRER_PROYECTO.md`](NexusAI/docs
 
 Más detalle por componente:
 
-- **Moodle local con Docker:** [`investigacion/10-setup-entorno/docker-moodle.md`](investigacion/10-setup-entorno/docker-moodle.md)
-- **Backend FastAPI:** [`investigacion/10-setup-entorno/python-fastapi.md`](investigacion/10-setup-entorno/python-fastapi.md)
-- **Frontend React:** [`investigacion/10-setup-entorno/node-react.md`](investigacion/10-setup-entorno/node-react.md)
+- **Moodle local con Docker:** [`investigacion/10-setup-entorno/docker-moodle.md`](NexusAI/investigacion/10-setup-entorno/docker-moodle.md)
+- **Backend FastAPI:** [`investigacion/10-setup-entorno/python-fastapi.md`](NexusAI/investigacion/10-setup-entorno/python-fastapi.md)
+- **Frontend React:** [`investigacion/10-setup-entorno/node-react.md`](NexusAI/investigacion/10-setup-entorno/node-react.md)
 
 ---
 
@@ -179,11 +183,11 @@ Más detalle por componente:
 
 | Documento | Para qué |
 |---|---|
-| [`docs/architecture.md`](docs/architecture.md) | Síntesis de arquitectura — empieza por acá si sos nuevo |
-| [`docs/adr/`](docs/adr/) | Decisiones de arquitectura formalizadas (ADRs) |
-| [`docs/diagrams/`](docs/diagrams/) | Diagramas (arquitectura, flujo RAG, secuencia, ER) |
-| [`investigacion/`](investigacion/) | 39 docs con todo el research técnico, de contexto y de setup |
-| [`docs/fases/`](docs/fases/) | Actas de cierre de cada fase del proyecto |
+| [`docs/architecture.md`](NexusAI/docs/architecture.md) | Síntesis de arquitectura — empieza por acá si sos nuevo |
+| [`docs/adr/`](NexusAI/docs/adr/) | Decisiones de arquitectura formalizadas (ADRs) |
+| [`docs/diagrams/`](NexusAI/docs/diagrams/) | Diagramas (arquitectura, flujo RAG, secuencia, ER) |
+| [`investigacion/`](NexusAI/investigacion/) | 39 docs con todo el research técnico, de contexto y de setup |
+| [`docs/fases/`](NexusAI/docs/fases/) | Actas de cierre de cada fase del proyecto |
 
 ---
 
@@ -198,11 +202,13 @@ Más detalle por componente:
 | **Sprint 4 — MVP** | **hasta 31 May 2026** | **✅ MVP entregado** |
 | Documentación MVP | hasta 14 Jun 2026 | ✅ Completo |
 | Post-MVP Sprint A | hasta 29 Jun 2026 | ✅ Completo |
-| Post-MVP Sprint B | hasta 30 Jul 2026 | 🚧 En cierre (informe/PI) |
-| Post-MVP Sprint C | hasta 30 Ago 2026 | ✅ Completo (9/9) |
-| Post-MVP Sprint D | hasta 14 Dic 2026 | 🚧 En curso — confiabilidad, privacidad, testing, deploy propio |
-| Entrega Final | hasta 29 Nov 2026 | Check 2 PI antes del 3 Nov 2026 |
-| Defensa Final | hasta 26 Feb 2027 | Ajustes + PPT + defensa |
+| Post-MVP Sprint B | hasta 30 Jul 2026 | ✅ Completo |
+| Post-MVP Sprint C | hasta 30 Ago 2026 | ✅ Completo |
+| Post-MVP Sprints D a G | hasta Oct 2026 | ✅ Confiabilidad, privacidad, visibilidad, datos en Moodle, deploy propio y publicación del plugin (quedan 2 issues abiertas en G) |
+| TP Calidad de Software | 26 Oct 2026 | ✅ Entregado y defendido |
+| Check 2 PI | 3 Nov 2026 | ✅ Realizado |
+| Pre-entrega | 30 Nov – 2 Dic 2026 | 🚧 En preparación ([épica #691](https://github.com/nexusai-ucc/nexusAI/issues/691)) |
+| Defensa Final | 20–27 Feb 2027 | Presentación, demo en vivo y defensa |
 
 **Metodología:** Scrum con sprints de 2 semanas. Planning, daily asíncrono, review y retrospectiva al cierre de cada sprint.
 
@@ -220,21 +226,21 @@ Más detalle por componente:
 | 06 | Foros Mejorados con IA | Detección de duplicados, sugerencia de respuesta, resumen de hilos | ✅ |
 | 07 | Integración con Moodle y Gestión de Contenido | Plugin local instalable, indexación multi-formato (PDF/DOCX/PPTX/XLSX/CSV/MD/HTML) | ✅ código \| 🚧 deploy propio |
 
-Las 7 épicas del MVP+post-MVP están implementadas y mergeadas a `main`. El
-trabajo actual (Sprint D) es sobre confiabilidad, privacidad, testing
-automatizado, publicación oficial del plugin y deploy propio.
+Las 7 épicas del MVP+post-MVP están implementadas y mergeadas a `development`.
+La publicación oficial del plugin y el deploy propio también están hechos; el
+trabajo actual es la preparación de la pre-entrega y de la defensa.
 
 ---
 
 ## Contribuir
 
-Por ahora el desarrollo está restringido al equipo del proyecto. Convenciones de código, branches, commits y PRs en [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Por ahora el desarrollo está restringido al equipo del proyecto. Convenciones de código, branches, commits y PRs en [`CONTRIBUTING.md`](NexusAI/CONTRIBUTING.md).
 
 **Resumen rápido:**
 
 - Branches: `feature/<id>-<descripcion>`, `fix/<id>-<descripcion>`, `docs/<descripcion>`.
 - Commits: [Conventional Commits](https://www.conventionalcommits.org/).
-- PRs: 1 review obligatorio + CI verde, squash merge a `main`.
+- PRs contra `development`: 1 review obligatorio + CI verde.
 
 ---
 
