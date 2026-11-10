@@ -88,12 +88,12 @@ Esta pre-entrega es un ensayo general de esa defensa: tiene la misma duración y
 
 # Novedad 4: correcciones del informe y orden del repositorio
 
-[COMPLETAR con PRE-08 y PRE-09. Por ejemplo:
-- los dos bloques pendientes del informe, la columna de evaluación con usuarios reales y el modelo de *fallback* descontinuado;
-- la Conclusión actualizada;
-- la referencia a la Figura 2a;
-- el README y el CHANGELOG al día, con la versión 0.19.0 del plugin;
-- las issues ya resueltas, cerradas.]
+Desde el Check 2 también ordenamos el repositorio del proyecto:
+
+- cerramos 31 issues cuyo trabajo ya estaba terminado, cada una con el *pull request* que la resolvió;
+- pusimos al día el README y el CHANGELOG con la versión 0.19.0 del plugin, la publicada en el directorio oficial de Moodle.
+
+[COMPLETAR con PRE-08: los resultados de las dos mediciones que faltaban en el informe. Son la latencia hasta el primer token, con meta menor a 2 segundos, y la fidelidad y honestidad de las respuestas, que antes no se pudieron medir porque se agotó la cuota de Gemini.]
 
 # Lo que falta hasta la defensa
 

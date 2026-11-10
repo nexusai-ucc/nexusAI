@@ -96,10 +96,14 @@ Los precios del servidor salen de sitios de terceros; los del modelo, de la docu
 
 ## Correcciones del informe antes de la defensa
 
-- Quedan 2 bloques `PENDIENTE`: en la tabla de trazabilidad de Objetivos y al final de Pruebas.
-- La Conclusión lista como trabajo futuro cosas ya hechas: la publicación en Moodle, los tests de frontend y el agrupamiento semántico de vacíos (ya está en `gaps/router.py`).
-- Falta anunciar la Figura 2a: el commit `9905d10` quedó afuera de `development`.
-- Recontar las páginas sobre la versión final. El objetivo son ~100.
+**El informe vigente es `informe-ipi/informe-ipi.docx`** (23/10, 110 páginas en PDF), no el `.md`. El `.md` quedó como versión anterior, según `informe-ipi/README.md`. Una versión previa de este plan listaba bloques `PENDIENTE`, una Conclusión desactualizada y la Figura 2a: todo eso salía del `.md` viejo. El `.docx` no tiene esos problemas.
+
+Lo que de verdad falta está en la tabla de resultados de 8.6. Son dos filas marcadas "Pendiente", y son las que dejan "Parcial" el objetivo 6 en la Tabla 21 de la Conclusión:
+
+- **Latencia hasta el primer token (RNF-06, meta < 2 s):** no se midió por separado. Se mide en el servidor de la demo con el modelo real.
+- **Fidelidad y honestidad de la evaluación automatizada:** solo se pudieron medir 2 de 8 y 0 de 4 casos, porque se agotó la cuota de Gemini. Hay que volver a correr `services/api/scripts/eval_rag.py` con OpenAI.
+
+Las dos dependen de la key de OpenAI (PRE-01) y se siguen en PRE-08 (#686). La evaluación con usuarios reales (#264, #265) sigue siendo una decisión del equipo.
 
 ## Urgente, fuera de la defensa
 

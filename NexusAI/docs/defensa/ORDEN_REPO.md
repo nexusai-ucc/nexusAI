@@ -1,6 +1,13 @@
 # Orden del repo antes de la pre-entrega
 
-> v0.1, 06/11/2026 (PRE-09, #687). **Es una propuesta: no se cerró nada ni se tocó ningún PR.** Los datos salen de `gh` y de `origin/development` al 06/11. Cada issue que se cierre lleva un comentario con el PR que la resolvió.
+> v0.2, 10/11/2026 (PRE-09, #687). Los datos salen de `gh` y de `origin/development` al 06/11.
+>
+> **Hecho el 10/11:**
+> - las 31 issues del punto 1 están cerradas, cada una con un comentario que enlaza el PR que la resolvió;
+> - VIS-06 y DATA-02 a DATA-06 pasaron al milestone "Post-MVP Sprint G";
+> - el README y el CHANGELOG están en el PR #692.
+>
+> **Queda:** los puntos 2 y 3.
 
 **Por qué ahora:** el profe Carreño es colaborador del repo y la cátedra puede mirarlo antes de la pre-entrega. Hoy tenemos:
 - 46 issues abiertas además de las PRE;
@@ -29,7 +36,7 @@ Las crucé con los PRs mergeados que las nombran. Antes de cerrar cada una, el r
 | #617 PI-19 Reflexiones del equipo | #641 |
 | #618 PI-20 Anexos B y D | #642 |
 | #619 PI-21 Ensamblado final | #657 |
-| #638 PI-22 Figuras 2a–2d | #650 (la referencia faltante a la Figura 2a está en el punto 3) |
+| #638 PI-22 Figuras 2a–2d | #650 |
 | #655 PI-25 Plugin aprobado en el Marketplace | #656 |
 
 ### Visibilidad, datos, curso y consumo: todo mergeado entre el 26/09 y el 01/10
@@ -52,7 +59,7 @@ Las crucé con los PRs mergeados que las nombran. Antes de cerrar cada una, el r
 | #520 CURSO-01 | #534 |
 | #521 COST-02 | #535 |
 
-**Ojo:** VIS-06, DATA-02 a DATA-06 están en el milestone "Backlog / Roadmap Post-Defensa", pero ya se hicieron. Al cerrarlas, conviene pasarlas a "Post-MVP Sprint G" para que el milestone diga la verdad.
+VIS-06 y DATA-02 a DATA-06 estaban en el milestone "Backlog / Roadmap Post-Defensa" aunque ya se habían hecho. Se pasaron a "Post-MVP Sprint G".
 
 ## 2. Issues para revisar antes de decidir
 
@@ -73,7 +80,7 @@ Las crucé con los PRs mergeados que las nombran. Antes de cerrar cada una, el r
 |---|---|---|
 | **#661** `chore(api)`: versión 0.2.0 | Abierto desde el 22/10. Era el cambio que se iba a mergear en vivo en la demo del TP de Calidad. Pasa `app_version` de 0.1.0 a 0.2.0 y agrega una entrada al CHANGELOG | **Mergear.** Producción y staging siguen diciendo 0.1.0 en `/health`, y el backend cambió mucho desde entonces. Si se mergea, la entrada del CHANGELOG del punto 4 lo tiene en cuenta |
 | **#676** `docs(calidad)`: los 10 defectos como issues | Abierto desde el 24/10. Solo documentación. Deja el registro de defectos coherente con lo que dice el informe del TP | **Que lo revise Marcos o Santiago y mergearlo.** Es el que respalda "10 defectos registrados" en la parte técnica |
-| **Commit `9905d10`** | Agrega en el informe la frase que menciona la Figura 2a y el PDF regenerado. Quedó en `docs/corregir-fatales-autocorreccion` después de que se mergeara #660, así que nunca llegó a `development` | **Llevarlo a PRE-08** (#686). Se hace cherry-pick del cambio al `.md` en una rama nueva y el PDF se regenera con el resto de las correcciones, para no pelear con el binario |
+| **Commit `9905d10`** | Agrega al `informe-ipi.md` la frase que anuncia la Figura 2a. Quedó en `docs/corregir-fatales-autocorreccion` y nunca llegó a `development` | **Descartarlo.** El informe vigente es `informe-ipi.docx` (lo dice `informe-ipi/README.md`); el `.md` quedó como versión anterior. En el `.docx` las figuras se renumeraron y todas se anuncian en el texto. Traer el commit no cambia el informe entregado |
 
 ## 4. README y CHANGELOG
 
@@ -93,7 +100,7 @@ Las crucé con los PRs mergeados que las nombran. Antes de cerrar cada una, el r
 El CHANGELOG del repo termina en **v0.17.8 (08/09)**. El del plugin (`plugin/local/nexusai/CHANGES.md`) sí está al día hasta 0.19.0. No hace falta copiarlo entero. Propuesta de entrada, para arriba de v0.17.8:
 
 ```markdown
-## [v0.19.0] — 2026-10-14 a 2026-10-23 — Publicación en Moodle, calidad y accesibilidad
+## [v0.19.0] — 2026-09-12 a 2026-10-23 — Publicación en Moodle, calidad y accesibilidad
 
 Detalle del plugin en `NexusAI/plugin/local/nexusai/CHANGES.md`.
 
@@ -110,12 +117,11 @@ Detalle del plugin en `NexusAI/plugin/local/nexusai/CHANGES.md`.
 - Cambios pedidos en la revisión del directorio de plugins de Moodle (MMR-301): privacidad de foros, streaming con `\curl`, i18n.
 ```
 
-El texto definitivo lo revisa quien haga el PR. Si se mergea #661, va una línea más para la API 0.2.0.
+Esto fue la propuesta. El texto final, más completo, está en el PR #692. Si se mergea #661, va una línea más para la API 0.2.0.
 
 ## Orden sugerido
 
-1. Cerrar las issues del punto 1, con un comentario cada una. Es un trabajo de 30 minutos.
+1. ~~Cerrar las issues del punto 1, con un comentario cada una.~~ Hecho el 10/11.
 2. Mergear #676 y #661 después de que alguien del equipo los revise.
-3. Hacer un PR `docs/readme-changelog-pre-entrega` con el punto 4.
-4. Pasar el commit `9905d10` a PRE-08.
-5. Decidir sobre las issues del punto 2 en la reunión de equipo.
+3. ~~Hacer un PR `docs/readme-changelog-pre-entrega` con el punto 4.~~ Es el PR #692: falta que alguien lo revise.
+4. Decidir sobre las issues del punto 2 en la reunión de equipo.

@@ -105,7 +105,7 @@ Sigue a los resultados: de los objetivos que no están cumplidos, qué vamos a h
 - **Lo que falta y cómo lo vamos a cerrar:**
   - **Evaluación con usuarios reales** (#264, #265). Hoy solo hay una prueba chica de mayo. [Completar con lo que decida el equipo: piloto, fechas, cuántas personas].
   - **Prueba de carga a través de Moodle,** con 60 navegadores y el modelo real, para la demo con público de febrero. Hasta ahora la carga se midió directo contra el backend y con el modelo simulado.
-- **Correcciones del informe** (PRE-08, #686): los 2 bloques `PENDIENTE` y la Conclusión.
+- **Las dos mediciones que dejan "Parcial" el objetivo 6** (PRE-08, #686): la latencia hasta el primer token y la fidelidad y honestidad de las respuestas. Se miden con el modelo real en el servidor de la demo. Si para el 30/11 ya están, este bloque se convierte en un resultado.
 
 Mostrar lo que falta antes de que lo pregunten es lo que recomiendan las guías de defensa ([INVESTIGACION_DEFENSA.md](INVESTIGACION_DEFENSA.md)).
 
