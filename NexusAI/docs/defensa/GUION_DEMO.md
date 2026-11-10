@@ -2,7 +2,7 @@
 
 > v0.3, 05/11/2026. **No se ensayó.** Los pasos se revisaron contra el código de `development`, pero la prueba con público y la de carga a través de Moodle quedan para enero. Los tiempos son estimados.
 
-**Duración:** 8 minutos, del minuto 8 al 16 de la exposición (la parte técnica pasó a 10). **Pantalla:** Delfina. **Narración:** Marcos. **Control** (panel en otra pantalla, plan B y alertas): Santiago. Todo el reparto está a confirmar.
+**Duración:** 8 minutos, del minuto 8 al 16 de la exposición (la parte técnica pasó a 10). **Pantalla:** Delfina. **Narración:** Delfina en los momentos de 0 a 4:15, mientras maneja, y Marcos de 4:15 a 8, así nadie habla 8 minutos seguidos. **Control** (panel en otra pantalla, plan B y alertas): Santiago. Todo el reparto está a confirmar.
 
 ## La idea
 

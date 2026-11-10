@@ -9,13 +9,20 @@
 | Min | Bloque | Quién |
 |---|---|---|
 | 0–3 | Apertura | Santiago |
-| 3–6 | Problema | Santiago |
+| 3–6 | Problema | Marcos |
 | 6–8 | Objetivo y aportes | Santiago |
-| 8–16 | Demo con el público | Delfina, Marcos y Santiago |
-| **16–26** | **Parte técnica** | Delfina (16–21:30) y Marcos (21:30–26) |
+| 8–16 | Demo con el público | Delfina maneja y narra (8–12), Marcos narra (12–16), Santiago controla |
+| 16–17:30 | Técnica: arquitectura | Delfina |
+| 17:30–19 | Técnica: seguridad y privacidad | Marcos |
+| 19–22 | Técnica: indexación, retrieval y generación | Delfina |
+| 22–23 | Técnica: resiliencia | Marcos |
+| 23–24 | Técnica: detección de vacíos | Delfina |
+| 24–26 | Técnica: DEF-09 y calidad | Marcos |
 | 26–27 | Proceso | Santiago |
 | 27–29 | Resultados | Santiago |
 | 29–30 | Aportes | Delfina |
+
+**Turnos cortos:** nadie habla más de 3 minutos seguidos (salvo la narración de la demo, que se parte en dos). La parte técnica alterna entre Delfina y Marcos siguiendo el recorrido de la pregunta: entra por la arquitectura, viaja firmada, encuentra los fragmentos, puede fallar el proveedor, se detecta el vacío, y al final cómo sabemos que aguanta.
 
 ## 0–3 · Apertura · Santiago
 
@@ -29,7 +36,7 @@ Sin índice y sin "buenas tardes, somos el grupo…". Arranca con la escena.
 
 Mientras la diapositiva muestra las dos respuestas: "Somos Delfina, Santiago y Marcos, y esto es NexusAI".
 
-## 3–6 · Problema · Santiago
+## 3–6 · Problema · Marcos
 
 > No lo supusimos: lo medimos. Encuestamos a 166 estudiantes y 17 docentes de la UCC.
 >
@@ -71,7 +78,22 @@ La parte técnica se cuenta siguiendo **una pregunta real que hizo el público e
 
 *Diapositiva:* diagrama de 3 capas (`docs/diagrams/architecture.md`).
 
-### 17:30–19 · Indexación · Delfina
+### 17:30–19 · Seguridad y privacidad · Marcos
+
+> Entre Moodle y el backend no basta con una contraseña.
+
+- **Dos capas en cada pedido** (ADR-005, `auth/hmac.py`):
+  1. una API key Bearer, que identifica al cliente;
+  2. una firma **HMAC-SHA256** de *timestamp + nonce + body* con un secreto compartido, que garantiza que el mensaje no se modificó.
+- **Anti-replay:** el timestamp tiene que estar dentro de una ventana de **300 s**, y cada nonce se guarda en Redis con ese TTL. Un pedido capturado y reenviado se rechaza con 401; lo prueba el smoke de cada deploy.
+- **Abuso y costo:**
+  - rate limit por usuario de **20 por minuto y 50 por día**;
+  - presupuesto de tokens por rol (alumno: 8.000 por hora y 40.000 por día), reservado de forma **atómica** con `INCRBY` en Redis antes de llamar al modelo, así 10 pedidos simultáneos no pueden pasar todos con el mismo saldo (`shared/token_budget.py`);
+  - moderación de la entrada antes de que llegue al modelo.
+- **Privacidad:** los datos del alumno (chats, quizzes, vacíos) viven en tablas de Moodle, y el backend no guarda estado del alumno (ADR-014). El plugin implementa la Privacy API, así que se exportan y se borran como cualquier otro dato de Moodle. Al proveedor de IA le llegan la pregunta y los fragmentos, no la identidad del alumno.
+- Auditoría OWASP Top 10 (`docs/security/owasp-audit-2026-08.md`).
+
+### 19–20:30 · Indexación · Delfina
 
 > Para poder responder, el informe tuvo que convertirse en vectores. Esto pasó cuando el docente lo subió.
 
@@ -84,7 +106,7 @@ La parte técnica se cuenta siguiendo **una pregunta real que hizo el público e
 
 *Diapositiva:* flujo de indexación (`docs/diagrams/rag-flow.md`).
 
-### 19–20:30 · Retrieval y generación · Delfina
+### 20:30–22 · Retrieval y generación · Delfina
 
 > Con su pregunta pasó esto:
 
@@ -103,32 +125,7 @@ La parte técnica se cuenta siguiendo **una pregunta real que hizo el público e
 
 En vivo, si alcanza el tiempo: panel docente → **Buscar** con la misma pregunta. Muestra los fragmentos encontrados. Esa búsqueda es **híbrida**: 0,6 de similitud semántica más 0,4 de coincidencia léxica (`ts_rank` de PostgreSQL), así que también encuentra términos exactos como siglas (`search/router.py`).
 
-### 20:30–21:30 · Detección de vacíos · Delfina
-
-> La pregunta de los commits no tenía respuesta. ¿Cómo lo supo el sistema?
-
-- **Dos señales**, y alcanza con una (`gaps/recorder.py`):
-  1. la similitud máxima de los fragmentos es menor a **0,4**, o no hubo ninguno;
-  2. la respuesta del modelo dice que no está en el material. Se detecta con patrones en español y en inglés, y cubre el caso de fragmentos parecidos pero irrelevantes.
-- Las preguntas se **agrupan por significado** comparando sus embeddings con un umbral de **0,75**. Así el docente ve un tema con su cantidad de consultas y no 30 preguntas sueltas (`gaps/router.py`).
-- El registro es *fire-and-forget*: si falla, el chat del alumno no se entera.
-
-### 21:30–23 · Seguridad y privacidad · Marcos
-
-> Entre Moodle y el backend no basta con una contraseña.
-
-- **Dos capas en cada pedido** (ADR-005, `auth/hmac.py`):
-  1. una API key Bearer, que identifica al cliente;
-  2. una firma **HMAC-SHA256** de *timestamp + nonce + body* con un secreto compartido, que garantiza que el mensaje no se modificó.
-- **Anti-replay:** el timestamp tiene que estar dentro de una ventana de **300 s**, y cada nonce se guarda en Redis con ese TTL. Un pedido capturado y reenviado se rechaza con 401; lo prueba el smoke de cada deploy.
-- **Abuso y costo:**
-  - rate limit por usuario de **20 por minuto y 50 por día**;
-  - presupuesto de tokens por rol (alumno: 8.000 por hora y 40.000 por día), reservado de forma **atómica** con `INCRBY` en Redis antes de llamar al modelo, así 10 pedidos simultáneos no pueden pasar todos con el mismo saldo (`shared/token_budget.py`);
-  - moderación de la entrada antes de que llegue al modelo.
-- **Privacidad:** los datos del alumno (chats, quizzes, vacíos) viven en tablas de Moodle, y el backend no guarda estado del alumno (ADR-014). El plugin implementa la Privacy API, así que se exportan y se borran como cualquier otro dato de Moodle. Al proveedor de IA le llegan la pregunta y los fragmentos, no la identidad del alumno.
-- Auditoría OWASP Top 10 (`docs/security/owasp-audit-2026-08.md`).
-
-### 23–24 · Resiliencia · Marcos
+### 22–23 · Resiliencia · Marcos
 
 > Dependemos de un proveedor externo, y eso falla.
 
@@ -137,6 +134,16 @@ En vivo, si alcanza el tiempo: panel docente → **Buscar** con la misma pregunt
   - Google retiró un modelo sin aviso, y la prueba diaria contra el proveedor real lo detectó;
   - DEF-07: Gemini devolvía los embeddings sin el campo `index` y el código asumía que venía. Ningún mock lo mostraba: lo encontró la prueba de integración real.
 - La prueba diaria contra Gemini falló casi siempre desde octubre por alta demanda. **Por eso la demo de hoy usa un modelo pago.**
+
+### 23–24 · Detección de vacíos · Delfina
+
+> La pregunta de los commits no tenía respuesta. ¿Cómo lo supo el sistema?
+
+- **Dos señales**, y alcanza con una (`gaps/recorder.py`):
+  1. la similitud máxima de los fragmentos es menor a **0,4**, o no hubo ninguno;
+  2. la respuesta del modelo dice que no está en el material. Se detecta con patrones en español y en inglés, y cubre el caso de fragmentos parecidos pero irrelevantes.
+- Las preguntas se **agrupan por significado** comparando sus embeddings con un umbral de **0,75**. Así el docente ve un tema con su cantidad de consultas y no 30 preguntas sueltas (`gaps/router.py`).
+- El registro es *fire-and-forget*: si falla, el chat del alumno no se entera.
 
 ### 24–25 · Concurrencia: DEF-09 · Marcos
 

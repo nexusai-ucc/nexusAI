@@ -47,13 +47,13 @@ No hay reglamento de la UCC publicado. Mensaje propuesto para Porrini, Carreño 
 
 ## Reparto propuesto
 
-Los tres hablan: así lo pide, por ejemplo, el reglamento de la UNT, y lo más probable es que la UCC también.
+Los tres hablan: así lo pide, por ejemplo, el reglamento de la UNT, y lo más probable es que la UCC también. Y en **turnos cortos**: nadie habla más de 3 minutos seguidos, y la parte técnica alterna entre Delfina y Marcos (detalle en [GUION_PRESENTACION.md](GUION_PRESENTACION.md)).
 
 | Responsable | En la exposición | Preparación |
 |---|---|---|
-| **Delfina** | Primera mitad de la parte técnica (arquitectura, indexación, RAG y vacíos) y cierre. En la demo maneja la pantalla | Canva, guion de la demo, coordinación de ensayos |
-| **Santiago** | Apertura, problema, objetivo y aportes, proceso y resultados. En la demo, control y plan B | Servidor de la demo, configuración del modelo, acceso a la VM (la cuenta de Oracle hoy es personal) |
-| **Marcos** | Segunda mitad de la parte técnica (seguridad, resiliencia, DEF-09 y calidad). En la demo narra | Moodle y curso de la demo, cuentas, PDF sembrado, prueba de carga a través de Moodle |
+| **Delfina** | En la parte técnica: arquitectura, indexación, RAG y vacíos. El cierre. En la demo maneja la pantalla y narra la primera mitad | Canva, guion de la demo, coordinación de ensayos |
+| **Santiago** | Apertura, objetivo y aportes, proceso y resultados. En la demo, control y plan B | Servidor de la demo, configuración del modelo, acceso a la VM (la cuenta de Oracle hoy es personal) |
+| **Marcos** | Problema. En la parte técnica: seguridad, resiliencia, DEF-09 y calidad. En la demo narra la segunda mitad | Moodle y curso de la demo, cuentas, PDF sembrado, prueba de carga a través de Moodle |
 
 ## Presupuesto (a confirmar con cotizaciones reales)
 

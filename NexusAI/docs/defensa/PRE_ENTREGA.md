@@ -19,10 +19,10 @@
 | Min | Bloque | Quién |
 |---|---|---|
 | 0–3 | Apertura (la escena de la alumna) | Santiago |
-| 3–5 | Problema (encuesta) | Santiago |
+| 3–5 | Problema (encuesta) | Marcos |
 | 5–7 | Objetivo y aportes | Santiago |
-| **7–13** | **Demo con los profes** | Delfina en la pantalla, Marcos narra |
-| **13–23** | **Parte técnica** | Delfina (13–18:30) y Marcos (18:30–23) |
+| **7–13** | **Demo con los profes** | Delfina en la pantalla; narra Delfina (pasos 1–3) y Marcos (pasos 4–6) |
+| **13–23** | **Parte técnica** | Alternan Delfina y Marcos (ver abajo) |
 | 23–24 | Proceso | Santiago |
 | 24–26 | Resultados contra los objetivos | Santiago |
 | 26–28 | Estado y lo que falta hasta febrero | Marcos |
@@ -34,6 +34,7 @@ Comparado con la defensa:
 - **La demo dura 6 minutos en lugar de 8,** porque son 3 personas.
 - **Se agrega un bloque:** "Estado y lo que falta hasta febrero", con esos 3 minutos. En la pre-entrega los profes quieren saber dónde estamos, no solo qué hicimos. Lo cuenta Marcos, así los tres hablan parecido.
 - **La parte técnica son los 10 minutos completos de la defensa.**
+- **Turnos cortos:** nadie habla más de 3 minutos seguidos. La parte técnica alterna entre Delfina y Marcos, y el resto rota entre los tres.
 - **El margen de 5 minutos no se planifica.** Si en el segundo ensayo (PRE-11) nos pasamos de 30, se recorta antes de usarlo.
 
 ## Antes de empezar (5 minutos antes, no cuentan en el tiempo)
@@ -58,7 +59,7 @@ Los roles son:
 - **Profe A** y **Profe B:** alumnos, desde su celular.
 - **Profe C:** docente, desde nuestra notebook.
 
-| Min | Qué pasa | Quién | Qué tiene que verse | Qué dice Marcos |
+| Min | Qué pasa | Quién | Qué tiene que verse | Qué dice el que narra (Delfina en 1–3, Marcos en 4–6) |
 |---|---|---|---|---|
 | 0–1 | **A y B preguntan lo que quieran sobre la tesis** | A y B, en el celular | Respuesta en streaming con la fuente debajo | "Pregúntenle lo que quieran de nuestra tesis. Fíjense de dónde sale cada respuesta" |
 | 1–1:30 | Una de esas preguntas, en la pantalla | Delfina hace clic en la fuente | Se abre el informe en la actividad citada | "Cada respuesta se puede verificar" |
@@ -78,18 +79,20 @@ Los minutos de la tabla son relativos: el minuto 0 de la demo es el minuto 7 de 
 
 ## Parte técnica
 
-Son los 10 minutos completos de [GUION_PRESENTACION.md](GUION_PRESENTACION.md) §16–26, corridos 3 minutos antes y contados sobre la pregunta que hizo el Profe A:
+Son los 10 minutos completos de [GUION_PRESENTACION.md](GUION_PRESENTACION.md) §16–26, en el mismo orden y corridos 3 minutos antes y contados sobre la pregunta que hizo el Profe A:
 
 | Min | Tema | Quién |
 |---|---|---|
 | 13–14:30 | Arquitectura: 3 capas, el plugin como proxy, por qué `local` | Delfina |
-| 14:30–16 | Indexación: chunking de 512/64, 768 dimensiones, HNSW | Delfina |
-| 16–17:30 | Retrieval y generación: top 5, umbral de 0,3, los 3 filtros, SSE, búsqueda híbrida | Delfina |
-| 17:30–18:30 | Detección de vacíos: las 2 señales, agrupamiento con 0,75 | Delfina |
-| 18:30–20 | Seguridad: HMAC con anti-replay, presupuesto de tokens atómico, privacidad | Marcos |
-| 20–21 | Resiliencia: cadena de fallback, DEF-07 | Marcos |
+| 14:30–16 | Seguridad: HMAC con anti-replay, presupuesto de tokens atómico, privacidad | Marcos |
+| 16–17:30 | Indexación: chunking de 512/64, 768 dimensiones, HNSW | Delfina |
+| 17:30–19 | Retrieval y generación: top 5, umbral de 0,3, los 3 filtros, SSE, búsqueda híbrida | Delfina |
+| 19–20 | Resiliencia: cadena de fallback, DEF-07 | Marcos |
+| 20–21 | Detección de vacíos: las 2 señales, agrupamiento con 0,75 | Delfina |
 | 21–22 | Concurrencia: DEF-09 | Marcos |
 | 22–23 | Calidad: pipeline, contratos, números, CD | Marcos |
+
+Sigue el recorrido de la pregunta: entra por la arquitectura, viaja firmada, encuentra los fragmentos, el proveedor puede fallar, se detecta el vacío, y al final cómo sabemos que aguanta. Cada uno habla como mucho 3 minutos seguidos.
 
 ## Proceso y resultados · Santiago (23–26)
 
