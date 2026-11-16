@@ -124,6 +124,12 @@ services:
       context: ../../services/api
       dockerfile: Dockerfile
     command: ["uvicorn", "mock_llm:app", "--app-dir", "/mock", "--host", "0.0.0.0", "--port", "9000"]
+    # La imagen hereda el healthcheck de la API (puerto 8000); el mock escucha en el 9000.
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     volumes:
       - ../../scripts/load/mock_llm.py:/mock/mock_llm.py:ro
 

@@ -114,6 +114,23 @@ docker compose exec -T -u www-data \
   moodle php /opt/demo/setup_demo.php "${ARGS[@]}"
 rm -f outputs/.cuentas-container.csv
 
+# 6b. Esperar a que el material termine de indexarse. Si setup.sh se vuelve a
+# correr mientras indexa, el --build reinicia la API y el documento queda en
+# "error" (el backend marca así las indexaciones interrumpidas).
+if [ -n "${MATERIAL:-}" ]; then
+  NAME="$(basename "$MATERIAL")"
+  echo "==> Esperando la indexación de $NAME"
+  START=$(date +%s); STATUS=""
+  for _ in $(seq 1 200); do
+    STATUS="$(docker compose exec -T postgres psql -U "$POSTGRES_USER" -d nexusai -tAc \
+      "SELECT status FROM documents WHERE filename = '$NAME' ORDER BY created_at DESC LIMIT 1")"
+    case "$STATUS" in indexed|error) break ;; esac
+    sleep 3
+  done
+  echo "    $NAME: ${STATUS:-sin registro} en $(( $(date +%s) - START )) s"
+  [ "$STATUS" = "indexed" ] || { echo "El material no se indexó: revisar 'docker compose logs api'" >&2; exit 1; }
+fi
+
 # 7. Cron y Caddy.
 "${COMPOSE[@]}" up -d moodle-cron caddy
 echo

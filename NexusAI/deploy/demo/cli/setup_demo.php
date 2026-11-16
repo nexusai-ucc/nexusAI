@@ -66,6 +66,18 @@ set_config('passwordpolicy', 0);
 set_config('enablemobilewebservice', 0);
 cli_writeln("[ok] Sitio: login obligatorio, sin invitados, sin autoregistro, sin mensajería");
 
+// Sin tours de bienvenida: cada cuenta del público es nueva y los vería todos en el celular.
+$DB->set_field('tool_usertours_tours', 'enabled', 0);
+cli_writeln("[ok] Tours de bienvenida desactivados");
+
+// Topes de tokens del alumno. Los de fábrica (8 k por hora, 40 k por día) dan
+// unas 2 preguntas por hora con el modelo real (~4 k tokens cada una), y el
+// público pregunta durante la demo y la parte técnica. El gasto lo acota el
+// tope del proyecto de OpenAI.
+set_config('token_limit_student_hourly', 80000, 'local_nexusai');
+set_config('token_limit_student_daily', 200000, 'local_nexusai');
+cli_writeln("[ok] Topes del alumno: 80 k tokens por hora y 200 k por día");
+
 // Nadie del público edita su perfil ni su contraseña, ni ve la lista de participantes.
 $syscontext = context_system::instance();
 $userrole = $DB->get_record('role', ['shortname' => 'user'], '*', MUST_EXIST);
@@ -172,9 +184,24 @@ if ($options['material']) {
     if (!$teacher) {
         cli_error('No hay docente en el curso: correr primero con --accounts');
     }
+    $filename = basename($options['material']);
+    // Cada subida crea una actividad: si ya hay una con ese nombre no se duplica.
+    // Para reemplazar el material, borrarlo antes desde el panel del docente.
+    $existing = $DB->record_exists_sql(
+        "SELECT 1 FROM {course_modules} cm
+           JOIN {modules} m ON m.id = cm.module AND m.name = 'resource'
+           JOIN {resource} r ON r.id = cm.instance
+          WHERE cm.course = ? AND r.name = ? AND cm.deletioninprogress = 0",
+        [$course->id, $filename]
+    );
+    if ($existing) {
+        cli_writeln("[ok] Material {$filename}: ya está en el curso, no se vuelve a subir");
+        $options['material'] = '';
+    }
+}
+if ($options['material']) {
     // Se sube como el docente, por la misma función que usa el panel de materiales.
     \core\session\manager::set_user($teacher);
-    $filename = basename($options['material']);
     $result = \local_nexusai\external\document_upload::execute(
         (int) $course->id,
         $filename,
