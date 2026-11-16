@@ -1,0 +1,15 @@
+# Moodle de la demo detrás de Caddy.
+#
+# DEMO_SITE_ADDRESS:
+#   - servidor: el dominio (p. ej. demo.ejemplo.com) → Caddy saca el certificado HTTPS solo.
+#   - local:    http://localhost → sin HTTPS.
+#
+# El chat del plugin es streaming (SSE): Caddy lo reenvía sin buffer
+# (flush_interval -1) para que las respuestas aparezcan palabra por palabra.
+
+{$DEMO_SITE_ADDRESS} {
+	encode zstd gzip
+	reverse_proxy moodle:80 {
+		flush_interval -1
+	}
+}
