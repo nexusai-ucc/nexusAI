@@ -228,6 +228,44 @@ $functions = [
         'loginrequired' => true,
     ],
 
+    // My API key (BYOK): the user's own AI provider key, last link of the model chain.
+    'local_nexusai_user_llm_get' => [
+        'classname'     => '\local_nexusai\external\user_llm_get',
+        'methodname'    => 'execute',
+        'description'   => 'Get the state of the logged-in user\'s own AI provider key, without the key.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+    'local_nexusai_user_llm_save' => [
+        'classname'     => '\local_nexusai\external\user_llm_save',
+        'methodname'    => 'execute',
+        'description'   => 'Test the logged-in user\'s own AI provider key and save it, encrypted, if it works.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+    'local_nexusai_user_llm_test' => [
+        'classname'     => '\local_nexusai\external\user_llm_test',
+        'methodname'    => 'execute',
+        'description'   => 'Test the logged-in user\'s saved AI provider key again.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+    'local_nexusai_user_llm_delete' => [
+        'classname'     => '\local_nexusai\external\user_llm_delete',
+        'methodname'    => 'execute',
+        'description'   => 'Remove the logged-in user\'s own AI provider key.',
+        'type'          => 'write',
+        'ajax'          => true,
+        'capabilities'  => 'local/nexusai:use',
+        'loginrequired' => true,
+    ],
+
     // Quiz evaluator — evaluates open answers with AI (SP-05).
     'local_nexusai_quiz_evaluate' => [
         'classname'     => '\local_nexusai\external\quiz_evaluate',
