@@ -71,6 +71,26 @@ function extractOwnRateLimitMessage(raw) {
     return null;
 }
 
+// "My API key" (BYOK): when the user's own key was the last link of the chain
+// and it failed, the backend answers 424 with a flat object detail —
+// {"error":"user_llm_failed","reason":"rejected"|"quota"|...,"provider":...,
+// "message":"<text that names the user's provider>"}. That message is meant for
+// the user (it tells them what to fix), unlike a provider's raw error text.
+export function extractUserLlmFailure(raw) {
+    const text = typeof raw === "string" ? raw : raw?.message || String(raw || "");
+    const match = text.match(/"detail"\s*:\s*(\{[^}]*\})/);
+    if (!match) return null;
+    try {
+        const parsed = JSON.parse(match[1]);
+        if (parsed.error === "user_llm_failed" && typeof parsed.message === "string") {
+            return { reason: parsed.reason || "unavailable", provider: parsed.provider || "", message: parsed.message };
+        }
+    } catch {
+        // Not the JSON we expected.
+    }
+    return null;
+}
+
 const INFRA_MESSAGES = {
     es: {
         rateLimit: "Se alcanzó el límite de uso por ahora. Probá de nuevo en unos minutos.",
@@ -88,6 +108,10 @@ export function getFriendlyErrorMessage(err, fallback, lang = "es") {
     const status = statusMatch ? parseInt(statusMatch[1], 10) : null;
     const msgs = INFRA_MESSAGES[lang] || INFRA_MESSAGES.es;
 
+    if (status === 424) {
+        const failure = extractUserLlmFailure(raw);
+        if (failure) return failure.message;
+    }
     if (status === 429) return extractOwnRateLimitMessage(raw) || msgs.rateLimit;
     if (status && status >= 500 && status < 600) return msgs.unavailable;
 

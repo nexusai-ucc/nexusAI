@@ -22,6 +22,7 @@
 
 import { useEffect, useState } from "react";
 import { getBudgetStatus } from "../api/budget.js";
+import { IconKey } from "./icons.jsx";
 
 // DATA-05 (#525): the student sees how much of their token limit is left. A
 // number of tokens tells them nothing, so the percentage of the day and an
@@ -68,14 +69,20 @@ export default function BudgetBar({ courseId, refreshKey = 0, lang = "es", fetch
         left: (n) => `Te quedan unas ${n} preguntas hoy`,
         warn: (p) => `Usaste el ${p}% del límite de hoy.`,
         out: (t) => `Llegaste al límite. Se renueva a las ${t}.`,
+        outByok: (p, w) => `Llegaste al límite ${w === "daily" ? "de hoy" : "de esta hora"}. Seguís con tu API key de ${p}.`,
     } : {
         title: "Your assistant limit",
         left: (n) => `About ${n} questions left today`,
         warn: (p) => `You have used ${p}% of today's limit.`,
         out: (t) => `You reached the limit. It renews at ${t}.`,
+        outByok: (p, w) => `You reached ${w === "daily" ? "today's" : "this hour's"} limit. You keep going with your ${p} API key.`,
     };
 
-    const text = exhausted
+    // "My API key": past the limit, the chat keeps answering with the user's key.
+    const byok = exhausted && status.userllm?.active;
+    const text = byok
+        ? L.outByok(status.userllm.providerlabel, daily.remaining <= 0 ? "daily" : "hourly")
+        : exhausted
         ? L.out(renewTime(window?.resetsinsec ?? 0, lang))
         : warning
             ? `${L.warn(percent)} ${L.left(daily.questionsleft)}`
@@ -95,7 +102,14 @@ export default function BudgetBar({ courseId, refreshKey = 0, lang = "es", fetch
             >
                 <div className="nexusai-budget__fill" style={{ width: `${percent}%` }} />
             </div>
-            <span className="nexusai-budget__text">{text}</span>
+            {byok ? (
+                <span className="nexusai-budget__text nexusai-budget__text--byok">
+                    <IconKey size={12} />
+                    {text}
+                </span>
+            ) : (
+                <span className="nexusai-budget__text">{text}</span>
+            )}
         </div>
     );
 }

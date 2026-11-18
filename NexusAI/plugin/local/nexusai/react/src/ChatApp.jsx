@@ -53,12 +53,14 @@ import HistoryDropdown from "./components/HistoryDropdown.jsx";
 import NavMenu from "./components/NavMenu.jsx";
 import Tooltip from "./components/Tooltip.jsx";
 import OnboardingPanel from "./components/OnboardingPanel.jsx";
+import ApiKeyPanel from "./components/ApiKeyPanel.jsx";
 import { IconBookOpen, IconGlobe, IconGrid } from "./components/icons.jsx";
 import { ToastProvider } from "./components/Toast.jsx";
-import { getFriendlyErrorMessage } from "./components/errors.js";
+import { extractUserLlmFailure, getFriendlyErrorMessage } from "./components/errors.js";
 import { sendMessage, sendMessageStream } from "./api/chat.js";
 import BudgetBar from "./components/BudgetBar.jsx";
 import { getSessionMessages } from "./api/history.js";
+import { getUserLlm } from "./api/userLlm.js";
 import { useOnboardingState } from "./onboarding/useOnboardingState.js";
 
 // UX-14 (#373): sessionStorage key for the active tab, per course —
@@ -75,6 +77,7 @@ const SECTION_TITLES = {
     history:     { es: "Historial",            en: "History" },
     review:      { es: "Revisión del curso",   en: "Course review" },
     forumdigest: { es: "Resumen del foro",     en: "Forum digest" },
+    apikey:      { es: "Mi API key",           en: "My API key" },
 };
 
 const STRINGS = {
@@ -89,6 +92,7 @@ const STRINGS = {
         errorGeneric: "Algo salió mal. Tocá «Reintentar» para volver a enviar tu pregunta.",
         errorRetry:   "Reintentar",
         errorDismiss: "Descartar",
+        goToApiKey:   "Ir a Mi API key",
         clearChat:    "Nueva conversación",
         modeMock:     "demo",
         poweredBy:    "Respuestas basadas en el contenido de tu curso",
@@ -110,6 +114,7 @@ const STRINGS = {
         errorGeneric: "Something went wrong. Tap «Retry» to send your message again.",
         errorRetry:   "Retry",
         errorDismiss: "Dismiss",
+        goToApiKey:   "Go to My API key",
         clearChat:    "New conversation",
         modeMock:     "demo",
         poweredBy:    "Answers based on your course content",
@@ -184,6 +189,11 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
     const [sessionId, setSessionId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    // "My API key": the last error came from the user's own key, so the error
+    // box offers to go and fix it.
+    const [errorIsUserKey, setErrorIsUserKey] = useState(false);
+    // State of the user's own key, for the menu item (null until loaded / outside a course).
+    const [userLlm, setUserLlm] = useState(null);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [multiCourse, setMultiCourse] = useState(false);
     // DATA-05: increased with each answer to refresh the limit bar.
@@ -262,6 +272,18 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         return () => window.removeEventListener("nexusai:toggle-panel", handleToggle);
     }, []);
 
+    // "My API key": its state, for the menu item. Loaded once the panel opens
+    // in a course; the panel itself refreshes it when the user changes the key.
+    useEffect(() => {
+        if (!open || !hasCourse || userLlm) return undefined;
+        let cancelled = false;
+        getUserLlm(courseid)
+            .then((s) => { if (!cancelled) setUserLlm(s); })
+            // Without the state the menu item is not shown; nothing else breaks.
+            .catch(() => {});
+        return () => { cancelled = true; };
+    }, [open, hasCourse, courseid, userLlm]);
+
     // UX-14 (#373): store the active tab. Try/catch because sessionStorage
     // can throw in private mode/with blocked storage — it must not break the
     // widget's render.
@@ -301,6 +323,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
 
     const send = async (question) => {
         setError(null);
+        setErrorIsUserKey(false);
         setLastQuestion(question);
 
         const ts = Date.now();
@@ -378,16 +401,28 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         // `bufferedGrounded` matcher below, captured with the local
                         // id) to be able to enable the 👍/👎 feedback only now that
                         // the message is stored.
+                        // "My API key": mark the answers the user's own key wrote.
+                        const metrics = doneEvent?.metrics;
                         setMessages((prev) =>
                             prev.map((m) =>
                                 m.id === streamingAssistantId
-                                    ? { ...m, streaming: false, realId: doneEvent?.assistant_message_id || null }
+                                    ? {
+                                        ...m,
+                                        streaming: false,
+                                        realId: doneEvent?.assistant_message_id || null,
+                                        byok: !!metrics?.byok,
+                                        model: metrics?.byok ? metrics.model || "" : undefined,
+                                      }
                                     : m
                             )
                         );
                     },
-                    onError: (detail) => {
-                        throw new Error(detail);
+                    onError: (detail, event) => {
+                        const streamError = new Error(detail);
+                        // The backend marks the errors of the user's own key: their
+                        // text names the provider and says what to fix.
+                        streamError.userKey = event?.code === "user_llm_failed";
+                        throw streamError;
                     },
                 }
             );
@@ -414,7 +449,13 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                     (m) => m.id !== optimisticUserMsg.id && m.id !== streamingAssistantId
                 )
             );
-            setError(getFriendlyErrorMessage(err, t.errorGeneric, lang));
+            const keyFailure = err?.userKey ? { message: err.message } : extractUserLlmFailure(err);
+            if (keyFailure) {
+                setError(keyFailure.message);
+                setErrorIsUserKey(true);
+            } else {
+                setError(getFriendlyErrorMessage(err, t.errorGeneric, lang));
+            }
         } finally {
             setLoading(false);
             setBudgetTick((n) => n + 1);
@@ -635,6 +676,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                         onSelect={setActiveTab}
                         isTeacher={isTeacher}
                         lang={lang}
+                        userLlm={userLlm}
                     />
 
                     {activeTab === "chat" ? (
@@ -689,13 +731,23 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                             <div className="nexusai-error" role="alert">
                                 <p className="nexusai-error__text">{error || t.errorGeneric}</p>
                                 <div className="nexusai-error__actions">
-                                    <button
-                                        type="button"
-                                        className="nexusai-btn nexusai-btn--primary"
-                                        onClick={retry}
-                                    >
-                                        {t.errorRetry}
-                                    </button>
+                                    {errorIsUserKey ? (
+                                        <button
+                                            type="button"
+                                            className="nexusai-btn nexusai-btn--primary"
+                                            onClick={() => { setError(null); setErrorIsUserKey(false); setActiveTab("apikey"); }}
+                                        >
+                                            {t.goToApiKey}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            className="nexusai-btn nexusai-btn--primary"
+                                            onClick={retry}
+                                        >
+                                            {t.errorRetry}
+                                        </button>
+                                    )}
                                     <button
                                         type="button"
                                         className="nexusai-btn nexusai-btn--ghost"
@@ -762,6 +814,17 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
                                 skipped={reviewSkipped}
                                 onSkip={reviewSkip}
                                 onUnskip={reviewUnskip}
+                            />
+                        </div>
+                    ) : activeTab === "apikey" ? (
+                        <div className="nexusai-panel__body">
+                            <ApiKeyPanel
+                                courseId={courseid}
+                                lang={lang}
+                                onChange={(next) => {
+                                    setUserLlm(next);
+                                    setBudgetTick((n) => n + 1);
+                                }}
                             />
                         </div>
                     ) : activeTab === "forumdigest" ? (

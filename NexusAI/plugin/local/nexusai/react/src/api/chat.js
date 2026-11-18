@@ -251,7 +251,8 @@ export async function submitMessageFeedback({ messageId, courseId, isHelpful, co
  * @param {(meta:{session_id:string,chunks:number}) => void} [callbacks.onMeta]
  * @param {(token:string) => void}                          callbacks.onToken
  * @param {(stats:{prompt_tokens:number,completion_tokens:number,total_tokens:number}) => void} [callbacks.onDone]
- * @param {(detail:string) => void}                         [callbacks.onError]
+ * @param {(detail:string, event:Object) => void}           [callbacks.onError] The event carries
+ *   `code: "user_llm_failed"` and `reason` when the user's own API key failed ("My API key").
  * @returns {Promise<void>} resolves when the stream ends
  */
 export async function sendMessageStream(
@@ -323,7 +324,7 @@ export async function sendMessageStream(
                 case "token":       onToken?.(parsed.content || ""); break;
                 case "answer_meta": onAnswerMeta?.(parsed); break;
                 case "done":        receivedTerminalEvent = true; onDone?.(parsed); break;
-                case "error":       receivedTerminalEvent = true; onError?.(parsed.detail || "stream error"); break;
+                case "error":       receivedTerminalEvent = true; onError?.(parsed.detail || "stream error", parsed); break;
             }
         }
     };
