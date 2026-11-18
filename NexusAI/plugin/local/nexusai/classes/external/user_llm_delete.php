@@ -68,6 +68,7 @@ class user_llm_delete extends external_api {
         $params = self::validate_parameters(self::execute_parameters(), ['courseid' => $courseid]);
         $courseid = (int) $params['courseid'];
         user_llm_get::check_access($courseid);
+        \local_nexusai\local\course_guard::require_enabled($courseid);
         user_llm::delete((int) $USER->id);
         return user_llm_get::state((int) $USER->id, $courseid);
     }

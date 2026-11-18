@@ -94,6 +94,7 @@ class user_llm_save extends external_api {
         ]);
         $courseid = (int) $params['courseid'];
         user_llm_get::check_access($courseid);
+        \local_nexusai\local\course_guard::require_enabled($courseid);
         if (!user_llm::site_enabled()) {
             throw new \moodle_exception('userllm_sitedisabled', 'local_nexusai');
         }

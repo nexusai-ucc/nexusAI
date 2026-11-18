@@ -97,11 +97,15 @@ class user_llm_get extends external_api {
         global $USER;
         $params = self::validate_parameters(self::execute_parameters(), ['courseid' => $courseid]);
         self::check_access((int) $params['courseid']);
+        \local_nexusai\local\course_guard::require_enabled((int) $params['courseid']);
         return self::state((int) $USER->id, (int) $params['courseid']);
     }
 
     /**
-     * Context, capability and course checks shared by the "My API key" functions.
+     * Context and capability checks shared by the "My API key" functions.
+     *
+     * Each function then calls course_guard::require_enabled() itself, like
+     * every other course function (course_guard_test checks it in each file).
      *
      * @param int $courseid Course.
      */
@@ -109,7 +113,6 @@ class user_llm_get extends external_api {
         $context = \context_course::instance($courseid);
         self::validate_context($context);
         require_capability('local/nexusai:use', $context);
-        \local_nexusai\local\course_guard::require_enabled($courseid);
     }
 
     /**
