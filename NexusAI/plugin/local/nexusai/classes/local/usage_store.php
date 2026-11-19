@@ -83,6 +83,7 @@ class usage_store {
                     'provider' => isset($call['provider']) ? \core_text::substr((string) $call['provider'], 0, 40) : null,
                     'model' => isset($call['model']) ? \core_text::substr((string) $call['model'], 0, 120) : null,
                     'fallback' => !empty($call['fallback']) ? 1 : 0,
+                    'byok' => !empty($call['byok']) ? 1 : 0,
                     'prompttokens' => (int) ($call['prompt_tokens'] ?? 0),
                     'completiontokens' => (int) ($call['completion_tokens'] ?? 0),
                     'cachedprompttokens' => (int) ($call['cached_prompt_tokens'] ?? 0),
@@ -185,6 +186,9 @@ class usage_store {
     /**
      * Chat tokens stored for a user and role since a time.
      *
+     * Calls made with the user's own API key (byok) do not count: the user paid
+     * for them and the backend leaves them out of the budget too.
+     *
      * @param int $userid User.
      * @param string $role Role.
      * @param int $since Unix time.
@@ -196,7 +200,7 @@ class usage_store {
         return (int) $DB->get_field_sql(
             "SELECT COALESCE(SUM(prompttokens + completiontokens), 0)
                FROM {local_nexusai_usage}
-              WHERE userid = :userid AND role = :role AND timecreated >= :since AND $like",
+              WHERE userid = :userid AND role = :role AND timecreated >= :since AND byok = 0 AND $like",
             ['userid' => $userid, 'role' => $role, 'since' => $since, 'feature' => 'chat.%']
         );
     }
@@ -212,7 +216,7 @@ class usage_store {
         $row = $DB->get_record_sql(
             "SELECT COUNT(DISTINCT requestid) AS questions, COALESCE(SUM(prompttokens + completiontokens), 0) AS tokens
                FROM {local_nexusai_usage}
-              WHERE userid = :userid AND timecreated >= :since AND " . $DB->sql_like('feature', ':feature'),
+              WHERE userid = :userid AND timecreated >= :since AND byok = 0 AND " . $DB->sql_like('feature', ':feature'),
             ['userid' => $userid, 'since' => time() - 30 * DAYSECS, 'feature' => 'chat.%']
         );
         if (!$row || (int) $row->questions === 0 || (int) $row->tokens === 0) {

@@ -325,3 +325,38 @@ export const IconMic = ({ size = 16 }) => (
         <line x1="8" y1="23" x2="16" y2="23" />
     </svg>
 );
+
+// ── Key ("My API key": the user's own AI provider key) ─────────────────────
+export const IconKey = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <circle cx="7.5" cy="15.5" r="4.5" />
+        <path d="M10.7 12.3 21 2" />
+        <path d="m16 7 3 3" />
+        <path d="m19 4 2 2" />
+    </svg>
+);
+
+// ── Eye / EyeOff (show or hide a secret while typing it) ───────────────────
+export const IconEye = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
+        <circle cx="12" cy="12" r="3" />
+    </svg>
+);
+
+export const IconEyeOff = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-6.4 0-10-7-10-7a18.5 18.5 0 0 1 5.06-5.94" />
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.4 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19" />
+        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+        <line x1="2" y1="2" x2="22" y2="22" />
+    </svg>
+);
+
+// ── Lock (a secret stored encrypted) ───────────────────────────────────────
+export const IconLock = ({ size = 14 }) => (
+    <svg {...baseProps(size)}>
+        <rect x="4" y="11" width="16" height="10" rx="2" />
+        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+);

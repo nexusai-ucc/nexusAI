@@ -31,9 +31,13 @@
  *
  * ONB-06: "Course review" (teacherOnly) — permanent access to the setup
  * checklist in review mode, without having to be on `course/edit.php`.
+ *
+ * "My API key" (BYOK): last item, apart from the course destinations because it
+ * is the user's own setting. Shown to students and teachers while the site
+ * allows own keys; under its name, the provider and whether it is connected.
  */
 
-import { IconBookOpen, IconCalendar, IconClipboardList, IconMessageSquare, IconSearch, IconSparkles } from "./icons.jsx";
+import { IconBookOpen, IconCalendar, IconClipboardList, IconKey, IconMessageSquare, IconSearch, IconSparkles } from "./icons.jsx";
 
 const ITEMS = [
     { key: "chat", labelEs: "Chat", labelEn: "Chat", Icon: IconSparkles },
@@ -44,11 +48,20 @@ const ITEMS = [
     { key: "forumdigest", labelEs: "Resumen del foro", labelEn: "Forum digest", Icon: IconMessageSquare, teacherOnly: true },
 ];
 
-export default function NavMenu({ open, onClose, activeTab, onSelect, isTeacher = false, lang = "es" }) {
+function userLlmSubtitle(userLlm, lang) {
+    const es = lang === "es";
+    if (!userLlm.configured) return es ? "Sin configurar" : "Not set up";
+    if (!userLlm.courseallowed) return `${userLlm.providerlabel} · ${es ? "pausada en este curso" : "paused in this course"}`;
+    if (!userLlm.active) return `${userLlm.providerlabel} · ${es ? "hay que cargarla de nuevo" : "needs to be added again"}`;
+    return `${userLlm.providerlabel} · ${es ? "conectada" : "connected"}`;
+}
+
+export default function NavMenu({ open, onClose, activeTab, onSelect, isTeacher = false, lang = "es", userLlm = null }) {
     if (!open) return null;
 
     const title = lang === "es" ? "Ir a" : "Go to";
     const closeLabel = lang === "es" ? "Cerrar" : "Close";
+    const showUserLlm = !!userLlm?.siteenabled;
 
     return (
         <div className="nexusai-navmenu">
@@ -78,6 +91,30 @@ export default function NavMenu({ open, onClose, activeTab, onSelect, isTeacher 
                         </span>
                     </button>
                 ))}
+                {showUserLlm && (
+                    <>
+                        <div className="nexusai-navmenu__sep" role="separator" />
+                        <button
+                            type="button"
+                            className={`nexusai-navmenu__item ${activeTab === "apikey" ? "nexusai-navmenu__item--active" : ""}`}
+                            onClick={() => { onSelect("apikey"); onClose(); }}
+                        >
+                            <span className="nexusai-navmenu__item-icon">
+                                <IconKey size={16} />
+                            </span>
+                            <span className="nexusai-navmenu__item-label">
+                                {lang === "es" ? "Mi API key" : "My API key"}
+                                <span className="nexusai-navmenu__item-sub">{userLlmSubtitle(userLlm, lang)}</span>
+                            </span>
+                            {userLlm.active && (
+                                <span
+                                    className="nexusai-navmenu__item-dot"
+                                    aria-label={lang === "es" ? "Conectada" : "Connected"}
+                                />
+                            )}
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );

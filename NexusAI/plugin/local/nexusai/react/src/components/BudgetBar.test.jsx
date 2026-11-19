@@ -50,6 +50,21 @@ describe("BudgetBar (DATA-05)", () => {
         expect(await screen.findByText(/Llegaste al límite. Se renueva a las/)).toBeInTheDocument();
     });
 
+    it("says the user's own API key takes over once the limit is used up (My API key)", async () => {
+        const withKey = { ...status(100, 0, 0), userllm: { active: true, providerlabel: "Anthropic" } };
+        render(<BudgetBar courseId={3} fetchStatus={vi.fn().mockResolvedValue(withKey)} />);
+        expect(
+            await screen.findByText("Llegaste al límite de hoy. Seguís con tu API key de Anthropic.")
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/Se renueva a las/)).not.toBeInTheDocument();
+    });
+
+    it("keeps the renew message when the user's key is not active in the course", async () => {
+        const paused = { ...status(100, 0, 0), userllm: { active: false, providerlabel: "" } };
+        render(<BudgetBar courseId={3} fetchStatus={vi.fn().mockResolvedValue(paused)} />);
+        expect(await screen.findByText(/Llegaste al límite. Se renueva a las/)).toBeInTheDocument();
+    });
+
     it("shows nothing when there is no status (outside Moodle or error)", async () => {
         const fetch = vi.fn().mockResolvedValue(null);
         const { container } = render(<BudgetBar courseId={3} fetchStatus={fetch} />);

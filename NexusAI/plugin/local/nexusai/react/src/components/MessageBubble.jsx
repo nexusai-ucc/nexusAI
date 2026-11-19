@@ -40,7 +40,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import temml from "temml";
-import { IconFile, IconRefreshCw, IconSparkles, IconThumbsDown, IconThumbsUp, IconX } from "./icons.jsx";
+import { IconFile, IconKey, IconRefreshCw, IconSparkles, IconThumbsDown, IconThumbsUp, IconX } from "./icons.jsx";
 import { submitMessageFeedback } from "../api/chat.js";
 
 // Conservative regex to detect files cited in the LLM's text.
@@ -240,6 +240,8 @@ const FEEDBACK_L = {
         showLess:     "Mostrar menos",
         showMore:     "Mostrar más",
         regenerate:   "Regenerar",
+        byok:         "Con tu key",
+        byokTitle:    "Esta respuesta la generó tu propia API key (Mi API key)",
     },
     en: {
         helpful:      "Helpful response",
@@ -255,6 +257,8 @@ const FEEDBACK_L = {
         showLess:     "Show less",
         showMore:     "Show more",
         regenerate:   "Regenerate",
+        byok:         "With your key",
+        byokTitle:    "This answer was generated with your own API key (My API key)",
     },
 };
 
@@ -497,8 +501,15 @@ export default function MessageBubble({ message, sesskey, courseId, lang = "es",
                 </div>
             )}
 
-            <div className="nexusai-msg__meta" style={{ paddingLeft: "34px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="nexusai-msg__meta" style={{ paddingLeft: "34px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 {formatTimestamp(message.created_at)}
+                {message.byok && (
+                    <span className="nexusai-msg__byok" title={FL.byokTitle}>
+                        <IconKey size={11} />
+                        {FL.byok}
+                        {message.model ? <span className="nexusai-msg__byok-model">{` · ${message.model}`}</span> : null}
+                    </span>
+                )}
                 {canRegenerate && (
                     <button
                         type="button"

@@ -398,5 +398,17 @@ function xmldb_local_nexusai_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026093001, 'local', 'nexusai');
     }
 
+    if ($oldversion < 2026111800) {
+        // My API key (BYOK): mark the calls the user's own key answered, so
+        // they cost the institution nothing and stay out of the token budget.
+        $table = new xmldb_table('local_nexusai_usage');
+        $field = new xmldb_field('byok', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'fallback');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2026111800, 'local', 'nexusai');
+    }
+
     return true;
 }

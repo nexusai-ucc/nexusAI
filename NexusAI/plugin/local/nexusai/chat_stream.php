@@ -135,6 +135,10 @@ $bodyarray['visible_cmids'] = \local_nexusai\local\visible_material::for_courses
     $bodyarray['course_ids'] ?? [$bodyarray['course_id']]
 );
 
+// The user's own API key ("My API key"), last link of the backend's model chain,
+// when the site, the course(s) and the user have it. Same rule as backend_client.
+$bodyarray = \local_nexusai\local\user_llm::add_to_body($bodyarray, $turn->role());
+
 $body = json_encode($bodyarray, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 if ($body === false) {
     $fail(500, get_string('errorbackend', 'local_nexusai', 'JSON encode failed'));

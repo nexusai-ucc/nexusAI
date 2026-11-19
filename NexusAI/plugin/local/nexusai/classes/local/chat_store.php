@@ -152,6 +152,11 @@ class chat_store {
         );
         $history = [];
         foreach (array_reverse($rows) as $row) {
+            // An answer cut before its first token is stored empty; the backend
+            // rejects empty history items (422), which would block the conversation.
+            if (trim((string) $row->content) === '') {
+                continue;
+            }
             if ($row->role === 'user' || $row->role === 'assistant') {
                 $history[] = ['role' => $row->role, 'content' => $row->content];
             }
