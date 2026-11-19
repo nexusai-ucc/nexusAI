@@ -30,7 +30,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026101406;
+$plugin->version   = 2026111800;
+// My API key (BYOK): a student or teacher can save their own AI provider key, used
+// as the last link of the backend's model chain. New usage column local_nexusai_usage.byok.
 // Fix: voice questions in the chat were always refused — MediaRecorder reports the
 // codec as a MIME parameter ("audio/webm;codecs=opus") and the type was compared whole.
 // Fix: deleting a course purges its forum posts from the backend through the

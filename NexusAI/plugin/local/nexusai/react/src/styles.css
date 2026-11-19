@@ -4108,3 +4108,268 @@
     white-space: nowrap;
     border: 0;
 }
+
+/* ============================================================
+   "My API key" (BYOK): the user's own AI provider key.
+   Menu item, the screen itself, the mark on answers written with
+   the user's key and the limit bar when the key takes over.
+   Only --nexusai-* tokens, so the dark block above covers it.
+============================================================ */
+.nexusai-navmenu__sep {
+    height: 1px;
+    margin: 4px;
+    background: var(--nexusai-border);
+}
+.nexusai-navmenu__item-label {
+    flex: 1;
+    min-width: 0;
+}
+.nexusai-navmenu__item-sub {
+    display: block;
+    font-size: 11px;
+    color: var(--nexusai-fg-subtle);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nexusai-navmenu__item-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: var(--nexusai-radius-full);
+    background: #22c55e;
+    flex-shrink: 0;
+}
+
+.nexusai-msg__byok {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 7px;
+    border-radius: var(--nexusai-radius-full);
+    border: 1px solid var(--nexusai-border);
+    background: var(--nexusai-bg-subtle);
+    color: var(--nexusai-fg-muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+.nexusai-msg__byok-model {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10.5px;
+}
+
+.nexusai-budget__text--byok {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-budget--out .nexusai-budget__text--byok {
+    color: var(--nexusai-fg-muted);
+}
+
+.nexusai-apikey {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 0 12px;
+}
+.nexusai-apikey__lead {
+    margin: 0;
+    font-size: 13px;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-apikey__callout {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid;
+    border-radius: var(--nexusai-radius);
+    font-size: 12.5px;
+}
+.nexusai-apikey__callout svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.nexusai-apikey__callout p {
+    margin: 0;
+}
+.nexusai-apikey__callout p + p,
+.nexusai-apikey__callout p + ul,
+.nexusai-apikey__callout ul + p {
+    margin-top: 6px;
+}
+.nexusai-apikey__callout ul {
+    margin: 4px 0 0;
+    padding-left: 18px;
+}
+.nexusai-apikey__callout strong {
+    font-weight: 600;
+}
+.nexusai-apikey__callout--info {
+    background: var(--nexusai-info-bg);
+    color: var(--nexusai-info-fg);
+    border-color: var(--nexusai-info-border);
+}
+.nexusai-apikey__callout--warn {
+    background: var(--nexusai-warning-bg);
+    color: var(--nexusai-warning-fg);
+    border-color: var(--nexusai-warning-border);
+}
+.nexusai-apikey__callout--danger {
+    background: var(--nexusai-danger-bg);
+    color: var(--nexusai-danger-fg);
+    border-color: var(--nexusai-danger-border);
+}
+.nexusai-apikey__callout--ok {
+    background: var(--nexusai-success-bg);
+    color: var(--nexusai-success-fg);
+    border-color: var(--nexusai-success-border);
+}
+.nexusai-apikey__field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.nexusai-apikey__field label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexusai-fg);
+}
+.nexusai-apikey__control {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 10px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--nexusai-fg);
+    background: var(--nexusai-bg);
+    border: 1px solid var(--nexusai-border-strong);
+    border-radius: var(--nexusai-radius);
+}
+.nexusai-apikey__control:focus {
+    outline: none;
+    border-color: var(--nexusai-primary);
+    box-shadow: 0 0 0 3px var(--nexusai-primary-ring);
+}
+.nexusai-apikey__control[aria-invalid="true"] {
+    border-color: var(--nexusai-danger-solid);
+}
+.nexusai-apikey__mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+}
+.nexusai-apikey__help {
+    margin: 0;
+    font-size: 11.5px;
+    color: var(--nexusai-fg-subtle);
+}
+.nexusai-apikey__help--error {
+    color: var(--nexusai-danger-fg);
+}
+.nexusai-apikey__with-btn {
+    display: flex;
+    gap: 6px;
+}
+.nexusai-apikey__with-btn .nexusai-apikey__control {
+    flex: 1;
+    min-width: 0;
+}
+.nexusai-apikey__eye {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+}
+.nexusai-apikey__check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12.5px;
+    color: var(--nexusai-fg);
+    cursor: pointer;
+}
+.nexusai-apikey__check input {
+    margin-top: 3px;
+    flex-shrink: 0;
+    accent-color: var(--nexusai-primary-solid);
+}
+.nexusai-apikey__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.nexusai-apikey__fine {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+    font-size: 11.5px;
+    color: var(--nexusai-fg-subtle);
+}
+.nexusai-apikey__fine svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.nexusai-apikey__card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--nexusai-border);
+    border-radius: var(--nexusai-radius-md);
+    background: var(--nexusai-surface);
+}
+.nexusai-apikey__card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.nexusai-apikey__provider {
+    font-size: 14px;
+    font-weight: 600;
+}
+.nexusai-apikey__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: var(--nexusai-radius-full);
+    border: 1px solid var(--nexusai-border);
+    background: var(--nexusai-bg-subtle);
+    color: var(--nexusai-fg-muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+.nexusai-apikey__pill--warn {
+    background: var(--nexusai-warning-bg);
+    color: var(--nexusai-warning-fg);
+    border-color: var(--nexusai-warning-border);
+}
+.nexusai-apikey__card-note {
+    margin: 0;
+    font-size: 12px;
+    color: var(--nexusai-fg-muted);
+}
+.nexusai-apikey__pill--ok {
+    background: var(--nexusai-success-bg);
+    color: var(--nexusai-success-fg);
+    border-color: var(--nexusai-success-border);
+}
+.nexusai-apikey__kv {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 14px;
+    margin: 0;
+    font-size: 12.5px;
+}
+.nexusai-apikey__kv dt {
+    color: var(--nexusai-fg-subtle);
+}
+.nexusai-apikey__kv dd {
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+}

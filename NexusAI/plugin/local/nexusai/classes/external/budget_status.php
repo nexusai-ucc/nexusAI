@@ -77,6 +77,10 @@ class budget_status extends external_api {
             'source' => new external_value(PARAM_ALPHA, 'backend (latest reported value) or estimate'),
             'hourly' => self::window('hour'),
             'daily' => self::window('day'),
+            'userllm' => new external_single_structure([
+                'active' => new external_value(PARAM_BOOL, 'Whether the user\'s own API key takes over at the limit'),
+                'providerlabel' => new external_value(PARAM_TEXT, 'Name of the user\'s provider, empty without a key'),
+            ], 'The user\'s own API key ("My API key")'),
         ]);
     }
 
@@ -97,7 +101,16 @@ class budget_status extends external_api {
         $role = has_capability('local/nexusai:manage', $context) ? 'teacher' : 'student';
         $budget = usage_store::budget((int) $USER->id, $role);
         $pertoken = usage_store::average_question_tokens((int) $USER->id);
-        $out = ['role' => $role, 'source' => $budget['source']];
+        $userllm = \local_nexusai\local\user_llm::status((int) $USER->id);
+        $active = \local_nexusai\local\user_llm::active_for((int) $USER->id, [(int) $params['courseid']]);
+        $out = [
+            'role' => $role,
+            'source' => $budget['source'],
+            'userllm' => [
+                'active' => $active,
+                'providerlabel' => $active ? \local_nexusai\local\user_llm::PROVIDERS[$userllm['provider']] : '',
+            ],
+        ];
         foreach (['hourly', 'daily'] as $window) {
             $w = $budget[$window];
             $out[$window] = [
