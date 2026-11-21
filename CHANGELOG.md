@@ -6,6 +6,34 @@ Versionado siguiendo [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [v0.19.0] — 2026-09-12 a 2026-10-23 — Publicación en Moodle, visibilidad, datos en Moodle, calidad y accesibilidad
+
+Agrupa todo lo mergeado entre v0.17.8 y el informe final. Lo del plugin, versión por versión (0.18.x y 0.19.0), está en [`NexusAI/plugin/local/nexusai/CHANGES.md`](NexusAI/plugin/local/nexusai/CHANGES.md).
+
+### Agregado
+- feat(shared): capa de moderación de contenido y límite diario de consultas por alumno — #479, #481
+- feat(asistente): presupuesto de tokens por rol (alumno/docente), reservado de forma atómica en Redis — #516
+- feat(consumo): registro de tokens por llamada a proveedor con modelo, costo y rol; resúmenes permanentes por versión del documento — COST-01, COST-02 — #533, #535
+- feat(curso): activar o desactivar NexusAI por curso, apagado por defecto — CURSO-01 — #534
+- feat: el material se filtra por las actividades que el usuario puede ver en Moodle; lo subido queda como actividad Archivo; el índice acompaña a la actividad; las fuentes se abren por la actividad; los foros respetan visibilidad y grupos — VIS-01 a VIS-06 — #542 a #547
+- feat: datos del alumno en tablas nativas de Moodle con Privacy API, backend sin estado del alumno y migración con guía del corte — ADR-014, DATA-01 a DATA-06 — #532, #548 a #552
+- feat: alertas mínimas por email (5xx, LLM, cuota, health) — #482
+- ci: CD a staging con verificación del commit y smoke de punta a punta — TPC-08 — #635
+- test: línea base de cobertura, casos de caja negra, pruebas de carga con k6 con umbrales en el pipeline — TPC-01, TPC-04, TPC-09 — #587, #632, #645
+
+### Corregido
+- fix(db): DEF-09 — el chat colapsaba con ~15 chats simultáneos por retener conexiones del pool mientras esperaba al modelo; pool aparte para el registro de consumo — #644
+- fix(calidad): hallazgos de SonarCloud, de 26 bugs y 14 vulnerabilidades a 0 — TPC-10 — #646
+- fix(plugin): accesibilidad WCAG 2.2 AA del widget y del panel docente — #665
+- fix(deps): Pillow 13 y vite 8.3.5 por vulnerabilidades nuevas — DEF-10 — #654
+- fix: cambios pedidos en la revisión del Moodle Plugins Directory (MMR-301): Coding Standard, i18n completa, privacidad y purga de foros, streaming por `\curl` de Moodle, boilerplate GPL — #475 a #514, #553 a #572, #585, #589
+- fix(asistente): la pregunta por voz se rechazaba siempre por el MIME con codec — #591
+
+### Publicación
+- El plugin `local_nexusai` 0.19.0 fue aprobado y publicado en el [Moodle Plugins Directory](https://marketplace.moodle.com/plugins/local_nexusai). Requiere Moodle 4.5 LTS o posterior.
+
+---
+
 ## [v0.17.8] — 2026-09-08 — Post-MVP Sprint G (cierre) + backlog chico
 
 ### Agregado
