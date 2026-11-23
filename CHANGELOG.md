@@ -6,6 +6,59 @@ Versionado siguiendo [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [v0.20.0] — 2026-11-23 — My API key y revisión del plugin
+
+Detalle del plugin en [`NexusAI/plugin/local/nexusai/CHANGES.md`](NexusAI/plugin/local/nexusai/CHANGES.md).
+
+### Agregado
+- feat(plugin): "My API key" — el alumno o docente puede guardar la clave de su propia cuenta en un proveedor de IA; se prueba antes de guardarla, se guarda cifrada y el backend la usa solo como último eslabón de la cadena de modelos. Apagado por defecto en el sitio — #694, #696
+- feat(api): `POST /api/v1/user-llm/test` para probar la clave sin guardarla; la clave vive solo en memoria durante el pedido — #694
+
+### Corregido
+- fix: robustez para la demo con público — pool de Redis, re-subida tras un error y respuestas vacías fuera del historial (el backend rechazaba la conversación con 422) — #693
+- fix(plugin): hallazgos de la revisión propia antes de subirlo al directorio: textos de falla de la key con strings de Moodle, `optional_param()` en `chat_stream.php`, privacidad de la key declarada, comentarios en inglés — #696
+- test(api): el test de contrato HMAC ya no rompe la colección en `nexusai-backend`, que no tiene `contracts/` — #699
+
+### Publicación
+- El plugin 0.20.0 también lleva al Moodle Plugins Directory DEF-01 (#623) y la accesibilidad WCAG 2.2 AA con DOMPurify 3.4.17 (#665), que se mergearon después de publicar la 0.19.0.
+
+---
+
+## [API 0.2.0] — 2026-10-26 — Cierre del TP de Calidad de Software
+
+### Cambiado
+- chore(api): la API pasa a la versión 0.2.0 (`app_version`, visible en `/health`). Incluye el trabajo de calidad de la épica TPC (#584): quality gate en SonarCloud, CD a staging con smoke E2E, integración externa diaria contra el LLM real, pruebas de carga con k6 y los fixes de DEF-01 a DEF-10. Es el cambio que recorre el pipeline completo en la demo del TP (`docs/calidad/DEMO.md`).
+
+---
+
+## [v0.19.0] — 2026-09-12 a 2026-10-23 — Publicación en Moodle, visibilidad, datos en Moodle, calidad y accesibilidad
+
+Agrupa todo lo mergeado entre v0.17.8 y el informe final. Lo del plugin, versión por versión (0.18.x y 0.19.0), está en [`NexusAI/plugin/local/nexusai/CHANGES.md`](NexusAI/plugin/local/nexusai/CHANGES.md).
+
+### Agregado
+- feat(shared): capa de moderación de contenido y límite diario de consultas por alumno — #479, #481
+- feat(asistente): presupuesto de tokens por rol (alumno/docente), reservado de forma atómica en Redis — #516
+- feat(consumo): registro de tokens por llamada a proveedor con modelo, costo y rol; resúmenes permanentes por versión del documento — COST-01, COST-02 — #533, #535
+- feat(curso): activar o desactivar NexusAI por curso, apagado por defecto — CURSO-01 — #534
+- feat: el material se filtra por las actividades que el usuario puede ver en Moodle; lo subido queda como actividad Archivo; el índice acompaña a la actividad; las fuentes se abren por la actividad; los foros respetan visibilidad y grupos — VIS-01 a VIS-06 — #542 a #547
+- feat: datos del alumno en tablas nativas de Moodle con Privacy API, backend sin estado del alumno y migración con guía del corte — ADR-014, DATA-01 a DATA-06 — #532, #548 a #552
+- feat: alertas mínimas por email (5xx, LLM, cuota, health) — #482
+- ci: CD a staging con verificación del commit y smoke de punta a punta — TPC-08 — #635
+- test: línea base de cobertura, casos de caja negra, pruebas de carga con k6 con umbrales en el pipeline — TPC-01, TPC-04, TPC-09 — #587, #632, #645
+
+### Corregido
+- fix(db): DEF-09 — el chat colapsaba con ~15 chats simultáneos por retener conexiones del pool mientras esperaba al modelo; pool aparte para el registro de consumo — #644
+- fix(calidad): hallazgos de SonarCloud, de 26 bugs y 14 vulnerabilidades a 0 — TPC-10 — #646
+- fix(plugin): accesibilidad WCAG 2.2 AA del widget y del panel docente — #665
+- fix(deps): Pillow 13 y vite 8.3.5 por vulnerabilidades nuevas — DEF-10 — #654
+- fix: cambios pedidos en la revisión del Moodle Plugins Directory (MMR-301): Coding Standard, i18n completa, privacidad y purga de foros, streaming por `\curl` de Moodle, boilerplate GPL — #475 a #514, #553 a #572, #585, #589
+- fix(asistente): la pregunta por voz se rechazaba siempre por el MIME con codec — #591
+
+### Publicación
+- El plugin `local_nexusai` 0.19.0 fue aprobado y publicado en el [Moodle Plugins Directory](https://marketplace.moodle.com/plugins/local_nexusai). Requiere Moodle 4.5 LTS o posterior.
+
+---
+
 ## [v0.17.8] — 2026-09-08 — Post-MVP Sprint G (cierre) + backlog chico
 
 ### Agregado
