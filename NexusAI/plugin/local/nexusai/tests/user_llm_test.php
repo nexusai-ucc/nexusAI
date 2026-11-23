@@ -49,6 +49,7 @@ final class user_llm_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
         $this->setUser($user);
+        set_config('user_llm_enabled', 1, 'local_nexusai');
         return [$user, $course];
     }
 
@@ -121,6 +122,13 @@ final class user_llm_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $admin = get_admin();
         user_llm::save((int) $admin->id, 'openai', 'gpt-x', self::KEY, 0);
+
+        // The site switch ships off: a saved key is not used until the administrator opts in.
+        $this->assertFalse(user_llm::site_enabled(), 'Off by default.');
+        $this->assertFalse(user_llm::active_for((int) $admin->id, [(int) $course->id]));
+        unset_config('user_llm_enabled', 'local_nexusai');
+        $this->assertFalse(user_llm::site_enabled(), 'A site that never saved the setting counts as off.');
+        set_config('user_llm_enabled', 1, 'local_nexusai');
 
         $this->assertTrue(user_llm::course_allowed((int) $course->id), 'Allowed by default.');
         $this->assertTrue(user_llm::active_for((int) $admin->id, [(int) $course->id]));

@@ -265,6 +265,6 @@ $string['upload_prompt_success'] = '"{$a}" was successfully added to NexusAI.';
 $string['upload_prompt_title'] = 'NexusAI — new material';
 $string['upload_prompt_yes'] = 'Yes, add it';
 $string['user_llm_enabled'] = 'Users can add their own API key';
-$string['user_llm_enabled_desc'] = 'Students and teachers can save the API key of their own account with an AI provider in "My API key". NexusAI uses it only as the last resort: when the institution\'s models are out of quota or down, or when the user reached their token limit. Those calls are paid by the user and do not count towards the institution\'s cost or the user\'s limit. Each course can still turn it off.';
+$string['user_llm_enabled_desc'] = 'Students and teachers can save the API key of their own account with an AI provider in "My API key". NexusAI uses it only as the last resort: when the institution\'s models are out of quota or down, or when the user reached their token limit. Those calls are paid by the user and do not count towards the institution\'s cost or the user\'s limit. When that key is used, the question and excerpts of the course material go to the provider the user chose. Off by default; once on, each course can still turn it off.';
 $string['userllm_missing'] = 'Your saved API key could not be read. Add it again.';
 $string['userllm_sitedisabled'] = 'The administrator turned off own API keys on this site.';

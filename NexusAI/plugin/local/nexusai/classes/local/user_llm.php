@@ -68,14 +68,14 @@ class user_llm {
     const KEY_MAX = 512;
 
     /**
-     * Whether the site-wide switch is on. A site that never saved the setting
-     * counts as on: the feature ships enabled.
+     * Whether the site-wide switch is on. Off until an administrator turns it
+     * on: the request then also reaches a provider the user chose, so the site
+     * has to opt in (a site that never saved the setting counts as off).
      *
      * @return bool
      */
     public static function site_enabled(): bool {
-        $value = get_config('local_nexusai', 'user_llm_enabled');
-        return $value === false ? true : !empty($value);
+        return !empty(get_config('local_nexusai', 'user_llm_enabled'));
     }
 
     /**

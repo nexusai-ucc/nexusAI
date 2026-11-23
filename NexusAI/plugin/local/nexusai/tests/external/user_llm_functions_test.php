@@ -44,6 +44,18 @@ final class user_llm_functions_test extends external_testcase {
     private const KEY = 'sk-proj-test-0123456789-9z9z';
 
     /**
+     * A course with NexusAI on and the site switch of own keys on (it ships off).
+     *
+     * @param string $role Role of the user in the course.
+     * @return \stdClass
+     */
+    protected function setup_course(string $role = 'student'): \stdClass {
+        $data = parent::setup_course($role);
+        set_config('user_llm_enabled', 1, 'local_nexusai');
+        return $data;
+    }
+
+    /**
      * Criterion: without a key the screen offers the providers and nothing is active.
      */
     public function test_get_without_a_key(): void {

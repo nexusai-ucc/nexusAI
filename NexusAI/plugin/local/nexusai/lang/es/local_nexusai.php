@@ -265,6 +265,6 @@ $string['upload_prompt_success'] = '"{$a}" fue agregado a NexusAI correctamente.
 $string['upload_prompt_title'] = 'NexusAI — nuevo material';
 $string['upload_prompt_yes'] = 'Sí, agregar';
 $string['user_llm_enabled'] = 'Los usuarios pueden cargar su propia API key';
-$string['user_llm_enabled_desc'] = 'Alumnos y docentes pueden guardar en «Mi API key» la key de su propia cuenta en un proveedor de IA. NexusAI la usa solo como último recurso: cuando los modelos de la facultad se quedan sin cuota o se caen, o cuando el usuario llegó a su límite de tokens. Esas llamadas las paga el usuario y no suman al costo de la facultad ni a su límite. Cada curso puede desactivarlo igual.';
+$string['user_llm_enabled_desc'] = 'Alumnos y docentes pueden guardar en «Mi API key» la key de su propia cuenta en un proveedor de IA. NexusAI la usa solo como último recurso: cuando los modelos de la facultad se quedan sin cuota o se caen, o cuando el usuario llegó a su límite de tokens. Esas llamadas las paga el usuario y no suman al costo de la facultad ni a su límite. Cuando se usa esa key, la pregunta y fragmentos del material del curso van al proveedor que eligió el usuario. Apagado por defecto; una vez encendido, cada curso puede desactivarlo igual.';
 $string['userllm_missing'] = 'No se pudo leer tu API key guardada. Cargala de nuevo.';
 $string['userllm_sitedisabled'] = 'El administrador desactivó las API keys propias en este sitio.';
