@@ -162,7 +162,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
     // progress, for the post-quiz review screen.
     const answersRef = useRef([]);
 
-    // Historial de quizzes (SP-09)
+    // Quiz history (SP-09)
     const [historyItems, setHistoryItems] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyError, setHistoryError] = useState(null);
@@ -792,7 +792,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
 
                 <p className="nexusai-quiz__question">{q.question}</p>
 
-                {/* ── Opciones: MC y T/F ── */}
+                {/* ── Options: MC and T/F ── */}
                 {!isOpen && !isFillBlank && !isFlashcard && (
                     <div className={`nexusai-quiz__options${isTF ? " nexusai-quiz__options--tf" : ""}`}>
                         {q.options.map((opt, i) => {
@@ -841,7 +841,7 @@ export default function QuizPanel({ courseId, lang = "es", initialTopic = "" }) 
                     </div>
                 )}
 
-                {/* ── Input: completar espacios en blanco (SP-04) ── */}
+                {/* ── Input: fill in the blanks (SP-04) ── */}
                 {isFillBlank && (
                     <div className="nexusai-quiz__open-area">
                         <p className="nexusai-quiz__open-hint">{L.fillBlankHint}</p>

@@ -21,23 +21,24 @@
  */
 
 /**
- * Doble de prueba de `core/ajax` (TPC-05, #577).
+ * Test double of `core/ajax` (TPC-05, #577).
  *
- * Los módulos `api/*.js` piden `core/ajax` con `window.require` y, si no hay
- * `window.M.cfg`, caen a datos mock. Esto instala un Moodle falso: cada
- * `ajax.call([{methodname, args}])` responde con lo que diga
- * `handlers[methodname]` (un valor o una función de los args) y queda anotado
- * en `ajaxCalls` para poder verificar qué web service se llamó y con qué.
+ * The `api/*.js` modules ask for `core/ajax` with `window.require` and, when
+ * there is no `window.M.cfg`, fall back to mock data. This installs a fake
+ * Moodle: each `ajax.call([{methodname, args}])` answers with what
+ * `handlers[methodname]` says (a value or a function of the args) and is
+ * recorded in `ajaxCalls`, so a test can check which web service was called
+ * and with what.
  *
- * El objeto `fakeAjax` es siempre el mismo: documents/api.js cachea
- * `ajax.call` la primera vez, así que los handlers se leen en cada llamada.
+ * The `fakeAjax` object is always the same: documents/api.js caches
+ * `ajax.call` the first time, so the handlers are read on every call.
  */
 
 import { vi } from "vitest";
 
 let handlers = {};
 
-/** Llamadas recibidas, en orden: `{ methodname, args }`. */
+/** Calls received, in order: `{ methodname, args }`. */
 export const ajaxCalls = [];
 
 const fakeAjax = {
@@ -45,7 +46,7 @@ const fakeAjax = {
         requests.map(({ methodname, args }) => {
             ajaxCalls.push({ methodname, args });
             if (!(methodname in handlers)) {
-                return Promise.reject(new Error(`Sin handler para ${methodname}`));
+                return Promise.reject(new Error(`No handler for ${methodname}`));
             }
             const handler = handlers[methodname];
             try {
@@ -58,10 +59,10 @@ const fakeAjax = {
 };
 
 /**
- * Instala el Moodle falso.
+ * Installs the fake Moodle.
  *
- * @param {Object<string, *>} map Respuesta (o función de los args) por methodname.
- * @returns {{call: Function}} El `core/ajax` falso.
+ * @param {Object<string, *>} map Answer (or function of the args) per methodname.
+ * @returns {{call: Function}} The fake `core/ajax`.
  */
 export function installMoodleAjax(map = {}) {
     handlers = map;
@@ -72,7 +73,7 @@ export function installMoodleAjax(map = {}) {
     return fakeAjax;
 }
 
-/** Saca el Moodle falso: los módulos vuelven a sus datos mock. */
+/** Removes the fake Moodle: the modules go back to their mock data. */
 export function uninstallMoodleAjax() {
     delete window.M;
     delete window.require;
@@ -81,10 +82,10 @@ export function uninstallMoodleAjax() {
 }
 
 /**
- * Corre una llamada en modo mock, que espera con setTimeout, sin esperar de verdad.
+ * Runs a call in mock mode, which waits with setTimeout, without really waiting.
  *
- * @param {Function} fn Llamada que devuelve una promesa.
- * @returns {Promise<*>} Su resultado.
+ * @param {Function} fn Call that returns a promise.
+ * @returns {Promise<*>} Its result.
  */
 export async function withFakeTimers(fn) {
     vi.useFakeTimers();

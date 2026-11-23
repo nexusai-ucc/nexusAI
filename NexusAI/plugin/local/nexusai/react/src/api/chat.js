@@ -64,10 +64,10 @@ const CHAT_ERRORS = {
 // MOCK SERVER (only for dev outside Moodle)
 // ============================================================
 const MOCK_RESPONSES = [
-    "Esta es una respuesta de prueba del asistente. Cuando el cliente PHP esté implementado, vas a ver respuestas reales del LLM con contexto del material del curso.",
-    "Perfecto, podés seguir preguntando. El historial de la conversación se está guardando en la base de datos.",
-    "Para responder esa pregunta sobre tu materia, normalmente buscaría en los PDFs subidos por tu profesor mediante similitud semántica con pgvector. Por ahora estoy en modo mock.",
-    "Recordá que puedo ayudarte con dudas sobre el contenido del curso, generar resúmenes, o crear quizzes de práctica.",
+    "This is a test answer from the assistant. Inside Moodle you get real answers from the LLM with context from the course material.",
+    "Great, you can keep asking. The conversation history is saved in the database.",
+    "To answer that question about your subject, I would search the PDFs your teacher uploaded by semantic similarity with pgvector. For now I am in mock mode.",
+    "Remember that I can help you with questions about the course content, write summaries or create practice quizzes.",
 ];
 
 let mockSessionMessages = [];
@@ -114,12 +114,12 @@ async function getMoodleAjax() {
     if (cachedFetchMany) return cachedFetchMany;
 
     if (typeof window === "undefined" || !window.M || !window.M.cfg) {
-        // No estamos dentro de Moodle.
+        // Not inside Moodle.
         return null;
     }
 
     try {
-        // require() global de RequireJS dentro de Moodle.
+        // RequireJS's global require() inside Moodle.
         const ajax = await new Promise((resolve, reject) => {
             // eslint-disable-next-line no-undef
             window.require(["core/ajax"], resolve, reject);

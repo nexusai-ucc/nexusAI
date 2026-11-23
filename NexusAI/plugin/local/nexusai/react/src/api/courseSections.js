@@ -50,11 +50,11 @@ async function getMoodleAjax() {
 export async function listCourseSections(courseId) {
     const ajax = await getMoodleAjax();
     if (!ajax) {
-        // Mock fuera de Moodle.
+        // Mock outside Moodle.
         return [
             { section: 0, name: "General" },
-            { section: 1, name: "Unidad 1" },
-            { section: 2, name: "Unidad 2" },
+            { section: 1, name: "Unit 1" },
+            { section: 2, name: "Unit 2" },
         ];
     }
 

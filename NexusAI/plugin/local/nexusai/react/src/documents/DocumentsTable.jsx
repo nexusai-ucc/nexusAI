@@ -509,7 +509,7 @@ export function ErrorModal({ message, onClose, lang = "es" }) {
 }
 
 // ============================================================
-// Fila de tabla
+// Table row
 // ============================================================
 
 function DocumentRow({ doc, lang, selected, onToggleSelect, onDelete, deleting, onReplace, replacing, previewOpen, preview, onTogglePreview }) {

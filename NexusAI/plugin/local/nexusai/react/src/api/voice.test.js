@@ -64,4 +64,11 @@ describe("transcribeAudio (VOICE-01, #314)", () => {
 
         await expect(transcribeAudio(5, blob)).rejects.toThrow("erroraudiotype");
     });
+
+    it("outside Moodle returns the English sample transcription", async () => {
+        // No window.M: the mock answers after its 800 ms delay.
+        const text = await transcribeAudio(5, new Blob(["audio"], { type: "audio/webm" }));
+
+        expect(text).toBe("This is a test transcription (mock mode, without Moodle).");
+    });
 });

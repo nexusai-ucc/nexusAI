@@ -59,10 +59,10 @@ const MOCK_DOCS = [
         id: "mock-3",
         course_id: 2,
         uploader_id: 2,
-        filename: "scan-clase-3.pdf",
+        filename: "scanned-class-3.pdf",
         mime_type: "application/pdf",
         status: "error",
-        error_message: "El PDF no tiene texto extraíble. Solo se admiten PDFs con texto, no escaneados.",
+        error_message: "The PDF has no extractable text. Only PDFs with text are supported, not scanned ones.",
     },
 ];
 
@@ -154,7 +154,7 @@ export async function getDocumentPreview(courseId, documentId) {
     if (typeof window === "undefined" || !window.M?.cfg) {
         await new Promise((r) => setTimeout(r, 200));
         const doc = MOCK_DOCS.find((d) => d.id === documentId);
-        const sample = "Una derivada mide la tasa de cambio instantánea de una función. "
+        const sample = "A derivative measures the instantaneous rate of change of a function. "
             + "Formalmente, f'(x) = lim(h→0) [f(x+h) - f(x)] / h. ".repeat(12);
         return {
             document_id: documentId,
@@ -408,7 +408,7 @@ const MOCK_GAPS = {
     total: 3,
     items: [
         {
-            question: "¿cómo se calcula el determinante de una matriz 4x4?",
+            question: "how do you compute the determinant of a 4x4 matrix?",
             count: 5,
             last_asked_at: new Date(Date.now() - 86400000).toISOString(),
             avg_similarity: 0.18,
@@ -416,7 +416,7 @@ const MOCK_GAPS = {
             is_archived: false,
         },
         {
-            question: "¿qué es la regla de la cadena en derivadas parciales?",
+            question: "what is the chain rule for partial derivatives?",
             count: 3,
             last_asked_at: new Date(Date.now() - 3 * 86400000).toISOString(),
             avg_similarity: 0.32,
@@ -490,25 +490,25 @@ const MOCK_FAQ_TOPICS = {
     total_questions: 14,
     topics: [
         {
-            topic: "Fechas y modalidad del parcial",
+            topic: "Midterm dates and format",
             count: 6,
             example_questions: [
-                "¿qué temas entran en el parcial?",
-                "¿el parcial es a libro abierto?",
+                "which topics are in the midterm?",
+                "is the midterm open book?",
             ],
         },
         {
-            topic: "Determinantes y matrices",
+            topic: "Determinants and matrices",
             count: 5,
             example_questions: [
-                "¿cómo se calcula el determinante de una matriz 4x4?",
+                "how do you compute the determinant of a 4x4 matrix?",
             ],
         },
         {
-            topic: "Regla de la cadena",
+            topic: "Chain rule",
             count: 3,
             example_questions: [
-                "¿qué es la regla de la cadena en derivadas parciales?",
+                "what is the chain rule for partial derivatives?",
             ],
         },
     ],
@@ -541,10 +541,10 @@ const MOCK_ANALYTICS_DASHBOARD = {
     course_id: 2,
     period_days: 30,
     top_queries: [
-        { question: "¿qué temas entran en el parcial?", count: 6 },
-        { question: "¿cómo se calcula el determinante de una matriz 4x4?", count: 5 },
-        { question: "¿qué es la regla de la cadena en derivadas parciales?", count: 3 },
-        { question: "¿el parcial es a libro abierto?", count: 2 },
+        { question: "which topics are in the midterm?", count: 6 },
+        { question: "how do you compute the determinant of a 4x4 matrix?", count: 5 },
+        { question: "what is the chain rule for partial derivatives?", count: 3 },
+        { question: "is the midterm open book?", count: 2 },
     ],
     daily_message_counts: Array.from({ length: 14 }, (_, i) => {
         const d = new Date();
