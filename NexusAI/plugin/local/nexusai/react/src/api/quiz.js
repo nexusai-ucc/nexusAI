@@ -35,26 +35,26 @@ const MOCK_QUIZ = {
     questions: [
         {
             question_type: "multiple_choice",
-            question: "¿Qué estructura de datos usa NexusAI para búsqueda semántica?",
-            options: ["Árbol B+", "pgvector con HNSW", "Tabla hash", "Lista enlazada"],
+            question: "Which data structure does NexusAI use for semantic search?",
+            options: ["B+ tree", "pgvector with HNSW", "Hash table", "Linked list"],
             correct_index: 1,
-            explanation: "NexusAI usa pgvector con índice HNSW para búsqueda por similaridad coseno.",
+            explanation: "NexusAI uses pgvector with an HNSW index for cosine similarity search.",
             source_filename: "architecture.md",
         },
         {
             question_type: "true_false",
-            question: "NexusAI usa gemini-embedding-001 como modelo de embeddings por defecto en el MVP.",
-            options: ["Verdadero", "Falso"],
+            question: "NexusAI uses gemini-embedding-001 as the default embedding model in the MVP.",
+            options: ["True", "False"],
             correct_index: 0,
-            explanation: "Correcto. El MVP usa gemini-embedding-001 con 768 dimensiones para representar el contenido del curso.",
+            explanation: "Correct. The MVP uses gemini-embedding-001 with 768 dimensions to represent the course content.",
             source_filename: "architecture.md",
         },
         {
             question_type: "open",
-            question: "¿Por qué NexusAI usa pgvector con índice HNSW en lugar de una búsqueda lineal?",
+            question: "Why does NexusAI use pgvector with an HNSW index instead of a linear search?",
             options: [],
             correct_index: -1,
-            explanation: "El índice HNSW (Hierarchical Navigable Small World) permite búsquedas aproximadas de vecinos más cercanos en tiempo sub-lineal (O(log n)), lo que es esencial para mantener tiempos de respuesta bajos con grandes volúmenes de embeddings. Una búsqueda lineal requeriría comparar cada vector del corpus, resultando en O(n) operaciones.",
+            explanation: "The HNSW (Hierarchical Navigable Small World) index finds approximate nearest neighbours in sub-linear time (O(log n)), which keeps response times low with large volumes of embeddings. A linear search would compare every vector in the corpus, which takes O(n) operations.",
             source_filename: "architecture.md",
         },
         {
@@ -62,7 +62,7 @@ const MOCK_QUIZ = {
             question: "HNSW",
             options: [],
             correct_index: -1,
-            explanation: "Hierarchical Navigable Small World — índice de pgvector para búsqueda aproximada de vecinos más cercanos en tiempo sub-lineal.",
+            explanation: "Hierarchical Navigable Small World — a pgvector index for approximate nearest-neighbour search in sub-linear time.",
             source_filename: "architecture.md",
         },
     ],
@@ -194,8 +194,8 @@ export async function evaluateOpenAnswer({ courseId, question, modelAnswer, user
             correct:  isCorrect,
             score:    isCorrect ? 0.8 : 0.2,
             feedback: isCorrect
-                ? "Buena respuesta. Mencionaste los conceptos clave. (Evaluación simulada — en el sistema real la IA compara con el material del curso.)"
-                : "La respuesta es demasiado breve. Desarrollá más el concepto. (Evaluación simulada.)",
+                ? "Good answer. You mentioned the key concepts. (Simulated evaluation: the real system compares it with the course material.)"
+                : "The answer is too short. Develop the concept further. (Simulated evaluation.)",
         };
     }
 
@@ -341,7 +341,7 @@ export async function listQuizAttempts(courseId, days = 90, limit = 20) {
             total: 2,
             items: [
                 { id: "mock-1", question_type: "multiple_choice", difficulty: "medium", topic: null,            total_questions: 5, correct_answers: 4, score: 0.8,    created_at: new Date(Date.now() - 86400000).toISOString() },
-                { id: "mock-2", question_type: "flashcard",       difficulty: "easy",   topic: "Fotosíntesis", total_questions: 3, correct_answers: 2, score: 0.6667, created_at: new Date(Date.now() - 3600000).toISOString() },
+                { id: "mock-2", question_type: "flashcard",       difficulty: "easy",   topic: "Photosynthesis", total_questions: 3, correct_answers: 2, score: 0.6667, created_at: new Date(Date.now() - 3600000).toISOString() },
             ],
         };
     }
@@ -388,11 +388,11 @@ export async function getStudyPlan(courseId, days = 30) {
             course_id: courseId,
             topics: [
                 {
-                    topic: "Derivadas de funciones trigonométricas",
+                    topic: "Derivatives of trigonometric functions",
                     quiz_error_count: 3,
                     gap_count: 1,
-                    reason: "Fallaste 3 preguntas de práctica y preguntaste esto una vez en el chat sin buena respuesta.",
-                    suggested_quiz_topic: "derivadas trigonométricas",
+                    reason: "You got 3 practice questions wrong and asked about this once in the chat without a good answer.",
+                    suggested_quiz_topic: "trigonometric derivatives",
                     quiz_error_ids: ["mock-qe-1", "mock-qe-2", "mock-qe-3"],
                     gap_question_ids: ["mock-gq-1"],
                 },

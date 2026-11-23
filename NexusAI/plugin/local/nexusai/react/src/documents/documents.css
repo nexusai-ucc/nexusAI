@@ -440,7 +440,7 @@
 }
 .nexusai-table tr:last-child td { border-bottom: none; }
 
-/* Hover en filas */
+/* Row hover */
 .nexusai-table tbody tr {
     transition: background 0.1s;
 }
@@ -740,7 +740,7 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Botones de modal */
+/* Modal buttons */
 .nexusai-btn {
     display: inline-flex;
     align-items: center;
@@ -1333,7 +1333,7 @@
     white-space: nowrap;
 }
 
-/* Resumen de puntaje promedio */
+/* Average score summary */
 .nexusai-analytics__score-summary {
     display: flex;
     align-items: baseline;
@@ -1350,7 +1350,7 @@
     color: var(--nexusai-fg-muted);
 }
 
-/* Ratio de gaps */
+/* Gap ratio */
 .nexusai-analytics__gaps-ratio {
     margin-top: 8px;
     padding: 12px 14px;
@@ -1811,7 +1811,7 @@
         border-color: var(--nexusai-success-border);
     }
 
-    /* ---- Cola de uploads / preview ---- */
+    /* ---- Upload queue / preview ---- */
     .nexusai-documents .nexusai-upload-queue__item--error {
         background: var(--nexusai-danger-bg);
         border-color: var(--nexusai-danger-border);
@@ -1851,7 +1851,7 @@
     .nexusai-documents .nexusai-table .nexusai-badge--unknown  { background: var(--nexusai-bg-muted) !important;   color: var(--nexusai-fg-muted) !important; }
     .nexusai-documents .nexusai-badge--indexing::before { background: var(--nexusai-info-fg); }
 
-    /* ---- Modal de error ---- */
+    /* ---- Error modal ---- */
     .nexusai-documents .nexusai-modal__body--error {
         color: var(--nexusai-danger-fg);
         background: var(--nexusai-danger-bg);
@@ -1900,7 +1900,7 @@
     .nexusai-documents .nexusai-analytics__health--high .nexusai-analytics__health-pct { color: var(--nexusai-danger-fg); }
     .nexusai-documents .nexusai-analytics__health-bar { background: var(--nexusai-bg-subtle); }
 
-    /* ---- Examen: badges de foco (gap/faq) ---- */
+    /* ---- Exam: focus badges (gap/faq) ---- */
     .nexusai-documents .nexusai-exam__focus-badge--gap {
         color: var(--nexusai-warning-fg);
         background: var(--nexusai-warning-bg);
@@ -2060,7 +2060,7 @@
 }
 .nexusai-skeleton-analytics__bars .nexusai-skeleton { flex: 1; }
 
-/* FAQ — cards de tema */
+/* FAQ — topic cards */
 .nexusai-skeleton-faq__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

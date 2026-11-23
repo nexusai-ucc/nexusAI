@@ -493,7 +493,7 @@ export default function AnalyticsDashboardPanel({ courseId, courseName, lang = "
                             )}
                         </section>
 
-                        {/* Ratio de gaps */}
+                        {/* Gap ratio */}
                         <section className="nexusai-analytics__section">
                             <h3 className="nexusai-documents__heading">{L.gaps}</h3>
                             {totalGapsBase === 0 ? (

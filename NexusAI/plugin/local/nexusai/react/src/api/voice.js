@@ -76,7 +76,7 @@ export async function transcribeAudio(courseId, blob) {
     if (!ajax) {
         // Mock outside Moodle: there is no way to really transcribe.
         await new Promise((r) => setTimeout(r, 800));
-        return "Esto es una transcripción de prueba (modo mock, sin Moodle).";
+        return "This is a test transcription (mock mode, without Moodle).";
     }
 
     // ajax.call() returns an ARRAY of promises: the element has to be awaited

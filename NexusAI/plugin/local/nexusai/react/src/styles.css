@@ -188,7 +188,7 @@
         border-color: var(--nexusai-warning-border);
     }
 
-    /* Quiz — opciones y feedback */
+    /* Quiz — options and feedback */
     .nexusai-widget .nexusai-quiz__option--correct {
         border-color: var(--nexusai-success-border);
         background: var(--nexusai-success-bg);
@@ -254,7 +254,7 @@
         color: var(--nexusai-danger-fg);
     }
 
-    /* Calendario — banner y badge de alerta */
+    /* Calendar — alert banner and badge */
     .nexusai-widget .nexusai-calendar__alert-banner {
         background: var(--nexusai-warning-bg);
         border-color: var(--nexusai-warning-border);
@@ -268,7 +268,7 @@
     .nexusai-widget .nexusai-calendar__feed-status--error,
     .nexusai-widget .nexusai-search__summary-text--error { color: var(--nexusai-danger-fg); }
 
-    /* Racha de estudio */
+    /* Study streak */
     .nexusai-widget .nexusai-study__streak { color: #fb923c; }
 
     /* Teacher onboarding (checklist) */
@@ -455,7 +455,7 @@
     background: var(--nexusai-bg-subtle);
 }
 
-/* ----- Body / lista de mensajes ----- */
+/* ----- Body / message list ----- */
 .nexusai-panel__body {
     flex: 1;
     overflow-y: auto;
@@ -1545,7 +1545,7 @@
         border-bottom: none;
     }
     .nexusai-input__textarea {
-        font-size: 16px; /* evita zoom en iOS */
+        font-size: 16px; /* avoids zoom on iOS */
     }
 }
 
@@ -1983,7 +1983,7 @@
     color: var(--nexusai-fg-muted);
 }
 
-/* ── CAL-02 · Alertas de calendario ── */
+/* ── CAL-02 · Calendar alerts ── */
 .nexusai-calendar-item-wrapper {
     border: 1px solid var(--nexusai-border);
     border-radius: 8px;
@@ -2022,7 +2022,7 @@
     cursor: not-allowed;
 }
 
-/* ----- CAL-05: toggle lista/grilla ----- */
+/* ----- CAL-05: list/grid toggle ----- */
 .nexusai-calendar__viewbtns {
     display: flex;
     align-items: center;
@@ -2030,7 +2030,7 @@
     margin-bottom: 14px;
 }
 
-/* ----- CAL-05: grilla de mes ----- */
+/* ----- CAL-05: month grid ----- */
 .nexusai-calendar__grid-wrap { margin-bottom: 8px; }
 .nexusai-calendar__grid-nav {
     display: flex;
@@ -2458,7 +2458,7 @@
     flex-shrink: 0;
 }
 
-/* ── Racha de estudio (SP-16, #354) ── */
+/* ── Study streak (SP-16, #354) ── */
 .nexusai-study__streak {
     display: flex;
     align-items: center;
@@ -2470,7 +2470,7 @@
     flex-shrink: 0;
 }
 
-/* ── Selector Practicar/Repaso de Modo Estudio (UX-01) ── */
+/* ── Study mode Practice/Review selector (UX-01) ── */
 .nexusai-study__modebtns {
     display: flex;
     padding: 10px 12px 0;
@@ -2586,7 +2586,7 @@
     border-radius: 6px;
 }
 
-/* Selector de dificultad (SP-08) */
+/* Difficulty selector (SP-08) */
 .nexusai-quiz__diffbtns {
     display: flex;
     gap: 6px;
@@ -3245,7 +3245,7 @@
     opacity: 0.6;
 }
 
-/* Sugerencias de repaso (SP-10) */
+/* Review suggestions (SP-10) */
 .nexusai-review__suggestions {
     background: var(--nexusai-surface);
     border: 1px solid var(--nexusai-primary-ring);
@@ -3330,7 +3330,7 @@
     margin: 0;
 }
 
-/* ── Plan de estudio personalizado ── */
+/* ── Personal study plan ── */
 .nexusai-studyplan {
     padding: 14px;
     display: flex;
@@ -3458,7 +3458,7 @@
     cursor: not-allowed;
 }
 
-/* ── Resumen de repaso pre-parcial (BUS-04) ── */
+/* ── Pre-exam review summary (BUS-04) ── */
 .nexusai-studyplan__review {
     background: var(--nexusai-bg-muted);
     border: 1px solid var(--nexusai-border);
@@ -3541,7 +3541,7 @@
     margin: 0;
 }
 
-/* ── Caret de streaming ── */
+/* ── Streaming caret ── */
 .nexusai-msg__markdown--streaming::after {
     content: "▍";
     display: inline-block;

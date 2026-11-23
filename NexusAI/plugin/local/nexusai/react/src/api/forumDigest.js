@@ -33,20 +33,20 @@ const MOCK_DIGEST = {
     discussions: [
         {
             discussion_id: 1,
-            discussion_name: "No entiendo nada del parcial",
-            forum_name: "Consultas generales",
+            discussion_name: "I don't understand anything about the midterm",
+            forum_name: "General questions",
             post_count: 3,
             urgent: true,
         },
         {
             discussion_id: 2,
-            discussion_name: "¿Cuándo entrega el TP2?",
-            forum_name: "Consultas generales",
+            discussion_name: "When is assignment 2 due?",
+            forum_name: "General questions",
             post_count: 2,
             urgent: false,
         },
     ],
-    summary: "Esta semana hubo actividad en 2 hilos. Un alumno pidió ayuda urgente con el parcial — conviene responderle pronto. La consulta sobre la fecha del TP2 ya quedó resuelta entre los alumnos.",
+    summary: "There was activity in 2 threads this week. A student asked for urgent help with the midterm, so it is worth replying soon. The question about the assignment 2 due date was already answered by other students.",
 };
 
 async function getMoodleAjax() {

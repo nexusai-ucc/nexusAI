@@ -29,9 +29,9 @@ import { randomFloat } from "./random";
  * through core/ajax.
  */
 
-const _MOCK_SUMMARY = `Este documento aborda los conceptos fundamentales del tema, organizados en secciones temáticas que van desde los fundamentos teóricos hasta la aplicación práctica. Se presentan definiciones clave, ejemplos ilustrativos y ejercicios de aplicación. El material está orientado a estudiantes de nivel universitario y sirve como referencia para las actividades prácticas del curso.`;
+const _MOCK_SUMMARY = `This document covers the core concepts of the topic, in sections that go from the theoretical foundations to practical application. It presents key definitions, worked examples and exercises. The material is aimed at university students and is a reference for the practical activities of the course.`;
 
-const _MOCK_PRE_EXAM_SUMMARY = `Para este examen, los temas principales a repasar son los fundamentos teóricos, sus aplicaciones prácticas y los ejercicios de referencia (apuntes.pdf). Se recomienda prestar especial atención a las definiciones clave y a los ejemplos resueltos, ya que suelen ser la base de las consignas de evaluación.`;
+const _MOCK_PRE_EXAM_SUMMARY = `For this exam, the main topics to review are the theoretical foundations, their practical applications and the reference exercises (notes.pdf). Pay special attention to the key definitions and the worked examples, since exam questions are usually based on them.`;
 
 async function getMoodleAjax() {
     if (typeof window === "undefined" || !window.M?.cfg) return null;
@@ -59,7 +59,7 @@ export async function summarizeDocument({ documentId, courseId }) {
         await new Promise(r => setTimeout(r, 1200 + randomFloat() * 600));
         return {
             document_id:       documentId,
-            document_filename: "documento.pdf",
+            document_filename: "document.pdf",
             summary:           _MOCK_SUMMARY,
             chunks_used:       12,
             total_chunks:      15,
@@ -91,7 +91,7 @@ export async function getPreExamSummary(courseId, section = null) {
         await new Promise(r => setTimeout(r, 1200 + randomFloat() * 600));
         return {
             summary:          _MOCK_PRE_EXAM_SUMMARY,
-            documents_used:   [{ document_id: "mock-1", filename: "apuntes.pdf" }],
+            documents_used:   [{ document_id: "mock-1", filename: "notes.pdf" }],
             total_documents:  1,
         };
     }

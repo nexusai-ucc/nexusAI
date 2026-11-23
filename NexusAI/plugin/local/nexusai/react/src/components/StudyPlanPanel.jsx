@@ -156,7 +156,7 @@ export default function StudyPlanPanel({ courseId, lang = "es", onPracticeTopic 
 
         getUpcomingEvents(courseId, 7)
             .then((events) => { if (!cancelled) setNextEvent(events?.[0] || null); })
-            .catch(() => { /* banner de deadline es secundario — falla en silencio */ });
+            .catch(() => { /* the deadline banner is secondary: fail silently */ });
 
         return () => { cancelled = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
