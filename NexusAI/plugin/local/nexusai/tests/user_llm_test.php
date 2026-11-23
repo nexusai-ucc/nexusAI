@@ -49,6 +49,7 @@ final class user_llm_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
         $this->setUser($user);
+        set_config('user_llm_enabled', 1, 'local_nexusai');
         return [$user, $course];
     }
 
@@ -101,6 +102,7 @@ final class user_llm_test extends \advanced_testcase {
             ['openai', 'con espacio', self::KEY],
             ['openai', 'gpt-x', 'corta'],
             ['openai', 'gpt-x', 'sk con espacio adentro'],
+            ['openai', 'gpt-x', 'sk-clave-con-eñe-0123'],
         ];
         foreach ($invalid as [$p, $m, $k]) {
             try {
@@ -121,6 +123,13 @@ final class user_llm_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $admin = get_admin();
         user_llm::save((int) $admin->id, 'openai', 'gpt-x', self::KEY, 0);
+
+        // The site switch ships off: a saved key is not used until the administrator opts in.
+        $this->assertFalse(user_llm::site_enabled(), 'Off by default.');
+        $this->assertFalse(user_llm::active_for((int) $admin->id, [(int) $course->id]));
+        unset_config('user_llm_enabled', 'local_nexusai');
+        $this->assertFalse(user_llm::site_enabled(), 'A site that never saved the setting counts as off.');
+        set_config('user_llm_enabled', 1, 'local_nexusai');
 
         $this->assertTrue(user_llm::course_allowed((int) $course->id), 'Allowed by default.');
         $this->assertTrue(user_llm::active_for((int) $admin->id, [(int) $course->id]));
@@ -206,5 +215,26 @@ final class user_llm_test extends \advanced_testcase {
         $this->assertNull(backend_client::user_llm_failure(
             new \moodle_exception('errorbackend', 'local_nexusai', '', 'HTTP 503: {"detail":"x"}')
         ));
+    }
+
+    /**
+     * The user reads a language string that names their provider, never the backend's text.
+     */
+    public function test_failure_message_comes_from_the_language_strings(): void {
+        $failure = user_llm::failure('model', 'anthropic', 'claude-x');
+        $this->assertSame('model', $failure['reason']);
+        $this->assertSame(
+            get_string('userllm_failed_model', 'local_nexusai', (object) ['provider' => 'Anthropic', 'model' => 'claude-x']),
+            $failure['message']
+        );
+        $this->assertStringContainsString('Anthropic', $failure['message']);
+
+        // An unknown reason (a newer backend, a broken answer) reads as "not responding".
+        $unknown = user_llm::failure('something-new', 'openai', 'gpt-x');
+        $this->assertSame('unavailable', $unknown['reason']);
+        $this->assertSame(
+            get_string('userllm_failed_unavailable', 'local_nexusai', (object) ['provider' => 'OpenAI', 'model' => 'gpt-x']),
+            $unknown['message']
+        );
     }
 }

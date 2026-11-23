@@ -13,19 +13,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+/**
+ * Part of the NexusAI plugin (local_nexusai).
+ *
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-// Números al azar con el generador criptográfico del navegador (SonarCloud
-// javascript:S2245). Se usa para ids de la UI y para las demoras simuladas de
-// los dobles de desarrollo: nada sensible, pero así no queda ningún
-// Math.random. getRandomValues funciona también fuera de https (Moodle local).
+/**
+ * Random numbers from the browser's cryptographic generator (SonarCloud
+ * javascript:S2245). Used for UI ids and for the simulated delays of the
+ * development doubles: nothing sensitive, but no Math.random is left.
+ * getRandomValues also works outside https (a local Moodle).
+ */
 
-/** Número uniforme en [0, 1). */
+/** Uniform number in [0, 1). */
 export function randomFloat() {
     const [value] = globalThis.crypto.getRandomValues(new Uint32Array(1));
     return value / 2 ** 32;
 }
 
-/** Id corto e irrepetible para elementos de la UI. */
+/** Short unique id for UI elements. */
 export function randomId() {
     const bytes = globalThis.crypto.getRandomValues(new Uint8Array(8));
     const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");

@@ -44,6 +44,18 @@ final class user_llm_functions_test extends external_testcase {
     private const KEY = 'sk-proj-test-0123456789-9z9z';
 
     /**
+     * A course with NexusAI on and the site switch of own keys on (it ships off).
+     *
+     * @param string $role Role of the user in the course.
+     * @return \stdClass
+     */
+    protected function setup_course(string $role = 'student'): \stdClass {
+        $data = parent::setup_course($role);
+        set_config('user_llm_enabled', 1, 'local_nexusai');
+        return $data;
+    }
+
+    /**
      * Criterion: without a key the screen offers the providers and nothing is active.
      */
     public function test_get_without_a_key(): void {
@@ -89,6 +101,39 @@ final class user_llm_functions_test extends external_testcase {
         $this->assertNotSame('', $result['message']);
         $this->assertFalse($result['state']['configured']);
         $this->assertNull(user_llm::credentials((int) $data->user->id));
+    }
+
+    /**
+     * Criterion: a key the provider refused (backend 424) reads as a translated reason, never the backend's text.
+     */
+    public function test_a_refused_key_reads_a_translated_reason(): void {
+        $this->resetAfterTest();
+        $detail = json_encode(['detail' => [
+            'error' => 'user_llm_failed',
+            'reason' => 'quota',
+            'provider' => 'groq',
+            'model' => 'llama-x',
+            'message' => 'Texto propio del backend',
+        ]]);
+        $refused = new \moodle_exception('errorbackend', 'local_nexusai', '', 'HTTP 424: ' . $detail);
+
+        $result = user_llm_save::failed($refused, ['provider' => 'groq', 'model' => 'llama-x', 'api_key' => self::KEY]);
+
+        $this->assertFalse($result['ok']);
+        $this->assertSame('quota', $result['reason']);
+        $this->assertSame(
+            get_string('userllm_failed_quota', 'local_nexusai', (object) ['provider' => 'Groq', 'model' => 'llama-x']),
+            $result['message']
+        );
+        $this->assertStringNotContainsString('Texto propio del backend', $result['message']);
+
+        // Any other backend error is "unavailable", with the plugin's own message.
+        $down = user_llm_save::failed(
+            new \moodle_exception('errorbackend', 'local_nexusai', '', 'HTTP 503: {"detail":"x"}'),
+            ['provider' => 'groq', 'model' => 'llama-x', 'api_key' => self::KEY]
+        );
+        $this->assertSame('unavailable', $down['reason']);
+        $this->assertSame(get_string('errorchatunavailable', 'local_nexusai'), $down['message']);
     }
 
     /**

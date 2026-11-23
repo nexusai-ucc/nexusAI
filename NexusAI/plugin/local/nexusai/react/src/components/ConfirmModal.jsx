@@ -79,8 +79,8 @@ export default function ConfirmModal({
     }, []);
 
     return (
-        // El fondo cierra con un click que cae en él mismo (no en el diálogo) y
-        // con Escape: el foco arranca en "Cancelar", así que la tecla llega acá.
+        // The backdrop closes on a click that lands on itself (not on the dialog)
+        // and on Escape: focus starts on "Cancel", so the key arrives here.
         <div
             className="nexusai-confirm-overlay"
             onClick={(e) => { if (e.target === e.currentTarget && !busy) onCancel(); }}

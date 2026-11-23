@@ -42,6 +42,7 @@ import { getFriendlyErrorMessage } from "./errors.js";
 import {
     KEY_MAX,
     KEY_MIN,
+    KEY_PATTERN,
     MODEL_PATTERN,
     deleteUserLlm,
     getUserLlm,
@@ -64,7 +65,7 @@ const L = {
         modelHelp: "El nombre exacto del modelo, como figura en tu cuenta del proveedor.",
         modelInvalid: "Escribí el nombre del modelo sin espacios.",
         key: "API key",
-        keyInvalid: `La key tiene que tener entre ${KEY_MIN} y ${KEY_MAX} caracteres, sin espacios.`,
+        keyInvalid: `La key tiene que tener entre ${KEY_MIN} y ${KEY_MAX} caracteres, sin espacios ni acentos.`,
         showKey: "Mostrar la key",
         hideKey: "Ocultar la key",
         privacy: (p) => `Cuando se use tu key, tu pregunta y los fragmentos del material del curso que sirven para responderla se envían a ${p} con tu cuenta, bajo sus condiciones de uso.`,
@@ -113,7 +114,7 @@ const L = {
         modelHelp: "The exact model name, as it appears in your provider account.",
         modelInvalid: "Type the model name without spaces.",
         key: "API key",
-        keyInvalid: `The key must have between ${KEY_MIN} and ${KEY_MAX} characters, without spaces.`,
+        keyInvalid: `The key must have between ${KEY_MIN} and ${KEY_MAX} characters, without spaces or accented letters.`,
         showKey: "Show the key",
         hideKey: "Hide the key",
         privacy: (p) => `When your key is used, your question and the excerpts of the course material that help answer it are sent to ${p} under your account and its terms of use.`,
@@ -210,7 +211,7 @@ export default function ApiKeyPanel({ courseId, lang = "es", onChange, api = nul
     const providers = state.providers || [];
     const providerLabel = providers.find((p) => p.id === provider)?.label || provider;
     const modelValid = MODEL_PATTERN.test(model.trim());
-    const keyValid = apiKey.trim().length >= KEY_MIN && apiKey.trim().length <= KEY_MAX && !/\s/.test(apiKey.trim());
+    const keyValid = KEY_PATTERN.test(apiKey.trim());
     const canSave = modelValid && keyValid && ack && !busy;
 
     const startEditing = () => {
@@ -452,7 +453,8 @@ export default function ApiKeyPanel({ courseId, lang = "es", onChange, api = nul
                         type={showKey ? "text" : "password"}
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
-                        autoComplete="off"
+                        // Not a login password: no "save password?" prompt, no autofill.
+                        autoComplete="new-password"
                         spellCheck={false}
                         aria-invalid={touched && !keyValid}
                     />
