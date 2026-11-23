@@ -69,7 +69,7 @@ export const MODEL_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,119}$/;
 export const KEY_MIN = 8;
 export const KEY_MAX = 512;
 /** Printable ASCII without spaces, KEY_MIN to KEY_MAX characters. */
-export const KEY_PATTERN = new RegExp(`^[\\x21-\\x7E]{${KEY_MIN},${KEY_MAX}}$`);
+export const KEY_PATTERN = new RegExp(String.raw`^[\x21-\x7E]{${KEY_MIN},${KEY_MAX}}$`);
 
 /**
  * @param {number} courseId

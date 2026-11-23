@@ -104,6 +104,39 @@ final class user_llm_functions_test extends external_testcase {
     }
 
     /**
+     * Criterion: a key the provider refused (backend 424) reads as a translated reason, never the backend's text.
+     */
+    public function test_a_refused_key_reads_a_translated_reason(): void {
+        $this->resetAfterTest();
+        $detail = json_encode(['detail' => [
+            'error' => 'user_llm_failed',
+            'reason' => 'quota',
+            'provider' => 'groq',
+            'model' => 'llama-x',
+            'message' => 'Texto propio del backend',
+        ]]);
+        $refused = new \moodle_exception('errorbackend', 'local_nexusai', '', 'HTTP 424: ' . $detail);
+
+        $result = user_llm_save::failed($refused, ['provider' => 'groq', 'model' => 'llama-x', 'api_key' => self::KEY]);
+
+        $this->assertFalse($result['ok']);
+        $this->assertSame('quota', $result['reason']);
+        $this->assertSame(
+            get_string('userllm_failed_quota', 'local_nexusai', (object) ['provider' => 'Groq', 'model' => 'llama-x']),
+            $result['message']
+        );
+        $this->assertStringNotContainsString('Texto propio del backend', $result['message']);
+
+        // Any other backend error is "unavailable", with the plugin's own message.
+        $down = user_llm_save::failed(
+            new \moodle_exception('errorbackend', 'local_nexusai', '', 'HTTP 503: {"detail":"x"}'),
+            ['provider' => 'groq', 'model' => 'llama-x', 'api_key' => self::KEY]
+        );
+        $this->assertSame('unavailable', $down['reason']);
+        $this->assertSame(get_string('errorchatunavailable', 'local_nexusai'), $down['message']);
+    }
+
+    /**
      * Criterion: nothing is saved while the administrator has own keys turned off.
      */
     public function test_save_refused_when_the_site_switch_is_off(): void {

@@ -126,18 +126,29 @@ class user_llm_save extends external_api {
             (new backend_client())->test_user_llm($userid, $courseid, $credentials);
             return ['ok' => true, 'reason' => '', 'message' => ''];
         } catch (\moodle_exception $e) {
-            $failure = backend_client::user_llm_failure($e);
-            if ($failure === null) {
-                // The backend itself failed, not the user's provider.
-                return [
-                    'ok' => false,
-                    'reason' => 'unavailable',
-                    'message' => get_string('errorchatunavailable', 'local_nexusai'),
-                ];
-            }
-            // The reason comes from the backend; the text, from this plugin's strings.
-            $translated = user_llm::failure($failure['reason'], (string) $credentials['provider'], (string) $credentials['model']);
-            return ['ok' => false, 'reason' => $translated['reason'], 'message' => $translated['message']];
+            return self::failed($e, $credentials);
         }
+    }
+
+    /**
+     * The result for a test that failed: the user's provider refused the key, or the backend failed.
+     *
+     * @param \moodle_exception $e Exception thrown by the backend request.
+     * @param array $credentials {provider, model, api_key}.
+     * @return array{ok:bool, reason:string, message:string}
+     */
+    public static function failed(\moodle_exception $e, array $credentials): array {
+        $failure = backend_client::user_llm_failure($e);
+        if ($failure === null) {
+            // The backend itself failed, not the user's provider.
+            return [
+                'ok' => false,
+                'reason' => 'unavailable',
+                'message' => get_string('errorchatunavailable', 'local_nexusai'),
+            ];
+        }
+        // The reason comes from the backend; the text, from this plugin's strings.
+        $translated = user_llm::failure($failure['reason'], (string) $credentials['provider'], (string) $credentials['model']);
+        return ['ok' => false, 'reason' => $translated['reason'], 'message' => $translated['message']];
     }
 }
