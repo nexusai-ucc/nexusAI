@@ -190,7 +190,7 @@ function DocumentsManagerInner({ courseid, userid, sesskey, lang = "es", courseF
     // ── Carga inicial ──────────────────────────────────────────────────────
     useEffect(() => {
         let cancelled = false;
-        // `void`: la función maneja sus errores adentro (try/catch).
+        // `void`: the function handles its own errors (try/catch).
         void (async () => {
             try {
                 const data = await listDocuments(courseid, PAGE_SIZE, 0);

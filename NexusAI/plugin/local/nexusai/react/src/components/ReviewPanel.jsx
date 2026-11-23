@@ -234,7 +234,7 @@ export default function ReviewPanel({ courseId, sesskey, lang = "es" }) {
 
     return (
         <div className="nexusai-review">
-            {/* Sugerencias de repaso (SP-10) */}
+            {/* Review suggestions (SP-10) */}
             <div className="nexusai-review__suggestions">
                 <div className="nexusai-review__suggestions-header">
                     <IconTarget size={16} />

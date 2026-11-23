@@ -320,7 +320,7 @@ export default function CalendarPanel({ courseId, lang = "es" }) {
             });
             showSuccess(L.alertSaved);
         } catch {
-            // Revertir estado si falla
+            // Revert the state if it fails
             setAlerts((prev) => ({ ...prev, [eventId]: alerts[eventId] ?? 0 }));
             showError(L.alertError);
         } finally {

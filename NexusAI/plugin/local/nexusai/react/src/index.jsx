@@ -67,7 +67,7 @@ export const init = (params = {}) => {
                     mode={onbMode}
                     courseid={params.courseid}
                     wwwroot={params.wwwroot}
-                    lang={params.lang || 'es'}
+                    lang={params.lang || 'en'}
                 />
             ) : (
                 <ChatApp
@@ -75,7 +75,7 @@ export const init = (params = {}) => {
                     userid={params.userid}
                     sesskey={params.sesskey}
                     wwwroot={params.wwwroot}
-                    lang={params.lang || 'es'}
+                    lang={params.lang || 'en'}
                     isteacher={params.isteacher || 0}
                 />
             )
