@@ -21,7 +21,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { getFriendlyErrorMessage } from "./errors.js";
+import { extractUserLlmFailure, getFriendlyErrorMessage } from "./errors.js";
 
 // UX-08 (#348): getFriendlyErrorMessage() es el único punto donde el frontend
 // decide qué mostrarle al alumno/docente cuando una llamada al backend falla.
@@ -119,5 +119,31 @@ describe("getFriendlyErrorMessage — límite diario vs. límite por minuto (429
         expect(getFriendlyErrorMessage(err, "fallback")).toBe(
             "Alcanzaste tu límite de 50 consultas de hoy. Volvé a intentarlo mañana."
         );
+    });
+});
+
+// "My API key": a 424 from the backend means the user's own key failed; its
+// message names their provider and says what to fix, so it is shown as is.
+describe("errors of the user's own API key (424)", () => {
+    const raw =
+        'Error del backend NexusAI: HTTP 424: {"detail":{"error":"user_llm_failed","reason":"quota",' +
+        '"provider":"openai","model":"m","message":"Tu cuenta de OpenAI no tiene cuota o saldo."}}';
+
+    it("shows the backend message instead of a curated one", () => {
+        expect(getFriendlyErrorMessage(new Error(raw), "fallback")).toBe("Tu cuenta de OpenAI no tiene cuota o saldo.");
+    });
+
+    it("exposes the reason so the widget can offer to fix the key", () => {
+        expect(extractUserLlmFailure(new Error(raw))).toEqual({
+            reason: "quota",
+            provider: "openai",
+            message: "Tu cuenta de OpenAI no tiene cuota o saldo.",
+        });
+    });
+
+    it("ignores any other structured detail", () => {
+        const other = 'HTTP 424: {"detail":{"error":"something_else","message":"x"}}';
+        expect(extractUserLlmFailure(new Error(other))).toBeNull();
+        expect(extractUserLlmFailure(new Error("HTTP 503: caído"))).toBeNull();
     });
 });

@@ -1,0 +1,5 @@
+# Secretos y salidas: nunca al repo.
+.env
+outputs/
+# Código de Moodle clonado por setup.sh.
+moodle/

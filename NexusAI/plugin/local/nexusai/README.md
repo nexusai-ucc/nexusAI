@@ -29,6 +29,9 @@ Repository: <https://github.com/nexusai-ucc/nexusAI>
 - AI-powered forum panel: duplicate-post detection before publishing, thread
   summaries, and reply suggestions grounded in the course material.
 - 👍/👎 feedback on chat responses.
+- "My API key" (optional, off by default): add the key of your own AI
+  provider account, used only when the institution's models are out of quota
+  or down, or when you reach your usage limit.
 
 **For teachers**
 
@@ -73,6 +76,7 @@ Once the backend is running:
 | **Backend API URL** | URL where the FastAPI backend runs (e.g. `https://api.your-institution.edu`) |
 | **API key** | Value of `NEXUSAI_API_KEY` configured on the backend |
 | **Shared secret (HMAC)** | Value of `NEXUSAI_SHARED_SECRET` configured on the backend |
+| **Users can add their own API key** | Off by default. When on, students and teachers can save their own AI provider key ("My API key"); the backend falls back to it as a last resort, and the question and course material excerpts then go to that user's provider. Each course can still turn it off. |
 
 After saving: **Site administration → Development → Purge all caches**.
 

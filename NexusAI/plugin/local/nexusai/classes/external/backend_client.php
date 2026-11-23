@@ -81,6 +81,30 @@ class backend_client {
     private const GROUP_PATHS = ['/api/v1/forums/similar-posts'];
 
     /**
+     * @var string[] Endpoints that call the LLM. Their body gets the logged-in
+     * user's own API key (`user_llm`, see local\user_llm) when it applies; the
+     * backend uses it as the last link of its model chain. Add here any new
+     * endpoint that uses the LLM; chat_stream.php does the same for the stream.
+     */
+    public const USER_LLM_PATHS = [
+        '/api/v1/chat/messages',
+        '/api/v1/quiz/generate',
+        '/api/v1/quiz/generate-exam',
+        '/api/v1/quiz/evaluate',
+        '/api/v1/quiz/review-suggestions',
+        '/api/v1/quiz/study-plan',
+        '/api/v1/documents/summarize',
+        '/api/v1/documents/pre-exam-summary',
+        '/api/v1/forums/summarize-thread',
+        '/api/v1/forums/weekly-digest',
+        '/api/v1/forums/suggest-reply',
+        '/api/v1/analytics/faq-topics',
+    ];
+
+    /** @var string Backend error code when the user's own key failed (HTTP 424). */
+    public const USER_LLM_ERROR = 'user_llm_failed';
+
+    /**
      * Forces the role reported to the backend for every request of this client.
      *
      * Scheduled tasks and event observers call this with 'system': their backend
@@ -937,7 +961,94 @@ class backend_client {
                 in_array($path, self::GROUP_PATHS, true)
             );
         }
+        if (in_array($path, self::USER_LLM_PATHS, true)) {
+            $body = $this->add_user_llm($path, $body);
+        }
         return $this->request('POST', $path, $body);
+    }
+
+    /**
+     * Adds the logged-in user's own API key to an LLM request, when it applies.
+     *
+     * @param string $path Relative path.
+     * @param string $body JSON body.
+     * @return string The body, unchanged when the key does not apply.
+     */
+    private function add_user_llm(string $path, string $body): string {
+        $data = json_decode($body, true);
+        if (!is_array($data)) {
+            return $body;
+        }
+        $withkey = \local_nexusai\local\user_llm::add_to_body($data, $this->request_role($path, $body));
+        if (!isset($withkey['user_llm'])) {
+            return $body;
+        }
+        $encoded = json_encode($withkey, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        return $encoded === false ? $body : $encoded;
+    }
+
+    /**
+     * Tests an API key against its provider before saving it ("My API key").
+     *
+     * The backend makes one tiny call with that key only. On failure it answers
+     * 424 with the reason; see user_llm_failure() to read it.
+     *
+     * @param int $userid User the key belongs to.
+     * @param int $courseid Course the screen was opened from.
+     * @param array $credentials {provider, model, api_key}.
+     * @return array{ok:bool, provider:string, model:string, latency_ms:float}
+     * @throws \moodle_exception If the provider or the backend fails.
+     */
+    public function test_user_llm(int $userid, int $courseid, array $credentials): array {
+        $body = json_encode([
+            'user_id' => $userid,
+            'course_id' => $courseid,
+            'user_llm' => $credentials,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($body === false) {
+            throw new \moodle_exception('errorbackend', 'local_nexusai', '', 'JSON encode failed');
+        }
+        // Not post(): the key comes from the form, not from the saved preference.
+        return $this->request('POST', '/api/v1/user-llm/test', $body);
+    }
+
+    /**
+     * Seconds to wait for the backend.
+     *
+     * 120 seconds is enough for any request. With the user's own key the
+     * backend may first wait up to 120 seconds for the institution's model
+     * (a timeout) and only then try the user's key, so those requests get the
+     * same 300 seconds as the streamed chat.
+     *
+     * @param string $body JSON body.
+     * @return int Seconds.
+     */
+    private function timeout_for(string $body): int {
+        return strpos($body, '"user_llm"') !== false ? 300 : 120;
+    }
+
+    /**
+     * Reads the backend's "your own key failed" error out of a request exception.
+     *
+     * @param \moodle_exception $e Exception thrown by request().
+     * @return array|null {reason, provider, model, message}; null for any other error.
+     */
+    public static function user_llm_failure(\moodle_exception $e): ?array {
+        $text = (string) ($e->a ?? '');
+        if (!preg_match('/^HTTP 424: (.*)$/s', $text, $m)) {
+            return null;
+        }
+        $decoded = json_decode($m[1], true);
+        $detail = is_array($decoded) ? ($decoded['detail'] ?? null) : null;
+        if (!is_array($detail) || ($detail['error'] ?? '') !== self::USER_LLM_ERROR) {
+            return null;
+        }
+        return [
+            'reason' => (string) ($detail['reason'] ?? 'unavailable'),
+            'provider' => (string) ($detail['provider'] ?? ''),
+            'model' => (string) ($detail['model'] ?? ''),
+            'message' => (string) ($detail['message'] ?? ''),
+        ];
     }
 
     /**
@@ -1043,7 +1154,7 @@ class backend_client {
             // upload, the backend returns 202 immediately and indexing runs
             // in the background, so 120s is plenty for uploads up to ~20MB
             // on slow networks.
-            'CURLOPT_TIMEOUT'        => 120,
+            'CURLOPT_TIMEOUT'        => $this->timeout_for($body),
             'CURLOPT_CONNECTTIMEOUT' => 10,
             'CURLOPT_RETURNTRANSFER' => true,
         ]);

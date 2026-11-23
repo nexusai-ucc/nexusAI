@@ -29,7 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($GLOBALS['CFG']->libdir . '/formslib.php');
 
 /**
- * One switch: does this course use NexusAI.
+ * The course switches: does this course use NexusAI, and may its users add their own API key.
  */
 class course_settings_form extends \moodleform {
     /**
@@ -46,6 +46,13 @@ class course_settings_form extends \moodleform {
         $mform->addElement('advcheckbox', 'enabled', get_string('course_enabled', 'local_nexusai'));
         $mform->addHelpButton('enabled', 'course_enabled', 'local_nexusai');
         $mform->setDefault('enabled', $this->_customdata['enabled'] ? 1 : 0);
+
+        // My API key (BYOK): only offered while the site-wide switch is on.
+        if (!empty($this->_customdata['userllmsite'])) {
+            $mform->addElement('advcheckbox', 'userllm', get_string('course_userllm', 'local_nexusai'));
+            $mform->addHelpButton('userllm', 'course_userllm', 'local_nexusai');
+            $mform->setDefault('userllm', !empty($this->_customdata['userllm']) ? 1 : 0);
+        }
 
         $this->add_action_buttons();
     }

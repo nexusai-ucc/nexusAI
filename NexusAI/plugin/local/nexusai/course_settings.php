@@ -50,6 +50,8 @@ $siteenabled = \local_nexusai\local\course_guard::plugin_enabled();
 $form = new \local_nexusai\form\course_settings_form($pageurl, [
     'courseid' => (int) $course->id,
     'enabled' => \local_nexusai\local\course_guard::course_setting((int) $course->id),
+    'userllmsite' => \local_nexusai\local\user_llm::site_enabled(),
+    'userllm' => \local_nexusai\local\user_llm::course_allowed((int) $course->id),
 ]);
 
 if ($form->is_cancelled()) {
@@ -58,6 +60,9 @@ if ($form->is_cancelled()) {
 
 if ($data = $form->get_data()) {
     \local_nexusai\local\course_guard::set_enabled((int) $course->id, !empty($data->enabled));
+    if (isset($data->userllm)) {
+        \local_nexusai\local\user_llm::set_course_allowed((int) $course->id, !empty($data->userllm));
+    }
     redirect(
         $pageurl,
         get_string(

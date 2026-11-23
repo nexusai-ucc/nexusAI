@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status: preparación de la defensa](https://img.shields.io/badge/status-preparaci%C3%B3n%20de%20la%20defensa-orange)]()
-[![Version: 0.19.0](https://img.shields.io/badge/version-0.19.0-blue)](CHANGELOG.md)
+[![Version: 0.20.0](https://img.shields.io/badge/version-0.20.0-blue)](CHANGELOG.md)
 [![Moodle: 4.5–5.3](https://img.shields.io/badge/Moodle-4.5--5.3-blue)]()
 [![Moodle Plugins Directory: aprobado](https://img.shields.io/badge/Moodle%20Plugins%20Directory-aprobado-green)](https://marketplace.moodle.com/plugins/local_nexusai)
 [![Python: 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)]()

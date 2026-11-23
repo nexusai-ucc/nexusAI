@@ -216,8 +216,8 @@ export default function ExamGeneratorPanel({ courseId, lang = "es" }) {
         setIncludeFocusTopics(checked);
         if (checked && !focusTopicsLoaded) {
             setFocusTopicsLoading(true);
-            // `void`: no rechaza nunca (cada pedido de fetchFocusTopicCandidates
-            // tiene su propio catch y devuelve una lista vacía).
+            // `void`: it never rejects (each request of fetchFocusTopicCandidates
+            // has its own catch and returns an empty list).
             void fetchFocusTopicCandidates(courseId)
                 .then((topics) => {
                     setFocusTopics(topics);

@@ -68,7 +68,7 @@ class provider implements
         'local_nexusai_quiz_errors' => ['uuid', 'questiontype', 'question', 'explanation', 'sourcefilename', 'options',
             'correctindex', 'userselectedindex', 'useranswer', 'aifeedback', 'aiscore', 'timecreated', 'timedismissed'],
         'local_nexusai_cal_alerts' => ['uuid', 'eventid', 'eventname', 'eventtimestamp', 'daysbefore', 'notified', 'timecreated'],
-        'local_nexusai_usage' => ['role', 'feature', 'provider', 'model', 'fallback', 'prompttokens', 'completiontokens',
+        'local_nexusai_usage' => ['role', 'feature', 'provider', 'model', 'fallback', 'byok', 'prompttokens', 'completiontokens',
             'cachedprompttokens', 'embeddingtokens', 'audioseconds', 'costusd', 'cachehit', 'savedtokens', 'latencyms',
             'status', 'timecreated'],
         'local_nexusai_exams' => ['uuid', 'params', 'includepracticed', 'allnew', 'examdate', 'timereleased', 'timecreated'],
@@ -99,6 +99,7 @@ class provider implements
                 'content'     => 'privacy:metadata:nexusai_backend:content',
                 'forum_posts' => 'privacy:metadata:nexusai_backend:forum_posts',
                 'voice_audio' => 'privacy:metadata:nexusai_backend:voice_audio',
+                'user_llm'    => 'privacy:metadata:nexusai_backend:user_llm',
                 'created_at'  => 'privacy:metadata:nexusai_backend:created_at',
             ],
             'privacy:metadata:nexusai_backend'
@@ -112,6 +113,15 @@ class provider implements
                 'voice_audio' => 'privacy:metadata:nexusai_ai_provider:voice_audio',
             ],
             'privacy:metadata:nexusai_ai_provider'
+        );
+        // My API key: with the user's own key, the request also reaches the provider they chose.
+        $collection->add_external_location_link(
+            'nexusai_user_ai_provider',
+            [
+                'content' => 'privacy:metadata:nexusai_user_ai_provider:content',
+                'api_key' => 'privacy:metadata:nexusai_user_ai_provider:api_key',
+            ],
+            'privacy:metadata:nexusai_user_ai_provider'
         );
         // A teacher can have the weekly forum digest posted to an outside chat tool.
         $collection->add_external_location_link(
@@ -150,6 +160,10 @@ class provider implements
         $collection->add_user_preference('local_nexusai_pending_uploads', 'privacy:metadata:preference:pending_uploads');
         $collection->add_user_preference('local_nexusai_calfeedtoken', 'privacy:metadata:preference:calfeedtoken');
         $collection->add_user_preference('local_nexusai_onb', 'privacy:metadata:preference:onboarding');
+        $collection->add_user_preference(
+            \local_nexusai\local\user_llm::PREFERENCE,
+            'privacy:metadata:preference:userllm'
+        );
 
         return $collection;
     }
@@ -259,6 +273,14 @@ class provider implements
             if ($name === 'local_nexusai_calfeedtoken') {
                 // A secret that opens the user's calendar feed: say it exists, never export it.
                 $value = get_string('privacy:preference:secret', 'local_nexusai');
+            }
+            if ($name === \local_nexusai\local\user_llm::PREFERENCE) {
+                // The provider and model are the user's data; the key is a secret and is never exported.
+                $status = \local_nexusai\local\user_llm::status($userid);
+                $value = $status === null ? '' : get_string('privacy:preference:userllm', 'local_nexusai', (object) [
+                    'provider' => \local_nexusai\local\user_llm::PROVIDERS[$status['provider']],
+                    'model' => $status['model'],
+                ]);
             }
             writer::export_user_preference(
                 'local_nexusai',
@@ -595,6 +617,9 @@ class provider implements
         }
         if ($name === 'local_nexusai_calfeedtoken') {
             return 'calfeedtoken';
+        }
+        if ($name === \local_nexusai\local\user_llm::PREFERENCE) {
+            return 'userllm';
         }
         foreach (self::PREFERENCE_PREFIXES as $prefix) {
             if (strpos($name, $prefix) === 0) {

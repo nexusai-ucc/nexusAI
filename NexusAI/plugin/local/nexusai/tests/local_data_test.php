@@ -161,6 +161,21 @@ final class local_data_test extends \advanced_testcase {
     }
 
     /**
+     * An empty answer (a stream cut before the first token) is left out of the history,
+     * so the backend does not reject the next question of the conversation.
+     */
+    public function test_empty_answer_is_left_out_of_the_history(): void {
+        global $DB;
+        $this->setUser($this->student);
+        $turn = new chat_turn((int) $this->student->id, (int) $this->course->id, '¿Qué es Bayes?', null, false);
+        $this->stream($turn, ['type' => 'done', 'prompt_tokens' => 1, 'completion_tokens' => 0, 'total_tokens' => 1]);
+        $DB->set_field('local_nexusai_messages', 'content', '', ['sessionid' => $turn->session->id, 'role' => 'assistant']);
+
+        $next = new chat_turn((int) $this->student->id, (int) $this->course->id, 'Y otra', $turn->session->uuid, false);
+        $this->assertSame([['role' => 'user', 'content' => '¿Qué es Bayes?']], $next->payload()['history']);
+    }
+
+    /**
      * Someone else's conversation cannot be continued, read or deleted.
      */
     public function test_conversations_belong_to_their_user(): void {

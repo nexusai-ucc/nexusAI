@@ -6,6 +6,31 @@ Versionado siguiendo [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [v0.20.0] — 2026-11-23 — My API key y revisión del plugin
+
+Detalle del plugin en [`NexusAI/plugin/local/nexusai/CHANGES.md`](NexusAI/plugin/local/nexusai/CHANGES.md).
+
+### Agregado
+- feat(plugin): "My API key" — el alumno o docente puede guardar la clave de su propia cuenta en un proveedor de IA; se prueba antes de guardarla, se guarda cifrada y el backend la usa solo como último eslabón de la cadena de modelos. Apagado por defecto en el sitio — #694, #696
+- feat(api): `POST /api/v1/user-llm/test` para probar la clave sin guardarla; la clave vive solo en memoria durante el pedido — #694
+
+### Corregido
+- fix: robustez para la demo con público — pool de Redis, re-subida tras un error y respuestas vacías fuera del historial (el backend rechazaba la conversación con 422) — #693
+- fix(plugin): hallazgos de la revisión propia antes de subirlo al directorio: textos de falla de la key con strings de Moodle, `optional_param()` en `chat_stream.php`, privacidad de la key declarada, comentarios en inglés — #696
+- test(api): el test de contrato HMAC ya no rompe la colección en `nexusai-backend`, que no tiene `contracts/` — #699
+
+### Publicación
+- El plugin 0.20.0 también lleva al Moodle Plugins Directory DEF-01 (#623) y la accesibilidad WCAG 2.2 AA con DOMPurify 3.4.17 (#665), que se mergearon después de publicar la 0.19.0.
+
+---
+
+## [API 0.2.0] — 2026-10-26 — Cierre del TP de Calidad de Software
+
+### Cambiado
+- chore(api): la API pasa a la versión 0.2.0 (`app_version`, visible en `/health`). Incluye el trabajo de calidad de la épica TPC (#584): quality gate en SonarCloud, CD a staging con smoke E2E, integración externa diaria contra el LLM real, pruebas de carga con k6 y los fixes de DEF-01 a DEF-10. Es el cambio que recorre el pipeline completo en la demo del TP (`docs/calidad/DEMO.md`).
+
+---
+
 ## [v0.19.0] — 2026-09-12 a 2026-10-23 — Publicación en Moodle, visibilidad, datos en Moodle, calidad y accesibilidad
 
 Agrupa todo lo mergeado entre v0.17.8 y el informe final. Lo del plugin, versión por versión (0.18.x y 0.19.0), está en [`NexusAI/plugin/local/nexusai/CHANGES.md`](NexusAI/plugin/local/nexusai/CHANGES.md).
