@@ -13,14 +13,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-import { randomFloat } from "./random";
-
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+import { randomFloat } from "./random";
 
 /**
  * API client of the quiz generator (Feature F / SP-03 / SP-05 / SP-10).

@@ -5,6 +5,8 @@ Imita la API compatible con OpenAI que usa NexusAI (`AsyncOpenAI` con
 proveedor:
 
   POST /v1/chat/completions  respuesta con latencia configurable y uso de tokens.
+                             Con `stream=True` responde en SSE palabra por
+                             palabra, como OpenAI (el chat del widget).
                              Si piden `response_format=json_object` (la
                              moderación vía LLM), devuelve {"flagged": false}.
   POST /v1/embeddings        vectores de 768 dimensiones por *feature hashing*
@@ -17,6 +19,7 @@ Variables de entorno:
   MOCK_LLM_LATENCY_MS         latencia media del chat (default 1500, como un
                               modelo flash con la respuesta corta)
   MOCK_LLM_JITTER_MS          variación uniforme ± (default 500)
+  MOCK_LLM_TTFT_MS            con stream, hasta el primer token (default 500)
   MOCK_LLM_JSON_LATENCY_MS    latencia de la moderación (default 300)
   MOCK_EMBEDDING_LATENCY_MS   latencia de los embeddings (default 150)
 
@@ -35,8 +38,12 @@ import re
 import time
 
 from fastapi import FastAPI, Request
+from fastapi.responses import StreamingResponse
 
 LATENCY_MS = int(os.getenv("MOCK_LLM_LATENCY_MS", "1500"))
+# Con stream=True: espera hasta el primer token; el resto de LATENCY_MS se
+# reparte entre las palabras, así el tiempo total es el mismo que sin stream.
+TTFT_MS = int(os.getenv("MOCK_LLM_TTFT_MS", "500"))
 JITTER_MS = int(os.getenv("MOCK_LLM_JITTER_MS", "500"))
 JSON_LATENCY_MS = int(os.getenv("MOCK_LLM_JSON_LATENCY_MS", "300"))
 EMBEDDING_LATENCY_MS = int(os.getenv("MOCK_EMBEDDING_LATENCY_MS", "150"))
@@ -73,13 +80,54 @@ async def health() -> dict:
     return {"status": "ok"}
 
 
+def _sse(payload: dict | str) -> bytes:
+    data = payload if isinstance(payload, str) else json.dumps(payload)
+    return f"data: {data}\n\n".encode()
+
+
+async def _stream_answer(body: dict, prompt: str):
+    """Respuesta en SSE con el formato de OpenAI (chat.completion.chunk)."""
+    chunk_id = f"chatcmpl-mock-{time.time_ns()}"
+    base = {
+        "id": chunk_id,
+        "object": "chat.completion.chunk",
+        "created": int(time.time()),
+        "model": body.get("model", "mock-llm"),
+    }
+    words = ANSWER.split(" ")
+    await _sleep(TTFT_MS, JITTER_MS // 3)
+    per_word = max(0, LATENCY_MS - TTFT_MS) / 1000 / len(words)
+    for i, word in enumerate(words):
+        delta = {"content": word if i == 0 else " " + word}
+        if i == 0:
+            delta["role"] = "assistant"
+        yield _sse({**base, "choices": [{"index": 0, "delta": delta, "finish_reason": None}]})
+        await asyncio.sleep(per_word)
+    yield _sse({**base, "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]})
+    if (body.get("stream_options") or {}).get("include_usage"):
+        p, c = _tokens(prompt), _tokens(ANSWER)
+        yield _sse({**base, "choices": [], "usage": {
+            "prompt_tokens": p, "completion_tokens": c, "total_tokens": p + c}})
+    yield _sse("[DONE]")
+
+
 @app.post("/v1/chat/completions")
-async def chat_completions(request: Request) -> dict:
+async def chat_completions(request: Request):
     body = await request.json()
     prompt = " ".join(str(m.get("content", "")) for m in body.get("messages", []))
     wants_json = (body.get("response_format") or {}).get("type") == "json_object"
 
-    if wants_json:
+    if body.get("stream") and not wants_json:
+        return StreamingResponse(_stream_answer(body, prompt), media_type="text/event-stream")
+
+    if wants_json and "question_indices" in prompt:
+        # Temas frecuentes del panel docente: todas las preguntas en un tema.
+        await _sleep(JSON_LATENCY_MS, JSON_LATENCY_MS // 3)
+        count = len(re.findall(r'^\d+\. "', prompt, flags=re.MULTILINE))
+        content = json.dumps({"topics": [
+            {"label": "Preguntas del público (mock)", "question_indices": list(range(count))}
+        ]})
+    elif wants_json:
         await _sleep(JSON_LATENCY_MS, JSON_LATENCY_MS // 3)
         content = json.dumps({"flagged": False, "categories": []})
     else:

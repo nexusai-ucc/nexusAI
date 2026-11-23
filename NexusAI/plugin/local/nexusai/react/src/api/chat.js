@@ -13,14 +13,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-import { randomFloat } from "./random";
-
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+import { randomFloat } from "./random";
 
 /**
  * Chat API client — transport layer between React and the Moodle plugin.
@@ -251,7 +251,8 @@ export async function submitMessageFeedback({ messageId, courseId, isHelpful, co
  * @param {(meta:{session_id:string,chunks:number}) => void} [callbacks.onMeta]
  * @param {(token:string) => void}                          callbacks.onToken
  * @param {(stats:{prompt_tokens:number,completion_tokens:number,total_tokens:number}) => void} [callbacks.onDone]
- * @param {(detail:string) => void}                         [callbacks.onError]
+ * @param {(detail:string, event:Object) => void}           [callbacks.onError] The event carries
+ *   `code: "user_llm_failed"` and `reason` when the user's own API key failed ("My API key").
  * @returns {Promise<void>} resolves when the stream ends
  */
 export async function sendMessageStream(
@@ -323,7 +324,7 @@ export async function sendMessageStream(
                 case "token":       onToken?.(parsed.content || ""); break;
                 case "answer_meta": onAnswerMeta?.(parsed); break;
                 case "done":        receivedTerminalEvent = true; onDone?.(parsed); break;
-                case "error":       receivedTerminalEvent = true; onError?.(parsed.detail || "stream error"); break;
+                case "error":       receivedTerminalEvent = true; onError?.(parsed.detail || "stream error", parsed); break;
             }
         }
     };
