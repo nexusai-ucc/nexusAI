@@ -462,7 +462,7 @@ export default function ChatApp({ courseid, userid, sesskey, wwwroot, lang = "es
         }
     };
 
-    // `void`: send maneja sus errores adentro (try/catch y setError).
+    // `void`: send handles its own errors (try/catch and setError).
     const retry = () => { if (lastQuestion) void send(lastQuestion); };
 
     // ASIST-03 (#359): resends the last question, replacing the last visible

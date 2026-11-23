@@ -48,12 +48,14 @@ if ($hassiteconfig) {
     ));
 
     // My API key (BYOK): users can add their own AI provider key as the last
-    // link of the model chain. On by default; each course can still turn it off.
+    // link of the model chain. Off by default: the site opts in, because the
+    // request then also reaches a provider the user chose. Once on, each course
+    // can still turn it off.
     $settings->add(new admin_setting_configcheckbox(
         'local_nexusai/user_llm_enabled',
         get_string('user_llm_enabled', 'local_nexusai'),
         get_string('user_llm_enabled_desc', 'local_nexusai'),
-        1
+        0
     ));
 
     // Courses section (CURSO-01): NexusAI ships off everywhere so it can be

@@ -30,7 +30,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_nexusai';
-$plugin->version   = 2026111800;
+$plugin->version   = 2026112300;
+// Release 0.20.0. My API key ships off site-wide (local_nexusai/user_llm_enabled = 0).
 // My API key (BYOK): a student or teacher can save their own AI provider key, used
 // as the last link of the backend's model chain. New usage column local_nexusai_usage.byok.
 // Fix: voice questions in the chat were always refused — MediaRecorder reports the
@@ -41,7 +42,7 @@ $plugin->version   = 2026111800;
 // Fix: deleting a single forum (course left intact) also purges its posts from the
 // backend, via pre_course_module_delete() — course_module_deleted fires too late,
 // after mod_forum has already removed the posts it would need to find.
-$plugin->release   = '0.19.0';
+$plugin->release   = '0.20.0';
 $plugin->maturity  = MATURITY_BETA;
 
 // We support Moodle 4.5 LTS (build 2024100700) up to 5.3. The UCC runs 5.0.
