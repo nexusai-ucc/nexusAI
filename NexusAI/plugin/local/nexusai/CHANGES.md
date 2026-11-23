@@ -36,7 +36,13 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   refused the whole conversation history after that (HTTP 422). Empty answers
   are left out of the history.
 - Fixed: the usage bar no longer breaks the chat when the budget cannot be read.
+- Changed: `chat_stream.php` reads its parameters with `optional_param()`
+  instead of reading `$_POST` directly.
+- Changed: the "My API key" field does not offer to save or autofill the key
+  as a login password, and tells the user about spaces and accented letters
+  before sending.
 - Changed: the CLI scripts load `config.php` with `require_once`.
+- Changed: code comments in the React source and its bundles are in English.
 - Fixed: text contrast now meets WCAG 2.2 AA (4.5:1) in the chat widget and the
   teacher panel, in light and dark mode (checked with axe-core). The primary
   indigo goes from `#6366f1` to `#4f46e5` (white text on it was 4.47:1); filled

@@ -216,7 +216,7 @@ export default function ChatInput({ onSend, disabled, placeholder, courseId, lan
         if (voiceState === "recording") {
             stopRecording();
         } else if (voiceState !== "transcribing") {
-            void startRecording(); // maneja sus errores adentro
+            void startRecording(); // Handles its own errors.
         }
     };
 

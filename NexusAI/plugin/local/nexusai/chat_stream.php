@@ -71,20 +71,13 @@ $fail = static function (int $status, string $message): void {
     exit;
 };
 
-// Parse input.
-// Supports both a JSON body and form-urlencoded (more flexibility for
-// fetch() from React).
-$rawbody = file_get_contents('php://input');
-$payload = json_decode($rawbody, true);
-if (!is_array($payload)) {
-    // Fallback to $_POST if it's not JSON.
-    $payload = $_POST;
-}
-
-$question    = isset($payload['question']) ? (string) $payload['question'] : '';
-$courseid    = isset($payload['courseid']) ? (int)    $payload['courseid'] : 0;
-$sessionid   = isset($payload['sessionid']) ? (string) $payload['sessionid'] : '';
-$multicourse = !empty($payload['multicourse']);
+// Parse input: the widget posts a form body (react/src/api/chat.js), read with
+// Moodle's parameter functions. The question goes to the backend as typed
+// (PARAM_RAW): it is never printed back here.
+$question    = optional_param('question', '', PARAM_RAW);
+$courseid    = optional_param('courseid', 0, PARAM_INT);
+$sessionid   = optional_param('sessionid', '', PARAM_ALPHANUMEXT);
+$multicourse = optional_param('multicourse', false, PARAM_BOOL);
 
 if ($courseid <= 0) {
     $fail(400, get_string('errorcourseidrequired', 'local_nexusai'));

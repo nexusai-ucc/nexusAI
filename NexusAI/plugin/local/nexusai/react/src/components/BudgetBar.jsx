@@ -48,7 +48,7 @@ export default function BudgetBar({ courseId, refreshKey = 0, lang = "es", fetch
             .then((s) => {
                 if (!cancelled) setStatus(s);
             })
-            // Si el presupuesto no se puede leer, la barra no se muestra.
+            // If the budget cannot be read, the bar is not shown.
             .catch(() => {
                 if (!cancelled) setStatus(null);
             });

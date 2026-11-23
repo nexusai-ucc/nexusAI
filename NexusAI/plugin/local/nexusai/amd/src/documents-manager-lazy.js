@@ -991,18 +991,27 @@ var client = __webpack_require__(338);
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-// Números al azar con el generador criptográfico del navegador (SonarCloud
-// javascript:S2245). Se usa para ids de la UI y para las demoras simuladas de
-// los dobles de desarrollo: nada sensible, pero así no queda ningún
-// Math.random. getRandomValues funciona también fuera de https (Moodle local).
+/**
+ * Part of the NexusAI plugin (local_nexusai).
+ *
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-/** Número uniforme en [0, 1). */
+/**
+ * Random numbers from the browser's cryptographic generator (SonarCloud
+ * javascript:S2245). Used for UI ids and for the simulated delays of the
+ * development doubles: nothing sensitive, but no Math.random is left.
+ * getRandomValues also works outside https (a local Moodle).
+ */
+
+/** Uniform number in [0, 1). */
 function randomFloat() {
   const [value] = globalThis.crypto.getRandomValues(new Uint32Array(1));
   return value / 2 ** 32;
 }
 
-/** Id corto e irrepetible para elementos de la UI. */
+/** Short unique id for UI elements. */
 function randomId() {
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(8));
   const hex = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
@@ -1024,14 +1033,14 @@ function randomId() {
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+
 
 /**
  * Client of the NexusAI documents API.
@@ -2668,8 +2677,8 @@ function ConfirmModal({
   }, []);
   return (
     /*#__PURE__*/
-    // El fondo cierra con un click que cae en él mismo (no en el diálogo) y
-    // con Escape: el foco arranca en "Cancelar", así que la tecla llega acá.
+    // The backdrop closes on a click that lands on itself (not on the dialog)
+    // and on Escape: focus starts on "Cancel", so the key arrives here.
     (0,jsx_runtime.jsx)("div", {
       className: "nexusai-confirm-overlay",
       onClick: e => {
@@ -5177,14 +5186,14 @@ function AnalyticsDashboardPanel({
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+
 
 /**
  * API client of the quiz generator (Feature F / SP-03 / SP-05 / SP-10).
@@ -6161,8 +6170,8 @@ function ExamGeneratorPanel({
     setIncludeFocusTopics(checked);
     if (checked && !focusTopicsLoaded) {
       setFocusTopicsLoading(true);
-      // `void`: no rechaza nunca (cada pedido de fetchFocusTopicCandidates
-      // tiene su propio catch y devuelve una lista vacía).
+      // `void`: it never rejects (each request of fetchFocusTopicCandidates
+      // has its own catch and returns an empty list).
       void fetchFocusTopicCandidates(courseId).then(topics => {
         setFocusTopics(topics);
         // All preselected — the teacher can untick the ones they do not want.
@@ -6600,14 +6609,14 @@ function HelpPanel({
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+
 
 /**
  * API client of the semantic search (Feature A).
@@ -6731,14 +6740,14 @@ async function searchMaterial({
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+
 
 /**
  * API client for the automatic document summary (BUS-03) and for the
@@ -7066,7 +7075,7 @@ function SearchPanel({
   };
   const selectRecentSearch = q => {
     setQuery(q);
-    void performSearch(q); // maneja sus errores adentro
+    void performSearch(q); // Handles its own errors.
   };
   const switchScope = toGlobal => {
     setGlobalMode(toGlobal);

@@ -1937,7 +1937,7 @@ function ChatInput({
     if (voiceState === "recording") {
       stopRecording();
     } else if (voiceState !== "transcribing") {
-      void startRecording(); // maneja sus errores adentro
+      void startRecording(); // Handles its own errors.
     }
   };
   const onPaste = e => {
@@ -21263,18 +21263,27 @@ var temml$1 = {
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-// Números al azar con el generador criptográfico del navegador (SonarCloud
-// javascript:S2245). Se usa para ids de la UI y para las demoras simuladas de
-// los dobles de desarrollo: nada sensible, pero así no queda ningún
-// Math.random. getRandomValues funciona también fuera de https (Moodle local).
+/**
+ * Part of the NexusAI plugin (local_nexusai).
+ *
+ * @copyright  2026 NexusAI Team — UCC
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
-/** Número uniforme en [0, 1). */
+/**
+ * Random numbers from the browser's cryptographic generator (SonarCloud
+ * javascript:S2245). Used for UI ids and for the simulated delays of the
+ * development doubles: nothing sensitive, but no Math.random is left.
+ * getRandomValues also works outside https (a local Moodle).
+ */
+
+/** Uniform number in [0, 1). */
 function randomFloat() {
   const [value] = globalThis.crypto.getRandomValues(new Uint32Array(1));
   return value / 2 ** 32;
 }
 
-/** Id corto e irrepetible para elementos de la UI. */
+/** Short unique id for UI elements. */
 function randomId() {
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(8));
   const hex = Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
@@ -21296,14 +21305,14 @@ function randomId() {
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+
 
 /**
  * Chat API client — transport layer between React and the Moodle plugin.
@@ -22337,14 +22346,14 @@ function TypingIndicator({
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+
 
 /**
  * API client of the quiz generator (Feature F / SP-03 / SP-05 / SP-10).
@@ -24445,8 +24454,8 @@ function ConfirmModal({
   }, []);
   return (
     /*#__PURE__*/
-    // El fondo cierra con un click que cae en él mismo (no en el diálogo) y
-    // con Escape: el foco arranca en "Cancelar", así que la tecla llega acá.
+    // The backdrop closes on a click that lands on itself (not on the dialog)
+    // and on Escape: focus starts on "Cancel", so the key arrives here.
     (0,jsx_runtime.jsx)("div", {
       className: "nexusai-confirm-overlay",
       onClick: e => {
@@ -25089,14 +25098,14 @@ async function getUpcomingEvents(courseId, days = 30) {
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+
 
 /**
  * API client for the automatic document summary (BUS-03) and for the
@@ -25713,14 +25722,14 @@ function StudyPanel({
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 /**
  * Part of the NexusAI plugin (local_nexusai).
  *
  * @copyright  2026 NexusAI Team — UCC
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+
 
 /**
  * API client of the semantic search (Feature A).
@@ -26068,7 +26077,7 @@ function SearchPanel({
   };
   const selectRecentSearch = q => {
     setQuery(q);
-    void performSearch(q); // maneja sus errores adentro
+    void performSearch(q); // Handles its own errors.
   };
   const switchScope = toGlobal => {
     setGlobalMode(toGlobal);
@@ -28596,6 +28605,8 @@ const PROVIDERS = [{
 const MODEL_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,119}$/;
 const KEY_MIN = 8;
 const KEY_MAX = 512;
+/** Printable ASCII without spaces, KEY_MIN to KEY_MAX characters. */
+const KEY_PATTERN = new RegExp(`^[\\x21-\\x7E]{${KEY_MIN},${KEY_MAX}}$`);
 
 /**
  * @param {number} courseId
@@ -28759,7 +28770,7 @@ const L = {
     modelHelp: "El nombre exacto del modelo, como figura en tu cuenta del proveedor.",
     modelInvalid: "Escribí el nombre del modelo sin espacios.",
     key: "API key",
-    keyInvalid: `La key tiene que tener entre ${KEY_MIN} y ${KEY_MAX} caracteres, sin espacios.`,
+    keyInvalid: `La key tiene que tener entre ${KEY_MIN} y ${KEY_MAX} caracteres, sin espacios ni acentos.`,
     showKey: "Mostrar la key",
     hideKey: "Ocultar la key",
     privacy: p => `Cuando se use tu key, tu pregunta y los fragmentos del material del curso que sirven para responderla se envían a ${p} con tu cuenta, bajo sus condiciones de uso.`,
@@ -28808,7 +28819,7 @@ const L = {
     modelHelp: "The exact model name, as it appears in your provider account.",
     modelInvalid: "Type the model name without spaces.",
     key: "API key",
-    keyInvalid: `The key must have between ${KEY_MIN} and ${KEY_MAX} characters, without spaces.`,
+    keyInvalid: `The key must have between ${KEY_MIN} and ${KEY_MAX} characters, without spaces or accented letters.`,
     showKey: "Show the key",
     hideKey: "Hide the key",
     privacy: p => `When your key is used, your question and the excerpts of the course material that help answer it are sent to ${p} under your account and its terms of use.`,
@@ -28929,7 +28940,7 @@ function ApiKeyPanel({
   const providers = state.providers || [];
   const providerLabel = providers.find(p => p.id === provider)?.label || provider;
   const modelValid = MODEL_PATTERN.test(model.trim());
-  const keyValid = apiKey.trim().length >= KEY_MIN && apiKey.trim().length <= KEY_MAX && !/\s/.test(apiKey.trim());
+  const keyValid = KEY_PATTERN.test(apiKey.trim());
   const canSave = modelValid && keyValid && ack && !busy;
   const startEditing = () => {
     setProvider(state.provider || "openai");
@@ -29217,8 +29228,10 @@ function ApiKeyPanel({
           className: "nexusai-apikey__control nexusai-apikey__mono",
           type: showKey ? "text" : "password",
           value: apiKey,
-          onChange: e => setApiKey(e.target.value),
-          autoComplete: "off",
+          onChange: e => setApiKey(e.target.value)
+          // Not a login password: no "save password?" prompt, no autofill.
+          ,
+          autoComplete: "new-password",
           spellCheck: false,
           "aria-invalid": touched && !keyValid
         }), /*#__PURE__*/(0,jsx_runtime.jsx)("button", {
@@ -29395,7 +29408,7 @@ function BudgetBar({
     fetchStatus(courseId).then(s => {
       if (!cancelled) setStatus(s);
     })
-    // Si el presupuesto no se puede leer, la barra no se muestra.
+    // If the budget cannot be read, the bar is not shown.
     .catch(() => {
       if (!cancelled) setStatus(null);
     });
@@ -30261,7 +30274,7 @@ function ChatApp({
     }
   };
 
-  // `void`: send maneja sus errores adentro (try/catch y setError).
+  // `void`: send handles its own errors (try/catch and setError).
   const retry = () => {
     if (lastQuestion) void send(lastQuestion);
   };
