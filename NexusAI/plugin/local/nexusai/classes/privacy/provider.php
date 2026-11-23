@@ -99,6 +99,7 @@ class provider implements
                 'content'     => 'privacy:metadata:nexusai_backend:content',
                 'forum_posts' => 'privacy:metadata:nexusai_backend:forum_posts',
                 'voice_audio' => 'privacy:metadata:nexusai_backend:voice_audio',
+                'user_llm'    => 'privacy:metadata:nexusai_backend:user_llm',
                 'created_at'  => 'privacy:metadata:nexusai_backend:created_at',
             ],
             'privacy:metadata:nexusai_backend'

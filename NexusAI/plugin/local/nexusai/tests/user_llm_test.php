@@ -102,6 +102,7 @@ final class user_llm_test extends \advanced_testcase {
             ['openai', 'con espacio', self::KEY],
             ['openai', 'gpt-x', 'corta'],
             ['openai', 'gpt-x', 'sk con espacio adentro'],
+            ['openai', 'gpt-x', 'sk-clave-con-eñe-0123'],
         ];
         foreach ($invalid as [$p, $m, $k]) {
             try {
@@ -214,5 +215,26 @@ final class user_llm_test extends \advanced_testcase {
         $this->assertNull(backend_client::user_llm_failure(
             new \moodle_exception('errorbackend', 'local_nexusai', '', 'HTTP 503: {"detail":"x"}')
         ));
+    }
+
+    /**
+     * The user reads a language string that names their provider, never the backend's text.
+     */
+    public function test_failure_message_comes_from_the_language_strings(): void {
+        $failure = user_llm::failure('model', 'anthropic', 'claude-x');
+        $this->assertSame('model', $failure['reason']);
+        $this->assertSame(
+            get_string('userllm_failed_model', 'local_nexusai', (object) ['provider' => 'Anthropic', 'model' => 'claude-x']),
+            $failure['message']
+        );
+        $this->assertStringContainsString('Anthropic', $failure['message']);
+
+        // An unknown reason (a newer backend, a broken answer) reads as "not responding".
+        $unknown = user_llm::failure('something-new', 'openai', 'gpt-x');
+        $this->assertSame('unavailable', $unknown['reason']);
+        $this->assertSame(
+            get_string('userllm_failed_unavailable', 'local_nexusai', (object) ['provider' => 'OpenAI', 'model' => 'gpt-x']),
+            $unknown['message']
+        );
     }
 }

@@ -135,7 +135,9 @@ class user_llm_save extends external_api {
                     'message' => get_string('errorchatunavailable', 'local_nexusai'),
                 ];
             }
-            return ['ok' => false, 'reason' => $failure['reason'], 'message' => $failure['message']];
+            // The reason comes from the backend; the text, from this plugin's strings.
+            $translated = user_llm::failure($failure['reason'], (string) $credentials['provider'], (string) $credentials['model']);
+            return ['ok' => false, 'reason' => $translated['reason'], 'message' => $translated['message']];
         }
     }
 }

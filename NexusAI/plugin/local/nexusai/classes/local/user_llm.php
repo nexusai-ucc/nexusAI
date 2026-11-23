@@ -62,6 +62,12 @@ class user_llm {
     /** @var string Model names as providers write them: "gpt-x-mini", "org/model:free". */
     const MODEL_PATTERN = '/^[A-Za-z0-9][A-Za-z0-9._:\/@+-]{0,119}$/';
 
+    /**
+     * @var string[] Why a key failed, as the backend reports it (HTTP 424, reason).
+     * Each one has its language string userllm_failed_<reason>.
+     */
+    const REASONS = ['rejected', 'quota', 'model', 'request', 'unavailable'];
+
     /** @var int Shortest and longest key accepted. */
     const KEY_MIN = 8;
     /** @var int Longest key accepted. */
@@ -145,8 +151,10 @@ class user_llm {
         if (!preg_match(self::MODEL_PATTERN, $model)) {
             throw new \invalid_parameter_exception('model');
         }
-        $length = \core_text::strlen($apikey);
-        if ($length < self::KEY_MIN || $length > self::KEY_MAX || preg_match('/\s/', $apikey)) {
+        // Provider keys are printable ASCII without spaces; anything else is a typo
+        // (and would not fit in the user preference once encrypted).
+        $length = strlen($apikey);
+        if ($length < self::KEY_MIN || $length > self::KEY_MAX || !preg_match('/^[\x21-\x7E]+$/', $apikey)) {
             throw new \invalid_parameter_exception('apikey');
         }
         return ['provider' => $provider, 'model' => $model, 'apikey' => $apikey];
@@ -310,7 +318,8 @@ class user_llm {
      */
     public static function month_usage(int $userid): array {
         global $DB;
-        $start = make_timestamp((int) date('Y'), (int) date('n'), 1);
+        $today = usergetdate(time());
+        $start = make_timestamp((int) $today['year'], (int) $today['mon'], 1);
         $nottest = $DB->sql_like('feature', ':testfeature', true, true, true);
         $row = $DB->get_record_sql(
             "SELECT COUNT(1) AS requests,
@@ -321,6 +330,26 @@ class user_llm {
             ['userid' => $userid, 'status' => 'ok', 'since' => $start, 'testfeature' => 'user-llm.%']
         );
         return ['requests' => (int) ($row->requests ?? 0), 'tokens' => (int) ($row->tokens ?? 0)];
+    }
+
+    /**
+     * The message for the user when their key failed, from this plugin's strings.
+     *
+     * The backend reports the reason (HTTP 424); the text shown is always a
+     * Moodle language string, in the user's language.
+     *
+     * @param string $reason Reason reported by the backend; unknown ones count as 'unavailable'.
+     * @param string $provider Provider id.
+     * @param string $model Model name.
+     * @return array{reason:string, message:string}
+     */
+    public static function failure(string $reason, string $provider, string $model): array {
+        $reason = in_array($reason, self::REASONS, true) ? $reason : 'unavailable';
+        $message = get_string('userllm_failed_' . $reason, 'local_nexusai', (object) [
+            'provider' => self::PROVIDERS[$provider] ?? $provider,
+            'model' => $model,
+        ]);
+        return ['reason' => $reason, 'message' => $message];
     }
 
     /**

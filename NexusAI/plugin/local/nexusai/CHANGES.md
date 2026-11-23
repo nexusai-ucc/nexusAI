@@ -14,15 +14,20 @@ file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   or down, or when the user reached their token limit. Those calls are paid by
   the user, are marked in the usage log (new column `local_nexusai_usage.byok`)
   and do not count towards the user's limit. Answers written with the key show
-  a "With your key" mark, and the usage bar says the chat goes on with it.
+  a "With your key" mark, and the usage bar says the chat goes on with it. When
+  the provider refuses the key (rejected, no quota left, unknown model, request
+  not accepted, not responding), the user reads why in a language string that
+  names their provider. Only printable ASCII keys without spaces are accepted.
 - Added: site setting "Users can add their own API key"
   (`local_nexusai/user_llm_enabled`), **off by default**: with the user's key
   the question and excerpts of the course material also reach the provider
   that user chose, so each site opts in. Once it is on, each course can turn
   it off from "NexusAI in this course". The key is only sent for requests the
   logged-in user made (never from tasks), and only when every course of the
-  request allows it. Declared in the privacy API: new external location and
-  user preference; the export names the provider and model, never the key.
+  request allows it. Declared in the privacy API: the key reaches the NexusAI
+  backend (used in memory for that request, never stored) and the provider the
+  user chose (new external location); the new user preference is exported
+  with the provider and model, never the key.
 - Fixed: several student and teacher features always showed their default
   values: the suggested quiz difficulty, the flashcards summary, the study
   streak and the forum webhook setting. The web service calls waited for the
