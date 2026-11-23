@@ -6,6 +6,11 @@ Versionado siguiendo [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [API 0.2.0] — 2026-10-26 — Cierre del TP de Calidad de Software
+
+### Cambiado
+- chore(api): la API pasa a la versión 0.2.0 (`app_version`, visible en `/health`). Incluye el trabajo de calidad de la épica TPC (#584): quality gate en SonarCloud, CD a staging con smoke E2E, integración externa diaria contra el LLM real, pruebas de carga con k6 y los fixes de DEF-01 a DEF-10. Es el cambio que recorre el pipeline completo en la demo del TP (`docs/calidad/DEMO.md`).
+
 ## [v0.17.8] — 2026-09-08 — Post-MVP Sprint G (cierre) + backlog chico
 
 ### Agregado
