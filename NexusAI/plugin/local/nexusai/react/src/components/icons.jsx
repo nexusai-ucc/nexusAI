@@ -199,7 +199,7 @@ export const IconThumbsUp = ({ size = 22 }) => (
     </svg>
 );
 
-// ── Flame (SP-16: racha de estudio) ────────────────────────────────────────
+// ── Flame (SP-16: study streak) ────────────────────────────────────────
 export const IconFlame = ({ size = 16 }) => (
     <svg {...baseProps(size)}>
         <path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2 1.5z" />
@@ -282,7 +282,7 @@ export const IconDownload = ({ size = 14 }) => (
     </svg>
 );
 
-// ── Upload (dropzone de material) ────────────────────────────────────────────
+// ── Upload (material dropzone) ────────────────────────────────────────────
 export const IconUpload = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -291,7 +291,7 @@ export const IconUpload = ({ size = 14 }) => (
     </svg>
 );
 
-// ── BarChart (dashboard de analytics — ANALYTICS-02) ────────────────────────
+// ── BarChart (analytics dashboard — ANALYTICS-02) ────────────────────────
 export const IconBarChart = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <line x1="12" y1="20" x2="12" y2="10" />
@@ -300,7 +300,7 @@ export const IconBarChart = ({ size = 14 }) => (
     </svg>
 );
 
-// ── AlertTriangle (FOR-05: hilo de foro urgente/frustrado) ─────────────────
+// ── AlertTriangle (FOR-05: urgent or frustrated forum thread) ─────────────────
 export const IconAlertTriangle = ({ size = 14 }) => (
     <svg {...baseProps(size)}>
         <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />

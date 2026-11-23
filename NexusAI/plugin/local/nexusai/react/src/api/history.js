@@ -53,7 +53,7 @@ async function getMoodleAjax() {
 export async function listSessions({ courseId, scopeCourse = true, limit = 20 }) {
     const ajax = await getMoodleAjax();
     if (!ajax) {
-        // Mock fuera de Moodle.
+        // Mock outside Moodle.
         return {
             sessions: [
                 {
@@ -61,7 +61,7 @@ export async function listSessions({ courseId, scopeCourse = true, limit = 20 })
                     course_id: courseId,
                     created_at: new Date(Date.now() - 86400000).toISOString(),
                     updated_at: new Date(Date.now() - 3600000).toISOString(),
-                    last_message_preview: "¿Qué temas entran en el parcial?",
+                    last_message_preview: "Which topics are in the midterm?",
                     message_count: 4,
                 },
                 {
@@ -69,7 +69,7 @@ export async function listSessions({ courseId, scopeCourse = true, limit = 20 })
                     course_id: courseId,
                     created_at: new Date(Date.now() - 172800000).toISOString(),
                     updated_at: new Date(Date.now() - 172800000).toISOString(),
-                    last_message_preview: "Explicame cómo funciona pgvector",
+                    last_message_preview: "Explain how pgvector works",
                     message_count: 2,
                 },
             ],
@@ -95,12 +95,12 @@ export async function listSessions({ courseId, scopeCourse = true, limit = 20 })
 export async function getSessionMessages({ courseId, sessionId }) {
     const ajax = await getMoodleAjax();
     if (!ajax) {
-        // Mock fuera de Moodle.
+        // Mock outside Moodle.
         return {
             session_id: sessionId,
             messages: [
-                { id: "m1", role: "user", content: "Pregunta de prueba", created_at: new Date().toISOString() },
-                { id: "m2", role: "assistant", content: "Respuesta de prueba mock.", created_at: new Date().toISOString() },
+                { id: "m1", role: "user", content: "Test question", created_at: new Date().toISOString() },
+                { id: "m2", role: "assistant", content: "Mock test answer.", created_at: new Date().toISOString() },
             ],
         };
     }
@@ -124,7 +124,7 @@ export async function getSessionMessages({ courseId, sessionId }) {
 export async function deleteSession({ courseId, sessionId }) {
     const ajax = await getMoodleAjax();
     if (!ajax) {
-        // Mock fuera de Moodle.
+        // Mock outside Moodle.
         return { success: true };
     }
 

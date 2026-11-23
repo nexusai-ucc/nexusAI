@@ -16,7 +16,7 @@
 # La fuente de React SÍ viaja en el ZIP (MMR-301 item 8, GPL: quien recibe el
 # bundle minificado tiene que recibir con qué se armó): react/src, package.json,
 # package-lock.json, webpack.config.js, .babelrc y README.md. Solo quedan
-# afuera los tests (*.test.js/jsx, vitest.*, scripts/run-vitest.js) y lo que
+# afuera los tests (*.test.js/jsx, src/test-utils/, vitest.*, scripts/run-vitest.js) y lo que
 # genera npm (node_modules, dist, coverage, .cache), que no hacen falta para
 # volver a compilar el bundle.
 #
@@ -91,6 +91,7 @@ zip -r "${REPO_ROOT}/${DIST_DIR}/${ZIP_NAME}" "nexusai" \
     -x "nexusai/react/coverage/*" \
     -x "nexusai/react/src/*.test.js" \
     -x "nexusai/react/src/*.test.jsx" \
+    -x "nexusai/react/src/test-utils/*" \
     -x "nexusai/react/vitest.setup.js" \
     -x "nexusai/react/vitest.config.js" \
     -x "nexusai/react/scripts/*" \
