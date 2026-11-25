@@ -41,11 +41,20 @@ class usage_store {
     /** @var string[] Roles as the backend records them. */
     const ROLES = ['student', 'teacher', 'system'];
 
-    /** @var array Default token limits per role, the same as the backend's. */
+    /**
+     * @var array Default token limits per role, the same as the backend's.
+     *
+     * A chat question with the course material costs about 4,400 tokens
+     * (instructions, up to 5 whole excerpts, history and answer), so a student
+     * gets about 4 questions an hour and 18 a day.
+     */
     const DEFAULT_LIMITS = [
-        'student' => ['hourly' => 8000, 'daily' => 40000],
-        'teacher' => ['hourly' => 20000, 'daily' => 100000],
+        'student' => ['hourly' => 20000, 'daily' => 80000],
+        'teacher' => ['hourly' => 40000, 'daily' => 200000],
     ];
+
+    /** @var int Tokens of one chat question when the user has no history yet. */
+    const DEFAULT_QUESTION_TOKENS = 4400;
 
     /** @var array Window length of each budget, in seconds. */
     const WINDOWS = ['hourly' => HOURSECS, 'daily' => DAYSECS];
@@ -220,7 +229,7 @@ class usage_store {
             ['userid' => $userid, 'since' => time() - 30 * DAYSECS, 'feature' => 'chat.%']
         );
         if (!$row || (int) $row->questions === 0 || (int) $row->tokens === 0) {
-            return 1500;
+            return self::DEFAULT_QUESTION_TOKENS;
         }
         return max(1, (int) round($row->tokens / $row->questions));
     }

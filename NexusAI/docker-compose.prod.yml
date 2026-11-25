@@ -30,7 +30,11 @@ services:
     # "command:" en el compose base persiste si el overlay no lo redefine,
     # y entrypoint.sh es el que corre "alembic upgrade head" antes de uvicorn.
     command: ["./entrypoint.sh"]
-    volumes: !reset
+    # !override (no !reset): !reset descarta la lista que sigue y la API
+    # arrancaba sin el volumen, sin poder guardar los archivos subidos.
+    # En el host, la carpeta tiene que ser del uid de la API:
+    #   sudo chown -R 1001:1001 services/api/uploads
+    volumes: !override
       - ./services/api/uploads:/app/uploads
     ports: !reset []
 
