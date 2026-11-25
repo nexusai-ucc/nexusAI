@@ -117,7 +117,7 @@ final class local_data_test extends \advanced_testcase {
         $turn = new chat_turn((int) $this->student->id, (int) $this->course->id, '¿Qué es Bayes?', null, false);
         $payload = $turn->payload();
         $this->assertSame([], $payload['history']);
-        $this->assertSame(8000, $payload['token_limit_hourly']);
+        $this->assertSame(20000, $payload['token_limit_hourly']);
         $this->assertFalse($payload['is_teacher']);
 
         $events = $this->stream($turn, [
@@ -330,7 +330,7 @@ final class local_data_test extends \advanced_testcase {
         $budget = usage_store::budget((int) $this->student->id, 'student');
         $this->assertSame('estimate', $budget['source']);
         $this->assertSame(4000, $budget['hourly']['used']);
-        $this->assertSame(50, $budget['hourly']['percent_used']);
+        $this->assertSame(20, $budget['hourly']['percent_used']);
 
         set_config('token_limit_student_daily', 8000, 'local_nexusai');
         $status = external\budget_status::execute((int) $this->course->id);

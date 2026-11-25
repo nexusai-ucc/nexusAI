@@ -127,8 +127,16 @@ dice otra cosa, corregir antes de seguir con `git checkout <rama>`.
 
 ```bash
 git pull origin staging   # o 'main' en producción
+sudo install -d -o 1001 -g 1001 services/api/uploads
+sudo chown -R 1001:1001 services/api/uploads
 sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
+
+El `chown` deja la carpeta de uploads a nombre del usuario de la API (uid
+1001): git la crea con el usuario del deploy y, si no se corrige, los archivos
+subidos no se guardan y el error solo aparece en el log (`scripts/deploy_vm.sh`
+ya lo hace). `docker-compose.prod.yml` usa `!override` en los volúmenes de la
+API, que necesita Docker Compose 2.24.4 o posterior.
 
 El `--build` hace falta cuando cambió algo del backend (`services/api/**`). Si
 el cambio es solo del plugin de Moodle, la VM no se toca en absoluto.
