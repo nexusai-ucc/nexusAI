@@ -83,6 +83,12 @@ main() {
         || die "no se puede avanzar con fast-forward: la VM tiene commits o cambios propios"
     log "código: $before -> $(git rev-parse --short HEAD)"
 
+    # La API corre como uid 1001 y escribe los archivos subidos en el bind
+    # mount ./services/api/uploads. Git crea esa carpeta con el usuario del
+    # deploy; si no es de 1001, guardar el archivo falla y solo queda en el log.
+    sudo install -d -o 1001 -g 1001 services/api/uploads
+    sudo chown -R 1001:1001 services/api/uploads
+
     sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
     wait_healthy
     sudo docker ps --format '{{.Names}}\t{{.Status}}'
