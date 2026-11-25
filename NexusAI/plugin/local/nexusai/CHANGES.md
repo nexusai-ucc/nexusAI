@@ -3,6 +3,18 @@
 All notable changes to the NexusAI Moodle plugin are documented in this
 file. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.21.0] — 2026-11-25
+
+- Changed: default token limits raised to 20,000 an hour and 80,000 a day for
+  students (were 8,000 and 40,000) and to 40,000 and 200,000 for teachers
+  (were 20,000 and 100,000). The backend now sends the chat whole excerpts of
+  the course material, so a question costs about 4,400 tokens instead of
+  2,800; with the old limits a student ran out after about 2 questions an
+  hour. The upgrade raises each limit that still holds its old default and
+  keeps any value the admin chose.
+- Changed: the "questions left" estimate assumes 4,400 tokens per question
+  (was 1,500) until the user has chat history of their own.
+
 ## [0.20.0] — 2026-11-23
 
 - Added: "My API key". A student or teacher can save the API key of their own

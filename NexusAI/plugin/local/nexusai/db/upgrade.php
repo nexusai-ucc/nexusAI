@@ -410,5 +410,14 @@ function xmldb_local_nexusai_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026111800, 'local', 'nexusai');
     }
 
+    if ($oldversion < 2026112500) {
+        // Whole excerpts in the chat cost more tokens per question: raise the
+        // limits that still hold the old defaults (see upgradelib.php).
+        require_once(__DIR__ . '/upgradelib.php');
+        local_nexusai_raise_old_default_token_limits();
+
+        upgrade_plugin_savepoint(true, 2026112500, 'local', 'nexusai');
+    }
+
     return true;
 }
