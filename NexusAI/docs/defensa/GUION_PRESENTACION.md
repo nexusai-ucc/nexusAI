@@ -88,7 +88,7 @@ La parte técnica se cuenta siguiendo **una pregunta real que hizo el público e
 - **Anti-replay:** el timestamp tiene que estar dentro de una ventana de **300 s**, y cada nonce se guarda en Redis con ese TTL. Un pedido capturado y reenviado se rechaza con 401; lo prueba el smoke de cada deploy.
 - **Abuso y costo:**
   - rate limit por usuario de **20 por minuto y 50 por día**;
-  - presupuesto de tokens por rol (alumno: 8.000 por hora y 40.000 por día), reservado de forma **atómica** con `INCRBY` en Redis antes de llamar al modelo, así 10 pedidos simultáneos no pueden pasar todos con el mismo saldo (`shared/token_budget.py`);
+  - presupuesto de tokens por rol (alumno: 20.000 por hora y 80.000 por día), reservado de forma **atómica** con `INCRBY` en Redis antes de llamar al modelo, así 10 pedidos simultáneos no pueden pasar todos con el mismo saldo (`shared/token_budget.py`);
   - moderación de la entrada antes de que llegue al modelo.
 - **Privacidad:** los datos del alumno (chats, quizzes, vacíos) viven en tablas de Moodle, y el backend no guarda estado del alumno (ADR-014). El plugin implementa la Privacy API, así que se exportan y se borran como cualquier otro dato de Moodle. Al proveedor de IA le llegan la pregunta y los fragmentos, no la identidad del alumno.
 - Auditoría OWASP Top 10 (`docs/security/owasp-audit-2026-08.md`).
