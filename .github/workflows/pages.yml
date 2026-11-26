@@ -21,17 +21,26 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+# Dos jobs, como los workflows de ejemplo de GitHub para Pages. Con los dos
+# pasos en un mismo job, deploy-pages buscaba el artifact 0,3 s después de
+# subirlo y GitHub todavía no lo listaba ("No artifacts named github-pages",
+# 26/11/2026): el cambio de job le da el margen que necesita.
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: NexusAI/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
