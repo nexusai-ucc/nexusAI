@@ -458,3 +458,163 @@ footer a { color: var(--muted); }
 
 .card.extra { justify-content: center; background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
 .card.extra .body { padding: 32px 26px; }
+
+/* ---------- Guías (instalación y tutorial) ---------- */
+
+.nav a[aria-current="page"] { color: var(--text); }
+
+.page-head { padding: 56px 0 8px; }
+.page-head .lede {
+  font-size: clamp(1.1rem, 2vw, 1.25rem);
+  color: var(--muted);
+  margin-top: 18px;
+  max-width: 40em;
+}
+
+.doc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+  padding-top: 32px;
+  padding-bottom: 72px;
+}
+@media (min-width: 1000px) {
+  .doc { grid-template-columns: 220px minmax(0, 1fr); gap: 56px; }
+}
+
+.toc { font-size: 0.95rem; }
+@media (min-width: 1000px) { .toc { position: sticky; top: 96px; align-self: start; } }
+.toc h2 {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.toc ol ol { padding-left: 14px; margin-top: 8px; }
+.toc a { color: var(--muted); text-decoration: none; }
+.toc a:hover { color: var(--text); }
+
+.prose { max-width: 46em; min-width: 0; }
+.prose > * + * { margin-top: 16px; }
+.prose h2 {
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  margin-top: 64px;
+  scroll-margin-top: 88px;
+}
+.prose > h2:first-child { margin-top: 0; }
+.prose h3 { font-size: 1.2rem; margin-top: 36px; scroll-margin-top: 88px; }
+.prose ul, .prose ol { padding-left: 1.3em; }
+.prose li + li { margin-top: 6px; }
+.prose .muted { color: var(--muted); }
+
+.prose h2 .num {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--tech);
+  color: var(--bg);
+  font: 700 1rem/1 var(--sans);
+  margin-right: 12px;
+  vertical-align: 0.25em;
+}
+
+.codeblock { position: relative; }
+.prose pre {
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font: 0.9rem/1.65 var(--mono);
+}
+.prose pre code { background: none; padding: 0; font-size: inherit; border-radius: 0; }
+.prose pre .cm { color: var(--muted); }
+.codeblock pre { padding-top: 46px; }
+.copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font: 600 0.8rem var(--sans);
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.copy:hover { color: var(--text); }
+
+.prose table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.prose th, .prose td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.prose th { font-weight: 600; }
+.prose td { color: var(--muted); overflow-wrap: anywhere; }
+.prose td:first-child { color: var(--text); }
+.table-scroll { overflow-x: auto; }
+
+.callout {
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--primary);
+  color: var(--muted);
+}
+.callout strong { color: var(--text); }
+.callout.warn { border-left-color: var(--demo); }
+
+.shot {
+  margin: 24px 0 0;
+}
+.shot .frame {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+.shot video { width: auto; max-width: 100%; max-height: 520px; }
+.shot.wide video { width: 100%; max-height: none; }
+.shot figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 8px; }
+
+.prose .faq { margin-top: 20px; }
+
+.next {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 56px;
+}
+@media (min-width: 700px) { .next { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.next a {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 600;
+}
+.next a small { display: block; color: var(--muted); font-weight: 400; margin-bottom: 4px; }
+.next a:hover { border-color: var(--primary); }
+
+.comments {
+  margin-top: 64px;
+  padding-top: 40px;
+  border-top: 1px solid var(--line);
+}
+.comments .giscus { margin-top: 24px; }
+.tech .btns { margin-top: 24px; }

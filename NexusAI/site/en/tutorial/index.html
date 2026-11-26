@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tutorial · NexusAI for Moodle</title>
+  <meta name="description" content="Getting started with NexusAI: how teachers turn the assistant on, upload the material and see what their students ask, and how students use it to study.">
+  <link rel="canonical" href="https://nexusai-ucc.github.io/nexusAI/en/tutorial/">
+  <link rel="alternate" hreflang="es" href="https://nexusai-ucc.github.io/nexusAI/tutorial/">
+  <link rel="alternate" hreflang="en" href="https://nexusai-ucc.github.io/nexusAI/en/tutorial/">
+  <link rel="alternate" hreflang="x-default" href="https://nexusai-ucc.github.io/nexusAI/tutorial/">
+  <meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#10151c" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="NexusAI for Moodle tutorial">
+  <meta property="og:description" content="Getting started for teachers and students.">
+  <meta property="og:url" content="https://nexusai-ucc.github.io/nexusAI/en/tutorial/">
+  <meta property="og:image" content="https://nexusai-ucc.github.io/nexusAI/media/og.png">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="es_AR">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="../../media/logo.png">
+  <link rel="apple-touch-icon" href="../../media/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,600;9..144,650&amp;display=swap">
+  <link rel="stylesheet" href="../../styles.css">
+  <script src="../../guide.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="../" aria-label="NexusAI for Moodle, home">
+        <img src="../../media/logo.png" alt="" width="32" height="32">
+        <span>NexusAI <small>for Moodle</small></span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a href="../">Home</a>
+        <a href="../install/">Install</a>
+        <a href="./" aria-current="page">Tutorial</a>
+        <a href="#comments">Comments</a>
+        <a class="lang" href="../../tutorial/" hreflang="es" lang="es">Español</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="content">
+    <div class="page-head">
+      <div class="wrap">
+        <span class="eyebrow">Tutorial</span>
+        <h1>Getting started with NexusAI.</h1>
+        <p class="lede">What teachers do to get their course ready, and how students use it to study. First, the administrator has to finish the <a href="../install/">installation</a>.</p>
+      </div>
+    </div>
+
+    <div class="wrap doc">
+      <nav class="toc" aria-labelledby="t-toc">
+        <h2 id="t-toc">On this page</h2>
+        <ol>
+          <li><a href="#teachers">For teachers</a>
+            <ol>
+              <li><a href="#turn-on">1. Turn the course on</a></li>
+              <li><a href="#material">2. Upload the material</a></li>
+              <li><a href="#questions">3. See what they ask</a></li>
+              <li><a href="#exam">4. Generate exams</a></li>
+              <li><a href="#teacher-assistant">5. The teacher's assistant</a></li>
+            </ol>
+          </li>
+          <li><a href="#students">For students</a>
+            <ol>
+              <li><a href="#chat">Chat</a></li>
+              <li><a href="#search">Search</a></li>
+              <li><a href="#study">Study Mode</a></li>
+              <li><a href="#calendar">Calendar</a></li>
+            </ol>
+          </li>
+          <li><a href="#comments">Comments</a></li>
+        </ol>
+      </nav>
+
+      <article class="prose">
+        <h2 id="teachers">For teachers</h2>
+        <p>Five steps get the course ready. The most important one is uploading the material, because NexusAI only answers with what the teacher uploads.</p>
+
+        <h3 id="turn-on">1. Turn NexusAI on in the course</h3>
+        <p>In the course menu (sometimes under “More”), open <em>NexusAI in this course</em>, tick <em>Use NexusAI in this course</em> and save.</p>
+        <p class="muted">While it is off, students see nothing of NexusAI in the course. Turning it off deletes nothing: the history, questions and documents come back when you turn it on again.</p>
+
+        <h3 id="material">2. Upload the material</h3>
+        <p>In the course menu, go to <em>NexusAI · Materials</em>. Drag your files, one or several at a time (PDF, DOCX, PPTX, XLSX, CSV, MD, HTML or TXT, up to 20 MB each), and choose:</p>
+        <ul>
+          <li><strong>Course unit:</strong> the course section the file goes into.</li>
+          <li><strong>Visible to students:</strong> whether students can see it right away.</li>
+        </ul>
+        <p>Each file is added to the course as a <em>File</em> activity in that unit and goes from “processing” to “indexed”. From then on, the chat, search and quizzes use it.</p>
+        <p class="callout">NexusAI only answers with the material each student can see. If you hide the activity or add a restriction, it stops using it for whoever cannot see it.</p>
+        <figure class="shot wide">
+          <div class="frame"><video autoplay muted loop playsinline preload="metadata" poster="../../media/materiales.png" width="1076" height="838" aria-hidden="true"><source src="../../media/materiales.mp4" type="video/mp4"></video></div>
+          <figcaption>The Material tab: upload files and see their status.</figcaption>
+        </figure>
+
+        <h3 id="questions">3. See what your students ask</h3>
+        <p>In <em>NexusAI · Materials</em>, the <strong>Student questions</strong> tab shows what the material could not answer well and the most frequent questions, grouped by topic. It is the list of what to reinforce in the next class.</p>
+        <p>The <strong>Analytics</strong> tab shows daily usage, the most frequent questions and quiz scores, and exports to PDF.</p>
+        <figure class="shot wide">
+          <div class="frame"><video autoplay muted loop playsinline preload="metadata" poster="../../media/gaps.png" width="1076" height="404" aria-hidden="true"><source src="../../media/gaps.mp4" type="video/mp4"></video></div>
+          <figcaption>Questions the material does not cover.</figcaption>
+        </figure>
+
+        <h3 id="exam">4. Generate exams</h3>
+        <p>The <strong>Generate exam</strong> tab builds questions from the indexed material. You can edit them and export them in GIFT format, which imports into the Moodle question bank.</p>
+        <p class="callout warn"><strong>Always review the questions before using them.</strong> An AI writes them from your material.</p>
+        <figure class="shot wide">
+          <div class="frame"><video autoplay muted loop playsinline preload="metadata" poster="../../media/examen.png" width="1076" height="628" aria-hidden="true"><source src="../../media/examen.mp4" type="video/mp4"></video></div>
+          <figcaption>A generated exam, ready to review and export.</figcaption>
+        </figure>
+
+        <h3 id="teacher-assistant">5. The assistant, on the teacher's side</h3>
+        <p>Teachers also get the NexusAI panel on the right of the screen, with two tools of their own in the <em>Go to</em> menu:</p>
+        <ul>
+          <li><strong>Course review:</strong> what the course is missing (sections, students, material, a Q&amp;A forum, dates), with a link to the Moodle page where each one is fixed.</li>
+          <li><strong>Forum digest:</strong> a weekly summary of forum activity and the posts that look urgent.</li>
+        </ul>
+        <p class="muted">Each tool is explained in the <em>Help</em> tab of <em>NexusAI · Materials</em>.</p>
+
+        <h2 id="students">For students</h2>
+        <p>Every course with NexusAI turned on shows the NexusAI panel on the right of the screen. The <em>Go to</em> menu switches between Chat, Study Mode, Search and Calendar. The panel also shows how much of the usage limit is left.</p>
+
+        <h3 id="chat">Chat</h3>
+        <p>Ask anything about the subject, in your own words. It answers with the course material and shows which document each part comes from, so you can check it. If the answer is not in the material, it says so instead of making it up.</p>
+        <figure class="shot">
+          <div class="frame"><video autoplay muted loop playsinline preload="metadata" poster="../../media/chat.png" width="400" height="838" aria-hidden="true"><source src="../../media/chat.mp4" type="video/mp4"></video></div>
+          <figcaption>An answer with its source.</figcaption>
+        </figure>
+
+        <h3 id="search">Search</h3>
+        <p>Finds a topic across all the course notes even if you do not use the same words as the text, and summarizes a document in one click.</p>
+        <figure class="shot">
+          <div class="frame"><video autoplay muted loop playsinline preload="metadata" poster="../../media/buscador.png" width="400" height="838" aria-hidden="true"><source src="../../media/buscador.mp4" type="video/mp4"></video></div>
+          <figcaption>Search by meaning.</figcaption>
+        </figure>
+
+        <h3 id="study">Study Mode</h3>
+        <ul>
+          <li><strong>Plan:</strong> what is due next and what to review.</li>
+          <li><strong>Practice:</strong> a quiz on the topic you choose, with the correction, the explanation and the source of each answer.</li>
+          <li><strong>Review:</strong> flashcards with spaced repetition, to get ready for the exam.</li>
+        </ul>
+        <figure class="shot">
+          <div class="frame"><video autoplay muted loop playsinline preload="metadata" poster="../../media/quiz.png" width="400" height="742" aria-hidden="true"><source src="../../media/quiz.mp4" type="video/mp4"></video></div>
+          <figcaption>A graded practice quiz.</figcaption>
+        </figure>
+
+        <h3 id="calendar">Calendar</h3>
+        <p>The course's assignments and exams in one place, with alerts you choose. It exports to any calendar app with an <code>.ics</code> file.</p>
+        <figure class="shot">
+          <div class="frame"><video autoplay muted loop playsinline preload="metadata" poster="../../media/calendario.png" width="400" height="534" aria-hidden="true"><source src="../../media/calendario.mp4" type="video/mp4"></video></div>
+          <figcaption>The course calendar.</figcaption>
+        </figure>
+
+        <div class="next">
+          <a href="../install/"><small>Previous</small>Installation guide</a>
+          <a href="../"><small>Back to</small>Home</a>
+        </div>
+
+        <div class="comments" role="region" aria-labelledby="comments">
+          <h2 id="comments">Comments</h2>
+          <p class="muted">How do you use it in your course? What would you like it to do? Leave a comment. You need a GitHub account to comment.</p>
+          <div class="giscus"></div>
+          <script src="https://giscus.app/client.js"
+            data-repo="nexusai-ucc/nexusAI"
+            data-repo-id="R_kgDOR-VWaw"
+            data-category="Announcements"
+            data-category-id="DIC_kwDOR-VWa84C8Zs6"
+            data-mapping="specific"
+            data-term="Tutorial"
+            data-strict="1"
+            data-reactions-enabled="1"
+            data-emit-metadata="0"
+            data-input-position="top"
+            data-theme="preferred_color_scheme"
+            data-lang="en"
+            data-loading="lazy"
+            crossorigin="anonymous"
+            async></script>
+          <noscript><p>Comments need JavaScript. You can also read them in the <a href="https://github.com/nexusai-ucc/nexusAI/discussions">repository discussions</a>.</p></noscript>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>NexusAI for Moodle · Plugin under GPL v3, server under MIT.</span>
+      <span><a href="https://github.com/nexusai-ucc/nexusAI">GitHub</a> · <a href="../../tutorial/" hreflang="es" lang="es">Español</a></span>
+    </div>
+  </footer>
+</body>
+</html>
