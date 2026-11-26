@@ -6,6 +6,18 @@ Versionado siguiendo [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [Sin publicar]
+
+### Agregado
+- docs(site): guía de instalación completa (servidor paso a paso, plugin, conexión, activar cursos, problemas comunes) y tutorial para docentes y alumnos, en español e inglés, con comentarios por giscus: `/instalacion/`, `/en/install/`, `/tutorial/`, `/en/tutorial/`
+
+### Corregido
+- fix(selfhost): `docker-compose.selfhost.yml` de `nexusai-backend` guarda los archivos subidos en un volumen (sin él no se guardaba el original y «Reindexar» fallaba), suma HTTPS opcional con Caddy (perfil `https`) y `API_BIND` para no publicar el puerto hacia afuera; `.env.example` trae `COMPOSE_FILE` y `ENV=production`
+- fix(api): `ALERT_EMAIL_TO` (y `NEXUSAI_ALERT_EMAIL_TO` del watchdog) ya no tiene como default el correo del responsable del piloto: sin destinatario no se manda nada. **Antes de desplegar**, staging y producción tienen que tener `ALERT_EMAIL_TO` en su `.env`
+- docs(site): la portada decía que con purgar cachés el asistente aparecía en todos los cursos (viene apagado por curso desde la 0.19.0) y listaba solo PDF, DOCX y TXT
+
+---
+
 ## [v0.20.0] — 2026-11-23 — My API key y revisión del plugin
 
 Detalle del plugin en [`NexusAI/plugin/local/nexusai/CHANGES.md`](NexusAI/plugin/local/nexusai/CHANGES.md).

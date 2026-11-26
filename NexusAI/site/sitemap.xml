@@ -10,4 +10,24 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://nexusai-ucc.github.io/nexusAI/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://nexusai-ucc.github.io/nexusAI/en/"/>
   </url>
+  <url>
+    <loc>https://nexusai-ucc.github.io/nexusAI/instalacion/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://nexusai-ucc.github.io/nexusAI/instalacion/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nexusai-ucc.github.io/nexusAI/en/install/"/>
+  </url>
+  <url>
+    <loc>https://nexusai-ucc.github.io/nexusAI/en/install/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://nexusai-ucc.github.io/nexusAI/instalacion/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nexusai-ucc.github.io/nexusAI/en/install/"/>
+  </url>
+  <url>
+    <loc>https://nexusai-ucc.github.io/nexusAI/tutorial/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://nexusai-ucc.github.io/nexusAI/tutorial/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nexusai-ucc.github.io/nexusAI/en/tutorial/"/>
+  </url>
+  <url>
+    <loc>https://nexusai-ucc.github.io/nexusAI/en/tutorial/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://nexusai-ucc.github.io/nexusAI/tutorial/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nexusai-ucc.github.io/nexusAI/en/tutorial/"/>
+  </url>
 </urlset>
