@@ -11,13 +11,16 @@ Es HTML y CSS a mano, sin framework ni build.
 |---|---|
 | `index.html` | Página en español (la principal) |
 | `en/index.html` | La misma página en inglés |
+| `instalacion/index.html`, `en/install/index.html` | Guía de instalación completa (servidor, plugin, conexión, activar cursos, problemas comunes) |
+| `tutorial/index.html`, `en/tutorial/index.html` | Tutorial para docentes y alumnos, con los clips de `media/` |
+| `guide.js` | Botón «Copiar» en los bloques de código de las guías y clips quietos con «reducir movimiento» |
 | `styles.css` | Estilos compartidos. Colores y tipografías = los de la presentación de la defensa; modo claro y oscuro según el sistema |
 | `media/` | Clips `.mp4` y sus imágenes fijas `.png` (grabados con Playwright en el entorno de `deploy/demo/`), `logo.png` (= `pix/icon.png` del plugin) y `og.png` (imagen al compartir el link) |
 | `robots.txt`, `sitemap.xml` | Para buscadores |
 
 ## Editar
 
-- **Un cambio de texto va en las dos páginas** (`index.html` y `en/index.html`).
+- **Un cambio de texto va en las dos versiones** de cada página (español e inglés).
 - Los links internos son relativos (`media/…` en español, `../media/…` en inglés) para que funcione bajo `/nexusAI/` y con un dominio propio.
 - No poner números que no estén en el informe (`informe-ipi`).
 
@@ -27,6 +30,12 @@ Para verlo en local:
 cd NexusAI/site && python3 -m http.server 8765
 # abrir http://localhost:8765/
 ```
+
+## Comentarios
+
+Las guías tienen comentarios con [giscus](https://giscus.app/es), que los guarda en las Discussions del repo (categoría *Announcements*). Hay un hilo por guía, compartido entre español e inglés (`data-term`). Para comentar hace falta cuenta de GitHub.
+
+Requisito, una sola vez: un admin de la organización instala la app [giscus](https://github.com/apps/giscus) en `nexusai-ucc/nexusAI`.
 
 ## Publicación
 

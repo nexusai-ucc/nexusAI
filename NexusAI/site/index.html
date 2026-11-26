@@ -65,6 +65,7 @@
         <a href="#alumnos">Alumnos</a>
         <a href="#docentes">Docentes</a>
         <a href="#instalar">Instalar</a>
+        <a href="tutorial/">Tutorial</a>
         <a href="#preguntas">Preguntas</a>
         <a class="lang" href="en/" hreflang="en" lang="en">English</a>
       </nav>
@@ -156,7 +157,7 @@
           </article>
           <article class="card">
             <div class="media wide"><video autoplay muted loop playsinline preload="metadata" poster="media/materiales.png" width="1076" height="838" aria-hidden="true"><source src="media/materiales.mp4" type="video/mp4"></video></div>
-            <div class="body"><h3>Subir el material y listo</h3><p>PDF, DOCX o TXT, de a uno o varios. Se indexa solo y queda disponible para el chat, el buscador y los quizzes.</p></div>
+            <div class="body"><h3>Subir el material y listo</h3><p>PDF, DOCX, PPTX, XLSX y más, de a uno o varios. Se indexa solo y queda disponible para el chat, el buscador y los quizzes.</p></div>
           </article>
           <article class="card">
             <div class="media wide"><video autoplay muted loop playsinline preload="metadata" poster="media/examen.png" width="1076" height="628" aria-hidden="true"><source src="media/examen.mp4" type="video/mp4"></video></div>
@@ -199,12 +200,12 @@
           <li>
             <h3>Levantar el servidor</h3>
             <p>Con Docker se levantan la API (FastAPI), PostgreSQL con pgvector y Redis.</p>
-            <p>La guía paso a paso está en el <a href="https://github.com/nexusai-ucc/nexusAI/blob/main/NexusAI/docs/CORRER_PROYECTO.md">repositorio</a>.</p>
+            <p>Los comandos y el archivo de configuración están en la <a href="instalacion/#servidor">guía de instalación</a>.</p>
           </li>
           <li>
             <h3>Conectar los dos</h3>
             <p>En <em>Extensiones → Extensiones locales → NexusAI</em>, completá la URL del servidor, la API key y el secreto compartido.</p>
-            <p>Purgá las cachés y el asistente aparece en cada curso.</p>
+            <p>Purgá las cachés y activá NexusAI en cada curso donde se vaya a usar: viene apagado.</p>
           </li>
         </ol>
         <ul class="reqs">
@@ -212,6 +213,10 @@
           <li>Un servidor con Docker</li>
           <li>Una clave de un proveedor de IA</li>
         </ul>
+        <div class="btns">
+          <a class="btn btn-primary" href="instalacion/">Guía de instalación completa</a>
+          <a class="btn btn-ghost" href="tutorial/">Tutorial para docentes y alumnos</a>
+        </div>
         <p class="note"><strong>¿Dudas o problemas al instalarlo?</strong> Abrí un issue en el <a href="https://github.com/nexusai-ucc/nexusAI/issues">repositorio de GitHub</a>.</p>
       </div>
     </section>
@@ -283,7 +288,7 @@
   <footer>
     <div class="wrap">
       <span>NexusAI para Moodle · Plugin bajo GPL v3, servidor bajo MIT.</span>
-      <span><a href="https://github.com/nexusai-ucc/nexusAI">GitHub</a> · <a href="en/" hreflang="en" lang="en">English</a></span>
+      <span><a href="instalacion/">Instalación</a> · <a href="tutorial/">Tutorial</a> · <a href="https://github.com/nexusai-ucc/nexusAI">GitHub</a> · <a href="en/" hreflang="en" lang="en">English</a></span>
     </div>
   </footer>
 
