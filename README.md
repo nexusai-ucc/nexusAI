@@ -12,6 +12,8 @@
 [![Python: 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)]()
 [![React: 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)]()
 
+**[Sitio web](https://nexusai-ucc.github.io/nexusAI/)** · **[Descargar del Marketplace de Moodle](https://marketplace.moodle.com/plugins/local_nexusai)**
+
 </div>
 
 ---
