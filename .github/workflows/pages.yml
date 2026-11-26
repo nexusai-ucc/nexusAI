@@ -1,0 +1,37 @@
+name: Sitio web (GitHub Pages)
+
+# Publica NexusAI/site/ en https://nexusai-ucc.github.io/nexusAI/
+# cada vez que cambia en main. El sitio es estático: no hay build.
+# Requisito único: Settings → Pages → Source: "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'NexusAI/site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: NexusAI/site
+      - id: deployment
+        uses: actions/deploy-pages@v4
