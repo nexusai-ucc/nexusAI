@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NexusAI for Moodle · AI assistant that answers from your course material</title>
+  <meta name="description" content="NexusAI is a free, open-source Moodle plugin: an AI assistant that answers from each course's real material, cites the source, and shows teachers which questions their material doesn't cover.">
+  <link rel="canonical" href="https://nexusai-ucc.github.io/nexusAI/en/">
+  <link rel="alternate" hreflang="es" href="https://nexusai-ucc.github.io/nexusAI/">
+  <link rel="alternate" hreflang="en" href="https://nexusai-ucc.github.io/nexusAI/en/">
+  <link rel="alternate" hreflang="x-default" href="https://nexusai-ucc.github.io/nexusAI/">
+  <meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#10151c" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="NexusAI for Moodle">
+  <meta property="og:description" content="The AI assistant that answers from your course material, inside Moodle. Free and open source.">
+  <meta property="og:url" content="https://nexusai-ucc.github.io/nexusAI/en/">
+  <meta property="og:image" content="https://nexusai-ucc.github.io/nexusAI/media/og.png">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="es_AR">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="../media/logo.png">
+  <link rel="apple-touch-icon" href="../media/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,600;9..144,650&amp;display=swap">
+  <link rel="stylesheet" href="../styles.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "NexusAI for Moodle",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Moodle 4.5–5.3",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+    "downloadUrl": "https://marketplace.moodle.com/plugins/local_nexusai",
+    "codeRepository": "https://github.com/nexusai-ucc/nexusAI",
+    "inLanguage": ["es", "en"]
+  }
+  </script>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></symbol>
+    <symbol id="i-quote" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-gap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M11 8v3M11 14h.01"/></symbol>
+    <symbol id="i-moodle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/></symbol>
+    <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/></symbol>
+  </svg>
+
+  <a class="skip" href="#contenido">Skip to content</a>
+
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="./" aria-label="NexusAI for Moodle, home">
+        <img src="../media/logo.png" alt="" width="32" height="32">
+        <span>NexusAI <small>for Moodle</small></span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a href="#students">Students</a>
+        <a href="#teachers">Teachers</a>
+        <a href="#install">Install</a>
+        <a href="#faq">FAQ</a>
+        <a class="lang" href="../" hreflang="es" lang="es">Español</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <div class="hero">
+      <div class="wrap">
+        <div>
+          <span class="eyebrow">Free plugin for Moodle</span>
+          <h1>The AI assistant that answers from your course material.</h1>
+          <p class="lede">NexusAI lives inside the Moodle course. It answers from the notes the teacher uploaded, cites where every answer comes from and, when something isn't in the material, says so instead of making it up.</p>
+          <div class="btns">
+            <a class="btn btn-primary" href="https://marketplace.moodle.com/plugins/local_nexusai">
+              <svg aria-hidden="true"><use href="#i-download"/></svg>Download from the Moodle Marketplace
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/nexusai-ucc/nexusAI">
+              <svg aria-hidden="true"><use href="#i-github"/></svg>View on GitHub
+            </a>
+          </div>
+          <p class="fine">Approved in the official Moodle plugins directory · Moodle 4.5 to 5.3 · Open source</p>
+        </div>
+        <figure class="device" style="margin:0">
+          <video autoplay muted loop playsinline preload="auto" poster="../media/chat.png" width="400" height="838" aria-hidden="true">
+            <source src="../media/chat.mp4" type="video/mp4">
+          </video>
+        </figure>
+      </div>
+    </div>
+
+    <section aria-labelledby="problema">
+      <div class="wrap stat">
+        <div class="stat-num" aria-hidden="true">80.7&nbsp;%</div>
+        <div>
+          <h2 id="problema">of the students surveyed find their course information scattered.</h2>
+          <p>Notes in one place, dates in another, questions nobody answers at 11 p.m. And when they ask a generic chatbot, the answer sounds right but doesn't come from their course. On the teaching side, 88.2&nbsp;% would hand tasks to an AI built into the campus, as long as they can review what it produces.</p>
+          <span class="source">Survey of 166 students and 17 teachers, Universidad Católica de Córdoba (Argentina), 2026.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="students" aria-labelledby="t-alumnos">
+      <div class="wrap">
+        <div class="head">
+          <span class="eyebrow">For students</span>
+          <h2 id="t-alumnos">Study with their course, not with the internet.</h2>
+          <p>A floating panel in every course, with everything they need to understand, practice and never miss a date.</p>
+        </div>
+        <div class="grid three">
+          <article class="card">
+            <div class="media"><video autoplay muted loop playsinline preload="metadata" poster="../media/chat.png" width="400" height="838" aria-hidden="true"><source src="../media/chat.mp4" type="video/mp4"></video></div>
+            <div class="body"><h3>Chat with sources</h3><p>Answers in real time from the course material, and shows which document each part comes from.</p></div>
+          </article>
+          <article class="card">
+            <div class="media"><video autoplay muted loop playsinline preload="metadata" poster="../media/buscador.png" width="400" height="838" aria-hidden="true"><source src="../media/buscador.mp4" type="video/mp4"></video></div>
+            <div class="body"><h3>Semantic search</h3><p>Finds the topic across all the notes even without the exact words, and summarizes the document in one click.</p></div>
+          </article>
+          <article class="card">
+            <div class="media"><video autoplay muted loop playsinline preload="metadata" poster="../media/quiz.png" width="400" height="742" aria-hidden="true"><source src="../media/quiz.mp4" type="video/mp4"></video></div>
+            <div class="body"><h3>Practice quizzes</h3><p>Questions on any topic they choose, with feedback, an explanation and the source of each answer.</p></div>
+          </article>
+          <article class="card">
+            <div class="media"><video autoplay muted loop playsinline preload="metadata" poster="../media/plan.png" width="400" height="838" aria-hidden="true"><source src="../media/plan.mp4" type="video/mp4"></video></div>
+            <div class="body"><h3>Study plan</h3><p>Deadline reminders, review summaries and spaced-repetition flashcards to get ready for the exam.</p></div>
+          </article>
+          <article class="card">
+            <div class="media"><video autoplay muted loop playsinline preload="metadata" poster="../media/calendario.png" width="400" height="534" aria-hidden="true"><source src="../media/calendario.mp4" type="video/mp4"></video></div>
+            <div class="body"><h3>Calendar and alerts</h3><p>Course deadlines and exams in one place, with configurable alerts and export to any calendar app (.ics).</p></div>
+          </article>
+          <article class="card extra">
+            <div class="body"><h3>And more</h3><p>Forums with thread summaries and duplicate-question detection, dark mode, an accessibility panel and personal data export.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="teachers" aria-labelledby="t-docentes">
+      <div class="wrap">
+        <div class="head">
+          <span class="eyebrow">For teachers</span>
+          <h2 id="t-docentes">Know what they didn't understand, before the exam.</h2>
+          <p>Teachers upload their material and NexusAI does the rest. In return, they get information they don't have today.</p>
+        </div>
+        <div class="grid">
+          <article class="card span">
+            <div class="media wide"><video autoplay muted loop playsinline preload="metadata" poster="../media/gaps.png" width="1076" height="404" aria-hidden="true"><source src="../media/gaps.mp4" type="video/mp4"></video></div>
+            <div class="body"><h3>Unanswered questions</h3><p>When a student asks something the material doesn't cover, it shows up in this panel: a list of what to reinforce in the next class. Alongside the most frequent questions and daily usage, in an analytics dashboard you can export to PDF.</p></div>
+          </article>
+          <article class="card">
+            <div class="media wide"><video autoplay muted loop playsinline preload="metadata" poster="../media/materiales.png" width="1076" height="838" aria-hidden="true"><source src="../media/materiales.mp4" type="video/mp4"></video></div>
+            <div class="body"><h3>Upload and you're done</h3><p>PDF, DOCX or TXT, one or many at a time. It is indexed automatically and becomes available to the chat, search and quizzes.</p></div>
+          </article>
+          <article class="card">
+            <div class="media wide"><video autoplay muted loop playsinline preload="metadata" poster="../media/examen.png" width="1076" height="628" aria-hidden="true"><source src="../media/examen.mp4" type="video/mp4"></video></div>
+            <div class="body"><h3>Exam generator</h3><p>Editable questions based on the material and the hardest topics, exportable in GIFT format for the Moodle question bank.</p></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="t-distinto">
+      <div class="wrap">
+        <div class="head">
+          <span class="eyebrow">Why it's different</span>
+          <h2 id="t-distinto">An AI you can verify.</h2>
+        </div>
+        <ul class="points">
+          <li><span class="ic"><svg aria-hidden="true"><use href="#i-quote"/></svg></span><h3>Cites the source</h3><p>Every answer says which course document it comes from, so it can be checked.</p></li>
+          <li><span class="ic"><svg aria-hidden="true"><use href="#i-shield"/></svg></span><h3>Doesn't make things up</h3><p>If the answer isn't in the material, it says so. An honest “I don't know” beats a wrong answer.</p></li>
+          <li><span class="ic"><svg aria-hidden="true"><use href="#i-gap"/></svg></span><h3>Teachers find out</h3><p>Whatever the material doesn't cover is recorded so the teacher can fill the gap.</p></li>
+          <li><span class="ic"><svg aria-hidden="true"><use href="#i-moodle"/></svg></span><h3>Inside Moodle</h3><p>No extra accounts or platforms: it uses the courses, roles and permissions you already have.</p></li>
+          <li><span class="ic"><svg aria-hidden="true"><use href="#i-server"/></svg></span><h3>On your institution's servers</h3><p>Material, indexes and history stay on your server. The AI provider key never reaches the browser.</p></li>
+          <li><span class="ic"><svg aria-hidden="true"><use href="#i-swap"/></svg></span><h3>Choose your AI provider</h3><p>Works with Gemini, OpenAI or any compatible provider. Switch with a configuration variable.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="install" class="tech" aria-labelledby="t-instalar">
+      <div class="wrap">
+        <div class="head">
+          <span class="eyebrow">Installation</span>
+          <h2 id="t-instalar">How to install it on your Moodle.</h2>
+          <p>NexusAI has two parts: the plugin, installed in Moodle, and your own server that searches the material and talks to the AI. It is not a cloud service: each institution runs it on its own infrastructure.</p>
+        </div>
+        <ol class="steps">
+          <li>
+            <h3>Install the plugin</h3>
+            <p>Download the <code>.zip</code> from the <a href="https://marketplace.moodle.com/plugins/local_nexusai">Moodle Marketplace</a>.</p>
+            <p>In Moodle: <em>Site administration → Plugins → Install plugins</em>, upload the file and follow the installer.</p>
+          </li>
+          <li>
+            <h3>Run the server</h3>
+            <p>Docker starts the API (FastAPI), PostgreSQL with pgvector and Redis.</p>
+            <p>The step-by-step guide (in Spanish) is in the <a href="https://github.com/nexusai-ucc/nexusAI/blob/main/NexusAI/docs/CORRER_PROYECTO.md">repository</a>.</p>
+          </li>
+          <li>
+            <h3>Connect them</h3>
+            <p>In <em>Plugins → Local plugins → NexusAI</em>, fill in the server URL, the API key and the shared secret.</p>
+            <p>Purge the caches and the assistant shows up in every course.</p>
+          </li>
+        </ol>
+        <ul class="reqs">
+          <li>Moodle 4.5 to 5.3</li>
+          <li>A server with Docker</li>
+          <li>An AI provider API key</li>
+        </ul>
+        <p class="note"><strong>Questions or trouble installing it?</strong> Open an issue in the <a href="https://github.com/nexusai-ucc/nexusAI/issues">GitHub repository</a>.</p>
+      </div>
+    </section>
+
+    <section id="faq" aria-labelledby="t-preguntas">
+      <div class="wrap">
+        <div class="head">
+          <span class="eyebrow">FAQ</span>
+          <h2 id="t-preguntas">Frequently asked questions.</h2>
+        </div>
+        <div class="faq">
+          <details>
+            <summary>How much does it cost?</summary>
+            <p>The plugin and the server are free and open source. The only costs are the AI provider chosen by the institution, billed per use, and the server it runs on.</p>
+          </details>
+          <details>
+            <summary>Which AI models does it use?</summary>
+            <p>Any provider compatible with the OpenAI API. We tested it with Gemini 2.5 Flash and GPT-4o mini. Switching is done with configuration variables, no code changes.</p>
+          </details>
+          <details>
+            <summary>What happens to student data?</summary>
+            <p>Material, indexes and history stay on the institution's servers. To generate each answer, the question and the relevant excerpts of the material are sent to the chosen AI provider. The plugin implements the Moodle Privacy API, so each user's data can be exported or deleted.</p>
+          </details>
+          <details>
+            <summary>Which Moodle versions are supported?</summary>
+            <p>From 4.5 LTS to 5.3. It is tested in continuous integration against several combinations of version and database.</p>
+          </details>
+          <details>
+            <summary>Can teachers control what it answers?</summary>
+            <p>Yes. NexusAI only answers from the material the teacher uploads, and the teacher decides which documents are used in each course.</p>
+          </details>
+          <details>
+            <summary>Who built it?</summary>
+            <p>It is the capstone project of three Systems Engineering students at Universidad Católica de Córdoba (Argentina).</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="t-equipo">
+      <div class="wrap">
+        <div class="head">
+          <span class="eyebrow">Team</span>
+          <h2 id="t-equipo">Made in Córdoba, Argentina.</h2>
+          <p>Systems Engineering, Universidad Católica de Córdoba, 2026.</p>
+        </div>
+        <ul class="team">
+          <li><h3>Santiago Tricherri</h3><p>Project management and backend</p><a href="https://github.com/SantiagoTricherri">@SantiagoTricherri</a></li>
+          <li><h3>Delfina Salinas</h3><p>Frontend and user experience</p><a href="https://github.com/delfisalinasmich">@delfisalinasmich</a></li>
+          <li><h3>Marcos Bugliotti</h3><p>Database and Moodle integration</p><a href="https://github.com/marcosbugliotti">@marcosbugliotti</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section aria-labelledby="t-cta">
+      <div class="wrap">
+        <div class="cta">
+          <h2 id="t-cta">Try it on your campus.</h2>
+          <p>Free, open source and approved in the official Moodle directory.</p>
+          <div class="btns">
+            <a class="btn btn-primary" href="https://marketplace.moodle.com/plugins/local_nexusai"><svg aria-hidden="true"><use href="#i-download"/></svg>Download from the Marketplace</a>
+            <a class="btn btn-ghost" href="https://github.com/nexusai-ucc/nexusAI"><svg aria-hidden="true"><use href="#i-code"/></svg>View the code</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>NexusAI for Moodle · Plugin under GPL v3, server under MIT.</span>
+      <span><a href="https://github.com/nexusai-ucc/nexusAI">GitHub</a> · <a href="../" hreflang="es" lang="es">Español</a></span>
+    </div>
+  </footer>
+
+  <script>
+    // With “reduce motion” on, clips stay on their still image.
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll('video').forEach(function (v) { v.removeAttribute('autoplay'); v.pause(); });
+    }
+  </script>
+</body>
+</html>
