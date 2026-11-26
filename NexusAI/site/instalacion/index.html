@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guía de instalación · NexusAI para Moodle</title>
+  <meta name="description" content="Cómo instalar NexusAI paso a paso: levantar el servidor con Docker, instalar el plugin en Moodle, conectarlos, verificar la conexión y activar el asistente en los cursos.">
+  <link rel="canonical" href="https://nexusai-ucc.github.io/nexusAI/instalacion/">
+  <link rel="alternate" hreflang="es" href="https://nexusai-ucc.github.io/nexusAI/instalacion/">
+  <link rel="alternate" hreflang="en" href="https://nexusai-ucc.github.io/nexusAI/en/install/">
+  <link rel="alternate" hreflang="x-default" href="https://nexusai-ucc.github.io/nexusAI/instalacion/">
+  <meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#10151c" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Guía de instalación de NexusAI para Moodle">
+  <meta property="og:description" content="Servidor, plugin, conexión y activación en los cursos, paso a paso.">
+  <meta property="og:url" content="https://nexusai-ucc.github.io/nexusAI/instalacion/">
+  <meta property="og:image" content="https://nexusai-ucc.github.io/nexusAI/media/og.png">
+  <meta property="og:locale" content="es_AR">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="../media/logo.png">
+  <link rel="apple-touch-icon" href="../media/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,600;9..144,650&amp;display=swap">
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../guide.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#contenido">Saltar al contenido</a>
+
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="../" aria-label="NexusAI para Moodle, inicio">
+        <img src="../media/logo.png" alt="" width="32" height="32">
+        <span>NexusAI <small>para Moodle</small></span>
+      </a>
+      <nav class="nav" aria-label="Principal">
+        <a href="../">Inicio</a>
+        <a href="./" aria-current="page">Instalación</a>
+        <a href="../tutorial/">Tutorial</a>
+        <a href="#comentarios">Comentarios</a>
+        <a class="lang" href="../en/install/" hreflang="en" lang="en">English</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <div class="page-head">
+      <div class="wrap">
+        <span class="eyebrow">Guía de instalación</span>
+        <h1>Instalar NexusAI paso a paso.</h1>
+        <p class="lede">NexusAI tiene dos partes: el plugin, que se instala en Moodle, y un servidor propio que busca en el material y habla con la IA. Esta guía instala las dos, las conecta y deja el asistente listo para usar en los cursos.</p>
+      </div>
+    </div>
+
+    <div class="wrap doc">
+      <nav class="toc" aria-labelledby="t-toc">
+        <h2 id="t-toc">En esta página</h2>
+        <ol>
+          <li><a href="#antes">Antes de empezar</a></li>
+          <li><a href="#servidor">1. Instalar el servidor</a>
+            <ol>
+              <li><a href="#s-maquina">La máquina</a></li>
+              <li><a href="#s-docker">Docker</a></li>
+              <li><a href="#s-descargar">Descargar</a></li>
+              <li><a href="#s-env">Configurar <code>.env</code></a></li>
+              <li><a href="#s-acceso">Cómo llega Moodle</a></li>
+              <li><a href="#s-levantar">Levantar y comprobar</a></li>
+              <li><a href="#s-mantener">Mantenerlo</a></li>
+            </ol>
+          </li>
+          <li><a href="#plugin">2. Instalar el plugin</a></li>
+          <li><a href="#conectar">3. Conectar los dos</a></li>
+          <li><a href="#verificar">4. Verificar la conexión</a></li>
+          <li><a href="#cursos">5. Activar NexusAI en los cursos</a></li>
+          <li><a href="#opcionales">Ajustes opcionales</a></li>
+          <li><a href="#problemas">Problemas comunes</a></li>
+          <li><a href="#comentarios">Comentarios</a></li>
+        </ol>
+      </nav>
+
+      <article class="prose">
+        <h2 id="antes">Antes de empezar</h2>
+        <p>Vas a necesitar:</p>
+        <ul>
+          <li>Moodle 4.5 a 5.3, con una cuenta de administrador del sitio.</li>
+          <li>Una máquina Linux para el servidor de NexusAI, con acceso a internet. Puede ser la misma de Moodle u otra.</li>
+          <li>Una clave de un proveedor de IA compatible con la API de OpenAI. Gemini tiene una capa gratuita: la clave se saca en <a href="https://aistudio.google.com/apikey">Google AI Studio</a>.</li>
+          <li>Si Moodle va a llegar al servidor por internet: un dominio o subdominio que apunte a esa máquina.</li>
+        </ul>
+        <p class="callout">El único que se conecta con el servidor de NexusAI es <strong>el servidor de Moodle</strong>. Los navegadores de los alumnos nunca le hablan directo, así que no hace falta publicarlo para todo el mundo.</p>
+
+        <h2 id="servidor"><span class="num" aria-hidden="true">1</span>Instalar el servidor</h2>
+        <p>El servidor corre en Docker con una imagen ya armada, así que no hay que compilar nada. Son cuatro contenedores: la API de NexusAI, PostgreSQL con pgvector (la base de datos y el índice del material), Redis y, si usás HTTPS, Caddy. Todo sale del repositorio <a href="https://github.com/nexusai-ucc/nexusai-backend">nexusai-backend</a>.</p>
+
+        <h3 id="s-maquina">1.1 La máquina</h3>
+        <ul>
+          <li><strong>Sistema:</strong> Linux. Los comandos de esta guía son para Ubuntu o Debian.</li>
+          <li><strong>Memoria:</strong> alcanza con una máquina chica. Nuestros servidores tienen 1 GB de RAM.</li>
+          <li><strong>Disco:</strong> la primera vez se descargan unos 1,5 GB de imágenes. Después crece con el material que suban los docentes (hasta 20 MB por archivo).</li>
+          <li><strong>Red:</strong> salida a internet, para hablar con el proveedor de IA. Si usás HTTPS, además los puertos 80 y 443 abiertos hacia esa máquina; en una nube, abrilos también en las reglas de red del proveedor.</li>
+        </ul>
+
+        <h3 id="s-docker">1.2 Instalar Docker</h3>
+        <p>Si la máquina no tiene Docker, el script oficial instala Docker y Docker Compose:</p>
+<pre><code>curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER</code></pre>
+        <p>El segundo comando te deja usar <code>docker</code> sin <code>sudo</code>. Cerrá la sesión y volvé a entrar para que tome efecto. Para comprobarlo:</p>
+<pre><code>docker compose version</code></pre>
+        <p>Tiene que mostrar una versión 2 o posterior.</p>
+
+        <h3 id="s-descargar">1.3 Descargar los archivos</h3>
+<pre><code>git clone https://github.com/nexusai-ucc/nexusai-backend.git
+cd nexusai-backend
+cp .env.example .env</code></pre>
+        <p>De acá en adelante, todos los comandos se corren dentro de la carpeta <code>nexusai-backend</code>. El archivo que levanta todo es <code>docker-compose.selfhost.yml</code>, y <code>.env</code> ya lo deja elegido, así que alcanza con escribir <code>docker compose</code>.</p>
+
+        <h3 id="s-env">1.4 Configurar <code>.env</code></h3>
+        <p>Primero generá dos valores al azar: uno para la API key y otro para el secreto compartido. Corré este comando dos veces y copiá cada resultado:</p>
+<pre><code>openssl rand -hex 32</code></pre>
+        <p>Después abrí <code>.env</code> (por ejemplo con <code>nano .env</code>) y reemplazá los valores de ejemplo. Queda algo así:</p>
+<pre class="out"><code>COMPOSE_FILE=docker-compose.selfhost.yml
+ENV=production
+
+LLM_API_KEY=AIzaSy...tu-clave-de-gemini
+EMBEDDING_API_KEY=AIzaSy...tu-clave-de-gemini
+
+NEXUSAI_API_KEY=3f9c1e...el-primer-valor-de-openssl
+NEXUSAI_SHARED_SECRET=a71e0b...el-segundo-valor-de-openssl
+
+POSTGRES_USER=nexusai
+POSTGRES_PASSWORD=una-contraseña-larga-cualquiera
+
+API_PORT=8001</code></pre>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th scope="col">Variable</th><th scope="col">Qué es</th></tr></thead>
+            <tbody>
+              <tr><td><code>LLM_API_KEY</code></td><td>La clave del proveedor de IA que responde las preguntas.</td></tr>
+              <tr><td><code>EMBEDDING_API_KEY</code></td><td>La clave con la que se indexa el material. Con Gemini, la misma que la anterior.</td></tr>
+              <tr><td><code>NEXUSAI_API_KEY</code></td><td>El primer valor generado. Va también en Moodle, en el paso 3.</td></tr>
+              <tr><td><code>NEXUSAI_SHARED_SECRET</code></td><td>El segundo valor generado. También va en Moodle.</td></tr>
+              <tr><td><code>POSTGRES_PASSWORD</code></td><td>La contraseña de la base de datos. Se usa solo adentro de Docker, así que puede ser cualquiera.</td></tr>
+              <tr><td><code>API_PORT</code></td><td>El puerto de la máquina donde queda la API. Cambialo si el 8001 ya está ocupado.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="callout warn"><strong>No cambies <code>POSTGRES_PASSWORD</code> después del primer arranque.</strong> La base se crea con esa contraseña: si la cambiás en <code>.env</code>, la API ya no puede conectarse.</p>
+
+        <h3 id="s-acceso">1.5 Elegir cómo llega Moodle</h3>
+        <p>Depende de dónde esté Moodle:</p>
+        <ul>
+          <li><strong>Misma máquina o misma red interna.</strong> No hace falta nada más. En el paso 3, la URL del servidor es <code>http://IP-de-la-maquina:8001</code>, o <code>http://localhost:8001</code> si es la misma máquina.</li>
+          <li><strong>Por internet.</strong> Usá HTTPS, para que las preguntas y el material viajen cifrados. Creá un registro DNS tipo A que apunte tu dominio (por ejemplo <code>nexusai.tu-institucion.edu</code>) a la IP pública de la máquina, y agregá al final de <code>.env</code>:</li>
+        </ul>
+<pre><code>COMPOSE_PROFILES=https
+NEXUSAI_DOMAIN=nexusai.tu-institucion.edu
+API_BIND=127.0.0.1</code></pre>
+        <p><code>COMPOSE_PROFILES=https</code> suma Caddy, que pide y renueva solo el certificado HTTPS. <code>API_BIND=127.0.0.1</code> deja el puerto 8001 cerrado hacia afuera, para que solo se entre por HTTPS. En el paso 3, la URL del servidor es <code>https://nexusai.tu-institucion.edu</code>.</p>
+        <p class="muted">¿Querés probar sin dominio propio? <code>nip.io</code> arma uno con la IP: <code>NEXUSAI_DOMAIN=nexusai.203.0.113.10.nip.io</code> (cambiá los números por la IP pública de la máquina). Sirve para pruebas, no para uso real. Si la institución ya tiene un proxy (nginx, Apache), no uses Caddy: dejá <code>API_BIND=127.0.0.1</code> y apuntá el proxy a <code>http://127.0.0.1:8001</code>.</p>
+
+        <h3 id="s-levantar">1.6 Levantar y comprobar</h3>
+<pre><code>docker compose up -d</code></pre>
+        <p>La primera vez descarga las imágenes y crea la base de datos, así que tarda unos minutos; después arranca en segundos. Para ver el estado:</p>
+<pre><code>docker compose ps</code></pre>
+        <p><code>api</code>, <code>postgres</code> y <code>redis</code> tienen que figurar <code>Up</code> y <code>(healthy)</code>, y <code>caddy</code> <code>Up</code> si usás HTTPS. <code>uploads-init</code> figura terminado: es normal, solo prepara la carpeta del material y se cierra. Probá la API:</p>
+<pre><code>curl http://localhost:8001/health</code></pre>
+        <p>Con HTTPS, probala también desde afuera: <code>curl https://nexusai.tu-institucion.edu/health</code>. Tiene que responder algo como:</p>
+<pre class="out"><code>{"status":"ok","version":"0.1.0","env":"production","llm_model":"gemini-3.5-flash"}</code></pre>
+        <p>Si no responde, mirá el registro con <code>docker compose logs api</code> y buscá el caso en <a href="#problemas">Problemas comunes</a>.</p>
+
+        <h3 id="s-mantener">1.7 Mantenerlo</h3>
+        <p><strong>Ver qué está pasando.</strong> El registro de la API, en vivo (salís con Ctrl+C):</p>
+<pre><code>docker compose logs -f api</code></pre>
+        <p><strong>Actualizar a la última versión.</strong> Los cambios en la base de datos se aplican solos al arrancar:</p>
+<pre><code>git pull
+docker compose pull
+docker compose up -d</code></pre>
+        <p><strong>Hacer una copia de seguridad.</strong> La base de datos y los archivos originales del material:</p>
+<pre><code>docker compose exec -T postgres pg_dump -U nexusai nexusai &gt; nexusai-$(date +%F).sql
+docker compose cp api:/app/uploads ./uploads-$(date +%F)</code></pre>
+        <p class="muted">Guardá esas copias fuera de la máquina. Para programarlas, agregalas a <code>crontab -e</code>.</p>
+        <p><strong>Restaurar una copia.</strong> Esto reemplaza la base actual por la de la copia (cambiá el nombre del archivo):</p>
+<pre><code>docker compose stop api
+docker compose exec -T postgres dropdb -U nexusai nexusai
+docker compose exec -T postgres createdb -U nexusai nexusai
+docker compose exec -T postgres psql -U nexusai nexusai &lt; nexusai-2026-11-26.sql
+docker compose cp ./uploads-2026-11-26/. api:/app/uploads
+docker compose up -d</code></pre>
+        <p><strong>Apagarlo.</strong> <code>docker compose down</code> apaga todo y conserva los datos. Con <code>docker compose up -d</code> vuelve a arrancar.</p>
+        <p class="callout warn"><strong>No uses <code>docker compose down -v</code></strong> salvo que quieras borrar todo: la <code>-v</code> elimina la base de datos y el material.</p>
+
+        <h2 id="plugin"><span class="num" aria-hidden="true">2</span>Instalar el plugin</h2>
+        <ol>
+          <li>Descargá el <code>.zip</code> desde el <a href="https://marketplace.moodle.com/plugins/local_nexusai">Marketplace de Moodle</a>.</li>
+          <li>En Moodle, entrá a <em>Administración del sitio → Extensiones → Instalar plugins</em>.</li>
+          <li>Subí el archivo y seguí el instalador hasta el final.</li>
+        </ol>
+        <p class="muted">Si tu Moodle no permite instalar desde la web, descomprimí el <code>.zip</code> en <code>local/nexusai</code> (en Moodle 5.1 o posterior, <code>public/local/nexusai</code>) y entrá a <em>Administración del sitio → Notificaciones</em>.</p>
+
+        <h2 id="conectar"><span class="num" aria-hidden="true">3</span>Conectar los dos</h2>
+        <p>En <em>Administración del sitio → Extensiones → Extensiones locales → Configuración de NexusAI</em>, sección <strong>Conexión con el backend</strong>:</p>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th scope="col">Campo</th><th scope="col">Valor</th></tr></thead>
+            <tbody>
+              <tr><td>URL del backend</td><td>La que elegiste en el paso 1.5: <code>https://nexusai.tu-institucion.edu</code> o <code>http://IP-de-la-maquina:8001</code></td></tr>
+              <tr><td>API key</td><td>El valor de <code>NEXUSAI_API_KEY</code></td></tr>
+              <tr><td>Shared secret (HMAC)</td><td>El valor de <code>NEXUSAI_SHARED_SECRET</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Guardá los cambios y purgá las cachés en <em>Administración del sitio → Desarrollo → Purgar todas las cachés</em>.</p>
+        <p class="callout warn"><strong>Cuidá las dos claves.</strong> Con ellas se le puede pedir cualquier cosa al servidor en nombre de cualquier usuario. No las mandes por correo ni las subas a un repositorio.</p>
+
+        <h2 id="verificar"><span class="num" aria-hidden="true">4</span>Verificar la conexión</h2>
+        <p>Abrí <em>Extensiones locales → NexusAI · Panel de administración</em> (o la dirección <code>/local/nexusai/admin.php</code> de tu Moodle). El panel consulta al servidor y muestra si responde, su versión y cuánto tarda.</p>
+        <p>Si muestra un error, buscá el caso en <a href="#problemas">Problemas comunes</a>.</p>
+
+        <h2 id="cursos"><span class="num" aria-hidden="true">5</span>Activar NexusAI en los cursos</h2>
+        <p>NexusAI viene apagado en todos los cursos, para poder activarlo de a uno. Hay tres formas:</p>
+        <ul>
+          <li><strong>El docente, desde su curso.</strong> En el menú del curso (a veces dentro de «Más») abre <em>NexusAI en este curso</em>, marca <em>Usar NexusAI en este curso</em> y guarda. Pueden hacerlo los profesores con permiso de edición y los gestores.</li>
+          <li><strong>En todos los cursos a la vez.</strong> En <em>Configuración de NexusAI</em>, marcá <em>Activado por defecto en los cursos</em>. Vale para los cursos que no tengan su propia configuración.</li>
+          <li><strong>Por consola</strong>, desde la carpeta de Moodle:</li>
+        </ul>
+<pre><code>php local/nexusai/cli/enable_course.php --courseid=12
+php local/nexusai/cli/enable_course.php --list   # en qué cursos está activado</code></pre>
+        <p>Con el curso activado, el docente sube su material y los alumnos ya pueden usarlo. Cómo se hace está en el <a href="../tutorial/">tutorial</a>.</p>
+
+        <h2 id="opcionales">Ajustes opcionales</h2>
+        <h3>En Moodle</h3>
+        <p>Están en la misma página, <em>Configuración de NexusAI</em>:</p>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th scope="col">Ajuste</th><th scope="col">Para qué sirve</th><th scope="col">De fábrica</th></tr></thead>
+            <tbody>
+              <tr><td>Límites de tokens</td><td>Cuánto puede usar cada rol por hora y por día. Los alumnos ven cuánto les queda.</td><td>Con límites</td></tr>
+              <tr><td>Mostrar fuera de un curso</td><td>Muestra el asistente también en las páginas que no son de un curso.</td><td>Apagado</td></tr>
+              <tr><td>Los usuarios pueden cargar su propia API key</td><td>Cada usuario puede cargar la clave de su propia cuenta de IA. Se usa solo cuando se agota la cuota de la institución, y en ese caso la pregunta y los fragmentos del material van a su proveedor. Desde la versión 0.20.0.</td><td>Apagado</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>En el servidor</h3>
+        <p>Se agregan al <code>.env</code> del servidor. Después de cambiarlo, aplicalo con <code>docker compose up -d --force-recreate api</code>.</p>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th scope="col">Para qué</th><th scope="col">Variables</th></tr></thead>
+            <tbody>
+              <tr><td>Usar otro proveedor de IA para responder</td><td><code>LLM_BASE_URL</code>, <code>LLM_MODEL</code> y <code>LLM_API_KEY</code>. Por ejemplo, para OpenAI: <code>LLM_BASE_URL=https://api.openai.com/v1</code> y <code>LLM_MODEL=gpt-4o-mini</code>. El material puede seguir indexándose con Gemini.</td></tr>
+              <tr><td>Recibir alertas por correo (errores, IA caída o lenta)</td><td><code>ALERT_SMTP_HOST</code>, <code>ALERT_SMTP_PORT</code>, <code>ALERT_SMTP_USER</code>, <code>ALERT_SMTP_PASSWORD</code> y <code>ALERT_EMAIL_TO</code>. Hacen falta las tres: el usuario y la contraseña SMTP, y <code>ALERT_EMAIL_TO</code> con la dirección que las recibe. Sin alguna de ellas no se manda nada.</td></tr>
+              <tr><td>Límite de preguntas por usuario</td><td><code>RATE_LIMIT_PER_USER_DAILY</code> (50 por día de fábrica) y <code>RATE_LIMIT_PER_USER_MINUTE</code> (20 por minuto).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="problemas">Problemas comunes</h2>
+        <div class="faq">
+          <details>
+            <summary>El panel de administración no se puede conectar con el servidor</summary>
+            <p>El servidor de Moodle no llega al de NexusAI. Desde el servidor de Moodle, probá <code>curl</code> con la URL que cargaste más <code>/health</code>. Si no responde, revisá que el dominio apunte a la máquina correcta y que ningún firewall corte el puerto (443 con HTTPS, 8001 sin HTTPS). Si la salida a internet pasa por un proxy, cargalo en <em>Administración del sitio → Servidor → HTTP</em>.</p>
+          </details>
+          <details>
+            <summary>Error de autenticación (401)</summary>
+            <p>La API key o el secreto compartido de Moodle no coinciden con los del <code>.env</code>: revisá que no se haya pegado un espacio de más. También pasa si los relojes de los dos servidores difieren en más de 5 minutos: activá la sincronización horaria (NTP) en ambos.</p>
+          </details>
+          <details>
+            <summary>El asistente no aparece en el curso</summary>
+            <p>Revisá que NexusAI esté activado en ese curso (paso 5) y que <em>Activar NexusAI</em> esté marcado en la configuración. Después purgá las cachés. El usuario también necesita el permiso <code>local/nexusai:use</code>, que alumnos y profesores tienen de fábrica.</p>
+          </details>
+          <details>
+            <summary>Responde que no encuentra la información en el material</summary>
+            <p>El archivo puede no haber terminado de indexarse: en <em>NexusAI · Material</em> tiene que figurar como indexado. NexusAI además solo responde con el material que cada alumno puede ver: si la actividad está oculta o restringida, para ese alumno no existe.</p>
+          </details>
+          <details>
+            <summary>La API no arranca o se reinicia sola</summary>
+            <p>Mirá el registro con <code>docker compose logs api</code>. Las causas más comunes: quedó un valor de ejemplo en <code>.env</code> (<code>REPLACE_ME</code>); se cambió <code>POSTGRES_PASSWORD</code> después del primer arranque; o <code>API_PORT</code> no es un número (la dirección va en <code>API_BIND</code>). Si el error dice <em>port is already allocated</em>, el puerto está ocupado: cambiá <code>API_PORT</code>.</p>
+          </details>
+          <details>
+            <summary>Caddy no consigue el certificado HTTPS</summary>
+            <p>Mirá <code>docker compose logs caddy</code>. Para pedir el certificado, el dominio tiene que apuntar ya a la IP pública de la máquina (un registro DNS nuevo puede tardar en propagarse) y los puertos 80 y 443 tienen que estar abiertos, también en las reglas de red de la nube. Caddy reintenta solo.</p>
+          </details>
+          <details>
+            <summary>El chat responde con un error</summary>
+            <p>Suele ser el proveedor de IA: la clave es incorrecta o se terminó la cuota. La capa gratuita de Gemini tiene un límite diario de pedidos. El detalle aparece en <code>docker compose logs api</code>.</p>
+          </details>
+        </div>
+        <p class="note"><strong>¿Seguís trabado?</strong> Contalo en los comentarios o abrí un issue en el <a href="https://github.com/nexusai-ucc/nexusAI/issues">repositorio de GitHub</a>.</p>
+
+        <div class="next">
+          <a href="../"><small>Volver a</small>Inicio</a>
+          <a href="../tutorial/"><small>Siguiente</small>Tutorial: primeros pasos</a>
+        </div>
+
+        <div class="comments" role="region" aria-labelledby="comentarios">
+          <h2 id="comentarios">Comentarios</h2>
+          <p class="muted">¿Te funcionó? ¿Te trabaste en algún paso? Dejá tu comentario o tu pregunta. Para comentar hace falta una cuenta de GitHub.</p>
+          <div class="giscus"></div>
+          <script src="https://giscus.app/client.js"
+            data-repo="nexusai-ucc/nexusAI"
+            data-repo-id="R_kgDOR-VWaw"
+            data-category="Announcements"
+            data-category-id="DIC_kwDOR-VWa84C8Zs6"
+            data-mapping="specific"
+            data-term="Guía de instalación · Installation guide"
+            data-strict="1"
+            data-reactions-enabled="1"
+            data-emit-metadata="0"
+            data-input-position="top"
+            data-theme="preferred_color_scheme"
+            data-lang="es"
+            data-loading="lazy"
+            crossorigin="anonymous"
+            async></script>
+          <noscript><p>Los comentarios necesitan JavaScript. También podés verlos en las <a href="https://github.com/nexusai-ucc/nexusAI/discussions">discusiones del repositorio</a>.</p></noscript>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>NexusAI para Moodle · Plugin bajo GPL v3, servidor bajo MIT.</span>
+      <span><a href="https://github.com/nexusai-ucc/nexusAI">GitHub</a> · <a href="../en/install/" hreflang="en" lang="en">English</a></span>
+    </div>
+  </footer>
+</body>
+</html>
