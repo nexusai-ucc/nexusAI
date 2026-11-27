@@ -33,7 +33,29 @@ cd NexusAI/site && python3 -m http.server 8765
 
 ## Comentarios
 
-Las guías tienen comentarios con [giscus](https://giscus.app/es), que los guarda en las Discussions del repo (categoría *Announcements*). Hay un hilo por guía, compartido entre español e inglés (`data-term`). Para comentar hace falta cuenta de GitHub.
+Hay dos lugares para comentar:
+
+- **La landing** (`#comentarios` en español, `#feedback` en inglés): un formulario que llega por mail a los tres, sin cuenta de GitHub. Es el que enlaza la ficha del Marketplace.
+- **Las guías** (instalación y tutorial): comentarios públicos con giscus.
+
+### Formulario de la landing (FormSubmit)
+
+El sitio no tiene servidor, así que el formulario lo entrega [FormSubmit](https://formsubmit.co): gratis, sin cuenta y sin límite de envíos. Guarda los envíos 30 días.
+
+- Destinatario principal: el `action` del `<form>`. Copias: el campo oculto `_cc`, separadas por coma. Cambiarlos **en las dos páginas** (`index.html` y `en/index.html`).
+- Las copias quedan visibles en el código de la página. El principal se puede ocultar (ver abajo).
+- Antispam: el reCAPTCHA de FormSubmit (no apagarlo) y el campo trampa `_honey`.
+- Al terminar, FormSubmit vuelve a la misma página con `?enviado=1` y se muestra el «¡Gracias!». El `_next` lo arma el script del final de la página a partir de la URL, así anda en local, bajo `/nexusAI/` y con dominio propio.
+- El formulario en inglés manda los mismos nombres de campo y valores en español, así los mails llegan siempre iguales; el campo `Idioma` dice en qué idioma responder.
+
+Requisito, una sola vez:
+
+1. Enviar el formulario una vez desde el sitio publicado. Al destinatario principal le llega un mail de FormSubmit para activar el formulario: tocar el botón de activación.
+2. FormSubmit manda una cadena aleatoria que reemplaza al mail. Poner `https://formsubmit.co/<cadena>` en el `action` de las dos páginas, así el mail principal no queda en el código.
+
+### Guías (giscus)
+
+Las guías usan [giscus](https://giscus.app/es), que guarda los comentarios en las Discussions del repo (categoría *Announcements*). Hay un hilo por guía, compartido entre español e inglés (`data-term`). Para comentar hace falta cuenta de GitHub.
 
 Requisito, una sola vez: un admin de la organización instala la app [giscus](https://github.com/apps/giscus) en `nexusai-ucc/nexusAI`.
 

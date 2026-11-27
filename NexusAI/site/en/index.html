@@ -217,7 +217,7 @@
           <a class="btn btn-primary" href="install/">Full installation guide</a>
           <a class="btn btn-ghost" href="tutorial/">Tutorial for teachers and students</a>
         </div>
-        <p class="note"><strong>Questions or trouble installing it?</strong> Open an issue in the <a href="https://github.com/nexusai-ucc/nexusAI/issues">GitHub repository</a>.</p>
+        <p class="note"><strong>Questions or trouble installing it?</strong> Open an issue in the <a href="https://github.com/nexusai-ucc/nexusAI/issues">GitHub repository</a> or <a href="#feedback">write to us</a>.</p>
       </div>
     </section>
 
@@ -256,6 +256,49 @@
       </div>
     </section>
 
+    <section id="feedback" aria-labelledby="t-feedback">
+      <div class="wrap">
+        <div class="head">
+          <span class="eyebrow">Feedback</span>
+          <h2 id="t-feedback">Leave a question or suggestion.</h2>
+          <p>Did you try it, get stuck on a step, or think something is missing? Write to us: the message reaches the three of us by email.</p>
+        </div>
+        <p class="callout sent" id="c-enviado" tabindex="-1" hidden><strong>Thank you!</strong> We got your message. If you left your email, we will reply there.</p>
+        <form class="form" action="https://formsubmit.co/marcosbugliotti@gmail.com" method="POST">
+          <input type="hidden" name="_subject" value="NexusAI: feedback from the website">
+          <input type="hidden" name="_cc" value="santiagotricherri@gmail.com,delfisalinasmich@gmail.com">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="Idioma" value="English">
+          <div class="hp" aria-hidden="true"><label>Leave empty <input type="text" name="_honey" tabindex="-1" autocomplete="off"></label></div>
+          <div class="field">
+            <label for="c-tipo">Type of message</label>
+            <select id="c-tipo" name="Tipo">
+              <option value="Duda">Question</option>
+              <option value="Sugerencia">Suggestion</option>
+              <option value="Problema al instalarlo o usarlo">Problem installing or using it</option>
+              <option value="Otro">Other</option>
+            </select>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="c-nombre">Name <span>(optional)</span></label>
+              <input id="c-nombre" name="Nombre" type="text" autocomplete="name">
+            </div>
+            <div class="field">
+              <label for="c-email">Your email <span>(optional, so we can reply)</span></label>
+              <input id="c-email" name="email" type="email" autocomplete="email">
+            </div>
+          </div>
+          <div class="field">
+            <label for="c-mensaje">Message</label>
+            <textarea id="c-mensaje" name="Mensaje" rows="6" maxlength="5000" required></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit">Send</button>
+          <p class="fine">The message is delivered to our inboxes by <a href="https://formsubmit.co">FormSubmit</a>. Before sending, it may ask you to confirm you are not a robot.</p>
+        </form>
+      </div>
+    </section>
+
     <section aria-labelledby="t-equipo">
       <div class="wrap">
         <div class="head">
@@ -288,7 +331,7 @@
   <footer>
     <div class="wrap">
       <span>NexusAI for Moodle · Plugin under GPL v3, server under MIT.</span>
-      <span><a href="install/">Install</a> · <a href="tutorial/">Tutorial</a> · <a href="https://github.com/nexusai-ucc/nexusAI">GitHub</a> · <a href="../" hreflang="es" lang="es">Español</a></span>
+      <span><a href="install/">Install</a> · <a href="tutorial/">Tutorial</a> · <a href="#feedback">Feedback</a> · <a href="https://github.com/nexusai-ucc/nexusAI">GitHub</a> · <a href="../" hreflang="es" lang="es">Español</a></span>
     </div>
   </footer>
 
@@ -297,6 +340,22 @@
     if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
       document.querySelectorAll('video').forEach(function (v) { v.removeAttribute('autoplay'); v.pause(); });
     }
+
+    // Feedback: FormSubmit comes back to this same page with ?enviado=1, and the “Thank you!” shows up.
+    (function () {
+      var form = document.querySelector('form.form');
+      if (!form) return;
+      var back = document.createElement('input');
+      back.type = 'hidden';
+      back.name = '_next';
+      back.value = location.href.split('#')[0].split('?')[0] + '?enviado=1#feedback';
+      form.appendChild(back);
+      if (new URLSearchParams(location.search).has('enviado')) {
+        var ok = document.getElementById('c-enviado');
+        ok.hidden = false;
+        ok.focus();
+      }
+    })();
   </script>
 </body>
 </html>

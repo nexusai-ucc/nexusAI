@@ -217,7 +217,7 @@
           <a class="btn btn-primary" href="instalacion/">Guía de instalación completa</a>
           <a class="btn btn-ghost" href="tutorial/">Tutorial para docentes y alumnos</a>
         </div>
-        <p class="note"><strong>¿Dudas o problemas al instalarlo?</strong> Abrí un issue en el <a href="https://github.com/nexusai-ucc/nexusAI/issues">repositorio de GitHub</a>.</p>
+        <p class="note"><strong>¿Dudas o problemas al instalarlo?</strong> Abrí un issue en el <a href="https://github.com/nexusai-ucc/nexusAI/issues">repositorio de GitHub</a> o <a href="#comentarios">escribinos</a>.</p>
       </div>
     </section>
 
@@ -256,6 +256,49 @@
       </div>
     </section>
 
+    <section id="comentarios" aria-labelledby="t-comentarios">
+      <div class="wrap">
+        <div class="head">
+          <span class="eyebrow">Comentarios</span>
+          <h2 id="t-comentarios">Dejanos tu duda o sugerencia.</h2>
+          <p>¿Lo probaste, te trabaste en algún paso o se te ocurre algo que le falta? Escribinos: el mensaje nos llega por mail a los tres.</p>
+        </div>
+        <p class="callout sent" id="c-enviado" tabindex="-1" hidden><strong>¡Gracias!</strong> Recibimos tu mensaje. Si dejaste tu mail, te respondemos ahí.</p>
+        <form class="form" action="https://formsubmit.co/marcosbugliotti@gmail.com" method="POST">
+          <input type="hidden" name="_subject" value="NexusAI: comentario desde el sitio">
+          <input type="hidden" name="_cc" value="santiagotricherri@gmail.com,delfisalinasmich@gmail.com">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="Idioma" value="Español">
+          <div class="hp" aria-hidden="true"><label>No completar <input type="text" name="_honey" tabindex="-1" autocomplete="off"></label></div>
+          <div class="field">
+            <label for="c-tipo">Tipo de mensaje</label>
+            <select id="c-tipo" name="Tipo">
+              <option>Duda</option>
+              <option>Sugerencia</option>
+              <option>Problema al instalarlo o usarlo</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="c-nombre">Nombre <span>(opcional)</span></label>
+              <input id="c-nombre" name="Nombre" type="text" autocomplete="name">
+            </div>
+            <div class="field">
+              <label for="c-email">Tu mail <span>(opcional, para responderte)</span></label>
+              <input id="c-email" name="email" type="email" autocomplete="email">
+            </div>
+          </div>
+          <div class="field">
+            <label for="c-mensaje">Mensaje</label>
+            <textarea id="c-mensaje" name="Mensaje" rows="6" maxlength="5000" required></textarea>
+          </div>
+          <button class="btn btn-primary" type="submit">Enviar</button>
+          <p class="fine">El mensaje lo entrega <a href="https://formsubmit.co">FormSubmit</a> a nuestros correos. Antes de enviarlo puede pedirte que confirmes que no sos un robot.</p>
+        </form>
+      </div>
+    </section>
+
     <section aria-labelledby="t-equipo">
       <div class="wrap">
         <div class="head">
@@ -288,7 +331,7 @@
   <footer>
     <div class="wrap">
       <span>NexusAI para Moodle · Plugin bajo GPL v3, servidor bajo MIT.</span>
-      <span><a href="instalacion/">Instalación</a> · <a href="tutorial/">Tutorial</a> · <a href="https://github.com/nexusai-ucc/nexusAI">GitHub</a> · <a href="en/" hreflang="en" lang="en">English</a></span>
+      <span><a href="instalacion/">Instalación</a> · <a href="tutorial/">Tutorial</a> · <a href="#comentarios">Comentarios</a> · <a href="https://github.com/nexusai-ucc/nexusAI">GitHub</a> · <a href="en/" hreflang="en" lang="en">English</a></span>
     </div>
   </footer>
 
@@ -297,6 +340,22 @@
     if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
       document.querySelectorAll('video').forEach(function (v) { v.removeAttribute('autoplay'); v.pause(); });
     }
+
+    // Comentarios: FormSubmit vuelve a esta misma página con ?enviado=1 y ahí se muestra el «¡Gracias!».
+    (function () {
+      var form = document.querySelector('form.form');
+      if (!form) return;
+      var vuelta = document.createElement('input');
+      vuelta.type = 'hidden';
+      vuelta.name = '_next';
+      vuelta.value = location.href.split('#')[0].split('?')[0] + '?enviado=1#comentarios';
+      form.appendChild(vuelta);
+      if (new URLSearchParams(location.search).has('enviado')) {
+        var ok = document.getElementById('c-enviado');
+        ok.hidden = false;
+        ok.focus();
+      }
+    })();
   </script>
 </body>
 </html>
