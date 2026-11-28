@@ -46,6 +46,7 @@ El sitio no tiene servidor, así que el formulario lo entrega [FormSubmit](https
 - Las copias quedan visibles en el código de la página. El principal se puede ocultar (ver abajo).
 - Antispam: el reCAPTCHA de FormSubmit (no apagarlo) y el campo trampa `_honey`.
 - Al terminar, FormSubmit vuelve a la misma página con `?enviado=1` y se muestra el «¡Gracias!». El `_next` lo arma el script del final de la página a partir de la URL, así anda en local, bajo `/nexusAI/` y con dominio propio.
+- Campos: tipo de mensaje (incluye «Quiero instalarlo en mi institución»), institución opcional, si quiere que lo contactemos y el mensaje. Si elige «anónimo», el nombre y el mail se ocultan y no se envían; si elige que lo contactemos, el mail es obligatorio. Sin JavaScript se ven todos los campos y ninguno es obligatorio salvo el mensaje.
 - El formulario en inglés manda los mismos nombres de campo y valores en español, así los mails llegan siempre iguales; el campo `Idioma` dice en qué idioma responder.
 
 Requisito, una sola vez:
