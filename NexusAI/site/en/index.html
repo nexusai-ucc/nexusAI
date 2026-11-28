@@ -275,17 +275,27 @@
             <select id="c-tipo" name="Tipo">
               <option value="Duda">Question</option>
               <option value="Sugerencia">Suggestion</option>
+              <option value="Quiero instalarlo en mi institución">I want to install it at my institution</option>
               <option value="Problema al instalarlo o usarlo">Problem installing or using it</option>
               <option value="Otro">Other</option>
             </select>
           </div>
-          <div class="row">
+          <div class="field">
+            <label for="c-institucion">Institution <span>(optional)</span></label>
+            <input id="c-institucion" name="Institucion" type="text" autocomplete="organization" placeholder="University, institute, school…">
+          </div>
+          <fieldset class="choice">
+            <legend>Do you want us to contact you?</legend>
+            <label><input type="radio" name="Contacto" value="Anónimo" checked> No, send it anonymously</label>
+            <label><input type="radio" name="Contacto" value="Con mail"> Yes, I'll leave an email so you can write to me</label>
+          </fieldset>
+          <div class="row" id="c-datos">
             <div class="field">
               <label for="c-nombre">Name <span>(optional)</span></label>
               <input id="c-nombre" name="Nombre" type="text" autocomplete="name">
             </div>
             <div class="field">
-              <label for="c-email">Your email <span>(optional, so we can reply)</span></label>
+              <label for="c-email">Your email</label>
               <input id="c-email" name="email" type="email" autocomplete="email">
             </div>
           </div>
@@ -350,6 +360,19 @@
       back.name = '_next';
       back.value = location.href.split('#')[0].split('?')[0] + '?enviado=1#feedback';
       form.appendChild(back);
+
+      // Anonymous: name and email are hidden and not sent. With email: the email becomes required.
+      var details = document.getElementById('c-datos');
+      var options = form.querySelectorAll('input[name="Contacto"]');
+      function contact() {
+        var withEmail = form.querySelector('input[name="Contacto"]:checked').value === 'Con mail';
+        details.hidden = !withEmail;
+        details.querySelectorAll('input').forEach(function (i) { i.disabled = !withEmail; });
+        document.getElementById('c-email').required = withEmail;
+      }
+      options.forEach(function (o) { o.addEventListener('change', contact); });
+      contact();
+
       if (new URLSearchParams(location.search).has('enviado')) {
         var ok = document.getElementById('c-enviado');
         ok.hidden = false;

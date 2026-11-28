@@ -275,17 +275,27 @@
             <select id="c-tipo" name="Tipo">
               <option>Duda</option>
               <option>Sugerencia</option>
+              <option>Quiero instalarlo en mi institución</option>
               <option>Problema al instalarlo o usarlo</option>
               <option>Otro</option>
             </select>
           </div>
-          <div class="row">
+          <div class="field">
+            <label for="c-institucion">Institución <span>(opcional)</span></label>
+            <input id="c-institucion" name="Institucion" type="text" autocomplete="organization" placeholder="Universidad, instituto, colegio…">
+          </div>
+          <fieldset class="choice">
+            <legend>¿Querés que te contactemos?</legend>
+            <label><input type="radio" name="Contacto" value="Anónimo" checked> No, lo envío de forma anónima</label>
+            <label><input type="radio" name="Contacto" value="Con mail"> Sí, dejo un mail para que me escriban</label>
+          </fieldset>
+          <div class="row" id="c-datos">
             <div class="field">
               <label for="c-nombre">Nombre <span>(opcional)</span></label>
               <input id="c-nombre" name="Nombre" type="text" autocomplete="name">
             </div>
             <div class="field">
-              <label for="c-email">Tu mail <span>(opcional, para responderte)</span></label>
+              <label for="c-email">Tu mail</label>
               <input id="c-email" name="email" type="email" autocomplete="email">
             </div>
           </div>
@@ -350,6 +360,19 @@
       vuelta.name = '_next';
       vuelta.value = location.href.split('#')[0].split('?')[0] + '?enviado=1#comentarios';
       form.appendChild(vuelta);
+
+      // Anónimo: se ocultan y no se envían el nombre ni el mail. Con mail: el mail pasa a ser obligatorio.
+      var datos = document.getElementById('c-datos');
+      var opciones = form.querySelectorAll('input[name="Contacto"]');
+      function contacto() {
+        var conMail = form.querySelector('input[name="Contacto"]:checked').value === 'Con mail';
+        datos.hidden = !conMail;
+        datos.querySelectorAll('input').forEach(function (i) { i.disabled = !conMail; });
+        document.getElementById('c-email').required = conMail;
+      }
+      opciones.forEach(function (o) { o.addEventListener('change', contacto); });
+      contacto();
+
       if (new URLSearchParams(location.search).has('enviado')) {
         var ok = document.getElementById('c-enviado');
         ok.hidden = false;
